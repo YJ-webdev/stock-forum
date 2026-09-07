@@ -1,10 +1,8 @@
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { DUMMY_DATA } from "../data/dummy";
 import { NewsList } from "./news-card";
 import { PostList } from "./post-card";
 import { ForumList } from "./forum-card";
@@ -52,7 +50,7 @@ export default function PanelLeft({ isOpen, setIsOpen }: PanelLeftProps) {
     <>
       {/* Sidebar Panel - No overlay, stays open on outside click */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-[320px] border-r border-zinc-100 dark:border-zinc-900 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transform-gpu transition-transform duration-500 ease-out z-40 ${
+        className={`fixed top-0 left-0 h-screen w-full md:w-[320px] border-r border-zinc-100 dark:border-r-zinc-900 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transform-gpu transition-transform duration-500 ease-out z-60 md:z-40 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

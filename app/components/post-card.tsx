@@ -76,7 +76,7 @@ function PostCard({ post }: { post: PostItem }) {
 export function PostList() {
   return (
     <div className="flex flex-col gap-3">
-      {DUMMY_POSTS.slice(0, 1).map((post) => (
+      {DUMMY_POSTS.slice(0, 2).map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
     </div>
