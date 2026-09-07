@@ -27,7 +27,7 @@ export default function LayoutShell({ user }: { user?: User | null }) {
         <section className="w-full md:w-2/3 p-4">A</section>
 
         {/* Section B (1/3 of available inner space) */}
-        <section className="w-full md:w-1/3 p-4 border-l border-zinc-200 dark:border-zinc-800">
+        <section className="w-full md:w-1/3 p-4 border-l border-zinc-100 dark:border-zinc-800">
           B
         </section>
       </div>
