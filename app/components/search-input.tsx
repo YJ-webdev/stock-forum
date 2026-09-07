@@ -22,7 +22,7 @@ export default function SeaerchInput() {
         autoFocus={true}
         value={input}
         placeholder="Search..."
-        className="h-10 border-l-0 border-r-0 rounded-r-full md:rounded-r-none  bg-muted outline-none ring-0 text-[15px] md:text-[14px] placeholder:text-[14px] focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
+        className="h-10 border-l-0 border-r-0 rounded-r-full md:rounded-r-none placeholder:text-current bg-muted outline-none ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
         maxLength={30}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={(e) => {

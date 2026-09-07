@@ -11,7 +11,7 @@ export function KbdMarkup() {
       </KbdGroup> */}
       <KbdGroup>
         <Kbd className="border font-light">Ctrl</Kbd>
-        <span className="font-extralight">+</span>
+        <span className="font-serif text-gray-500">+</span>
         <Kbd className="border font-light">K</Kbd>
       </KbdGroup>
     </div>
