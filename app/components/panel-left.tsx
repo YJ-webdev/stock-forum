@@ -52,7 +52,7 @@ export default function PanelLeft({ isOpen, setIsOpen }: PanelLeftProps) {
     <>
       {/* Sidebar Panel - No overlay, stays open on outside click */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-[320px] border-r border-zinc-100 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transform-gpu transition-transform duration-500 ease-out z-40 ${
+        className={`fixed top-0 left-0 h-screen w-[320px] border-r border-zinc-100 dark:border-zinc-900 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transform-gpu transition-transform duration-500 ease-out z-40 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
