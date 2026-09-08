@@ -114,7 +114,7 @@ export default function UserMenu({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-56 mt-2 z-60">
-        <div className="flex items-center justify-start gap-2 p-2">
+        {/* <div className="flex items-center justify-start gap-2 p-2">
           <Avatar className="h-8 w-8">
             {user.image && (
               <AvatarImage src={user.image} alt={user.name || "User avatar"} />
@@ -130,23 +130,23 @@ export default function UserMenu({
             )}
           </div>
         </div>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator /> */}
 
         <DropdownMenuGroup>
-          <DropdownMenuItem className="cursor-pointer">
-            <SquarePen className="mr-2 h-8 w-8" />
+          <DropdownMenuItem className="cursor-pointer h-11 text-[15px]">
+            <SquarePen className="mr-2 size-4.5" strokeWidth={1.5} />
             Write
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer">
-            <BadgeCheckIcon className="mr-2 h-8 w-8" />
+          <DropdownMenuItem className="cursor-pointer h-11 text-[15px]">
+            <BadgeCheckIcon className="mr-2 size-4.5" strokeWidth={1.5} />
             Account
           </DropdownMenuItem>
           {/* <DropdownMenuItem className="cursor-pointer">
             <CreditCardIcon className="mr-2 h-4 w-4" />
             Billing
           </DropdownMenuItem> */}
-          <DropdownMenuItem className="cursor-pointer">
-            <BellIcon className="mr-2 h-4 w-4" />
+          <DropdownMenuItem className="cursor-pointer h-11 text-[15px]">
+            <BellIcon className="mr-2 size-4.5" strokeWidth={1.5} />
             Notifications
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -166,9 +166,9 @@ export default function UserMenu({
             handleSignOutClick();
           }}
           disabled={isPending}
-          className="text-destructive focus:text-destructive cursor-pointer"
+          className="text-muted- cursor-pointer text-[15px]"
         >
-          <LogOutIcon className="mr-2 h-4 w-4" />
+          <LogOutIcon className="mr-2 size-4.5" strokeWidth={1.5} />
           {isPending ? "Signing out..." : "Sign Out"}
         </DropdownMenuItem>
       </DropdownMenuContent>

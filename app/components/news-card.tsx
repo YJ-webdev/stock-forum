@@ -13,7 +13,7 @@ function NewsRow({ item }: { item: NewsItem }) {
   return (
     <Link
       href={`/news/${item.id}`}
-      className="flex items-center py-2 justify-between  group w-full h-22"
+      className="flex items-center py-2 justify-between  group w-full h-20"
     >
       <div className="flex items-center gap-4 min-w-0 pr-2">
         {/* Publisher Brand Icon */}
@@ -35,9 +35,9 @@ function NewsRow({ item }: { item: NewsItem }) {
         {/* Details & Title */}
         <div className="flex flex-col min-w-0 gap-1">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+            {/* <span className="font-semibold text-zinc-800 dark:text-zinc-200">
               {item.source}
-            </span>
+            </span> */}
             {/* <span>•</span> */}
             {/* <span>{item.category}</span> */}
           </div>
