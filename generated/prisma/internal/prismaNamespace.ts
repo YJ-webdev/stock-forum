@@ -402,7 +402,8 @@ export const ModelName = {
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   Post: 'Post',
-  Comment: 'Comment'
+  Comment: 'Comment',
+  MarketAsset: 'MarketAsset'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -418,7 +419,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "post" | "comment"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "post" | "comment" | "marketAsset"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -866,6 +867,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MarketAsset: {
+      payload: Prisma.$MarketAssetPayload<ExtArgs>
+      fields: Prisma.MarketAssetFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MarketAssetFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAssetPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MarketAssetFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAssetPayload>
+        }
+        findFirst: {
+          args: Prisma.MarketAssetFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAssetPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MarketAssetFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAssetPayload>
+        }
+        findMany: {
+          args: Prisma.MarketAssetFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAssetPayload>[]
+        }
+        create: {
+          args: Prisma.MarketAssetCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAssetPayload>
+        }
+        createMany: {
+          args: Prisma.MarketAssetCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MarketAssetCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAssetPayload>[]
+        }
+        delete: {
+          args: Prisma.MarketAssetDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAssetPayload>
+        }
+        update: {
+          args: Prisma.MarketAssetUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAssetPayload>
+        }
+        deleteMany: {
+          args: Prisma.MarketAssetDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MarketAssetUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MarketAssetUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAssetPayload>[]
+        }
+        upsert: {
+          args: Prisma.MarketAssetUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAssetPayload>
+        }
+        aggregate: {
+          args: Prisma.MarketAssetAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMarketAsset>
+        }
+        groupBy: {
+          args: Prisma.MarketAssetGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MarketAssetGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MarketAssetCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MarketAssetCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -911,6 +986,7 @@ export const UserScalarFieldEnum = {
   email: 'email',
   emailVerified: 'emailVerified',
   image: 'image',
+  role: 'role',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -978,6 +1054,25 @@ export const CommentScalarFieldEnum = {
 export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
 
 
+export const MarketAssetScalarFieldEnum = {
+  id: 'id',
+  symbol: 'symbol',
+  name: 'name',
+  category: 'category',
+  logoUrl: 'logoUrl',
+  lastPrice: 'lastPrice',
+  change: 'change',
+  changePercent: 'changePercent',
+  high: 'high',
+  low: 'low',
+  volume: 'volume',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MarketAssetScalarFieldEnum = (typeof MarketAssetScalarFieldEnum)[keyof typeof MarketAssetScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1033,6 +1128,20 @@ export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel
  * Reference to a field of type 'DateTime[]'
  */
 export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Role'
+ */
+export type EnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role'>
+    
+
+
+/**
+ * Reference to a field of type 'Role[]'
+ */
+export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role[]'>
     
 
 
@@ -1220,6 +1329,7 @@ export type GlobalOmitConfig = {
   verificationToken?: Prisma.VerificationTokenOmit
   post?: Prisma.PostOmit
   comment?: Prisma.CommentOmit
+  marketAsset?: Prisma.MarketAssetOmit
 }
 
 /* Types for Logging */

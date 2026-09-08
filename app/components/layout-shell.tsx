@@ -6,7 +6,9 @@ import PanelLeft from "./panel-left";
 import { LeaderboardChart } from "./leader-board-chart";
 import { CountryLeaderboard } from "./country-leader-chart";
 import { MarketIndexTable } from "./market-index-table";
-import { MarketCardList } from "./market-card-lists";
+// import { MarketCardList } from "./market-card-lists";
+import { MarketDataTable } from "./market-data-table";
+import { MarketAssetClient } from "../data/type";
 
 interface User {
   name?: string | null;
@@ -14,7 +16,13 @@ interface User {
   image?: string | null;
 }
 
-export default function LayoutShell({ user }: { user?: User | null }) {
+export default function LayoutShell({
+  user,
+  marketData,
+}: {
+  user: User | null;
+  marketData: MarketAssetClient[];
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -29,7 +37,8 @@ export default function LayoutShell({ user }: { user?: User | null }) {
       >
         {/* Section A (2/3 of available inner space) */}
         <section className="w-full md:ml-20">
-          <MarketCardList />
+          {/* <MarketCardList /> */}
+          <MarketDataTable marketData={marketData} />
         </section>
 
         {/* Section B (1/3 of available inner space) */}

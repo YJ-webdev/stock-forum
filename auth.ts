@@ -33,6 +33,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // 'user' is only present on initial sign-in
       if (user) {
         token.id = user.id;
+        token.role = (user as { role?: string }).role || "USER";
       }
       return token;
     },
@@ -40,6 +41,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = (token.id as string) || token.sub!;
+        // Pass role to the client/server session
+        session.user.role = token.role as string;
       }
       return session;
     },

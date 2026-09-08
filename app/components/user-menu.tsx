@@ -81,12 +81,11 @@ export default function UserMenu({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <button
-          type="button"
-          className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition outline-none cursor-pointer flex items-center gap-2"
-          aria-label="User menu"
-        >
+      <DropdownMenuTrigger
+        className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition outline-none cursor-pointer flex items-center gap-2"
+        aria-label="User menu"
+      >
+        <div className="flex items-center gap-2">
           {/* Small Screens: Icon/Avatar */}
           <div className="sm:hidden flex items-center justify-center">
             <Avatar className="h-8 w-8">
@@ -110,7 +109,7 @@ export default function UserMenu({
           <span className="hidden sm:inline text-sm font-medium px-2">
             {`Hi, ${user.name || user.email || "User"}`}
           </span>
-        </button>
+        </div>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-56 mt-2 z-60">

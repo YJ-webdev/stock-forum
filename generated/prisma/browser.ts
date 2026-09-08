@@ -47,3 +47,8 @@ export type Post = Prisma.PostModel
  * 
  */
 export type Comment = Prisma.CommentModel
+/**
+ * Model MarketAsset
+ * 
+ */
+export type MarketAsset = Prisma.MarketAssetModel

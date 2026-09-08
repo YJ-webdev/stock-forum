@@ -56,7 +56,8 @@ export const ModelName = {
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   Post: 'Post',
-  Comment: 'Comment'
+  Comment: 'Comment',
+  MarketAsset: 'MarketAsset'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -81,6 +82,7 @@ export const UserScalarFieldEnum = {
   email: 'email',
   emailVerified: 'emailVerified',
   image: 'image',
+  role: 'role',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -146,6 +148,25 @@ export const CommentScalarFieldEnum = {
 } as const
 
 export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
+
+
+export const MarketAssetScalarFieldEnum = {
+  id: 'id',
+  symbol: 'symbol',
+  name: 'name',
+  category: 'category',
+  logoUrl: 'logoUrl',
+  lastPrice: 'lastPrice',
+  change: 'change',
+  changePercent: 'changePercent',
+  high: 'high',
+  low: 'low',
+  volume: 'volume',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MarketAssetScalarFieldEnum = (typeof MarketAssetScalarFieldEnum)[keyof typeof MarketAssetScalarFieldEnum]
 
 
 export const SortOrder = {
