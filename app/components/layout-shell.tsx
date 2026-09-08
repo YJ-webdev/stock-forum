@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { Header } from "./header";
 import PanelLeft from "./panel-left";
+import { LeaderboardChart } from "./leader-board-chart";
+import { CountryLeaderboard } from "./country-leader-chart";
+import { MarketIndexTable } from "./market-index-table";
+import { MarketCardList } from "./market-card-lists";
 
 interface User {
   name?: string | null;
@@ -24,11 +28,15 @@ export default function LayoutShell({ user }: { user?: User | null }) {
         }`}
       >
         {/* Section A (2/3 of available inner space) */}
-        <section className="w-full md:w-2/3 p-4">A</section>
+        <section className="w-full md:ml-20">
+          <MarketCardList />
+        </section>
 
         {/* Section B (1/3 of available inner space) */}
-        <section className="w-full md:w-1/3 p-4 border-l border-zinc-100 dark:border-zinc-900">
-          B
+        <section className="w-[35%] p-4 border-l border-zinc-100 dark:border-zinc-900 flex flex-col gap-4">
+          <MarketIndexTable />
+          <LeaderboardChart />
+          <CountryLeaderboard />
         </section>
       </div>
     </>

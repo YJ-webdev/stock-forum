@@ -107,7 +107,7 @@ export default function UserMenu({
           </div>
 
           {/* Medium & Larger Screens: Text Greeting */}
-          <span className="hidden sm:inline px-2">
+          <span className="hidden sm:inline text-sm font-medium px-2">
             {`Hi, ${user.name || user.email || "User"}`}
           </span>
         </button>
