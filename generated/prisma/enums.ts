@@ -15,3 +15,19 @@ export const Role = {
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
+
+
+export const TradeType = {
+  BUY: 'BUY',
+  SELL: 'SELL'
+} as const
+
+export type TradeType = (typeof TradeType)[keyof typeof TradeType]
+
+
+export const TradeStatus = {
+  OPEN: 'OPEN',
+  CLOSED: 'CLOSED'
+} as const
+
+export type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus]

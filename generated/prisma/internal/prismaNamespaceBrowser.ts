@@ -59,7 +59,9 @@ export const ModelName = {
   Comment: 'Comment',
   Like: 'Like',
   ForumCategory: 'ForumCategory',
-  MarketAsset: 'MarketAsset'
+  MarketAsset: 'MarketAsset',
+  AccountBalance: 'AccountBalance',
+  Trade: 'Trade'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -84,6 +86,7 @@ export const UserScalarFieldEnum = {
   email: 'email',
   emailVerified: 'emailVerified',
   image: 'image',
+  country: 'country',
   role: 'role',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -193,6 +196,35 @@ export const MarketAssetScalarFieldEnum = {
 } as const
 
 export type MarketAssetScalarFieldEnum = (typeof MarketAssetScalarFieldEnum)[keyof typeof MarketAssetScalarFieldEnum]
+
+
+export const AccountBalanceScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  cash: 'cash',
+  pnl: 'pnl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AccountBalanceScalarFieldEnum = (typeof AccountBalanceScalarFieldEnum)[keyof typeof AccountBalanceScalarFieldEnum]
+
+
+export const TradeScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  symbol: 'symbol',
+  type: 'type',
+  status: 'status',
+  quantity: 'quantity',
+  entryPrice: 'entryPrice',
+  exitPrice: 'exitPrice',
+  pnl: 'pnl',
+  createdAt: 'createdAt',
+  closedAt: 'closedAt'
+} as const
+
+export type TradeScalarFieldEnum = (typeof TradeScalarFieldEnum)[keyof typeof TradeScalarFieldEnum]
 
 
 export const SortOrder = {

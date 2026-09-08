@@ -50,6 +50,37 @@ const initialAssets = [
   },
 ];
 
+const demoUsers = [
+  {
+    name: "Alex Trader",
+    email: "trader@example.com",
+    country: "US",
+    cash: 15000,
+    pnl: 2500,
+  },
+  {
+    name: "Min-jun Kim",
+    email: "kim@example.com",
+    country: "KR",
+    cash: 12000,
+    pnl: 1100,
+  },
+  {
+    name: "Elena Rostova",
+    email: "elena@example.com",
+    country: "DE",
+    cash: 9500,
+    pnl: -500,
+  },
+  {
+    name: "Kenji Sato",
+    email: "kenji@example.com",
+    country: "JP",
+    cash: 18000,
+    pnl: 4200,
+  },
+];
+
 async function main() {
   console.log("🌱 Starting seeding...");
 
@@ -73,7 +104,7 @@ async function main() {
     },
   });
 
-  const stocksCategory = await prisma.forumCategory.upsert({
+  await prisma.forumCategory.upsert({
     where: { slug: "stocks" },
     update: {},
     create: {
@@ -83,32 +114,75 @@ async function main() {
     },
   });
 
-  // 3. Seed Demo User
-  const demoUser = await prisma.user.upsert({
-    where: { email: "trader@example.com" },
-    update: {},
-    create: {
-      name: "Alex Trader",
-      email: "trader@example.com",
-    },
-  });
+  // 3. Seed Demo Users, Balances, and Initial Trades
+  let primaryDemoUser = null;
 
-  // 4. Seed Initial Post
-  const existingPost = await prisma.post.findFirst({
-    where: { title: "Bitcoin breaks key resistance level" },
-  });
-
-  if (!existingPost) {
-    await prisma.post.create({
-      data: {
-        title: "Bitcoin breaks key resistance level",
-        content:
-          "Looking at the 4-hour chart, momentum seems strong for another push.",
-        stockTicker: "BTCUSD",
-        authorId: demoUser.id,
-        categoryId: cryptoCategory.id,
+  for (const u of demoUsers) {
+    const user = await prisma.user.upsert({
+      where: { email: u.email },
+      update: { country: u.country },
+      create: {
+        name: u.name,
+        email: u.email,
+        country: u.country,
       },
     });
+
+    // Seed Account Balance for each user
+    await prisma.accountBalance.upsert({
+      where: { userId: user.id },
+      update: {
+        cash: u.cash,
+        pnl: u.pnl,
+      },
+      create: {
+        userId: user.id,
+        cash: u.cash,
+        pnl: u.pnl,
+      },
+    });
+
+    // Seed sample open trade if user has none
+    const existingTrade = await prisma.trade.findFirst({
+      where: { userId: user.id },
+    });
+
+    if (!existingTrade) {
+      await prisma.trade.create({
+        data: {
+          userId: user.id,
+          symbol: "BTCUSD",
+          type: "BUY",
+          status: "OPEN",
+          quantity: 0.5,
+          entryPrice: 63000.0,
+        },
+      });
+    }
+
+    if (u.email === "trader@example.com") {
+      primaryDemoUser = user;
+    }
+  }
+
+  // 4. Seed Initial Post
+  if (primaryDemoUser) {
+    const existingPost = await prisma.post.findFirst({
+      where: { title: "Bitcoin breaks key resistance level" },
+    });
+
+    if (!existingPost) {
+      await prisma.post.create({
+        data: {
+          title: "Bitcoin breaks key resistance level",
+          content:
+            "Looking at the 4-hour chart, momentum seems strong for another push.",
+          stockTicker: "BTCUSD",
+          authorId: primaryDemoUser.id,
+          categoryId: cryptoCategory.id,
+        },
+      });
+    }
   }
 
   console.log("✅ Seeding finished successfully.");

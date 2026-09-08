@@ -86,3 +86,13 @@ export type ForumCategory = Prisma.ForumCategoryModel
  * 
  */
 export type MarketAsset = Prisma.MarketAssetModel
+/**
+ * Model AccountBalance
+ * 
+ */
+export type AccountBalance = Prisma.AccountBalanceModel
+/**
+ * Model Trade
+ * 
+ */
+export type Trade = Prisma.TradeModel

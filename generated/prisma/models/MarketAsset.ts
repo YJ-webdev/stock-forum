@@ -296,6 +296,7 @@ export type MarketAssetWhereInput = {
   volume?: Prisma.StringFilter<"MarketAsset"> | string
   createdAt?: Prisma.DateTimeFilter<"MarketAsset"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MarketAsset"> | Date | string
+  trades?: Prisma.TradeListRelationFilter
 }
 
 export type MarketAssetOrderByWithRelationInput = {
@@ -312,6 +313,7 @@ export type MarketAssetOrderByWithRelationInput = {
   volume?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  trades?: Prisma.TradeOrderByRelationAggregateInput
 }
 
 export type MarketAssetWhereUniqueInput = Prisma.AtLeast<{
@@ -331,6 +333,7 @@ export type MarketAssetWhereUniqueInput = Prisma.AtLeast<{
   volume?: Prisma.StringFilter<"MarketAsset"> | string
   createdAt?: Prisma.DateTimeFilter<"MarketAsset"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MarketAsset"> | Date | string
+  trades?: Prisma.TradeListRelationFilter
 }, "id" | "symbol">
 
 export type MarketAssetOrderByWithAggregationInput = {
@@ -387,6 +390,7 @@ export type MarketAssetCreateInput = {
   volume?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  trades?: Prisma.TradeCreateNestedManyWithoutAssetInput
 }
 
 export type MarketAssetUncheckedCreateInput = {
@@ -403,6 +407,7 @@ export type MarketAssetUncheckedCreateInput = {
   volume?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  trades?: Prisma.TradeUncheckedCreateNestedManyWithoutAssetInput
 }
 
 export type MarketAssetUpdateInput = {
@@ -419,6 +424,7 @@ export type MarketAssetUpdateInput = {
   volume?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  trades?: Prisma.TradeUpdateManyWithoutAssetNestedInput
 }
 
 export type MarketAssetUncheckedUpdateInput = {
@@ -435,6 +441,7 @@ export type MarketAssetUncheckedUpdateInput = {
   volume?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  trades?: Prisma.TradeUncheckedUpdateManyWithoutAssetNestedInput
 }
 
 export type MarketAssetCreateManyInput = {
@@ -549,6 +556,11 @@ export type MarketAssetSumOrderByAggregateInput = {
   low?: Prisma.SortOrder
 }
 
+export type MarketAssetScalarRelationFilter = {
+  is?: Prisma.MarketAssetWhereInput
+  isNot?: Prisma.MarketAssetWhereInput
+}
+
 export type FloatFieldUpdateOperationsInput = {
   set?: number
   increment?: number
@@ -557,6 +569,129 @@ export type FloatFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type MarketAssetCreateNestedOneWithoutTradesInput = {
+  create?: Prisma.XOR<Prisma.MarketAssetCreateWithoutTradesInput, Prisma.MarketAssetUncheckedCreateWithoutTradesInput>
+  connectOrCreate?: Prisma.MarketAssetCreateOrConnectWithoutTradesInput
+  connect?: Prisma.MarketAssetWhereUniqueInput
+}
+
+export type MarketAssetUpdateOneRequiredWithoutTradesNestedInput = {
+  create?: Prisma.XOR<Prisma.MarketAssetCreateWithoutTradesInput, Prisma.MarketAssetUncheckedCreateWithoutTradesInput>
+  connectOrCreate?: Prisma.MarketAssetCreateOrConnectWithoutTradesInput
+  upsert?: Prisma.MarketAssetUpsertWithoutTradesInput
+  connect?: Prisma.MarketAssetWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MarketAssetUpdateToOneWithWhereWithoutTradesInput, Prisma.MarketAssetUpdateWithoutTradesInput>, Prisma.MarketAssetUncheckedUpdateWithoutTradesInput>
+}
+
+export type MarketAssetCreateWithoutTradesInput = {
+  id?: string
+  symbol: string
+  name: string
+  category: string
+  logoUrl: string
+  lastPrice?: number
+  change?: number
+  changePercent?: number
+  high?: number
+  low?: number
+  volume?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type MarketAssetUncheckedCreateWithoutTradesInput = {
+  id?: string
+  symbol: string
+  name: string
+  category: string
+  logoUrl: string
+  lastPrice?: number
+  change?: number
+  changePercent?: number
+  high?: number
+  low?: number
+  volume?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type MarketAssetCreateOrConnectWithoutTradesInput = {
+  where: Prisma.MarketAssetWhereUniqueInput
+  create: Prisma.XOR<Prisma.MarketAssetCreateWithoutTradesInput, Prisma.MarketAssetUncheckedCreateWithoutTradesInput>
+}
+
+export type MarketAssetUpsertWithoutTradesInput = {
+  update: Prisma.XOR<Prisma.MarketAssetUpdateWithoutTradesInput, Prisma.MarketAssetUncheckedUpdateWithoutTradesInput>
+  create: Prisma.XOR<Prisma.MarketAssetCreateWithoutTradesInput, Prisma.MarketAssetUncheckedCreateWithoutTradesInput>
+  where?: Prisma.MarketAssetWhereInput
+}
+
+export type MarketAssetUpdateToOneWithWhereWithoutTradesInput = {
+  where?: Prisma.MarketAssetWhereInput
+  data: Prisma.XOR<Prisma.MarketAssetUpdateWithoutTradesInput, Prisma.MarketAssetUncheckedUpdateWithoutTradesInput>
+}
+
+export type MarketAssetUpdateWithoutTradesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  lastPrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  change?: Prisma.FloatFieldUpdateOperationsInput | number
+  changePercent?: Prisma.FloatFieldUpdateOperationsInput | number
+  high?: Prisma.FloatFieldUpdateOperationsInput | number
+  low?: Prisma.FloatFieldUpdateOperationsInput | number
+  volume?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type MarketAssetUncheckedUpdateWithoutTradesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  lastPrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  change?: Prisma.FloatFieldUpdateOperationsInput | number
+  changePercent?: Prisma.FloatFieldUpdateOperationsInput | number
+  high?: Prisma.FloatFieldUpdateOperationsInput | number
+  low?: Prisma.FloatFieldUpdateOperationsInput | number
+  volume?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+
+/**
+ * Count Type MarketAssetCountOutputType
+ */
+
+export type MarketAssetCountOutputType = {
+  trades: number
+}
+
+export type MarketAssetCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  trades?: boolean | MarketAssetCountOutputTypeCountTradesArgs
+}
+
+/**
+ * MarketAssetCountOutputType without action
+ */
+export type MarketAssetCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MarketAssetCountOutputType
+   */
+  select?: Prisma.MarketAssetCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * MarketAssetCountOutputType without action
+ */
+export type MarketAssetCountOutputTypeCountTradesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TradeWhereInput
+}
 
 
 export type MarketAssetSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -573,6 +708,8 @@ export type MarketAssetSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   volume?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  trades?: boolean | Prisma.MarketAsset$tradesArgs<ExtArgs>
+  _count?: boolean | Prisma.MarketAssetCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["marketAsset"]>
 
 export type MarketAssetSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -624,10 +761,18 @@ export type MarketAssetSelectScalar = {
 }
 
 export type MarketAssetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "symbol" | "name" | "category" | "logoUrl" | "lastPrice" | "change" | "changePercent" | "high" | "low" | "volume" | "createdAt" | "updatedAt", ExtArgs["result"]["marketAsset"]>
+export type MarketAssetInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  trades?: boolean | Prisma.MarketAsset$tradesArgs<ExtArgs>
+  _count?: boolean | Prisma.MarketAssetCountOutputTypeDefaultArgs<ExtArgs>
+}
+export type MarketAssetIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type MarketAssetIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $MarketAssetPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "MarketAsset"
-  objects: {}
+  objects: {
+    trades: Prisma.$TradePayload<ExtArgs>[]
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     symbol: string
@@ -1036,6 +1181,7 @@ readonly fields: MarketAssetFieldRefs;
  */
 export interface Prisma__MarketAssetClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  trades<T extends Prisma.MarketAsset$tradesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketAsset$tradesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1095,6 +1241,10 @@ export type MarketAssetFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.I
    */
   omit?: Prisma.MarketAssetOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketAssetInclude<ExtArgs> | null
+  /**
    * Filter, which MarketAsset to fetch.
    */
   where: Prisma.MarketAssetWhereUniqueInput
@@ -1113,6 +1263,10 @@ export type MarketAssetFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Exten
    */
   omit?: Prisma.MarketAssetOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketAssetInclude<ExtArgs> | null
+  /**
    * Filter, which MarketAsset to fetch.
    */
   where: Prisma.MarketAssetWhereUniqueInput
@@ -1130,6 +1284,10 @@ export type MarketAssetFindFirstArgs<ExtArgs extends runtime.Types.Extensions.In
    * Omit specific fields from the MarketAsset
    */
   omit?: Prisma.MarketAssetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketAssetInclude<ExtArgs> | null
   /**
    * Filter, which MarketAsset to fetch.
    */
@@ -1179,6 +1337,10 @@ export type MarketAssetFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extens
    */
   omit?: Prisma.MarketAssetOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketAssetInclude<ExtArgs> | null
+  /**
    * Filter, which MarketAsset to fetch.
    */
   where?: Prisma.MarketAssetWhereInput
@@ -1226,6 +1388,10 @@ export type MarketAssetFindManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Omit specific fields from the MarketAsset
    */
   omit?: Prisma.MarketAssetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketAssetInclude<ExtArgs> | null
   /**
    * Filter, which MarketAssets to fetch.
    */
@@ -1275,6 +1441,10 @@ export type MarketAssetCreateArgs<ExtArgs extends runtime.Types.Extensions.Inter
    */
   omit?: Prisma.MarketAssetOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketAssetInclude<ExtArgs> | null
+  /**
    * The data needed to create a MarketAsset.
    */
   data: Prisma.XOR<Prisma.MarketAssetCreateInput, Prisma.MarketAssetUncheckedCreateInput>
@@ -1322,6 +1492,10 @@ export type MarketAssetUpdateArgs<ExtArgs extends runtime.Types.Extensions.Inter
    * Omit specific fields from the MarketAsset
    */
   omit?: Prisma.MarketAssetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketAssetInclude<ExtArgs> | null
   /**
    * The data needed to update a MarketAsset.
    */
@@ -1389,6 +1563,10 @@ export type MarketAssetUpsertArgs<ExtArgs extends runtime.Types.Extensions.Inter
    */
   omit?: Prisma.MarketAssetOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketAssetInclude<ExtArgs> | null
+  /**
    * The filter to search for the MarketAsset to update in case it exists.
    */
   where: Prisma.MarketAssetWhereUniqueInput
@@ -1415,6 +1593,10 @@ export type MarketAssetDeleteArgs<ExtArgs extends runtime.Types.Extensions.Inter
    */
   omit?: Prisma.MarketAssetOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketAssetInclude<ExtArgs> | null
+  /**
    * Filter which MarketAsset to delete.
    */
   where: Prisma.MarketAssetWhereUniqueInput
@@ -1435,6 +1617,30 @@ export type MarketAssetDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.I
 }
 
 /**
+ * MarketAsset.trades
+ */
+export type MarketAsset$tradesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Trade
+   */
+  select?: Prisma.TradeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Trade
+   */
+  omit?: Prisma.TradeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TradeInclude<ExtArgs> | null
+  where?: Prisma.TradeWhereInput
+  orderBy?: Prisma.TradeOrderByWithRelationInput | Prisma.TradeOrderByWithRelationInput[]
+  cursor?: Prisma.TradeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TradeScalarFieldEnum | Prisma.TradeScalarFieldEnum[]
+}
+
+/**
  * MarketAsset without action
  */
 export type MarketAssetDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1446,4 +1652,8 @@ export type MarketAssetDefaultArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Omit specific fields from the MarketAsset
    */
   omit?: Prisma.MarketAssetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketAssetInclude<ExtArgs> | null
 }

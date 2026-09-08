@@ -27,7 +27,7 @@ const SYMBOL_MAP: Record<string, string> = {
   BTCUSD: "BTC-USD",
   US100: "^NDX",
   US500: "^GSPC",
-  DJI: "^DJI", // Add Dow Jones ticker mapping
+  DJI: "^DJI",
 };
 
 // Reverse map for mapping Yahoo response back to UI symbols
@@ -39,6 +39,14 @@ let cachedData: MarketPriceUpdate[] = [];
 let lastFetchTime = 0;
 const CACHE_TTL_MS = 5000;
 let activeFetchPromise: Promise<MarketPriceUpdate[]> | null = null;
+
+function formatVolume(vol: number | undefined | null): string {
+  if (!vol) return "N/A";
+  if (vol >= 1e9) return `${(vol / 1e9).toFixed(1)}B`;
+  if (vol >= 1e6) return `${(vol / 1e6).toFixed(1)}M`;
+  if (vol >= 1e3) return `${(vol / 1e3).toFixed(1)}K`;
+  return vol.toString();
+}
 
 async function getLatestPrices(): Promise<MarketPriceUpdate[]> {
   const now = Date.now();
@@ -57,7 +65,7 @@ async function getLatestPrices(): Promise<MarketPriceUpdate[]> {
 
       let dbSymbols = registeredAssets.map((asset) => asset.symbol);
       if (dbSymbols.length === 0) {
-        dbSymbols = ["BTCUSD", "US100", "US500"];
+        dbSymbols = ["BTCUSD", "US100", "US500", "DJI"];
       }
 
       // 2. Map Database symbols to valid Yahoo Tickers
@@ -85,15 +93,9 @@ async function getLatestPrices(): Promise<MarketPriceUpdate[]> {
       );
 
       // 5. Build response mapping Yahoo Ticker BACK to Database Symbol key
-      // 5. Build response mapping Yahoo Ticker BACK to Database Symbol key
+      const nowIso = new Date().toISOString();
       cachedData = validQuotes.map((quote) => {
         const clientSymbol = REVERSE_SYMBOL_MAP[quote.symbol] || quote.symbol;
-        const vol = quote.regularMarketVolume;
-        const formattedVolume = vol
-          ? vol >= 1e9
-            ? `${(vol / 1e9).toFixed(1)}B`
-            : `${(vol / 1e6).toFixed(1)}M`
-          : "N/A";
 
         return {
           symbol: clientSymbol,
@@ -102,10 +104,25 @@ async function getLatestPrices(): Promise<MarketPriceUpdate[]> {
           changePercent: quote.regularMarketChangePercent ?? 0,
           high: quote.regularMarketDayHigh ?? 0,
           low: quote.regularMarketDayLow ?? 0,
-          volume: formattedVolume,
-          updatedAt: new Date().toISOString(),
+          volume: formatVolume(quote.regularMarketVolume),
+          updatedAt: nowIso,
         };
       });
+
+      // 6. Sync updated prices back to Prisma asynchronously
+      Promise.all(
+        cachedData.map((item) =>
+          prisma.marketAsset.updateMany({
+            where: { symbol: item.symbol },
+            data: { lastPrice: item.lastPrice },
+          }),
+        ),
+      ).catch((err) =>
+        console.error(
+          "[Database Sync Error] Failed to update asset prices:",
+          err,
+        ),
+      );
 
       lastFetchTime = Date.now();
       return cachedData;
@@ -124,11 +141,18 @@ export async function GET(req: NextRequest) {
   const encoder = new TextEncoder();
   let intervalId: NodeJS.Timeout | null = null;
 
+  const cleanup = () => {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+  };
+
   const stream = new ReadableStream({
     async start(controller) {
       const pushUpdates = async () => {
         if (req.signal.aborted) {
-          if (intervalId) clearInterval(intervalId);
+          cleanup();
           return;
         }
 
@@ -139,6 +163,7 @@ export async function GET(req: NextRequest) {
           );
         } catch (err) {
           console.error("SSE Push Error:", err);
+          cleanup();
         }
       };
 
@@ -146,13 +171,11 @@ export async function GET(req: NextRequest) {
       intervalId = setInterval(pushUpdates, 5000);
     },
     cancel() {
-      if (intervalId) clearInterval(intervalId);
+      cleanup();
     },
   });
 
-  req.signal.addEventListener("abort", () => {
-    if (intervalId) clearInterval(intervalId);
-  });
+  req.signal.addEventListener("abort", cleanup);
 
   return new Response(stream, {
     headers: {

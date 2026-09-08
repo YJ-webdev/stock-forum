@@ -1,106 +1,63 @@
 "use client";
 
-import { User, Cat, Smile, Zap, Crown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getTopBetters, LeaderboardUser } from "@/app/actions/leaderboard";
 
 export function LeaderboardChart() {
-  const players = [
-    {
-      rank: "01",
-      name: "ApexPredictor",
-      profit: "+$342,900",
-      rate: "+78.4%",
-      icon: Crown,
-      iconBg: "bg-zinc-900 text-amber-400 dark:bg-zinc-100 dark:text-amber-500",
-    },
-    {
-      rank: "02",
-      name: "HighRoller99",
-      profit: "+$289,150",
-      rate: "+72.1%",
-      icon: Zap,
-      iconBg: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-    },
-    {
-      rank: "03",
-      name: "LuckyStrike_X",
-      profit: "+$210,400",
-      rate: "+68.9%",
-      icon: Cat,
-      iconBg: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-    },
-    {
-      rank: "04",
-      name: "VegasWhale",
-      profit: "+$184,000",
-      rate: "+65.3%",
-      icon: Smile,
-      iconBg: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-    },
-    {
-      rank: "05",
-      name: "OddsMaster",
-      profit: "+$145,220",
-      rate: "+61.7%",
-      icon: User,
-      iconBg: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-    },
-  ];
+  const [leaders, setLeaders] = useState<LeaderboardUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadLeaderboard() {
+      const data = await getTopBetters(5);
+      setLeaders(data);
+      setIsLoading(false);
+    }
+    loadLeaderboard();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="text-sm text-muted-foreground p-4">
+        Loading leaderboard...
+      </div>
+    );
+  }
 
   return (
-    <div className="w-2xs py-2">
-      {/* Header */}
-      <div className="flex justify-between items-center px-3">
-        <p className="text-muted-foreground text-xs text-light tracking-wider uppercase">
-          top bettors
-        </p>
-        {/* <div className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-            Real-time
-          </span>
-        </div> */}
+    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-sm">Top Traders</h3>
+        <span className="text-xs text-muted-foreground">Ranked by Profit</span>
       </div>
 
-      {/* List */}
-      <div className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
-        {players.map((p) => {
-          const IconComponent = p.icon;
-
-          return (
-            <div
-              key={p.rank}
-              className="py-2.5 px-3 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors"
-            >
-              {/* Rank, Icon Avatar, Name */}
-              <div className="flex items-center gap-3.5 min-w-0">
-                <span className="text-xs font-semibold tabular-nums text-zinc-400 dark:text-zinc-500 w-5">
-                  {p.rank}
+      <div className="flex flex-col gap-3">
+        {leaders.map((user) => (
+          <div
+            key={user.id}
+            className="flex items-center justify-between text-sm"
+          >
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs w-4 text-muted-foreground">
+                #{user.rank}
+              </span>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user.image || ""} />
+                <AvatarFallback>{user.name[0]}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="font-medium text-xs">{user.name}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {user.winRate}% Win Rate
                 </span>
-
-                {/* 이모티콘/아이콘 아바타 */}
-                <div
-                  className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 border border-zinc-200/60 dark:border-zinc-700/50 ${p.iconBg}`}
-                >
-                  <IconComponent className="h-4 w-4" />
-                </div>
-
-                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                  {p.name}
-                </span>
-              </div>
-
-              {/* Profit & Rate Numbers */}
-              <div className="text-right shrink-0">
-                <div className="text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-                  {p.profit}
-                </div>
-                <div className="text-[11px] font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
-                  {p.rate}
-                </div>
               </div>
             </div>
-          );
-        })}
+            <span className="font-mono text-xs font-semibold text-emerald-500">
+              +${user.totalProfit.toLocaleString()}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );

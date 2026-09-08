@@ -4,6 +4,7 @@ import LayoutShell from "./components/layout-shell";
 import { getRecentPosts } from "./actions/posts";
 import { PostCard } from "./components/post-card";
 import { getForumCategories } from "./actions/categories";
+// import { LivePriceTracker } from "./components/live-price-tracker";
 
 async function getNews() {
   try {
@@ -55,6 +56,7 @@ export default async function Home() {
               <PostCard key={post.id} post={post} />
             ))}
           </div>
+          {/* <LivePriceTracker /> */}
         </LayoutShell>
       </main>
     </div>

@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-//   url      = env("DATABASE_URL")
+  // url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -14,20 +14,23 @@ enum Role {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String          @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?         @unique
   emailVerified DateTime?
   image         String?
-  role          Role      @default(USER)
+  country       String?         @default("US")
+  role          Role            @default(USER)
   accounts      Account[]
   sessions      Session[]
   posts         Post[]
   comments      Comment[]
   likes         Like[]
+  balance       AccountBalance?
+  trades        Trade[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 }
 
 model Account {
@@ -65,37 +68,34 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// Your Post and Comment models stay here, referencing User by userId
 model Post {
-  id          String    @id @default(cuid())
+  id          String        @id @default(cuid())
   title       String
   content     String
   stockTicker String?
-  createdAt   DateTime  @default(now())
-  author      User      @relation(fields: [authorId], references: [id])
+  createdAt   DateTime      @default(now())
+  author      User          @relation(fields: [authorId], references: [id])
   authorId    String
-  categoryId String
-  category   ForumCategory @relation(fields: [categoryId], references: [id])
-  comments   Comment[]
-  likes      Like[]
-
+  categoryId  String
+  category    ForumCategory @relation(fields: [categoryId], references: [id])
+  comments    Comment[]
+  likes       Like[]
 }
 
 model Comment {
-  id       String @id @default(cuid())
-  content  String
-  postId   String
-  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  authorId String
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  content   String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  // Nested replies (Self-relation)
-  parentId String?
-  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies  Comment[] @relation("CommentReplies")
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Like {
@@ -130,7 +130,49 @@ model MarketAsset {
   high          Float    @default(0.0)
   low           Float    @default(0.0)
   volume        String   @default("0M")
+  trades        Trade[]  // Added back-relation to Trade
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
 
+model AccountBalance {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  cash      Float    @default(10000.0)
+  pnl       Float    @default(0.0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum TradeType {
+  BUY
+  SELL
+}
+
+enum TradeStatus {
+  OPEN
+  CLOSED
+}
+
+model Trade {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  symbol     String
+  asset      MarketAsset @relation(fields: [symbol], references: [symbol])
+  
+  type       TradeType
+  status     TradeStatus @default(OPEN)
+  
+  quantity   Float
+  entryPrice Float
+  exitPrice  Float?
+  pnl        Float?
+  
+  createdAt  DateTime    @default(now())
+  closedAt   DateTime?
+}
