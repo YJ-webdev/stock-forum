@@ -9,6 +9,7 @@ import {
   LogOutIcon,
   User as UserIcon,
   Sun,
+  SquarePen,
 } from "lucide-react";
 import { TbUser } from "react-icons/tb";
 import { BsMoon } from "react-icons/bs";
@@ -82,7 +83,7 @@ export default function UserMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition outline-none cursor-pointer flex items-center gap-2"
+        className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer flex items-center gap-2"
         aria-label="User menu"
       >
         <div className="flex items-center gap-2">
@@ -106,7 +107,7 @@ export default function UserMenu({
           </div>
 
           {/* Medium & Larger Screens: Text Greeting */}
-          <span className="hidden sm:inline text-sm font-medium px-2">
+          <span className="hidden sm:inline  px-2">
             {`Hi, ${user.name || user.email || "User"}`}
           </span>
         </div>
@@ -133,13 +134,17 @@ export default function UserMenu({
 
         <DropdownMenuGroup>
           <DropdownMenuItem className="cursor-pointer">
-            <BadgeCheckIcon className="mr-2 h-4 w-4" />
-            Account
+            <SquarePen className="mr-2 h-8 w-8" />
+            Write
           </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer">
+            <BadgeCheckIcon className="mr-2 h-8 w-8" />
+            Account
+          </DropdownMenuItem>
+          {/* <DropdownMenuItem className="cursor-pointer">
             <CreditCardIcon className="mr-2 h-4 w-4" />
             Billing
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
           <DropdownMenuItem className="cursor-pointer">
             <BellIcon className="mr-2 h-4 w-4" />
             Notifications

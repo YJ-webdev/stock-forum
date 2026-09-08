@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { getUserOpenPositions } from "@/app/actions/get-portfolio";
 
 import { redirect } from "next/navigation";
-import { PortfolioTable } from "../components/portfolio-table";
+import { PortfolioTable } from "@/app/components/portfolio-table";
 
 export default async function PortfolioPage() {
   const session = await auth();

@@ -36,14 +36,18 @@ export function Header({ user, onTogglePanel }: HeaderProps) {
         <div className="self-center m-auto">
           <SeaerchInput />
         </div>
-        <UserMenu
-          user={user}
-          onSignOut={handleSignOut}
-          onLoginClick={() => setIsLoginOpen(true)}
-        />
-        {/* Hide ModeToggle on small screens */}
-        <div className="hidden sm:flex items-center">
-          <ModeToggle />
+        <div className="flex">
+          <UserMenu
+            user={user}
+            onSignOut={handleSignOut}
+            onLoginClick={() => setIsLoginOpen(true)}
+          />
+
+          {/* <SquarePen strokeWidth={1.5} className="h-5 w-5 mr-2 mt-2" /> */}
+          {/* Hide ModeToggle on small screens */}
+          <div className="hidden sm:flex items-center">
+            <ModeToggle />
+          </div>
         </div>
         <LoginDialog isOpen={isLoginOpen} setIsOpen={setIsLoginOpen} />
       </header>

@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { AssetManagementTable } from "../components/admin/asset-management-table";
-import { AddAssetForm } from "../components/admin/add-asset-form";
+
 import { MarketAsset } from "@/generated/prisma/client";
+import { AddAssetForm } from "@/app/components/admin/add-asset-form";
+import { AssetManagementTable } from "@/app/components/admin/asset-management-table";
 
 export const dynamic = "force-dynamic"; // Prevent static pre-rendering caching issues
 

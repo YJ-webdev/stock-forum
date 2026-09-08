@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import {
   getCountryLeaderboard,
   CountryLeaderboardItem,
-  getCountryFlagEmoji,
 } from "@/app/actions/country-leaderboard";
+import { getCountryFlagEmoji } from "@/lib/utils/flag";
 
 export function CountryLeaderboard() {
   const [countries, setCountries] = useState<CountryLeaderboardItem[]>([]);

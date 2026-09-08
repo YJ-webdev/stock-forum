@@ -13,15 +13,28 @@ export type MarketAssetClient = Omit<MarketAsset, "createdAt" | "updatedAt"> & {
   volume?: string;
 };
 
+// export interface NewsItem {
+//   id: string | number;
+//   title: string;
+//   href?: string;
+//   url?: string;
+//   source: string;
+//   sourceIcon?: string;
+//   timeAgo?: string;
+//   time?: string;
+//   category?: string;
+//   thumbnail?: string | null;
+// }
+
 export interface NewsItem {
-  id: string | number;
+  id: string;
   title: string;
-  href?: string;
-  url?: string;
   source: string;
+  category: string;
+  url?: string;
   sourceIcon?: string;
-  timeAgo?: string;
-  time?: string;
-  category?: string;
-  thumbnail?: string | null;
+  thumbnail?: string; // Large cover image for the detail page
+  content?: string; // Full script/article body text
+  description?: string; // Fallback short summary
+  timeAgo: string;
 }

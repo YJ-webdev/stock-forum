@@ -20,23 +20,9 @@ export function MarketIndexTable({
   );
 
   return (
-    <div className="w-2xs">
-      {/* Upper Bar */}
-      <div className="flex justify-between items-center mb-3 px-3">
-        <p className="text-muted-foreground text-xs text-light tracking-wider uppercase">
-          market indices
-        </p>
-
-        <div className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-            Real-time
-          </span>
-        </div>
-      </div>
-
+    <div className="py-2">
       {/* Header Row */}
-      <div className="grid grid-cols-12 px-3 py-1 text-[11px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+      <div className="grid grid-cols-12 py-1 text-[11px]  text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
         <span className="col-span-4">Index</span>
         <span className="col-span-3 text-right">Previous</span>
         <span className="col-span-3 text-right">Today</span>
@@ -55,15 +41,15 @@ export function MarketIndexTable({
           return (
             <div
               key={item.symbol}
-              className="grid grid-cols-12 px-3 py-2.5 items-center hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors"
+              className="grid grid-cols-12 items-center hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors"
             >
               {/* Index Symbol & Name */}
               <div className="col-span-4 min-w-0">
                 <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                  {item.symbol}
+                  {INDEX_NAMES[item.symbol] || item.symbol}
                 </div>
                 <div className="text-[11px] text-zinc-400 dark:text-zinc-500 truncate">
-                  {INDEX_NAMES[item.symbol] || item.symbol}
+                  {item.symbol}
                 </div>
               </div>
 

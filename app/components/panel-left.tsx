@@ -2,13 +2,12 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
-import { NewsList } from "./news-card";
 
 import { CategoryWithCount, ForumList } from "./forum-card";
 import { NewsItem } from "../data/type";
 import { PostCard } from "./post-card";
 import { PostWithRelations } from "./post-card";
+import { NewsCarousel } from "./news-card";
 
 interface PanelLeftProps {
   isOpen: boolean;
@@ -25,13 +24,6 @@ export default function PanelLeft({
   posts,
   categories,
 }: PanelLeftProps) {
-  const pathname = usePathname();
-
-  // Auto-close sidebar on route change
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname, setIsOpen]);
-
   // Keyboard shortcuts: Ctrl+B / Cmd+B to toggle, Esc to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -62,17 +54,14 @@ export default function PanelLeft({
     <>
       {/* Sidebar Panel - No overlay, stays open on outside click */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-full md:w-[320px] border-r border-zinc-100 dark:border-r-zinc-900 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transform-gpu transition-transform duration-500 ease-out z-60 md:z-40 ${
+        className={`fixed top-0 left-0 h-screen w-full md:w-[320px] md:border-r border-zinc-100 dark:border-r-zinc-900 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transform-gpu transition-transform duration-500 ease-out z-60 md:z-40 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <ScrollArea className="h-full w-full p-5 mt-10 pb-20">
           {/* News Section */}
-          <div className="mt-2">
-            <p className="text-muted-foreground text-xs text-light tracking-wider">
-              NEWS
-            </p>
-            <NewsList news={news} />
+          <div>
+            <NewsCarousel news={news} />
           </div>
 
           {/* Topics */}
