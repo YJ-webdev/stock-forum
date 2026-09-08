@@ -379,12 +379,12 @@ export type MarketAssetCreateInput = {
   name: string
   category: string
   logoUrl: string
-  lastPrice: number
-  change: number
-  changePercent: number
-  high: number
-  low: number
-  volume: string
+  lastPrice?: number
+  change?: number
+  changePercent?: number
+  high?: number
+  low?: number
+  volume?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -395,12 +395,12 @@ export type MarketAssetUncheckedCreateInput = {
   name: string
   category: string
   logoUrl: string
-  lastPrice: number
-  change: number
-  changePercent: number
-  high: number
-  low: number
-  volume: string
+  lastPrice?: number
+  change?: number
+  changePercent?: number
+  high?: number
+  low?: number
+  volume?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -443,12 +443,12 @@ export type MarketAssetCreateManyInput = {
   name: string
   category: string
   logoUrl: string
-  lastPrice: number
-  change: number
-  changePercent: number
-  high: number
-  low: number
-  volume: string
+  lastPrice?: number
+  change?: number
+  changePercent?: number
+  high?: number
+  low?: number
+  volume?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }

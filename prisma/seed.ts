@@ -53,11 +53,61 @@ const initialAssets = [
 async function main() {
   console.log("🌱 Starting seeding...");
 
+  // 1. Seed Market Assets
   for (const asset of initialAssets) {
     await prisma.marketAsset.upsert({
       where: { symbol: asset.symbol },
       update: asset,
       create: asset,
+    });
+  }
+
+  // 2. Seed Forum Categories
+  const cryptoCategory = await prisma.forumCategory.upsert({
+    where: { slug: "crypto" },
+    update: {},
+    create: {
+      name: "Crypto Discussion",
+      slug: "crypto",
+      description: "Talk about BTC, ETH, and altcoins.",
+    },
+  });
+
+  const stocksCategory = await prisma.forumCategory.upsert({
+    where: { slug: "stocks" },
+    update: {},
+    create: {
+      name: "Stock Market",
+      slug: "stocks",
+      description: "Equities, S&P 500, Nasdaq, and market trends.",
+    },
+  });
+
+  // 3. Seed Demo User
+  const demoUser = await prisma.user.upsert({
+    where: { email: "trader@example.com" },
+    update: {},
+    create: {
+      name: "Alex Trader",
+      email: "trader@example.com",
+    },
+  });
+
+  // 4. Seed Initial Post
+  const existingPost = await prisma.post.findFirst({
+    where: { title: "Bitcoin breaks key resistance level" },
+  });
+
+  if (!existingPost) {
+    await prisma.post.create({
+      data: {
+        title: "Bitcoin breaks key resistance level",
+        content:
+          "Looking at the 4-hour chart, momentum seems strong for another push.",
+        stockTicker: "BTCUSD",
+        authorId: demoUser.id,
+        categoryId: cryptoCategory.id,
+      },
     });
   }
 

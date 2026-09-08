@@ -1,42 +1,24 @@
 "use client";
 
-export interface IndexMarketData {
-  index: string;
-  name: string;
-  previous: number;
-  today: number;
-  change: number;
-  changePercent: string;
-}
+import { MarketAssetClient } from "../data/type";
 
-const MARKET_DATA: IndexMarketData[] = [
-  {
-    index: "US500",
-    name: "S&P 500",
-    previous: 100,
-    today: 90,
-    change: -10,
-    changePercent: "-10.00%",
-  },
-  {
-    index: "US100",
-    name: "Nasdaq 100",
-    previous: 18500,
-    today: 18725,
-    change: 225,
-    changePercent: "+1.22%",
-  },
-  {
-    index: "DJI",
-    name: "Dow Jones Industrial",
-    previous: 40800,
-    today: 40650,
-    change: -150,
-    changePercent: "-0.37%",
-  },
-];
+// Friendly display names map based on DB symbol keys
+const INDEX_NAMES: Record<string, string> = {
+  US500: "S&P 500",
+  US100: "Nasdaq 100",
+  DJI: "Dow Jones Industrial",
+};
 
-export function MarketIndexTable() {
+export function MarketIndexTable({
+  marketData,
+}: {
+  marketData: MarketAssetClient[];
+}) {
+  // Filter SSE market data for the target index symbols
+  const indices = marketData.filter((item) =>
+    ["US500", "US100", "DJI"].includes(item.symbol),
+  );
+
   return (
     <div className="w-2xs">
       {/* Upper Bar */}
@@ -45,12 +27,12 @@ export function MarketIndexTable() {
           market indices
         </p>
 
-        {/* <div className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        <div className="flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
             Real-time
           </span>
-        </div> */}
+        </div>
       </div>
 
       {/* Header Row */}
@@ -63,32 +45,46 @@ export function MarketIndexTable() {
 
       {/* List Rows */}
       <div className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
-        {MARKET_DATA.map((item) => {
-          const isNegative = item.change < 0;
+        {indices.map((item) => {
+          const currentPrice = item.price ?? item.lastPrice ?? 0;
+          const change = item.change ?? 0;
+          const previousPrice = currentPrice - change;
+          const changePercent = item.changePercent ?? 0;
+          const isNegative = change < 0;
 
           return (
             <div
-              key={item.index}
+              key={item.symbol}
               className="grid grid-cols-12 px-3 py-2.5 items-center hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors"
             >
               {/* Index Symbol & Name */}
               <div className="col-span-4 min-w-0">
                 <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                  {item.index}
+                  {item.symbol}
                 </div>
                 <div className="text-[11px] text-zinc-400 dark:text-zinc-500 truncate">
-                  {item.name}
+                  {INDEX_NAMES[item.symbol] || item.symbol}
                 </div>
               </div>
 
               {/* Previous Price */}
               <div className="col-span-3 text-right text-sm tabular-nums text-zinc-500 dark:text-zinc-400">
-                {item.previous.toLocaleString()}
+                {previousPrice
+                  ? previousPrice.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  : "0.00"}
               </div>
 
               {/* Today Price */}
               <div className="col-span-3 text-right text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-                {item.today.toLocaleString()}
+                {currentPrice
+                  ? currentPrice.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  : "0.00"}
               </div>
 
               {/* Change % */}
@@ -99,7 +95,8 @@ export function MarketIndexTable() {
                     : "text-emerald-600 dark:text-emerald-400"
                 }`}
               >
-                {item.changePercent}
+                {isNegative ? "" : "+"}
+                {changePercent.toFixed(2)}%
               </div>
             </div>
           );

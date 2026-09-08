@@ -24,6 +24,7 @@ model User {
   sessions      Session[]
   posts         Post[]
   comments      Comment[]
+  likes         Like[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -73,31 +74,63 @@ model Post {
   createdAt   DateTime  @default(now())
   author      User      @relation(fields: [authorId], references: [id])
   authorId    String
-  comments    Comment[]
+  categoryId String
+  category   ForumCategory @relation(fields: [categoryId], references: [id])
+  comments   Comment[]
+  likes      Like[]
+
 }
 
 model Comment {
-  id        String   @id @default(cuid())
-  text      String
+  id       String @id @default(cuid())
+  content  String
+  postId   String
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Nested replies (Self-relation)
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
+
   createdAt DateTime @default(now())
-  post      Post     @relation(fields: [postId], references: [id])
+  updatedAt DateTime @updatedAt
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   postId    String
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+model ForumCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  posts       Post[]
+  createdAt   DateTime @default(now())
 }
 
 model MarketAsset {
   id            String   @id @default(cuid())
   symbol        String   @unique
   name          String
-  category      String   // 지수, 암호화폐, 원자재
-  logoUrl       String   // Vercel Blob public URL
-  lastPrice     Float
-  change        Float
-  changePercent Float
-  high          Float
-  low           Float
-  volume        String
+  category      String
+  logoUrl       String
+  lastPrice     Float    @default(0.0)
+  change        Float    @default(0.0)
+  changePercent Float    @default(0.0)
+  high          Float    @default(0.0)
+  low           Float    @default(0.0)
+  volume        String   @default("0M")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+

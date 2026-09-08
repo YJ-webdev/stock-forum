@@ -1,54 +1,165 @@
 import { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import YahooFinance from "yahoo-finance2";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
-  const encoder = new TextEncoder();
+export interface MarketPriceUpdate {
+  symbol: string;
+  lastPrice: number;
+  change: number;
+  changePercent: number;
+  high: number;
+  low: number;
+  volume: string;
+  updatedAt: string;
+}
 
-  let intervalId: NodeJS.Timeout;
+const yahooFinance = new YahooFinance({
+  queue: {
+    concurrency: 2,
+    interval: 200,
+  },
+});
 
-  const stream = new ReadableStream({
-    start(controller) {
-      intervalId = setInterval(() => {
-        // Mock live price tick data
-        const update = {
-          symbol: "BTCUSD",
-          lastPrice: Math.floor(Math.random() * 1000) + 60000,
+// Map Database Symbol -> Yahoo Finance Ticker
+const SYMBOL_MAP: Record<string, string> = {
+  BTCUSD: "BTC-USD",
+  US100: "^NDX",
+  US500: "^GSPC",
+  DJI: "^DJI", // Add Dow Jones ticker mapping
+};
+
+// Reverse map for mapping Yahoo response back to UI symbols
+const REVERSE_SYMBOL_MAP = Object.fromEntries(
+  Object.entries(SYMBOL_MAP).map(([db, yahoo]) => [yahoo, db]),
+);
+
+let cachedData: MarketPriceUpdate[] = [];
+let lastFetchTime = 0;
+const CACHE_TTL_MS = 5000;
+let activeFetchPromise: Promise<MarketPriceUpdate[]> | null = null;
+
+async function getLatestPrices(): Promise<MarketPriceUpdate[]> {
+  const now = Date.now();
+  if (now - lastFetchTime < CACHE_TTL_MS && cachedData.length > 0) {
+    return cachedData;
+  }
+
+  if (activeFetchPromise) return activeFetchPromise;
+
+  activeFetchPromise = (async (): Promise<MarketPriceUpdate[]> => {
+    try {
+      // 1. Fetch registered database symbols
+      const registeredAssets = await prisma.marketAsset.findMany({
+        select: { symbol: true },
+      });
+
+      let dbSymbols = registeredAssets.map((asset) => asset.symbol);
+      if (dbSymbols.length === 0) {
+        dbSymbols = ["BTCUSD", "US100", "US500"];
+      }
+
+      // 2. Map Database symbols to valid Yahoo Tickers
+      const yahooSymbolMap = dbSymbols.map((s) => ({
+        dbSymbol: s,
+        yahooSymbol: SYMBOL_MAP[s] || s,
+      }));
+
+      // 3. Batch fetch quotes safely
+      const rawQuotes = await Promise.all(
+        yahooSymbolMap.map(({ yahooSymbol }) =>
+          yahooFinance.quoteCombine(yahooSymbol).catch((err: Error) => {
+            console.error(
+              `[Yahoo Stream] Failed for ${yahooSymbol}:`,
+              err.message,
+            );
+            return null;
+          }),
+        ),
+      );
+
+      // 4. Filter valid objects
+      const validQuotes = rawQuotes.filter((q): q is NonNullable<typeof q> =>
+        Boolean(q && typeof q === "object" && "symbol" in q && q.symbol),
+      );
+
+      // 5. Build response mapping Yahoo Ticker BACK to Database Symbol key
+      // 5. Build response mapping Yahoo Ticker BACK to Database Symbol key
+      cachedData = validQuotes.map((quote) => {
+        const clientSymbol = REVERSE_SYMBOL_MAP[quote.symbol] || quote.symbol;
+        const vol = quote.regularMarketVolume;
+        const formattedVolume = vol
+          ? vol >= 1e9
+            ? `${(vol / 1e9).toFixed(1)}B`
+            : `${(vol / 1e6).toFixed(1)}M`
+          : "N/A";
+
+        return {
+          symbol: clientSymbol,
+          lastPrice: quote.regularMarketPrice ?? 0,
+          change: quote.regularMarketChange ?? 0,
+          changePercent: quote.regularMarketChangePercent ?? 0,
+          high: quote.regularMarketDayHigh ?? 0,
+          low: quote.regularMarketDayLow ?? 0,
+          volume: formattedVolume,
           updatedAt: new Date().toISOString(),
         };
+      });
 
-        // Check request signal before enqueuing to prevent closed controller errors
+      lastFetchTime = Date.now();
+      return cachedData;
+    } catch (error) {
+      console.error("Error fetching market data:", error);
+      return cachedData; // Fallback to last cache on fatal error
+    } finally {
+      activeFetchPromise = null;
+    }
+  })();
+
+  return activeFetchPromise;
+}
+
+export async function GET(req: NextRequest) {
+  const encoder = new TextEncoder();
+  let intervalId: NodeJS.Timeout | null = null;
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const pushUpdates = async () => {
         if (req.signal.aborted) {
-          clearInterval(intervalId);
+          if (intervalId) clearInterval(intervalId);
           return;
         }
 
         try {
+          const updates = await getLatestPrices();
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(update)}\n\n`),
+            encoder.encode(`data: ${JSON.stringify(updates)}\n\n`),
           );
-        } catch (e) {
-          // If controller is already closed, clear timer gracefully
-          clearInterval(intervalId);
+        } catch (err) {
+          console.error("SSE Push Error:", err);
         }
-      }, 2000);
+      };
+
+      await pushUpdates();
+      intervalId = setInterval(pushUpdates, 5000);
     },
     cancel() {
-      // Triggered automatically when client closes connection or navigates away
       if (intervalId) clearInterval(intervalId);
     },
   });
 
-  // Handle client disconnect signal directly
   req.signal.addEventListener("abort", () => {
     if (intervalId) clearInterval(intervalId);
   });
 
   return new Response(stream, {
     headers: {
-      "Content-Type": "text/event-stream",
+      "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
     },
   });
 }

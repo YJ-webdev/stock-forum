@@ -4,15 +4,27 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { NewsList } from "./news-card";
-import { PostList } from "./post-card";
-import { ForumList } from "./forum-card";
+
+import { CategoryWithCount, ForumList } from "./forum-card";
+import { NewsItem } from "../data/type";
+import { PostCard } from "./post-card";
+import { PostWithRelations } from "./post-card";
 
 interface PanelLeftProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  news: NewsItem[];
+  categories: CategoryWithCount[]; // Add live categories prop
+  posts?: PostWithRelations[];
 }
 
-export default function PanelLeft({ isOpen, setIsOpen }: PanelLeftProps) {
+export default function PanelLeft({
+  isOpen,
+  setIsOpen,
+  news,
+  posts,
+  categories,
+}: PanelLeftProps) {
   const pathname = usePathname();
 
   // Auto-close sidebar on route change
@@ -60,7 +72,7 @@ export default function PanelLeft({ isOpen, setIsOpen }: PanelLeftProps) {
             <p className="text-muted-foreground text-xs text-light tracking-wider">
               NEWS
             </p>
-            <NewsList />
+            <NewsList news={news} />
           </div>
 
           {/* Topics */}
@@ -68,7 +80,7 @@ export default function PanelLeft({ isOpen, setIsOpen }: PanelLeftProps) {
             <p className="text-muted-foreground text-xs text-light mb-2 tracking-wider">
               TOPICS
             </p>
-            <ForumList />
+            <ForumList categories={categories} />
           </div>
 
           {/* Recent Posts Section */}
@@ -76,7 +88,9 @@ export default function PanelLeft({ isOpen, setIsOpen }: PanelLeftProps) {
             <p className="text-muted-foreground text-xs text-light mb-2 tracking-wider">
               RECENT POSTS
             </p>
-            <PostList />
+            {posts?.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
           </div>
         </ScrollArea>
       </aside>

@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Newspaper } from "lucide-react";
-import { DUMMY_NEWS, NewsItem } from "../data/dummy";
+// import { Newspaper } from "lucide-react";
+import { NewsItem } from "../data/type";
 
 function NewsRow({ item }: { item: NewsItem }) {
   const [imgError, setImgError] = useState(false);
 
   return (
     <Link
-      href={item.href}
+      href={item.url || "#"}
       className="flex items-center px-1 py-3 justify-between rounded-lg border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-all duration-200 group"
     >
       <div className="flex items-center gap-4 min-w-0 pr-2">
@@ -49,10 +49,10 @@ function NewsRow({ item }: { item: NewsItem }) {
   );
 }
 
-export function NewsList() {
+export function NewsList({ news }: { news: NewsItem[] }) {
   return (
     <div className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800/50">
-      {DUMMY_NEWS.slice(0, 3).map((item) => (
+      {news.slice(0, 3).map((item) => (
         <NewsRow key={item.id} item={item} />
       ))}
     </div>

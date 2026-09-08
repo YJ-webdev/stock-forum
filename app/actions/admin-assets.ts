@@ -6,13 +6,11 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { Role } from "@/generated/prisma/enums";
 
-// Helper function to assert admin rights on every action execution
 async function assertAdmin() {
   const session = await auth();
   if (!session?.user || session.user.role !== Role.ADMIN) {
     throw new Error("Unauthorized: Admin privileges required.");
   }
-  return session;
 }
 
 export async function createMarketAssetAction(formData: FormData) {
@@ -21,20 +19,13 @@ export async function createMarketAssetAction(formData: FormData) {
   const symbol = (formData.get("symbol") as string).toUpperCase().trim();
   const name = (formData.get("name") as string).trim();
   const category = (formData.get("category") as string).trim();
-  const lastPrice = parseFloat((formData.get("lastPrice") as string) || "0");
-  const changePercent = parseFloat(
-    (formData.get("changePercent") as string) || "0",
-  );
-  const high = parseFloat((formData.get("high") as string) || "0");
-  const low = parseFloat((formData.get("low") as string) || "0");
-  const volume = (formData.get("volume") as string) || "0M";
   const logoFile = formData.get("logo") as File;
 
   if (!logoFile || logoFile.size === 0) {
     throw new Error("A logo image file is required.");
   }
 
-  // 1. Upload asset logo directly to Vercel Blob Storage
+  // 1. Upload logo image to Vercel Blob
   const blob = await put(
     `logos/${symbol.toLowerCase()}-${logoFile.name}`,
     logoFile,
@@ -43,18 +34,12 @@ export async function createMarketAssetAction(formData: FormData) {
     },
   );
 
-  // 2. Create database record via Prisma
+  // 2. Save only metadata to Database (Prices will be pulled via API/SSE)
   await prisma.marketAsset.create({
     data: {
       symbol,
       name,
       category,
-      lastPrice,
-      change: (lastPrice * changePercent) / 100,
-      changePercent,
-      high,
-      low,
-      volume,
       logoUrl: blob.url,
     },
   });
@@ -66,17 +51,13 @@ export async function createMarketAssetAction(formData: FormData) {
 export async function deleteMarketAssetAction(id: string, logoUrl: string) {
   await assertAdmin();
 
-  // 1. Remove database entry
-  await prisma.marketAsset.delete({
-    where: { id },
-  });
+  await prisma.marketAsset.delete({ where: { id } });
 
-  // 2. Clean up logo asset from Vercel Blob Storage
   if (logoUrl) {
     try {
       await del(logoUrl);
-    } catch (e) {
-      console.warn("Failed to delete blob image from storage:", e);
+    } catch (_err) {
+      console.error("Failed to delete blob storage image:", _err);
     }
   }
 

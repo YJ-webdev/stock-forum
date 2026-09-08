@@ -57,6 +57,8 @@ export const ModelName = {
   VerificationToken: 'VerificationToken',
   Post: 'Post',
   Comment: 'Comment',
+  Like: 'Like',
+  ForumCategory: 'ForumCategory',
   MarketAsset: 'MarketAsset'
 } as const
 
@@ -133,7 +135,8 @@ export const PostScalarFieldEnum = {
   content: 'content',
   stockTicker: 'stockTicker',
   createdAt: 'createdAt',
-  authorId: 'authorId'
+  authorId: 'authorId',
+  categoryId: 'categoryId'
 } as const
 
 export type PostScalarFieldEnum = (typeof PostScalarFieldEnum)[keyof typeof PostScalarFieldEnum]
@@ -141,13 +144,36 @@ export type PostScalarFieldEnum = (typeof PostScalarFieldEnum)[keyof typeof Post
 
 export const CommentScalarFieldEnum = {
   id: 'id',
-  text: 'text',
-  createdAt: 'createdAt',
+  content: 'content',
   postId: 'postId',
-  authorId: 'authorId'
+  authorId: 'authorId',
+  parentId: 'parentId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
+
+
+export const LikeScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  postId: 'postId',
+  createdAt: 'createdAt'
+} as const
+
+export type LikeScalarFieldEnum = (typeof LikeScalarFieldEnum)[keyof typeof LikeScalarFieldEnum]
+
+
+export const ForumCategoryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slug: 'slug',
+  description: 'description',
+  createdAt: 'createdAt'
+} as const
+
+export type ForumCategoryScalarFieldEnum = (typeof ForumCategoryScalarFieldEnum)[keyof typeof ForumCategoryScalarFieldEnum]
 
 
 export const MarketAssetScalarFieldEnum = {
