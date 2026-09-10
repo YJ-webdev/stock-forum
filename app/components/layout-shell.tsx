@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { Header } from "./header";
 import PanelLeft from "./panel-left";
-import { MarketIndexTable } from "./market-index-table";
+// import { MarketIndexTable } from "./market-index-table";
 import { LeaderboardChart } from "./leader-board-chart";
-// import { CountryLeaderboard } from "./country-leader-chart";
 
 import { CategoryWithCount } from "./forum-card";
 
@@ -75,7 +74,7 @@ export default function LayoutShell({
                 market indices
               </p> */}
 
-              <MarketIndexTable marketData={marketData} />
+              {/* <MarketIndexTable marketData={marketData} /> */}
             </div>
             <div>
               <p className="text-muted-foreground text-xs text-light tracking-wider uppercase">
@@ -83,7 +82,6 @@ export default function LayoutShell({
               </p>
               <LeaderboardChart />
             </div>
-            {/* <CountryLeaderboard /> */}
           </div>
         </section>
       </div>
