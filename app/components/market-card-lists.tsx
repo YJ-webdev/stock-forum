@@ -1,6 +1,6 @@
 // components/categorized-market-banner.tsx
 import React from "react";
-import { MARKET_ITEMS, MarketItem } from "../data/market-item";
+import { MARKET_ITEMS, MarketItem } from "../../lib/data/market-item";
 
 export function MarketCardList() {
   // Group items by category and sort by priority

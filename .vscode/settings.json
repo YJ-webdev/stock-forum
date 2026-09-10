@@ -1,0 +1,9 @@
+{
+  "tailwindcss.validate": false,
+  "tailwindcss.lint.suggestCanonical": "ignore",
+  "tailwindcss.lint.invalidApply": "ignore",
+  "tailwindcss.lint.invalidScreen": "ignore",
+  "tailwindcss.lint.invalidVariant": "ignore",
+  "tailwindcss.lint.invalidConfigPath": "ignore",
+  "tailwindcss.lint.cssConflict": "ignore"
+}

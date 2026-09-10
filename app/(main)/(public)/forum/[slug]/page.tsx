@@ -1,6 +1,6 @@
 import { PostCard } from "@/app/components/post-card";
 import { notFound } from "next/navigation";
-import { getForumCategories } from "@/app/actions/categories";
+import { getForumCategories } from "@/app/actions/forum-categories";
 import { getForumPosts } from "@/app/actions/posts";
 
 export default async function CategoryPage({

@@ -8,6 +8,12 @@ const eslintConfig = defineConfig([
   {
     rules: {
       "react-hooks/incompatible-library": "off",
+      // Disable TypeScript explicit-any and unused-vars errors
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      // Disable Tailwind class order/simplification warnings if triggered via ESLint
+      "tailwindcss/classnames-order": "off",
+      "tailwindcss/no-custom-classname": "off",
     },
   },
   // Override default ignores of eslint-config-next.

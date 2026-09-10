@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MarketAssetClient } from "../data/type";
+import { MarketAssetClient } from "../../types/index.ts";
 
 // 1. Custom hook to track price changes
 function usePriceFlash(currentPrice: number) {

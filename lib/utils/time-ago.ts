@@ -6,16 +6,12 @@ export function getTimeAgo(dateInput?: string | Date | number | null): string {
   const now = new Date();
   let postDate: Date;
 
-  // 1. Handle time-only strings ("오후 10:45", "오전 04:44", "10:45 PM")
   if (
     typeof dateInput === "string" &&
-    (dateInput.includes("오전") ||
-      dateInput.includes("오후") ||
-      dateInput.includes("AM") ||
-      dateInput.includes("PM"))
+    (dateInput.includes("AM") || dateInput.includes("PM"))
   ) {
     const isPM = dateInput.includes("오후") || dateInput.includes("PM");
-    const cleanTime = dateInput.replace(/(오전|오후|AM|PM)/gi, "").trim();
+    const cleanTime = dateInput.replace(/(AM|PM)/gi, "").trim();
     const [hoursStr, minutesStr] = cleanTime.split(":");
 
     let hours = parseInt(hoursStr, 10);

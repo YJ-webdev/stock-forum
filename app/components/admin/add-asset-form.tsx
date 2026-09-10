@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { createMarketAssetAction } from "@/app/actions/admin-assets";
+import { createMarketAssetAction } from "@/app/actions/admin/admin-assets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

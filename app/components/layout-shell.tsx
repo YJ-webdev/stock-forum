@@ -8,7 +8,9 @@ import { LeaderboardChart } from "./leader-board-chart";
 // import { CountryLeaderboard } from "./country-leader-chart";
 
 import { CategoryWithCount } from "./forum-card";
-import { MarketAssetClient, NewsItem } from "../data/type";
+
+import EditorDrawer from "./editor-drawer";
+import { MarketAssetClient, NewsItem } from "@/types";
 
 interface User {
   name?: string | null;
@@ -31,11 +33,17 @@ export default function LayoutShell({
   marketData,
   children,
 }: LayoutShellProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   return (
     <>
-      <Header user={user} onTogglePanel={() => setIsOpen((prev) => !prev)} />
+      <Header
+        user={user}
+        onTogglePanel={() => setIsOpen((prev) => !prev)}
+        onOpenEditor={() => setIsEditorOpen(true)}
+      />
+
       <PanelLeft
         isOpen={isOpen}
         setIsOpen={setIsOpen}
@@ -44,22 +52,28 @@ export default function LayoutShell({
       />
 
       <div
-        className={`pt-14 min-h-screen w-full flex flex-col md:flex-row max-w-full transition-[padding] duration-500 ease-out ${
-          isOpen ? "md:pl-60" : "pl-0"
+        className={`pt-14 min-h-screen flex flex-col md:flex-row transition-all duration-300 ease-in-out ${
+          isOpen
+            ? "xl:ml-80 xl:w-[calc(100%-320px)] w-full ml-0"
+            : "ml-0 w-full"
         }`}
       >
         {/* Section A (Dynamic Page Content) */}
-        <section className="w-full md:ml-20 flex-1">
+        <section className="w-full flex-1 min-w-0 bg-white dark:bg-zinc-900">
           <div className="p-4">{children}</div>
         </section>
 
-        {/* Section B (Persistent Right Panel) */}
-        <section className="w-full md:w-[25%] p-4 border-l border-zinc-100 dark:border-zinc-900 flex flex-col gap-4">
-          <div className="flex flex-col w-2xs gap-4">
+        {/* Section B (Right Panel): Expands when PanelLeft is closed, shrinks when opened */}
+        <section
+          className={`transition-all duration-300 ease-in-out delay-75 z-5 p-4 border-l border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col gap-4 ${
+            isOpen ? "xl:w-78" : "xl:w-90"
+          }`}
+        >
+          <div className="flex flex-col w-full max-w-2xs gap-4">
             <div>
-              <p className="text-muted-foreground text-xs text-light tracking-wider uppercase">
+              {/* <p className="text-muted-foreground text-xs text-light tracking-wider uppercase">
                 market indices
-              </p>
+              </p> */}
 
               <MarketIndexTable marketData={marketData} />
             </div>
@@ -73,6 +87,11 @@ export default function LayoutShell({
           </div>
         </section>
       </div>
+
+      <EditorDrawer
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
+      />
     </>
   );
 }

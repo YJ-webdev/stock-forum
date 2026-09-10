@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { Newspaper } from "lucide-react";
-import { NewsItem } from "../data/type";
+import { NewsItem } from "@/types";
+
 // import { getTimeAgo } from "@/lib/utils/time-ago";
 
 function NewsRow({ item }: { item: NewsItem }) {
@@ -35,11 +36,11 @@ function NewsRow({ item }: { item: NewsItem }) {
         {/* Details & Title */}
         <div className="flex flex-col min-w-0 gap-1">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            {/* <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+            <span className="font-semibold text-zinc-800 dark:text-zinc-200">
               {item.source}
-            </span> */}
+            </span>
             {/* <span>•</span> */}
-            {/* <span>{item.category}</span> */}
+            <span>{item.category}</span>
           </div>
           <p className="text-sm text-wrap text-foreground group-hover:text-primary transition-colors line-clamp-3">
             {item.title}
@@ -61,11 +62,7 @@ export function NewsCarousel({ news }: { news: NewsItem[] }) {
   if (!news || news.length === 0) return null;
 
   return (
-    <div className="flex flex-col w-full max-w-md bg-muted-foreground/5 rounded-xl p-2 mt-3">
-      {/* Active Card Container */}
-      <p className="text-muted-foreground text-xs text-light tracking-wider ">
-        NEWS
-      </p>
+    <div className="flex flex-col w-full bg-white dark:bg-zinc-900  sm:bg-gray-100 sm:dark:bg-zinc-800 px-4 py-4 mt-3">
       <div className="flex items-center gap-1 py-1">
         <div className="flex-1 overflow-hidden">
           <NewsRow item={news[currentIndex]} />
@@ -73,18 +70,23 @@ export function NewsCarousel({ news }: { news: NewsItem[] }) {
       </div>
 
       {/* Navigation Dots */}
-      <div className="flex items-center justify-center gap-1.5 mt-2">
+
+      <div className="flex items-center justify-center gap-0">
         {news.slice(0, 3).map((item, index) => (
           <button
             key={item.id}
             onClick={() => setCurrentIndex(index)}
-            className={`h-1.5 rounded-full transition-all duration-200 ${
-              currentIndex === index
-                ? "w-1.5 bg-zinc-500 dark:bg-zinc-200"
-                : "w-1.5 bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 hover:cursor-pointer"
-            }`}
+            className="p-1.5 cursor-pointer focus:outline-none"
             aria-label={`Go to slide ${index + 1}`}
-          />
+          >
+            <span
+              className={`block h-1 w-1 rounded-full transition-all duration-200 ${
+                currentIndex === index
+                  ? "bg-zinc-500 dark:bg-zinc-200"
+                  : "bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400"
+              }`}
+            />
+          </button>
         ))}
       </div>
     </div>

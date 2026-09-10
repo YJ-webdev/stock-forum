@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteMarketAssetAction } from "@/app/actions/admin-assets";
+import { deleteMarketAssetAction } from "@/app/actions/admin/admin-assets";
 import { Button } from "@/components/ui/button";
 import { MarketAsset } from "@/generated/prisma/client";
 import { Trash2 } from "lucide-react";

@@ -1,35 +1,48 @@
-import { Input } from "@/components/ui/input";
-import { SearchIcon } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { KbdMarkup } from "./kbd-markup";
+import { SearchSparkIcon } from "./search-sparkle-icon";
 
-export default function SeaerchInput() {
+export default function SearchInput() {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [input, setInput] = useState("");
+
   const handleSearch = async () => {
     if (input.trim().length > 0) {
       console.log("handleSearch:", input);
     }
   };
 
-  return (
-    <div className="rounded-full flex items-center">
-      <div className="p-2.5 bg-muted rounded-l-full border-r-0 ">
-        <SearchIcon className="h-5 w-5 text-muted-foreground" strokeWidth={1} />
-      </div>
+  const handleContainerClick = () => {
+    inputRef.current?.focus();
+  };
 
+  return (
+    <div
+      className="flex px-5 items-center w-full h-12 bg-gray-200 dark:bg-zinc-800 rounded-full cursor-text"
+      onClick={handleContainerClick}
+    >
+      {/* Search Icon */}
+      {/* <SearchIcon className="h-6 w-6 shrink-0 mr-2.5" strokeWidth={1.5} /> */}
+      {/* Google Material Symbol search_spark */}
+      <SearchSparkIcon className="h-6 w-6 shrink-0 mr-2.5" />
+
+      {/* Input Field - dynamic width */}
       <input
+        ref={inputRef}
         type="text"
         autoFocus={true}
         value={input}
         placeholder="Search..."
-        className="h-10 border-l-0 border-r-0 rounded-r-full md:rounded-r-none placeholder:text-muted-foreground bg-muted outline-none ring-0 text-md md:text-[14px] placeholder:text-[14px] focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
+        className="lg:w-2xl min-w-0 bg-transparent placeholder:text-black dark:placeholder:text-white outline-none ring-0 font-normal focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
         maxLength={30}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") handleSearch();
         }}
       />
-      <div className="hidden md:block p-2.5 bg-muted rounded-r-full border-l-0 outline-none ring-0 text-[15px] md:text-[14px] placeholder:text-[14px] focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none">
+
+      {/* Keyboard Hint Container */}
+      <div className="hidden lg:flex items-center shrink-0 ml-2">
         <KbdMarkup />
       </div>
     </div>

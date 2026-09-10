@@ -4,10 +4,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect } from "react";
 
 import { CategoryWithCount, ForumList } from "./forum-card";
-import { NewsItem } from "../data/type";
+
 import { PostCard } from "./post-card";
 import { PostWithRelations } from "./post-card";
 import { NewsCarousel } from "./news-card";
+import { NewsItem } from "@/types";
 
 interface PanelLeftProps {
   isOpen: boolean;
@@ -24,6 +25,24 @@ export default function PanelLeft({
   posts,
   categories,
 }: PanelLeftProps) {
+  useEffect(() => {
+    const handleResize = () => {
+      // 1024px corresponds to Tailwind's 'lg' breakpoint
+      if (window.innerWidth >= 1024) {
+        setIsOpen(true);
+      } else {
+        setIsOpen(false);
+      }
+    };
+
+    // Run check on mount
+    handleResize();
+
+    // Optional: Uncomment below if you want it to auto-toggle when resizing the browser window
+    // window.addEventListener("resize", handleResize);
+    // return () => window.removeEventListener("resize", handleResize);
+  }, [setIsOpen]);
+
   // Keyboard shortcuts: Ctrl+B / Cmd+B to toggle, Esc to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -54,18 +73,18 @@ export default function PanelLeft({
     <>
       {/* Sidebar Panel - No overlay, stays open on outside click */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-full md:w-[320px] md:border-r border-zinc-100 dark:border-r-zinc-900 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transform-gpu transition-transform duration-500 ease-out z-60 md:z-40 ${
+        className={`fixed top-0 left-0 h-screen w-full md:w-[320px] md:border-r border-zinc-100 dark:border-r-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transform-gpu transition-transform duration-300 ease-out z-30 md:z-40 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <ScrollArea className="h-full w-full p-5 mt-10 pb-20">
+        <ScrollArea className="h-full w-full mt-10 pb-20">
           {/* News Section */}
-          <div>
+          <div className="mt-8">
             <NewsCarousel news={news} />
           </div>
 
           {/* Topics */}
-          <div className="mt-5">
+          <div className="mt-5 p-4">
             <p className="text-muted-foreground text-xs text-light mb-2 tracking-wider">
               TOPICS
             </p>
@@ -73,7 +92,7 @@ export default function PanelLeft({
           </div>
 
           {/* Recent Posts Section */}
-          <div className="mt-8">
+          <div className="mt-8 p-4">
             <p className="text-muted-foreground text-xs text-light mb-2 tracking-wider">
               RECENT POSTS
             </p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { MarketAssetClient } from "../data/type";
+import { MarketAssetClient } from "../../types/index.ts";
 
 // Friendly display names map based on DB symbol keys
 const INDEX_NAMES: Record<string, string> = {

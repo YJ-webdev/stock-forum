@@ -48,7 +48,7 @@ export function LeaderboardChart() {
                 </span>
               </div>
             </div>
-            <span className="font-mono text-xs font-semibold text-emerald-500">
+            <span className=" text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               +${user.totalProfit.toLocaleString()}
             </span>
           </div>

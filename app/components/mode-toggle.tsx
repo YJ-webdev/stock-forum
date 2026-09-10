@@ -3,19 +3,19 @@
 import * as React from "react";
 import { Sun } from "lucide-react";
 import { BsMoon } from "react-icons/bs";
-
 import { useTheme } from "next-themes";
-
 import { Button } from "@/components/ui/button";
+
+const emptySubscribe = () => () => {};
 
 export function ModeToggle() {
   const { setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-
-  // Avoid hydration mismatch by waiting for client mount
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Returns true on the client after mount, false on the server
+  const mounted = React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
 
   const toggleTheme = () => {
     // If currently dark, switch to light; otherwise switch to dark
