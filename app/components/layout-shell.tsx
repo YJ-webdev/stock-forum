@@ -59,7 +59,7 @@ export default function LayoutShell({
       >
         {/* Section A (Dynamic Page Content) */}
         <section className="w-full flex-1 min-w-0 bg-white dark:bg-zinc-900">
-          <div className="p-4">{children}</div>
+          <div className="">{children}</div>
         </section>
 
         {/* Section B (Right Panel): Expands when PanelLeft is closed, shrinks when opened */}
