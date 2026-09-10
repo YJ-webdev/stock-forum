@@ -8,6 +8,7 @@ import { ArrowUp, ArrowDown, ChevronRight, ChevronLeft } from "lucide-react";
 import { useFinnhubQuote } from "../hooks/useFinnhubQuote";
 import { MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { Sparkline } from "./sparkline";
+import Link from "next/link";
 
 function useItemsPerPage() {
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -67,72 +68,75 @@ function MarketCard({
   }
 
   return (
-    <div className="bg-gray-100/80 dark:bg-zinc-800 h-44 overflow-hidden m-0 p-0 rounded-lg cursor-pointer transition-colors hover:bg-gray-200/80 dark:hover:bg-zinc-700/50">
-      <div className="flex flex-col justify-between h-48 m-0 p-0">
-        {/* Header */}
+    <Link
+      href={`/market?symbol=${encodeURIComponent(symbol)}&name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}`}
+    >
+      <div className="bg-gray-100/80 dark:bg-zinc-800 h-44 overflow-hidden m-0 p-0 rounded-lg cursor-pointer transition-colors hover:bg-gray-200/80 dark:hover:bg-zinc-700/50">
+        <div className="flex flex-col justify-between h-48 m-0 p-0">
+          {/* Header */}
 
-        <div className="flex flex-col">
-          <div className="flex items-center justify-between w-full ">
-            <span className="mx-2 my-1.5 border w-fit ml-auto rounded-full shrink-0 text-[9px] uppercase text-zinc-500 dark:text-zinc-200 bg-white dark:font-thin dark:bg-zinc-700 px-1 whitespace-nowrap">
-              15min delay
-            </span>
-          </div>
-          <div className="flex items-start justify-between mx-3.5 ">
-            <h3 className=" line-clamp-2 text-zinc-800 font-medium dark:text-zinc-200 text-lg tracking-tight text-wrap leading-tight">
-              {data.name}
-            </h3>
-          </div>
-          <p className="text-zinc-700 dark:text-zinc-400 text-sm mx-3.5 ">
-            {data.value}{" "}
-            <span className="text-zinc-500 dark:text-zinc-400 dark:font-thin tracking-tight">
-              ({data.change})
-            </span>
-          </p>{" "}
-        </div>
-
-        {/* Performance & Graph */}
-        <div className="-translate-y-1">
-          <div className="flex items-center justify-end gap-1.5 font-semibold text-xl mx-2">
-            <span
-              className={`${data.isPositive ? "text-emerald-700" : "text-[#cf0000]"}`}
-            >
-              {data.percent}
-            </span>
-            <div
-              className={`flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${
-                data.isPositive ? "bg-emerald-700" : "bg-[#cf0000]"
-              }`}
-            >
-              {data.isPositive ? (
-                <ArrowUp
-                  className="w-3 h-3 dark:text-zinc-800"
-                  strokeWidth={3.5}
-                />
-              ) : (
-                <ArrowDown
-                  className="w-3 h-3 dark:text-zinc-800"
-                  strokeWidth={3.5}
-                />
-              )}
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between w-full ">
+              <span className="mx-2 mt-1.5 mb-0.5 border w-fit ml-auto rounded-full shrink-0 text-[9px] uppercase text-zinc-500 dark:text-zinc-200 bg-white dark:font-thin dark:bg-zinc-700 px-1 whitespace-nowrap">
+                15min delay
+              </span>
             </div>
+            <div className="flex items-start justify-between mx-3.5 ">
+              <h3 className=" line-clamp-2 text-zinc-800 text-[17px] font-medium dark:text-zinc-200 text-lg tracking-tight text-wrap leading-tight">
+                {data.name}
+              </h3>
+            </div>
+            <p className="text-zinc-700 dark:text-zinc-400 text-sm mx-3.5 ">
+              {data.value}{" "}
+              <span className="text-zinc-500 dark:text-zinc-400 dark:font-thin tracking-tight">
+                ({data.change})
+              </span>
+            </p>{" "}
           </div>
 
-          {/* Curved Dynamic Sparkline */}
-          <div className="-translate-y-4">
-            <Sparkline
-              points={data.history}
-              isPositive={data.isPositive}
-              isClosed={data.isClosed}
-            />
+          {/* Performance & Graph */}
+          <div className="-translate-y-1">
+            <div className="flex items-center justify-end gap-1.5 font-semibold text-xl mx-2">
+              <span
+                className={`${data.isPositive ? "text-emerald-700" : "text-[#cf0000]"}`}
+              >
+                {data.percent}
+              </span>
+              <div
+                className={`flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${
+                  data.isPositive ? "bg-emerald-700" : "bg-[#cf0000]"
+                }`}
+              >
+                {data.isPositive ? (
+                  <ArrowUp
+                    className="w-3 h-3 dark:text-zinc-800"
+                    strokeWidth={3.5}
+                  />
+                ) : (
+                  <ArrowDown
+                    className="w-3 h-3 dark:text-zinc-800"
+                    strokeWidth={3.5}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Curved Dynamic Sparkline */}
+            <div className="-translate-y-4">
+              <Sparkline
+                points={data.history.map((p) => p.price)}
+                isPositive={data.isPositive}
+                isClosed={data.isClosed}
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
 export default function MarketOverview() {
-  const itemsPerPage = useItemsPerPage();
   const categories = Object.keys(
     MARKET_SYMBOLS,
   ) as (keyof typeof MARKET_SYMBOLS)[];

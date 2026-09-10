@@ -7,6 +7,7 @@ import {
   OilLogo,
   Sp500Logo,
 } from "../../app/components/market-logos";
+import { StockTab } from "@/app/components/market-overview-header";
 
 export interface MarketItem {
   id: string; // Database / Unique ID
@@ -18,4 +19,4 @@ export interface MarketItem {
   icon: React.ReactNode;
   initialPrice: number; // Raw numeric fallback price
   price: number; // Display price
-}
+} // Top carousel stock list items

@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
 
+export interface ChartPoint {
+  timestampMs: number;
+  price: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
+}
+
 export interface MarketItem {
   id: string;
   name: string;
@@ -7,22 +16,42 @@ export interface MarketItem {
   change: string;
   percent: string;
   isPositive: boolean;
-  history: number[];
+  history: ChartPoint[];
   isClosed: boolean;
+  rawPrice: number;
+  previousClose?: number;
 }
 
-export function useFinnhubQuote(symbol: string, name: string) {
+export type ChartRange =
+  | "1D"
+  | "5D"
+  | "1M"
+  | "6M"
+  | "YTD"
+  | "1Y"
+  | "5Y"
+  | "MAX";
+
+export function useFinnhubQuote(
+  symbol: string,
+  name: string,
+  range: ChartRange = "1D",
+) {
   const [data, setData] = useState<MarketItem | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     let isMounted = true;
 
+    if (!symbol) return;
+
     async function fetchQuote() {
+      // 🟢 Fix 1: Reset loading state when range/symbol switches
+      if (isMounted) setLoading(true);
+
       try {
-        // 1. Safely encode ticker symbol to handle special characters (^, =, .)
         const res = await fetch(
-          `/api/candles?symbol=${encodeURIComponent(symbol)}`,
+          `/api/candles?symbol=${encodeURIComponent(symbol)}&range=${encodeURIComponent(range)}`,
         );
 
         if (!res.ok) {
@@ -32,27 +61,30 @@ export function useFinnhubQuote(symbol: string, name: string) {
 
         const json = await res.json();
 
-        // 2. Validate candle points array
         if (!json || !Array.isArray(json.points) || json.points.length === 0) {
           if (isMounted) setData(null);
           return;
         }
 
         if (isMounted) {
-          // Extract history prices cleanly
-          const historyPrices: number[] = json.points.map(
-            (p: { price: number }) => p.price,
-          );
-
+          const points: { timestampMs: number; price: number }[] = json.points;
           const currentPrice =
-            json.currentPrice ?? historyPrices[historyPrices.length - 1];
-          const firstPrice = historyPrices[0] ?? currentPrice;
-          const changeVal = currentPrice - firstPrice;
-          const percentVal =
-            json.changePercent ??
-            (firstPrice !== 0 ? (changeVal / firstPrice) * 100 : 0);
+            json.currentPrice ?? points[points.length - 1]?.price ?? 0;
 
-          // 3. Format value based on symbol type (USD vs Index points/FX)
+          // 🟢 Fix 2: Calculate change relative to selected range start for non-1D charts
+          const firstPrice = points[0]?.price ?? currentPrice;
+          const changeVal =
+            range === "1D"
+              ? currentPrice - firstPrice
+              : currentPrice - firstPrice;
+
+          const percentVal =
+            typeof json.changePercent === "number" && json.changePercent !== 0
+              ? json.changePercent
+              : firstPrice !== 0
+                ? (changeVal / firstPrice) * 100
+                : 0;
+
           const isUsdSecurity =
             !symbol.startsWith("^") &&
             !symbol.includes("=X") &&
@@ -78,8 +110,10 @@ export function useFinnhubQuote(symbol: string, name: string) {
                 : changeVal.toFixed(2),
             percent: `${percentVal >= 0 ? "+" : ""}${percentVal.toFixed(2)}%`,
             isPositive: percentVal >= 0,
-            history: historyPrices,
+            history: points,
             isClosed: json.isClosed ?? true,
+            rawPrice: currentPrice,
+            previousClose: json.previousClose ?? firstPrice,
           });
         }
       } catch (_err) {
@@ -91,13 +125,14 @@ export function useFinnhubQuote(symbol: string, name: string) {
 
     fetchQuote();
 
-    const interval = setInterval(fetchQuote, 60000);
+    // 🟢 Polling only during 1D mode to save server bandwidth
+    const interval = range === "1D" ? setInterval(fetchQuote, 60000) : null;
 
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
     };
-  }, [symbol, name]);
+  }, [symbol, name, range]);
 
   return { data, loading };
 }

@@ -1,18 +1,22 @@
+// components/Sparkline.tsx
 import React from "react";
 
 export interface SparklineProps {
   points: number[];
   isPositive: boolean;
   isClosed: boolean;
-  /** Maximum number of data points expected across the full timeframe (e.g., 36 points for 6 hours if sampled every 10 min) */
   totalExpectedPoints?: number;
+  lunchStartIndex?: number; // e.g., index of point at 11:30
+  lunchEndIndex?: number; // e.g., index of point at 13:00
 }
 
 export function Sparkline({
   points,
   isPositive,
   isClosed,
-  totalExpectedPoints = 36, // Adjust to match your total 6-hour slot count
+  totalExpectedPoints,
+  lunchStartIndex,
+  lunchEndIndex,
 }: SparklineProps) {
   if (!points || points.length === 0) {
     return (
@@ -30,10 +34,12 @@ export function Sparkline({
   const max = Math.max(...points);
   const range = max - min || 1;
 
-  // Use fixed total slots so incomplete trading sessions scale proportionally
-  const totalSlots = Math.max(points.length - 1, totalExpectedPoints - 1, 1);
+  const totalSlots = Math.max(
+    points.length - 1,
+    (totalExpectedPoints ?? points.length) - 1,
+    1,
+  );
 
-  // Map points to SVG coordinates up to current progress
   const coords = points.map((val, idx) => {
     const x = (idx / totalSlots) * width;
     const y = height - padding - ((val - min) / range) * (height - padding * 2);
@@ -42,20 +48,48 @@ export function Sparkline({
 
   const lastPoint = coords[coords.length - 1];
 
-  // Path line covering data up to the latest point
   const pathD = coords.reduce((acc, point, i) => {
     return i === 0
       ? `M ${point.x},${point.y}`
       : `${acc} L ${point.x},${point.y}`;
   }, "");
 
-  // Fill path closes straight down from the CURRENT last point (leaving the right empty)
   const areaD = `${pathD} L ${lastPoint.x},${height} L 0,${height} Z`;
-
   const strokeColor = isClosed ? "#94a3b8" : isPositive ? "#008549" : "#cf0000";
-
   const baselineY = height / 2;
   const gradientId = `spark-grad-${isClosed ? "closed" : isPositive ? "pos" : "neg"}`;
+
+  const hasLunch =
+    lunchStartIndex !== undefined &&
+    lunchEndIndex !== undefined &&
+    lunchStartIndex < coords.length &&
+    lunchEndIndex < coords.length;
+
+  // Separate coords into pre-lunch and post-lunch if lunch break exists
+  const preLunchCoords = hasLunch
+    ? coords.slice(0, lunchStartIndex + 1)
+    : coords;
+  const postLunchCoords = hasLunch ? coords.slice(lunchEndIndex) : [];
+
+  const buildPath = (pts: typeof coords) =>
+    pts.reduce(
+      (acc, point, i) =>
+        i === 0 ? `M ${point.x},${point.y}` : `${acc} L ${point.x},${point.y}`,
+      "",
+    );
+
+  const prePathD = buildPath(preLunchCoords);
+  const postPathD = buildPath(postLunchCoords);
+
+  const preLast = preLunchCoords[preLunchCoords.length - 1];
+  const postFirst = postLunchCoords[0];
+
+  const preAreaD = prePathD
+    ? `${prePathD} L ${preLast.x},${height} L ${preLunchCoords[0].x},${height} Z`
+    : "";
+  const postAreaD = postPathD
+    ? `${postPathD} L ${lastPoint.x},${height} L ${postFirst.x},${height} Z`
+    : "";
 
   return (
     <div className="w-full h-10 relative overflow-hidden mt-2 pr-0.5">
@@ -75,7 +109,6 @@ export function Sparkline({
           </linearGradient>
         </defs>
 
-        {/* Dotted Baseline across full width */}
         <line
           x1="0"
           y1={baselineY}
@@ -86,10 +119,10 @@ export function Sparkline({
           strokeWidth="1"
         />
 
-        {/* Fill Area up to current time */}
-        <path d={areaD} fill={`url(#${gradientId})`} />
+        {/* Areas */}
+        <path d={preAreaD} fill={`url(#${gradientId})`} />
+        {hasLunch && <path d={postAreaD} fill={`url(#${gradientId})`} />}
 
-        {/* Dynamic Line up to current time */}
         <path
           d={pathD}
           fill="none"
@@ -99,7 +132,30 @@ export function Sparkline({
           strokeLinejoin="round"
         />
 
-        {/* Pulsing Dot at current live point */}
+        {hasLunch && (
+          <>
+            <path
+              d={postPathD}
+              fill="none"
+              stroke={strokeColor}
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {/* Dashed Bridge Line during Lunch */}
+            <line
+              x1={preLast.x}
+              y1={preLast.y}
+              x2={postFirst.x}
+              y2={preLast.y}
+              stroke={strokeColor}
+              strokeDasharray="2 2"
+              strokeWidth="1.2"
+              opacity="0.7"
+            />
+          </>
+        )}
+
         {!isClosed && lastPoint && (
           <g transform={`translate(${lastPoint.x}, ${lastPoint.y})`}>
             <circle r="2.5" fill={strokeColor}>
