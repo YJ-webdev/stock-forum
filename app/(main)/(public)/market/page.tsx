@@ -66,7 +66,7 @@ export default function MarketDetailPage() {
                 onClick={() => setActiveRange(r)}
                 className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
                   activeRange === r
-                    ? "bg-zinc-300 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
+                    ? "bg-zinc-300/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
                     : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600/50"
                 }`}
               >

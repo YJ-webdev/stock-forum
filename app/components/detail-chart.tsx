@@ -298,15 +298,15 @@ export function DetailChart({
         </div>
 
         <button className="flex items-center gap-2 text-sm font-semibold text-zinc-300 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
-          <TrendingUp className="w-4 h-4 text-zinc-300" />
-          <span className="text-zinc-300">Compare</span>
-          <ChevronDown className="w-3.5 h-3.5 text-zinc-300" />
+          <TrendingUp className="w-4 h-4 text-zinc-300 dark:text-zinc-500" />
+          <span className="text-zinc-300 dark:text-zinc-500">Compare</span>
+          <ChevronDown className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-500" />
         </button>
 
-        <button className="flex items-center gap-2 text-sm font-semibold text-zinc-300 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
-          <BarChart3 className="w-4 h-4 text-zinc-300" />
-          <span className="text-zinc-300">Indicators</span>
-          <ChevronDown className="w-3.5 h-3.5 text-zinc-300" />
+        <button className="flex items-center gap-2 text-sm font-semibold text-zinc-300 dark:text-zinc-800 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
+          <BarChart3 className="w-4 h-4 text-zinc-300 dark:text-zinc-500" />
+          <span className="text-zinc-300 dark:text-zinc-500">Indicators</span>
+          <ChevronDown className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-500" />
         </button>
       </div>
 
