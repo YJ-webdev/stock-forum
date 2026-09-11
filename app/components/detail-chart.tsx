@@ -49,7 +49,7 @@ export function DetailChart({
 
   if (!history || history.length === 0) {
     return (
-      <div className="h-64 w-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
+      <div className="h-64 w-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 p-4 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
         <span className="text-xs text-zinc-400">No chart data available</span>
       </div>
     );
@@ -258,17 +258,17 @@ export function DetailChart({
   };
 
   return (
-    <div className="w-full relative bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm select-none">
+    <div className="w-full relative bg-white dark:bg-zinc-900 md:rounded-2xl md:border border-zinc-200 dark:border-zinc-800 p-4 md:shadow-sm select-none">
       {/* TOP CONTROL BAR */}
-      <div className="relative z-20 flex items-center gap-6 mb-4 px-2">
+      <div className="relative z-20 flex items-center gap-6 mb-4 px-2 dark:text-zinc-300">
         <div className="relative">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-2 text-sm font-medium  hover:text-black dark:hover:text-white transition-colors cursor-pointer"
           >
-            <CurrentIcon className="w-4 h-4 dark:text-zinc-300" />
-            <span className="capitalize dark:text-zinc-300">{chartType}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-zinc-300" />
+            <CurrentIcon className="w-4 h-4 " />
+            <span className="capitalize ">{chartType}</span>
+            <ChevronDown className="w-3.5 h-3.5 " />
           </button>
 
           {isMenuOpen && (
@@ -297,16 +297,16 @@ export function DetailChart({
           )}
         </div>
 
-        <button className="flex items-center gap-2 text-sm font-semibold text-zinc-300 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
-          <TrendingUp className="w-4 h-4 text-zinc-300 dark:text-zinc-500" />
-          <span className="text-zinc-300 dark:text-zinc-500">Compare</span>
-          <ChevronDown className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-500" />
+        <button className="flex items-center gap-2 text-sm font-medium  hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
+          <TrendingUp className="w-4 h-4 " />
+          <span className="">Compare</span>
+          <ChevronDown className="w-3.5 h-3.5 " />
         </button>
 
-        <button className="flex items-center gap-2 text-sm font-semibold text-zinc-300 dark:text-zinc-800 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
-          <BarChart3 className="w-4 h-4 text-zinc-300 dark:text-zinc-500" />
-          <span className="text-zinc-300 dark:text-zinc-500">Indicators</span>
-          <ChevronDown className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-500" />
+        <button className="flex items-center gap-2 text-sm font-medium  hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
+          <BarChart3 className="w-4 h-4  " />
+          <span className="">Indicators</span>
+          <ChevronDown className="w-3.5 h-3.5 " />
         </button>
       </div>
 

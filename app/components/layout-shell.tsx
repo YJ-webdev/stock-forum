@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Header } from "./header";
 import PanelLeft from "./panel-left";
-// import { MarketIndexTable } from "./market-index-table";
 import { LeaderboardChart } from "./leader-board-chart";
 
 import { CategoryWithCount } from "./forum-card";
@@ -29,7 +28,6 @@ export default function LayoutShell({
   user,
   news,
   categories,
-  marketData,
   children,
 }: LayoutShellProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -58,13 +56,13 @@ export default function LayoutShell({
         }`}
       >
         {/* Section A (Dynamic Page Content) */}
-        <section className="w-full flex-1 min-w-0 bg-white dark:bg-zinc-900">
+        <section className="relative w-full border-blue-700 flex-1 min-w-0 bg-white dark:bg-zinc-900">
           <div className="">{children}</div>
         </section>
 
         {/* Section B (Right Panel): Expands when PanelLeft is closed, shrinks when opened */}
         <section
-          className={`transition-all duration-300 ease-in-out delay-75 z-5 p-4 border-l border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col gap-4 ${
+          className={`hidden lg:flex transition-all duration-300 ease-in-out delay-75 z-5 p-4 border-l border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900  flex-col gap-4 ${
             isOpen ? "xl:w-78" : "xl:w-90"
           }`}
         >

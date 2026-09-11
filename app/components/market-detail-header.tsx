@@ -1,18 +1,11 @@
 "use client";
 
 import React from "react";
-import {
-  ArrowLeft,
-  Plus,
-  ChevronDown,
-  Clock,
-  Bookmark,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Bookmark, Clock, ChevronRight } from "lucide-react";
 import { useSimulatedLivePrice } from "@/app/hooks/useSimulatedLivePrice";
 import { BookmarkIcon } from "./bookmark-icon";
 import { useRouter } from "next/navigation";
+import { TbPlaylistAdd } from "react-icons/tb";
 
 export interface MarketDetailHeaderProps {
   symbol: string;
@@ -44,10 +37,19 @@ export function MarketDetailHeader({
     router.push("/");
   };
 
+  const bookmarked = false;
   return (
-    <div className="w-full mb-3">
+    <div className="w-full p-4">
       {/* Navigation Breadcrumb */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex relative items-center justify-between mb-5">
+        <button
+          onClick={onAddToList}
+          className="flex fixed top-20 right-0 z-40 items-center transition-all  cursor-pointer -translate-y-2.5"
+        >
+          <BookmarkIcon
+            className={`size-10 ${bookmarked ? "fill-emerald-700 text-emerald-700" : "text-zinc-600 dark:text-zinc-500"}`}
+          />
+        </button>
         <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-300 font-medium ">
           <button
             onClick={handleHomeClick}
@@ -66,19 +68,22 @@ export function MarketDetailHeader({
           <ChevronRight className="w-4 h-4" />
           <span className=" uppercase cursor-default">{symbol}</span>
         </div>{" "}
-        {/* <button
-          onClick={onAddToList}
-          className="flex items-center hover:translate-y-[1px] transition-all dark:hover:bg-blue-900/50 cursor-pointer -translate-y-2.5"
-        >
-          <BookmarkIcon className="size-10" />
-        </button> */}
       </div>
 
       {/* Header Title & Watchlist Action */}
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl md:text-[40px] font-bold text-gray-500/50 dark:text-zinc-700 tracking-tight">
+        <h1 className="text-[40px] font-bold text-gray-500/50 dark:text-zinc-700 tracking-tight">
           {name}
         </h1>
+        {/* <button
+          onClick={onAddToList}
+          className="flex items-center transition-all  cursor-pointer"
+        >
+          <TbPlaylistAdd
+            className="size-11 text-zinc-900 dark:text-zinc-200"
+            strokeWidth="1.5"
+          />
+        </button> */}
       </div>
 
       {/* Live Price Display */}

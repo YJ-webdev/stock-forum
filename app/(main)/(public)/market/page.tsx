@@ -8,6 +8,7 @@ import { DetailChart } from "@/app/components/detail-chart";
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { MarketDetailHeader } from "@/app/components/market-detail-header";
 import { RelativeStocks } from "@/app/components/relative-stocks";
+import { BookmarkIcon } from "lucide-react";
 
 const RANGES = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
@@ -39,7 +40,7 @@ export default function MarketDetailPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto mt-4 ">
       {/* Detailed Chart & Range Controls */}
       {data && (
         <>
@@ -52,19 +53,21 @@ export default function MarketDetailPage() {
             onBack={() => router.back()}
             categoryTitle={selectedCategory}
           />
-          <DetailChart
-            history={data.history}
-            isPositive={data.isPositive}
-            isClosed={data.isClosed}
-            range={activeRange}
-            previousClose={data.previousClose}
-          />
-          <div className="flex gap-2">
+          <div className="md:mx-4">
+            <DetailChart
+              history={data.history}
+              isPositive={data.isPositive}
+              isClosed={data.isClosed}
+              range={activeRange}
+              previousClose={data.previousClose}
+            />
+          </div>
+          <div className="flex gap-2 flex-wrap m-4">
             {RANGES.map((r) => (
               <button
                 key={r}
                 onClick={() => setActiveRange(r)}
-                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
+                className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all cursor-pointer ${
                   activeRange === r
                     ? "bg-zinc-300/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
                     : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600/50"
@@ -74,7 +77,9 @@ export default function MarketDetailPage() {
               </button>
             ))}
           </div>
-          <RelativeStocks />
+          <div className="md:mx-4">
+            <RelativeStocks />
+          </div>
         </>
       )}
     </div>

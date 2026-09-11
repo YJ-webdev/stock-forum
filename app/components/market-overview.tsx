@@ -196,7 +196,7 @@ export default function MarketOverview() {
       <div className="flex items-center justify-between mb-4">
         {/* Tab Navigation Menu */}
         <div className="flex gap-2 flex-wrap justify-start">
-          {categories.slice(0, 4).map((category) => {
+          {categories.map((category) => {
             const isActive = activeTab === category;
 
             return (
