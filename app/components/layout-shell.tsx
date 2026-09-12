@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Header } from "./header";
 import PanelLeft from "./panel-left";
-import { LeaderboardChart } from "./leader-board-chart";
+// import { LeaderboardChart } from "./leader-board-chart";
 
 import { CategoryWithCount } from "./forum-card";
 
@@ -74,12 +74,12 @@ export default function LayoutShell({
 
               {/* <MarketIndexTable marketData={marketData} /> */}
             </div>
-            <div>
+            {/* <div>
               <p className="text-muted-foreground text-xs text-light tracking-wider uppercase">
                 top traders
               </p>
               <LeaderboardChart />
-            </div>
+            </div> */}
           </div>
         </section>
       </div>

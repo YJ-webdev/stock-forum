@@ -1,56 +1,112 @@
 "use client";
 
-import React from "react";
-import { Bookmark, Clock, ChevronRight } from "lucide-react";
-import { useSimulatedLivePrice } from "@/app/hooks/useSimulatedLivePrice";
-import { BookmarkIcon } from "./bookmark-icon";
+import { ChevronRight, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { TbPlaylistAdd } from "react-icons/tb";
 
 export interface MarketDetailHeaderProps {
   symbol: string;
   name: string;
-  rawPrice: number;
-  isPositive?: boolean;
+  rawPrice?: number;
+  value?: string;
+  change: string;
+  percent: string;
+  isPositive: boolean;
+  selectedRange: string;
+  updatedAt?: number | string;
   onBack?: () => void;
   onAddToList?: () => void;
-  categoryTitle?: string; // 👈 Added category prop
+  categoryTitle?: string;
+  displaySymbol: string;
+  exchangeTimezone: string;
 }
 
 export function MarketDetailHeader({
-  symbol,
   name,
   rawPrice,
+  value,
+  change = "+0.00",
+  percent = "+0.00%",
+  isPositive,
+  selectedRange = "1D",
+  updatedAt,
   categoryTitle,
-  onBack,
-  onAddToList,
+  exchangeTimezone,
 }: MarketDetailHeaderProps) {
-  const { price } = useSimulatedLivePrice(rawPrice);
   const router = useRouter();
 
-  const formattedPrice = price.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  // Dynamically resolve price string from API value prop or raw numeric fallback
+  const displayPrice =
+    value ??
+    (rawPrice !== undefined
+      ? rawPrice.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : "-");
+
+  const formatMarketTimestamp = (dateInput?: number | string) => {
+    const date = dateInput ? new Date(dateInput) : new Date();
+
+    try {
+      const formatter = new Intl.DateTimeFormat("en-GB", {
+        timeZone: exchangeTimezone,
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+        timeZoneName: "shortOffset",
+      });
+
+      const parts = formatter.formatToParts(date);
+      const day = parts.find((p) => p.type === "day")?.value;
+      const month = parts.find((p) => p.type === "month")?.value;
+      const hour = parts.find((p) => p.type === "hour")?.value;
+      const minute = parts.find((p) => p.type === "minute")?.value;
+      const second = parts.find((p) => p.type === "second")?.value;
+
+      let tz = parts.find((p) => p.type === "timeZoneName")?.value || "";
+      tz = tz.replace("GMT", "UTC");
+
+      return `${day} ${month}, ${hour}:${minute}:${second} ${tz}`;
+    } catch (_e) {
+      return date.toISOString();
+    }
+  };
+
+  const rangeLabelMap: Record<string, string> = {
+    "1D": "Today",
+    "5D": "Past 5 Days",
+    "1M": "Past Month",
+    "3M": "Past 3 Months",
+    "6M": "Past 6 Months",
+    YTD: "Year to Date",
+    "1Y": "Past Year",
+    "5Y": "Past 5 Years",
+    MAX: "All Time",
+  };
+
+  const rangeLabel = rangeLabelMap[selectedRange] || "Today";
+  const colorClass = isPositive
+    ? "text-emerald-600 dark:text-emerald-400"
+    : "text-rose-600 dark:text-rose-400";
 
   const handleHomeClick = () => {
     router.push("/");
   };
 
-  const bookmarked = false;
+  console.log("HEADER PRICE:", {
+    rawPrice,
+    value,
+    displayPrice,
+  });
+
   return (
-    <div className="w-full p-4">
+    <div className="w-full relative p-4">
       {/* Navigation Breadcrumb */}
-      <div className="flex relative items-center justify-between mb-5">
-        <button
-          onClick={onAddToList}
-          className="flex fixed top-20 right-0 z-40 items-center transition-all  cursor-pointer -translate-y-2.5"
-        >
-          <BookmarkIcon
-            className={`size-10 ${bookmarked ? "fill-emerald-700 text-emerald-700" : "text-zinc-600 dark:text-zinc-500"}`}
-          />
-        </button>
-        <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-300 font-medium ">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-300 font-medium">
           <button
             onClick={handleHomeClick}
             className="flex items-center gap-1.5 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors cursor-pointer"
@@ -65,38 +121,52 @@ export function MarketDetailHeader({
           >
             <span>{categoryTitle}</span>
           </button>
-          <ChevronRight className="w-4 h-4" />
-          <span className=" uppercase cursor-default">{symbol}</span>
-        </div>{" "}
+        </div>
       </div>
 
-      {/* Header Title & Watchlist Action */}
+      {/* Header Title */}
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-[40px] font-bold text-gray-500/50 dark:text-zinc-700 tracking-tight">
+        <h1 className="text-[44px] font-bold text-gray-500/50 dark:text-zinc-700 tracking-tight leading-none">
           {name}
         </h1>
-        {/* <button
-          onClick={onAddToList}
-          className="flex items-center transition-all  cursor-pointer"
-        >
-          <TbPlaylistAdd
-            className="size-11 text-zinc-900 dark:text-zinc-200"
-            strokeWidth="1.5"
-          />
-        </button> */}
       </div>
 
-      {/* Live Price Display */}
-      <div className="flex items-center gap-3 -mt-1">
-        <span
-          className={`text-[30px] font-semibold text-zinc-800 dark:text-zinc-200 `}
-        >
-          {formattedPrice}
-        </span>
+      <div className="flex items-center gap-3 mt-1.5">
+        <div className="flex flex-col">
+          <div className="flex items-baseline gap-3">
+            <span className="text-3xl font-medium text-zinc-900 dark:text-zinc-100">
+              {displayPrice}
+            </span>
 
-        <div className="flex items-center gap-1.5 px-1 py-0.5  bg-zinc-100 dark:bg-zinc-800/80 text-[11px] font-medium text-zinc-500 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/50">
-          <Clock className="w-3.5 h-3.5 text-zinc-400" />
-          <span>15MIN DELAY</span>
+            <div className={`flex items-center gap-1.5 text-lg ${colorClass}`}>
+              {isPositive ? (
+                <ArrowUpCircle className="w-5 h-5 fill-current text-white dark:text-zinc-950" />
+              ) : (
+                <ArrowDownCircle className="w-5 h-5 fill-current text-white dark:text-zinc-950" />
+              )}
+              <span>{percent}</span>
+              <span>({change})</span>
+              <span>{rangeLabel}</span>
+            </div>
+          </div>
+
+          {/* Timestamp Display */}
+          <div className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400 font-normal flex items-center gap-1.5">
+            <span>{formatMarketTimestamp(updatedAt)}</span>
+            <span>·</span>
+            <span>Data delayed 15m</span>
+            <span>·</span>
+            <button
+              onClick={() =>
+                alert(
+                  "Market data is provided for informational purposes only.",
+                )
+              }
+              className="hover:underline cursor-pointer"
+            >
+              Disclaimer
+            </button>
+          </div>
         </div>
       </div>
     </div>

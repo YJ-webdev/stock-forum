@@ -5,42 +5,31 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { ArrowUp, ArrowDown, ChevronRight, ChevronLeft } from "lucide-react";
-import { useFinnhubQuote } from "../hooks/useFinnhubQuote";
+import { AssetType, useMarketQuote } from "../hooks/useMarketQuote";
 import { MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { Sparkline } from "./sparkline";
 import Link from "next/link";
 
-function useItemsPerPage() {
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-
-  useEffect(() => {
-    const handleResize = () => {
-      // 1024px corresponds to Tailwind's default `lg:` breakpoint
-      if (window.innerWidth >= 1024) {
-        setItemsPerPage(5);
-      } else {
-        setItemsPerPage(3);
-      }
-    };
-
-    handleResize(); // Set initial value on mount
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  return itemsPerPage;
-}
-
 function MarketCard({
   symbol,
+  displaySymbol,
   name,
   category,
+  assetType,
 }: {
   symbol: string;
   name: string;
   category: string;
+  displaySymbol: string;
+  assetType: AssetType;
 }) {
-  const { data, loading } = useFinnhubQuote(symbol, name);
+  const { data, loading } = useMarketQuote(
+    symbol,
+    name,
+    "1D",
+    displaySymbol,
+    assetType,
+  );
 
   if (loading) {
     return (
@@ -69,7 +58,7 @@ function MarketCard({
 
   return (
     <Link
-      href={`/market?symbol=${encodeURIComponent(symbol)}&name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}`}
+      href={`/market?symbol=${encodeURIComponent(symbol)}&name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}&assetType=${encodeURIComponent(assetType)}`}
     >
       <div className="bg-gray-100/80 dark:bg-zinc-800 h-44 overflow-hidden m-0 p-0 rounded-lg cursor-pointer transition-colors hover:bg-gray-200/80 dark:hover:bg-zinc-700/50">
         <div className="flex flex-col justify-between h-48 m-0 p-0">
@@ -77,7 +66,7 @@ function MarketCard({
 
           <div className="flex flex-col">
             <div className="flex items-center justify-between w-full ">
-              <span className="mx-2 mt-1.5 mb-0.5 border w-fit ml-auto rounded-full shrink-0 text-[9px] uppercase text-zinc-500 dark:text-zinc-200 bg-white dark:font-thin dark:bg-zinc-700 px-1 whitespace-nowrap">
+              <span className="mx-2 mt-1.5 mb-0.5 border w-fit ml-auto rounded-full shrink-0 text-[9px] uppercase text-zinc-500 dark:text-zinc-300 bg-white dark:font-thin dark:bg-zinc-700/50 px-1 whitespace-nowrap">
                 15min delay
               </span>
             </div>
@@ -141,7 +130,8 @@ export default function MarketOverview() {
     MARKET_SYMBOLS,
   ) as (keyof typeof MARKET_SYMBOLS)[];
 
-  const [activeTab, setActiveTab] = useState<keyof typeof MARKET_SYMBOLS>("US");
+  const [activeTab, setActiveTab] =
+    useState<keyof typeof MARKET_SYMBOLS>("America");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const [canSlideLeft, setCanSlideLeft] = useState(false);
@@ -203,10 +193,10 @@ export default function MarketOverview() {
               <button
                 key={category}
                 onClick={() => setActiveTab(category)}
-                className={`px-4 py-1.5 rounded-full uppercase text-sm font-medium transition-all cursor-pointer border dark:text-zinc-300 ${
+                className={`px-4 py-1.5 rounded-full uppercase text-sm font-medium transition-all cursor-pointer border ${
                   isActive
-                    ? "bg-zinc-100 text-zinc-900 border-zinc-300 dark:bg-zinc-800/50 dark:text-white dark:border-zinc-700/50"
-                    : "bg-transparent font-medium text-zinc-500 border-transparent hover:text-zinc-900 dark:hover:text-zinc-200"
+                    ? "bg-zinc-100  text-zinc-900 border-zinc-300 dark:bg-zinc-800 dark:text-white dark:border-zinc-600"
+                    : "bg-transparent font-medium text-zinc-500 dark:text-zinc-400 border-transparent hover:text-zinc-500 hover:border-zinc-200 dark:hover:border-zinc-600 dark:hover:bg-zinc-800 hover:bg-zinc-100 dark:hover:text-zinc-400"
                 }`}
               >
                 {category}
@@ -248,6 +238,8 @@ export default function MarketOverview() {
                 symbol={item.symbol}
                 name={item.name}
                 category={activeTab}
+                displaySymbol={item.displaySymbol}
+                assetType={item.assetType}
               />
             </div>
           ))}

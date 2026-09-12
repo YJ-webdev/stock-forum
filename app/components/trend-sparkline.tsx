@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useId } from "react";
-import { ChartPoint } from "@/app/hooks/useFinnhubQuote";
+import { ChartPoint } from "@/app/hooks/useMarketQuote";
 
 interface TrendSparklineProps {
   data?: ChartPoint[]; // 🟢 Made optional to prevent TS errors when loading

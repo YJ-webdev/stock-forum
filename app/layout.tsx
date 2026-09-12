@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "./components/theme-provider";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { Toaster } from "sonner";
+import { Footer } from "./components/footer";
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -51,6 +52,7 @@ export default function RootLayout({
           >
             {children}
             <Toaster position="bottom-right" richColors />
+            <Footer />
           </ThemeProvider>
         </SessionProvider>
       </body>

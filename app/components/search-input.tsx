@@ -18,7 +18,7 @@ export default function SearchInput() {
 
   return (
     <div
-      className="flex px-5 items-center w-full h-12 bg-gray-200 dark:bg-zinc-800 rounded-full cursor-text"
+      className="flex px-5  items-center w-full h-12 bg-gray-200 dark:bg-zinc-800 rounded-full cursor-text"
       onClick={handleContainerClick}
     >
       {/* Search Icon */}
@@ -33,7 +33,7 @@ export default function SearchInput() {
         autoFocus={true}
         value={input}
         placeholder="Search..."
-        className="lg:w-2xl min-w-0 bg-transparent placeholder:text-black dark:placeholder:text-white outline-none ring-0 font-normal focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
+        className="lg:w-2xl w-full bg-transparent placeholder:text-black dark:placeholder:text-white outline-none ring-0 font-normal focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
         maxLength={30}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={(e) => {

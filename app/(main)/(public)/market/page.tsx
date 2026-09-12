@@ -2,43 +2,75 @@
 "use client";
 
 import React, { useState } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { ChartRange, useFinnhubQuote } from "@/app/hooks/useFinnhubQuote";
+import { useSearchParams, useRouter } from "next/navigation";
+import { ChartRange, useMarketQuote } from "@/app/hooks/useMarketQuote";
 import { DetailChart } from "@/app/components/detail-chart";
-import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
+import { ALL_MARKET_SYMBOLS, AssetType } from "@/lib/data/market-symbols";
 import { MarketDetailHeader } from "@/app/components/market-detail-header";
 import { RelativeStocks } from "@/app/components/relative-stocks";
-import { BookmarkIcon } from "lucide-react";
+import { MarketSymbolItem } from "@/lib/data/market-symbols";
 
 const RANGES = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
+
+function getMarketSymbolMeta(symbol: string): MarketSymbolItem | undefined {
+  // Simple, direct lookup against ALL_MARKET_SYMBOLS
+  return ALL_MARKET_SYMBOLS.find((item) => item.symbol === symbol);
+}
 
 export default function MarketDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Read single source of truth directly from searchParams (no useState needed)
-  const selectedSymbol = searchParams.get("symbol") ?? "^GSPC";
+  const rawSymbol = searchParams.get("symbol") ?? "^GSPC";
+  const selectedSymbol = decodeURIComponent(rawSymbol);
+
   const selectedName = searchParams.get("name") ?? "S&P 500";
   const selectedCategory = searchParams.get("category") ?? "us";
+  const selectedAssetType = searchParams.get("assetType") ?? "index";
 
   const [activeRange, setActiveRange] = useState("1D");
 
-  // Filter symbols based on current category
+  const matchedItem = ALL_MARKET_SYMBOLS.find(
+    (item) => item.symbol === selectedSymbol,
+  );
+
+  const selectedDisplaySymbol =
+    searchParams.get("displaySymbol") ??
+    matchedItem?.displaySymbol ??
+    selectedSymbol;
+
   const relativeStocks = ALL_MARKET_SYMBOLS.filter(
-    (item) => item.category.toLowerCase() === selectedCategory.toLowerCase(),
+    (item) =>
+      item.region.toLowerCase() === selectedCategory.toLowerCase() &&
+      item.symbol !== selectedSymbol,
   );
 
   // Fetch chart data directly with searchParam values
-  const { data } = useFinnhubQuote(
+  const { data } = useMarketQuote(
     selectedSymbol,
     selectedName,
     activeRange as ChartRange,
+    selectedDisplaySymbol,
+    selectedAssetType as AssetType,
   );
 
-  const handleBack = () => {
-    router.back();
-  };
+  // Fallback metadata lookup for timezone
+  const symbolMeta = getMarketSymbolMeta(selectedSymbol);
 
+  console.log({
+    selectedSymbol,
+    hookTimezone: data?.exchangeTimezone,
+    staticMeta: symbolMeta,
+    resolvedTimezone:
+      data?.exchangeTimezone ||
+      symbolMeta?.timezone ||
+      symbolMeta?.exchangeTimezone,
+  });
+  console.log("PRICE DEBUG:", {
+    data,
+    rawPrice: data?.rawPrice,
+    value: data?.value,
+  });
   return (
     <div className="max-w-4xl mx-auto mt-4 ">
       {/* Detailed Chart & Range Controls */}
@@ -49,10 +81,23 @@ export default function MarketDetailPage() {
             symbol={data.id}
             name={data.name}
             rawPrice={data.rawPrice}
+            displaySymbol={selectedDisplaySymbol}
+            // value={data?.value}
+            change={data.change}
+            percent={data.percent}
             isPositive={data.isPositive}
+            selectedRange={activeRange}
             onBack={() => router.back()}
             categoryTitle={selectedCategory}
+            updatedAt={data.updatedAt}
+            exchangeTimezone={
+              data?.exchangeTimezone ||
+              symbolMeta?.timezone ||
+              symbolMeta?.exchangeTimezone ||
+              "UTC"
+            }
           />
+          {/* chart */}
           <div className="md:mx-4">
             <DetailChart
               history={data.history}
@@ -77,8 +122,15 @@ export default function MarketDetailPage() {
               </button>
             ))}
           </div>
-          <div className="md:mx-4">
-            <RelativeStocks />
+
+          <div className="flex flex-col gap-3 md:mx-4 mb-20">
+            <div className="flex justify-between items-baseline mx-3 md:mx-0 font-thin">
+              <h3 className=" mt-10">Related assets</h3>
+              {/* <p className="text-end text-sm text-zinc-900 dark:text-zinc-200">
+                Data Delayed 15mins
+              </p> */}
+            </div>
+            <RelativeStocks items={relativeStocks} />
           </div>
         </>
       )}

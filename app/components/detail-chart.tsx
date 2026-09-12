@@ -67,8 +67,10 @@ export function DetailChart({
   const chartHeight = height - paddingTop - paddingBottom;
 
   const prices = history.map((p) => p.price);
-  const rawMin = Math.min(...prices);
-  const rawMax = Math.max(...prices);
+  const validPrices = previousClose ? [...prices, previousClose] : prices;
+
+  const rawMin = Math.min(...validPrices);
+  const rawMax = Math.max(...validPrices);
 
   const min = rawMin - (rawMax - rawMin) * 0.05;
   const max = rawMax + (rawMax - rawMin) * 0.05;
@@ -101,6 +103,21 @@ export function DetailChart({
       paddingTop + chartHeight - ((low - min) / priceRange) * chartHeight;
 
     const isRising = close >= open;
+
+    const unclampedPrevCloseY = previousClose
+      ? paddingTop +
+        chartHeight -
+        ((previousClose - min) / priceRange) * chartHeight
+      : null;
+
+    // Clamp y-position within canvas padding bounds
+    const prevCloseY =
+      unclampedPrevCloseY !== null
+        ? Math.max(
+            paddingTop,
+            Math.min(paddingTop + chartHeight, unclampedPrevCloseY),
+          )
+        : null;
 
     return {
       x,
@@ -268,7 +285,7 @@ export function DetailChart({
           >
             <CurrentIcon className="w-4 h-4 " />
             <span className="capitalize ">{chartType}</span>
-            <ChevronDown className="w-3.5 h-3.5 " />
+            <ChevronDown className="hidden md:block w-3.5 h-3.5 " />
           </button>
 
           {isMenuOpen && (
@@ -300,7 +317,7 @@ export function DetailChart({
         <button className="flex items-center gap-2 text-sm font-medium  hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
           <TrendingUp className="w-4 h-4 " />
           <span className="">Compare</span>
-          <ChevronDown className="w-3.5 h-3.5 " />
+          <ChevronDown className="hidden md:block w-3.5 h-3.5 " />
         </button>
 
         <button className="flex items-center gap-2 text-sm font-medium  hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
@@ -387,7 +404,7 @@ export function DetailChart({
         ))}
 
         {/* PREVIOUS CLOSE DASHED BASELINE */}
-        {prevCloseY && (
+        {/* {prevCloseY && (
           <g>
             <line
               x1={paddingLeft}
@@ -407,7 +424,75 @@ export function DetailChart({
               Prev. close {previousClose?.toFixed(2) ?? "N/A"}
             </text>
           </g>
-        )}
+        )} */}
+        {previousClose &&
+          prevCloseY !== null &&
+          (() => {
+            const isAboveChart = previousClose > max;
+            const isBelowChart = previousClose < min;
+            const isOutOfBounds = isAboveChart || isBelowChart;
+
+            // Clamp line position so it stays inside chart area even when out of bounds
+            const clampedY = Math.max(
+              paddingTop,
+              Math.min(paddingTop + chartHeight, prevCloseY),
+            );
+
+            return (
+              <g>
+                {/* BASELINE (Dashed Line) */}
+                <line
+                  x1={paddingLeft}
+                  y1={clampedY}
+                  x2={paddingLeft + chartWidth}
+                  y2={clampedY}
+                  stroke="#94a3b8"
+                  strokeDasharray="2 3"
+                  strokeWidth="1"
+                />
+
+                {/* CASE A: IN-BOUNDS TEXT (Renders right above the line inside the chart) */}
+                {!isOutOfBounds && (
+                  <text
+                    x={paddingLeft + chartWidth - 10}
+                    y={prevCloseY - 6}
+                    textAnchor="end"
+                    className="fill-zinc-500 dark:fill-zinc-400 text-[11px] font-semibold"
+                  >
+                    Prev. close {previousClose.toFixed(2)}
+                  </text>
+                )}
+
+                {/* CASE B: OUT-OF-BOUNDS BADGE (Renders safely inside top or bottom margin) */}
+                {isOutOfBounds && (
+                  <g
+                    transform={`translate(${paddingLeft + chartWidth - 120}, ${
+                      isAboveChart
+                        ? paddingTop + 4
+                        : paddingTop + chartHeight - 20
+                    })`}
+                  >
+                    <rect
+                      x="0"
+                      y="0"
+                      width="120"
+                      height="18"
+                      rx="4"
+                      className="fill-zinc-100 dark:fill-zinc-800 stroke-zinc-300 dark:stroke-zinc-700 opacity-90"
+                    />
+                    <text
+                      x="60"
+                      y="13"
+                      textAnchor="middle"
+                      className="fill-zinc-600 dark:fill-zinc-300 text-[10px] font-semibold"
+                    >
+                      Prev. close {previousClose.toFixed(2)}
+                    </text>
+                  </g>
+                )}
+              </g>
+            );
+          })()}
 
         {/* AREA CHART */}
         {chartType === "area" && (

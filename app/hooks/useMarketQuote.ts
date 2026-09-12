@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 
 export interface ChartPoint {
@@ -19,7 +21,10 @@ export interface MarketItem {
   history: ChartPoint[];
   isClosed: boolean;
   rawPrice: number;
+  displaySymbol?: string;
   previousClose?: number;
+  updatedAt?: number | string;
+  exchangeTimezone?: string;
 }
 
 export type ChartRange =
@@ -32,21 +37,25 @@ export type ChartRange =
   | "5Y"
   | "MAX";
 
-export function useFinnhubQuote(
+export type AssetType = "index" | "stock" | "crypto" | "currency" | "futures";
+
+export function useMarketQuote(
   symbol: string,
   name: string,
-  range: ChartRange = "1D",
+  range: ChartRange,
+  displaySymbol: string,
+  assetType: AssetType,
 ) {
   const [data, setData] = useState<MarketItem | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    let isMounted = true;
-
     if (!symbol) return;
 
+    let isMounted = true;
+
     async function fetchQuote() {
-      // 🟢 Fix 1: Reset loading state when range/symbol switches
+      // Move state update inside async function
       if (isMounted) setLoading(true);
 
       try {
@@ -54,66 +63,47 @@ export function useFinnhubQuote(
           `/api/candles?symbol=${encodeURIComponent(symbol)}&range=${encodeURIComponent(range)}`,
         );
 
-        if (!res.ok) {
-          if (isMounted) setData(null);
-          return;
-        }
+        if (!res.ok) throw new Error("Fetch failed");
 
         const json = await res.json();
-
-        if (!json || !Array.isArray(json.points) || json.points.length === 0) {
+        if (!json?.points?.length) {
           if (isMounted) setData(null);
           return;
         }
 
         if (isMounted) {
-          const points: { timestampMs: number; price: number }[] = json.points;
+          const points = json.points;
           const currentPrice =
             json.currentPrice ?? points[points.length - 1]?.price ?? 0;
-
-          // 🟢 Fix 2: Calculate change relative to selected range start for non-1D charts
-          const firstPrice = points[0]?.price ?? currentPrice;
-          const changeVal =
+          const basePrice =
             range === "1D"
-              ? currentPrice - firstPrice
-              : currentPrice - firstPrice;
+              ? (json.previousClose ?? points[0]?.price)
+              : points[0]?.price;
+          const changeVal = currentPrice - basePrice;
 
           const percentVal =
-            typeof json.changePercent === "number" && json.changePercent !== 0
-              ? json.changePercent
-              : firstPrice !== 0
-                ? (changeVal / firstPrice) * 100
-                : 0;
+            range === "1D" ? json.dailyChangePercent : json.rangeChangePercent;
 
-          const isUsdSecurity =
-            !symbol.startsWith("^") &&
-            !symbol.includes("=X") &&
-            !symbol.includes(".");
-
-          const formattedValue = isUsdSecurity
-            ? currentPrice.toLocaleString("en-US", {
-                style: "currency",
-                currency: "USD",
-              })
-            : currentPrice.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              });
+          const formattedValue = currentPrice.toLocaleString("en-US", {
+            style: assetType === "crypto" ? "currency" : "decimal",
+            currency: assetType === "crypto" ? "USD" : undefined,
+            minimumFractionDigits: assetType === "currency" ? 4 : 2,
+            maximumFractionDigits: assetType === "currency" ? 4 : 2,
+          });
 
           setData({
             id: symbol,
             name,
+            displaySymbol,
             value: formattedValue,
-            change:
-              changeVal >= 0
-                ? `+${changeVal.toFixed(2)}`
-                : changeVal.toFixed(2),
+            change: `${changeVal >= 0 ? "+" : ""}${changeVal.toFixed(2)}`,
             percent: `${percentVal >= 0 ? "+" : ""}${percentVal.toFixed(2)}%`,
             isPositive: percentVal >= 0,
             history: points,
             isClosed: json.isClosed ?? true,
             rawPrice: currentPrice,
-            previousClose: json.previousClose ?? firstPrice,
+            previousClose: json.previousClose,
+            updatedAt: points[points.length - 1]?.timestampMs ?? Date.now(),
           });
         }
       } catch (_err) {
@@ -125,14 +115,17 @@ export function useFinnhubQuote(
 
     fetchQuote();
 
-    // 🟢 Polling only during 1D mode to save server bandwidth
     const interval = range === "1D" ? setInterval(fetchQuote, 60000) : null;
 
     return () => {
       isMounted = false;
       if (interval) clearInterval(interval);
     };
-  }, [symbol, name, range]);
+  }, [symbol, name, range, displaySymbol, assetType]);
+
+  if (!symbol) {
+    return { data: null, loading: false };
+  }
 
   return { data, loading };
 }
