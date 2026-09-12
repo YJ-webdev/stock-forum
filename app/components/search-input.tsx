@@ -18,7 +18,7 @@ export default function SearchInput() {
 
   return (
     <div
-      className="flex px-5  items-center w-full h-12 bg-gray-200 dark:bg-zinc-800 rounded-full cursor-text"
+      className="flex px-5  items-center w-full h-12 bg-zinc-100 dark:bg-zinc-800 rounded-full cursor-text"
       onClick={handleContainerClick}
     >
       {/* Search Icon */}

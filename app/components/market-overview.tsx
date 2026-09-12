@@ -60,18 +60,21 @@ function MarketCard({
     <Link
       href={`/market?symbol=${encodeURIComponent(symbol)}&name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}&assetType=${encodeURIComponent(assetType)}`}
     >
-      <div className="bg-gray-100/80 dark:bg-zinc-800 h-44 overflow-hidden m-0 p-0 rounded-lg cursor-pointer transition-colors hover:bg-gray-200/80 dark:hover:bg-zinc-700/50">
+      <div className="bg-zinc-100/70 dark:bg-zinc-800/50 h-44 overflow-hidden m-0 p-0 rounded-lg cursor-pointer transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800">
         <div className="flex flex-col justify-between h-48 m-0 p-0">
           {/* Header */}
 
           <div className="flex flex-col">
-            <div className="flex items-center justify-between w-full ">
+            {/* <div className="flex items-center justify-between w-full ">
               <span className="mx-2 mt-1.5 mb-0.5 border w-fit ml-auto rounded-full shrink-0 text-[9px] uppercase text-zinc-500 dark:text-zinc-300 bg-white dark:font-thin dark:bg-zinc-700/50 px-1 whitespace-nowrap">
                 15min delay
               </span>
-            </div>
-            <div className="flex items-start justify-between mx-3.5 ">
-              <h3 className=" line-clamp-2 text-zinc-800 text-[17px] font-medium dark:text-zinc-200 text-lg tracking-tight text-wrap leading-tight">
+            </div> */}
+            <div className="flex flex-col items-start mx-3.5 mt-5 ">
+              <h2 className=" line-clamp-2 text-zinc-800 text-[18px] font-medium dark:text-zinc-200 text-lg tracking-tight text-wrap leading-tight">
+                {data.displaySymbol}
+              </h2>
+              <h3 className=" line-clamp-2 text-zinc-600 text-[16px] font-normal dark:font-thin dark:text-zinc-200 text-lg tracking-tight text-wrap leading-tight">
                 {data.name}
               </h3>
             </div>

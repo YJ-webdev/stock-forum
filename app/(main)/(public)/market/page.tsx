@@ -125,10 +125,12 @@ export default function MarketDetailPage() {
 
           <div className="flex flex-col gap-3 md:mx-4 mb-20">
             <div className="flex justify-between items-baseline mx-3 md:mx-0 font-thin">
-              <h3 className=" mt-10">Related assets</h3>
-              {/* <p className="text-end text-sm text-zinc-900 dark:text-zinc-200">
-                Data Delayed 15mins
-              </p> */}
+              <h3 className="mt-10">
+                Related assets{" "}
+                <span className="text-sm font-normal text-zinc-500">
+                  ({relativeStocks.length})
+                </span>
+              </h3>
             </div>
             <RelativeStocks items={relativeStocks} />
           </div>

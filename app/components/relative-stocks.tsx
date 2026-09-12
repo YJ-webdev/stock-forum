@@ -79,7 +79,7 @@ function RelativeStockRow({ item }: { item: MarketSymbolItem }) {
 
   const priceColor = quote?.isPositive
     ? "text-emerald-700 dark:text-emerald-600"
-    : "text-[#cf0000] dark:text-[#ff002f]";
+    : "text-[#cf0000] dark:text-[#cf0000]";
 
   const [marketOpened, setMarketOpened] = useState(() => isMarketOpen(item));
 
@@ -137,14 +137,14 @@ function RelativeStockRow({ item }: { item: MarketSymbolItem }) {
 
       {/* Change % */}
       <td
-        className={`hidden md:table-cell py-3.5 text-right whitespace-nowrap ${priceColor}`}
+        className={`hidden md:table-cell font-normal py-3.5 text-right whitespace-nowrap ${priceColor}`}
       >
         {quote?.percent ?? "-"}
       </td>
 
       {/* Change */}
       <td
-        className={`hidden md:table-cell py-3.5 text-right self-end whitespace-nowrap ${priceColor}`}
+        className={`hidden md:table-cell py-3.5 font-normal text-right self-end whitespace-nowrap ${priceColor}`}
       >
         {quote?.change ?? "-"}
       </td>

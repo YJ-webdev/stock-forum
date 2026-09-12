@@ -1,6 +1,12 @@
 "use client";
 
-import { ChevronRight, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import {
+  ChevronRight,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export interface MarketDetailHeaderProps {
@@ -90,7 +96,7 @@ export function MarketDetailHeader({
   const rangeLabel = rangeLabelMap[selectedRange] || "Today";
   const colorClass = isPositive
     ? "text-emerald-600 dark:text-emerald-400"
-    : "text-rose-600 dark:text-rose-400";
+    : "text-[#cf0000] dark:text-[#cf0000]";
 
   const handleHomeClick = () => {
     router.push("/");
@@ -140,9 +146,9 @@ export function MarketDetailHeader({
 
             <div className={`flex items-center gap-1.5 text-lg ${colorClass}`}>
               {isPositive ? (
-                <ArrowUpCircle className="w-5 h-5 fill-current text-white dark:text-zinc-950" />
+                <TrendingUp className="w-5 h-5" />
               ) : (
-                <ArrowDownCircle className="w-5 h-5 fill-current text-white dark:text-zinc-950" />
+                <TrendingDown className="w-5 h-5" />
               )}
               <span>{percent}</span>
               <span>({change})</span>
