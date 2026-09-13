@@ -30,6 +30,8 @@ export interface MarketItem {
   previousClose?: number;
   updatedAt?: number | string;
   exchangeTimezone?: string;
+  lunchStartMs?: number;
+  lunchEndMs?: number;
 }
 
 export type ChartRange =

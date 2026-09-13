@@ -1,3 +1,5 @@
+import { getTimestampForMarketTime } from "@/lib/utils/market-time";
+import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { NextResponse } from "next/server";
 import YahooFinance from "yahoo-finance2";
 
@@ -14,31 +16,21 @@ function getPeriod1(range: string): Date {
 
   switch (range) {
     case "1D":
-      // Fetch enough calendar days to find the latest trading session
-      // even on weekends and market holidays.
       return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
     case "5D":
       return new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
-
     case "1M":
       return new Date(now.setMonth(now.getMonth() - 1));
-
     case "6M":
       return new Date(now.setMonth(now.getMonth() - 6));
-
     case "YTD":
       return new Date(now.getFullYear(), 0, 1);
-
     case "1Y":
       return new Date(now.setFullYear(now.getFullYear() - 1));
-
     case "5Y":
       return new Date(now.setFullYear(now.getFullYear() - 5));
-
     case "MAX":
       return new Date("1980-01-01");
-
     default:
       return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   }
@@ -55,12 +47,6 @@ const INTERVALS: Record<string, "15m" | "1d" | "1wk"> = {
   MAX: "1wk",
 };
 
-/**
- * Returns a calendar-day key in the exchange's timezone.
- *
- * Example:
- * America/New_York → "2026-09-11"
- */
 function getExchangeDate(date: Date, timezone?: string): string {
   if (!timezone) {
     return date.toISOString().slice(0, 10);
@@ -74,10 +60,6 @@ function getExchangeDate(date: Date, timezone?: string): string {
   }).format(date);
 }
 
-/**
- * For a 1D chart, Yahoo may return several days of 15m candles.
- * We only want the most recent trading session.
- */
 function getLatestTradingSession(quotes: any[], timezone?: string): any[] {
   if (quotes.length === 0) {
     return [];
@@ -103,35 +85,39 @@ function getLatestTradingSession(quotes: any[], timezone?: string): any[] {
   });
 }
 
-/**
- * Determines whether the regular exchange session is currently closed.
- *
- * Yahoo's chart metadata provides the current regular trading period.
- * This works for weekends, holidays, pre-market, regular hours,
- * and post-market without hard-coding a particular exchange.
- */
-function isRegularMarketClosed(meta: any): boolean {
+function isRegularMarketClosed(
+  meta: any,
+  lunchStartMs?: number | null,
+  lunchEndMs?: number | null,
+): boolean {
   const regularPeriod = meta?.currentTradingPeriod?.regular;
 
   if (regularPeriod?.start && regularPeriod?.end) {
     const now = Date.now();
+
     const start = new Date(regularPeriod.start).getTime();
     const end = new Date(regularPeriod.end).getTime();
 
-    return now < start || now >= end;
+    if (now < start || now >= end) {
+      return true;
+    }
+    if (
+      lunchStartMs != null &&
+      lunchEndMs != null &&
+      now >= lunchStartMs &&
+      now < lunchEndMs
+    ) {
+      return true;
+    }
+    return false;
   }
-
-  // If Yahoo doesn't provide the trading period,
-  // fail safely and treat the market as closed.
   return true;
 }
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-
   const rawSymbol = searchParams.get("symbol") || "^GSPC";
   const range = searchParams.get("range") || "1D";
-
   const symbol = PROVIDER_SYMBOLS[rawSymbol] || rawSymbol;
   const period1 = getPeriod1(range);
   const interval = INTERVALS[range] || "15m";
@@ -148,23 +134,46 @@ export async function GET(request: Request) {
       : [];
 
     const meta = chartResult?.meta || {};
+    const exchangeTimezone = meta.exchangeTimezoneName;
+    const market = ALL_MARKET_SYMBOLS.find(
+      (item) => item.symbol === rawSymbol || item.symbol === symbol,
+    );
 
-    /*
-     * For 1D:
-     *
-     * Yahoo may return several days because we intentionally
-     * request 7 calendar days. Select only the latest trading day.
-     *
-     * Example on Sunday:
-     *
-     * Wed → Thu → Fri → Sat → Sun
-     *                    ↑
-     *             latest trading session
-     */
+    let lunchStartMs: number | null = null;
+    let lunchEndMs: number | null = null;
+
     const sessionQuotes =
       range === "1D"
-        ? getLatestTradingSession(rawQuotes, meta.exchangeTimezoneName)
+        ? getLatestTradingSession(rawQuotes, exchangeTimezone)
         : rawQuotes;
+
+    if (
+      range === "1D" &&
+      sessionQuotes.length > 0 &&
+      market?.tradingBreak &&
+      exchangeTimezone
+    ) {
+      const latestQuote = sessionQuotes[sessionQuotes.length - 1];
+
+      if (latestQuote?.date) {
+        const tradingDate = getExchangeDate(
+          new Date(latestQuote.date),
+          exchangeTimezone,
+        );
+
+        lunchStartMs = getTimestampForMarketTime(
+          tradingDate,
+          market.tradingBreak.start,
+          exchangeTimezone,
+        );
+
+        lunchEndMs = getTimestampForMarketTime(
+          tradingDate,
+          market.tradingBreak.end,
+          exchangeTimezone,
+        );
+      }
+    }
 
     if (sessionQuotes.length === 0) {
       return NextResponse.json({
@@ -175,12 +184,16 @@ export async function GET(request: Request) {
           meta.previousClose ??
           meta.regularMarketPrice ??
           0,
+
         dailyChangePercent: 0,
         rangeChangePercent: 0,
-        isClosed: isRegularMarketClosed(meta),
+        isClosed: isRegularMarketClosed(meta, lunchStartMs, lunchEndMs),
         requestedSymbol: rawSymbol,
         providerSymbol: symbol,
-        exchangeTimezone: meta.exchangeTimezoneName,
+        exchangeTimezone,
+
+        lunchStartMs,
+        lunchEndMs,
       });
     }
 
@@ -194,24 +207,19 @@ export async function GET(request: Request) {
 
         return {
           timestampMs: new Date(quote.date).getTime(),
-
           price: Number(close.toFixed(2)),
-
           open:
             quote.open != null
               ? Number(Number(quote.open).toFixed(2))
               : Number(close.toFixed(2)),
-
           high:
             quote.high != null
               ? Number(Number(quote.high).toFixed(2))
               : Number(close.toFixed(2)),
-
           low:
             quote.low != null
               ? Number(Number(quote.low).toFixed(2))
               : Number(close.toFixed(2)),
-
           close: Number(close.toFixed(2)),
         };
       });
@@ -219,36 +227,31 @@ export async function GET(request: Request) {
     if (points.length === 0) {
       return NextResponse.json({
         points: [],
+
         currentPrice: meta.regularMarketPrice ?? 0,
+
         previousClose:
           meta.chartPreviousClose ??
           meta.previousClose ??
           meta.regularMarketPrice ??
           0,
+
         dailyChangePercent: 0,
         rangeChangePercent: 0,
-        isClosed: isRegularMarketClosed(meta),
+        isClosed: isRegularMarketClosed(meta, lunchStartMs, lunchEndMs),
         requestedSymbol: rawSymbol,
         providerSymbol: symbol,
-        exchangeTimezone: meta.exchangeTimezoneName,
+        exchangeTimezone,
+        lunchStartMs,
+        lunchEndMs,
       });
     }
 
-    /*
-     * regularMarketPrice is preferable because it represents
-     * Yahoo's latest regular-session market price.
-     *
-     * When the market is closed, this remains the latest
-     * regular-session price.
-     */
     const currentPrice =
       typeof meta.regularMarketPrice === "number"
         ? meta.regularMarketPrice
         : (points[points.length - 1]?.price ?? 0);
 
-    /*
-     * chartPreviousClose is Yahoo's previous regular-session close.
-     */
     const previousClose =
       typeof meta.chartPreviousClose === "number"
         ? meta.chartPreviousClose
@@ -268,23 +271,23 @@ export async function GET(request: Request) {
         ? ((currentPrice - rangeStartPrice) / rangeStartPrice) * 100
         : 0;
 
-    const isClosed = isRegularMarketClosed(meta);
-
+    const isClosed = isRegularMarketClosed(meta, lunchStartMs, lunchEndMs);
     return NextResponse.json({
       points,
       currentPrice,
       previousClose,
       dailyChangePercent,
       rangeChangePercent,
-      isClosed,
-
+      isClosed: isRegularMarketClosed(meta, lunchStartMs, lunchEndMs),
       requestedSymbol: rawSymbol,
       providerSymbol: symbol,
-
-      exchangeTimezone: meta.exchangeTimezoneName,
+      exchangeTimezone,
       updatedAt: meta.regularMarketTime
         ? new Date(meta.regularMarketTime).getTime()
         : (points[points.length - 1]?.timestampMs ?? Date.now()),
+
+      lunchStartMs,
+      lunchEndMs,
     });
   } catch (error) {
     console.error(`Yahoo Finance chart error for ${symbol}:`, error);
@@ -293,7 +296,9 @@ export async function GET(request: Request) {
       {
         error: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }

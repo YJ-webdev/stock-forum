@@ -12,6 +12,10 @@ export interface MarketSymbolItem {
   isProxy?: boolean;
   timezone?: string;
   exchangeTimezone?: string;
+  tradingBreak?: {
+    start: string;
+    end: string;
+  };
 }
 
 export const getSymbolIcon = (symbol: string): string => {
@@ -96,6 +100,10 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Tokyo",
+      tradingBreak: {
+        start: "11:30",
+        end: "12:30",
+      },
     },
     {
       name: "TOPIX",
@@ -107,6 +115,10 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       providerSymbol: "1306.T",
       isProxy: true,
       timezone: "Asia/Tokyo",
+      tradingBreak: {
+        start: "11:30",
+        end: "12:30",
+      },
     },
     {
       name: "Shanghai Composite Index",
@@ -116,6 +128,10 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Shanghai",
+      tradingBreak: {
+        start: "11:30",
+        end: "13:00",
+      },
     },
     {
       name: "CSI 300 Index",
@@ -134,6 +150,10 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Hong_Kong",
+      tradingBreak: {
+        start: "12:00",
+        end: "13:00",
+      },
     },
     {
       name: "Nifty 50",
@@ -192,11 +212,28 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
     {
       name: "IDX Composite",
       symbol: "^JKSE",
-      displaySymbol: "IHSG",
+      displaySymbol: "JCI",
       country: "ID",
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Jakarta",
+      tradingBreak: {
+        start: "12:00",
+        end: "13:30",
+      },
+    },
+    {
+      name: "Shenzhen Component",
+      symbol: "399001.SZ",
+      displaySymbol: "SZSE",
+      country: "CN",
+      region: "APEC",
+      assetType: "index",
+      timezone: "Asia/Shanghai",
+      tradingBreak: {
+        start: "11:30",
+        end: "13:00",
+      },
     },
   ],
   EMEA: [

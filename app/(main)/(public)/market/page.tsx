@@ -67,21 +67,6 @@ export default function MarketDetailPage() {
   // Fallback metadata lookup for timezone
   const symbolMeta = getMarketSymbolMeta(selectedSymbol);
 
-  console.log({
-    selectedSymbol,
-    hookTimezone: data?.exchangeTimezone,
-    staticMeta: symbolMeta,
-    resolvedTimezone:
-      data?.exchangeTimezone ||
-      symbolMeta?.timezone ||
-      symbolMeta?.exchangeTimezone,
-  });
-  console.log("PRICE DEBUG:", {
-    data,
-    rawPrice: data?.rawPrice,
-    value: data?.value,
-  });
-
   return (
     <div className="max-w-4xl mx-auto mt-4 ">
       {data && (
@@ -101,10 +86,7 @@ export default function MarketDetailPage() {
             categoryTitle={selectedCategory}
             updatedAt={data.updatedAt}
             exchangeTimezone={
-              data?.exchangeTimezone ||
-              symbolMeta?.timezone ||
-              symbolMeta?.exchangeTimezone ||
-              "UTC"
+              data?.exchangeTimezone || symbolMeta?.timezone || "UTC"
             }
           />
           {/* chart */}
@@ -115,6 +97,8 @@ export default function MarketDetailPage() {
               isClosed={data.isClosed}
               range={activeRange}
               previousClose={data.previousClose}
+              lunchStartMs={data.lunchStartMs}
+              lunchEndMs={data.lunchEndMs}
             />
           </div>
           <div className="flex justify-between md:justify-start gap-2 flex-wrap mx-2 my-4 md:mx-4">
