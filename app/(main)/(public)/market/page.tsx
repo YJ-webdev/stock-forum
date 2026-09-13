@@ -123,14 +123,12 @@ export default function MarketDetailPage() {
             ))}
           </div>
 
-          <div className="flex flex-col gap-3 md:mx-4 mb-20">
-            <div className="flex justify-between items-baseline mx-3 md:mx-0 font-thin">
-              <h3 className="mt-10">
-                Related assets{" "}
-                <span className="text-sm font-normal text-zinc-500">
-                  ({relativeStocks.length})
-                </span>
-              </h3>
+          <div className="flex flex-col gap-3 md:mx-4 mb-20 mt-10">
+            <div className="flex justify-between items-baseline mx-3 md:mx-0">
+              <p className="text-[15px] text-zinc-600 dark:text-zinc-300 ">
+                Related assets
+                {/* <span className="ml-0.5">{relativeStocks.length}</span> */}
+              </p>
             </div>
             <RelativeStocks items={relativeStocks} />
           </div>

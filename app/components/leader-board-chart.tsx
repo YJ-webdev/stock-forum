@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getTopBetters, LeaderboardUser } from "@/app/actions/leaderboard";
+import { Numeric } from "./numeric";
 
 export function LeaderboardChart() {
   const [leaders, setLeaders] = useState<LeaderboardUser[]>([]);
@@ -45,9 +46,9 @@ export function LeaderboardChart() {
                 </span>
               </div>
             </div>
-            <span className=" text-emerald-700 dark:text-emerald-400">
-              +${user.totalProfit.toLocaleString()}
-            </span>
+            <Numeric className=" font-medium  text-emerald-700 dark:text-emerald-600">
+              +{user.totalProfit.toLocaleString()}
+            </Numeric>
           </div>
         ))}
       </div>
