@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMarketQuote } from "@/app/hooks/useMarketQuote";
 import {
   getMarketCloseTarget,
@@ -17,13 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import {
-  AlertCircle,
-  ArrowDownRight,
-  ArrowUpRight,
-  Clock,
-  RefreshCw,
-} from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Clock, RefreshCw } from "lucide-react";
 import { useCountdown } from "../hooks/useCountdown";
 import { useRouter } from "next/navigation";
 import { Numeric } from "./numeric";
@@ -90,9 +83,9 @@ function RelativeStockRow({ item }: { item: MarketSymbolItem }) {
 
   const href = `/market?symbol=${encodeURIComponent(
     item.symbol,
-  )}&name=${encodeURIComponent(
-    item.name,
-  )}&category=${encodeURIComponent(item.region)}`;
+  )}&name=${encodeURIComponent(item.name)}&category=${encodeURIComponent(
+    item.assetType === "index" ? item.region : item.assetType,
+  )}`;
 
   const handleRowClick = () => {
     router.push(href);
@@ -135,9 +128,6 @@ function RelativeStockRow({ item }: { item: MarketSymbolItem }) {
       {/* Price */}
       <td className="py-3 font-medium dark:font-normal pr-2 sm:pr-0 min-w-fit text-right whitespace-nowrap overflow-hidden text-ellipsis">
         <Numeric>{quote?.value ?? "-"}</Numeric>
-        {/* <Numeric className={`md:hidden ${priceColor}`}>
-          {quote?.percent ?? "-"}
-        </Numeric> */}
       </td>
 
       {/* Change % */}

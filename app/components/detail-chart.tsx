@@ -404,27 +404,6 @@ export function DetailChart({
         ))}
 
         {/* PREVIOUS CLOSE DASHED BASELINE */}
-        {/* {prevCloseY && (
-          <g>
-            <line
-              x1={paddingLeft}
-              y1={prevCloseY}
-              x2={paddingLeft + chartWidth}
-              y2={prevCloseY}
-              stroke="#94a3b8"
-              strokeDasharray="2 3"
-              strokeWidth="1"
-            />
-            <text
-              x={paddingLeft + chartWidth - 10}
-              y={prevCloseY - 6}
-              textAnchor="end"
-              className="fill-zinc-500 dark:fill-zinc-400 text-[11px] font-semibold"
-            >
-              Prev. close {previousClose?.toFixed(2) ?? "N/A"}
-            </text>
-          </g>
-        )} */}
         {previousClose &&
           prevCloseY !== null &&
           (() => {

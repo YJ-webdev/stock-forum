@@ -13,7 +13,6 @@ import { MarketSymbolItem } from "@/lib/data/market-symbols";
 const RANGES = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
 function getMarketSymbolMeta(symbol: string): MarketSymbolItem | undefined {
-  // Simple, direct lookup against ALL_MARKET_SYMBOLS
   return ALL_MARKET_SYMBOLS.find((item) => item.symbol === symbol);
 }
 
@@ -39,13 +38,24 @@ export default function MarketDetailPage() {
     matchedItem?.displaySymbol ??
     selectedSymbol;
 
-  const relativeStocks = ALL_MARKET_SYMBOLS.filter(
-    (item) =>
-      item.region.toLowerCase() === selectedCategory.toLowerCase() &&
-      item.symbol !== selectedSymbol,
-  );
+  const relativeStocks = ALL_MARKET_SYMBOLS.filter((item) => {
+    const category = selectedCategory.toLowerCase();
+    if (["america", "apec", "emea"].includes(category)) {
+      return (
+        item.region.toLowerCase() === category && item.symbol !== selectedSymbol
+      );
+    }
 
-  // Fetch chart data directly with searchParam values
+    if (["crypto", "currency", "futures"].includes(category)) {
+      return (
+        item.assetType.toLowerCase() === category &&
+        item.symbol !== selectedSymbol
+      );
+    }
+
+    return false;
+  });
+
   const { data } = useMarketQuote(
     selectedSymbol,
     selectedName,
@@ -71,9 +81,9 @@ export default function MarketDetailPage() {
     rawPrice: data?.rawPrice,
     value: data?.value,
   });
+
   return (
     <div className="max-w-4xl mx-auto mt-4 ">
-      {/* Detailed Chart & Range Controls */}
       {data && (
         <>
           <MarketDetailHeader
@@ -127,7 +137,6 @@ export default function MarketDetailPage() {
             <div className="flex justify-between items-baseline mx-3 md:mx-0">
               <p className="text-[15px] text-zinc-600 dark:text-zinc-300 ">
                 Related assets
-                {/* <span className="ml-0.5">{relativeStocks.length}</span> */}
               </p>
             </div>
             <RelativeStocks items={relativeStocks} />

@@ -124,7 +124,7 @@ export function MarketDetailHeader({
           <ChevronRight className="w-4 h-4" />
           <button
             // onClick={() => {}}
-            className="flex capitalize items-center gap-1.5 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+            className="flex capitalize items-center gap-1.5  transition-colors"
           >
             <span>{categoryTitle}</span>
           </button>

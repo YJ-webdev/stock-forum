@@ -175,14 +175,11 @@ export default function MarketOverview() {
     });
 
     checkScrollPosition();
-
     el.addEventListener("scroll", checkScrollPosition, { passive: true });
-
     window.addEventListener("resize", checkScrollPosition);
 
     return () => {
       el.removeEventListener("scroll", checkScrollPosition);
-
       window.removeEventListener("resize", checkScrollPosition);
     };
   }, [activeTab]);
@@ -213,10 +210,10 @@ export default function MarketOverview() {
               <button
                 key={category}
                 onClick={() => setActiveTab(category)}
-                className={`px-2 md:px-4 py-1.5 rounded-full uppercase text-sm font-medium transition-all cursor-pointer border ${
+                className={`px-2 md:px-4 py-1.5 rounded-full uppercase text-sm font-medium dark:font-normal transition-all cursor-pointer border ${
                   isActive
-                    ? "bg-zinc-100 text-zinc-900 border-zinc-300 dark:bg-zinc-800 dark:text-white dark:border-zinc-600"
-                    : "bg-transparent text-zinc-500 dark:text-zinc-400 border-transparent hover:text-zinc-500 hover:border-zinc-200 dark:hover:border-zinc-600 dark:hover:bg-zinc-800 hover:bg-zinc-100 dark:hover:text-zinc-400"
+                    ? "bg-zinc-100 text-zinc-900 border-zinc-300 dark:bg-zinc-800 dark:text-white dark:border-zinc-700"
+                    : "bg-transparent text-zinc-500 dark:text-zinc-300 border-transparent hover:text-zinc-500 hover:border-zinc-200 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 hover:bg-zinc-100 dark:hover:text-zinc-300"
                 }`}
               >
                 {category}

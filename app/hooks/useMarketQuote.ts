@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
+
+import {
+  getMarketQuoteSnapshot,
+  subscribeToMarketQuote,
+} from "./market-quote-store";
 
 export interface ChartPoint {
   timestampMs: number;
@@ -45,87 +50,39 @@ export function useMarketQuote(
   range: ChartRange,
   displaySymbol: string,
   assetType: AssetType,
+  pollingInterval = 0,
 ) {
-  const [data, setData] = useState<MarketItem | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (!symbol) return;
-
-    let isMounted = true;
-
-    async function fetchQuote() {
-      // Move state update inside async function
-      if (isMounted) setLoading(true);
-
-      try {
-        const res = await fetch(
-          `/api/candles?symbol=${encodeURIComponent(symbol)}&range=${encodeURIComponent(range)}`,
-        );
-
-        if (!res.ok) throw new Error("Fetch failed");
-
-        const json = await res.json();
-        if (!json?.points?.length) {
-          if (isMounted) setData(null);
-          return;
-        }
-
-        if (isMounted) {
-          const points = json.points;
-          const currentPrice =
-            json.currentPrice ?? points[points.length - 1]?.price ?? 0;
-          const basePrice =
-            range === "1D"
-              ? (json.previousClose ?? points[0]?.price)
-              : points[0]?.price;
-          const changeVal = currentPrice - basePrice;
-
-          const percentVal =
-            range === "1D" ? json.dailyChangePercent : json.rangeChangePercent;
-
-          const formattedValue = currentPrice.toLocaleString("en-US", {
-            style: assetType === "crypto" ? "currency" : "decimal",
-            currency: assetType === "crypto" ? "USD" : undefined,
-            minimumFractionDigits: assetType === "currency" ? 4 : 2,
-            maximumFractionDigits: assetType === "currency" ? 4 : 2,
-          });
-
-          setData({
-            id: symbol,
-            name,
-            displaySymbol,
-            value: formattedValue,
-            change: `${changeVal >= 0 ? "+" : ""}${changeVal.toFixed(2)}`,
-            percent: `${percentVal >= 0 ? "+" : ""}${percentVal.toFixed(2)}%`,
-            isPositive: percentVal >= 0,
-            history: points,
-            isClosed: json.isClosed ?? true,
-            rawPrice: currentPrice,
-            previousClose: json.previousClose,
-            updatedAt: points[points.length - 1]?.timestampMs ?? Date.now(),
-          });
-        }
-      } catch (_err) {
-        if (isMounted) setData(null);
-      } finally {
-        if (isMounted) setLoading(false);
+  const subscribe = useCallback(
+    (listener: () => void) => {
+      if (!symbol) {
+        return () => {};
       }
+
+      return subscribeToMarketQuote(
+        symbol,
+        name,
+        range,
+        displaySymbol,
+        assetType,
+        pollingInterval,
+        listener,
+      );
+    },
+    [symbol, name, range, displaySymbol, assetType, pollingInterval],
+  );
+
+  const getSnapshot = useCallback(() => {
+    if (!symbol) {
+      return EMPTY_SNAPSHOT;
     }
 
-    fetchQuote();
+    return getMarketQuoteSnapshot(symbol, range);
+  }, [symbol, range]);
 
-    const interval = range === "1D" ? setInterval(fetchQuote, 60000) : null;
-
-    return () => {
-      isMounted = false;
-      if (interval) clearInterval(interval);
-    };
-  }, [symbol, name, range, displaySymbol, assetType]);
-
-  if (!symbol) {
-    return { data: null, loading: false };
-  }
-
-  return { data, loading };
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
+
+const EMPTY_SNAPSHOT = {
+  data: null,
+  loading: false,
+};

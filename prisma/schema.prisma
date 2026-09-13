@@ -1,16 +1,24 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  // url      = env("DATABASE_URL")
 }
 
 enum Role {
   USER
   ADMIN
+}
+
+enum TradeType {
+  BUY
+  SELL
+}
+
+enum TradeStatus {
+  OPEN
+  CLOSED
 }
 
 model User {
@@ -21,6 +29,7 @@ model User {
   image         String?
   country       String?         @default("US")
   role          Role            @default(USER)
+  
   accounts      Account[]
   sessions      Session[]
   posts         Post[]
@@ -28,6 +37,8 @@ model User {
   likes         Like[]
   balance       AccountBalance?
   trades        Trade[]
+  positions     PortfolioPosition[]
+  watchlist     Watchlist[]
 
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
@@ -71,22 +82,35 @@ model VerificationToken {
 model Post {
   id          String        @id @default(cuid())
   title       String
-  content     String
+  content     Json
   stockTicker String?
+
+  viewCount   Int           @default(0)
+
   createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
   author      User          @relation(fields: [authorId], references: [id])
   authorId    String
+
   categoryId  String
   category    ForumCategory @relation(fields: [categoryId], references: [id])
+
   comments    Comment[]
   likes       Like[]
+
+  @@index([categoryId, createdAt])
+  @@index([authorId, createdAt])
+  @@index([stockTicker, createdAt])
 }
 
 model Comment {
   id        String   @id @default(cuid())
   content   String
+
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
   authorId  String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
@@ -94,8 +118,11 @@ model Comment {
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId, createdAt])
+  @@index([parentId])
 }
 
 model Like {
@@ -107,6 +134,7 @@ model Like {
   createdAt DateTime @default(now())
 
   @@unique([userId, postId])
+  @@index([postId])
 }
 
 model ForumCategory {
@@ -119,20 +147,29 @@ model ForumCategory {
 }
 
 model MarketAsset {
-  id            String   @id @default(cuid())
-  symbol        String   @unique
+  id            String              @id @default(cuid())
+  symbol        String              @unique
+  displaySymbol String?
   name          String
   category      String
-  logoUrl       String
-  lastPrice     Float    @default(0.0)
-  change        Float    @default(0.0)
-  changePercent Float    @default(0.0)
-  high          Float    @default(0.0)
-  low           Float    @default(0.0)
-  volume        String   @default("0M")
-  trades        Trade[]  // Added back-relation to Trade
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  assetType     String              @default("index")
+  timezone      String              @default("UTC")
+  logoUrl       String?
+  
+  // Use Decimal for high precision values
+  lastPrice     Decimal             @default(0.0) @db.Decimal(18, 4)
+  change        Decimal             @default(0.0) @db.Decimal(18, 4)
+  changePercent Decimal             @default(0.0) @db.Decimal(10, 4)
+  high          Decimal             @default(0.0) @db.Decimal(18, 4)
+  low           Decimal             @default(0.0) @db.Decimal(18, 4)
+  volume        Decimal             @default(0.0) @db.Decimal(18, 2)
+  
+  trades        Trade[]
+  positions     PortfolioPosition[]
+  watchlistItems Watchlist[]
+
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 }
 
 model AccountBalance {
@@ -140,21 +177,27 @@ model AccountBalance {
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  cash      Float    @default(10000.0)
-  pnl       Float    @default(0.0)
+  cash      Decimal  @default(10000.0) @db.Decimal(18, 2)
+  pnl       Decimal  @default(0.0)     @db.Decimal(18, 2)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-enum TradeType {
-  BUY
-  SELL
-}
+model PortfolioPosition {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  symbol      String
+  asset       MarketAsset @relation(fields: [symbol], references: [symbol])
+  
+  quantity    Decimal     @default(0.0) @db.Decimal(18, 8)
+  avgCost     Decimal     @default(0.0) @db.Decimal(18, 4)
 
-enum TradeStatus {
-  OPEN
-  CLOSED
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([userId, symbol])
 }
 
 model Trade {
@@ -168,11 +211,26 @@ model Trade {
   type       TradeType
   status     TradeStatus @default(OPEN)
   
-  quantity   Float
-  entryPrice Float
-  exitPrice  Float?
-  pnl        Float?
+  quantity   Decimal     @db.Decimal(18, 8)
+  entryPrice Decimal     @db.Decimal(18, 4)
+  exitPrice  Decimal?    @db.Decimal(18, 4)
+  pnl        Decimal?    @db.Decimal(18, 2)
   
   createdAt  DateTime    @default(now())
   closedAt   DateTime?
+
+  @@index([userId, status])
+}
+
+model Watchlist {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  symbol    String
+  asset     MarketAsset @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  
+  createdAt DateTime    @default(now())
+
+  @@unique([userId, symbol])
 }
