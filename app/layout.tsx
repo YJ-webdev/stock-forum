@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Figtree, Roboto_Mono } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  Figtree,
+  Roboto_Mono,
+  Red_Hat_Display,
+  Plus_Jakarta_Sans,
+} from "next/font/google";
 import "@/app/globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "./components/theme-provider";
@@ -12,6 +19,17 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const redHatDisplay = Red_Hat_Display({
+  subsets: ["latin"],
+  variable: "--font-red-hat-display",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const jakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
 });
 
 const robotoMono = Roboto_Mono({
@@ -39,10 +57,14 @@ export default function RootLayout({
         figtree.variable,
         "font-sans",
         robotoMono.variable,
+        redHatDisplay.variable,
+        jakartaSans.variable,
       )}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body
+        className={`${redHatDisplay.variable} min-h-full flex flex-col bg-background text-foreground`}
+      >
         <SessionProvider>
           <ThemeProvider
             attribute="class"

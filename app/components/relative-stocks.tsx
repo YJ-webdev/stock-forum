@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useCountdown } from "../hooks/useCountdown";
 import { useRouter } from "next/navigation";
+import { Numeric } from "./numeric";
 
 interface RelativeStocksProps {
   items: MarketSymbolItem[]; // 🟢 Accepts the filtered list directly
@@ -112,8 +113,10 @@ function RelativeStockRow({ item }: { item: MarketSymbolItem }) {
           )}&category=${encodeURIComponent(item.region)}`}
           className="flex flex-col items-start gap-0.5 justify-center min-w-0"
         > */}
-        <div className="shrink-0 font-medium">{item.displaySymbol}</div>
-        <p className="truncate block w-full text-sm font-thin text-zinc-900/50 dark:text-zinc-300/70 dark:font-light">
+        <div className="shrink-0 font-medium text-[15.5px] -mb-0.75">
+          {item.displaySymbol}
+        </div>
+        <p className="truncate block w-full text-sm font-normal text-zinc-900/50 dark:text-zinc-300/70 dark:font-normal">
           {item.name}
         </p>
         {/* </Link> */}
@@ -130,23 +133,25 @@ function RelativeStockRow({ item }: { item: MarketSymbolItem }) {
       </td>
 
       {/* Price */}
-      <td className="py-3 pr-2 sm:pr-0 min-w-fit text-right whitespace-nowrap overflow-hidden text-ellipsis">
-        {quote?.value ?? "-"}
-        <p className={`md:hidden ${priceColor}`}> {quote?.percent ?? "-"}</p>
+      <td className="py-3 font-medium dark:font-normal pr-2 sm:pr-0 min-w-fit text-right whitespace-nowrap overflow-hidden text-ellipsis">
+        <Numeric>{quote?.value ?? "-"}</Numeric>
+        {/* <Numeric className={`md:hidden ${priceColor}`}>
+          {quote?.percent ?? "-"}
+        </Numeric> */}
       </td>
 
       {/* Change % */}
       <td
-        className={`hidden md:table-cell font-normal py-3.5 text-right whitespace-nowrap ${priceColor}`}
+        className={`hidden md:table-cell font-medium dark:font-semibold py-3.5 text-right whitespace-nowrap ${priceColor}`}
       >
-        {quote?.percent ?? "-"}
+        <Numeric>{quote?.percent ?? "-"}</Numeric>
       </td>
 
       {/* Change */}
       <td
-        className={`hidden md:table-cell py-3.5 font-normal text-right self-end whitespace-nowrap ${priceColor}`}
+        className={`hidden md:table-cell py-3.5 font-medium dark:font-semibold text-right self-end whitespace-nowrap ${priceColor}`}
       >
-        {quote?.change ?? "-"}
+        <Numeric>{quote?.change ?? "-"}</Numeric>
       </td>
 
       {/* Users Prediction */}
@@ -434,10 +439,15 @@ export function VoteClosed({
   const { hours, minutes, seconds } = useCountdown(targetOpenDate, onExpire);
 
   return (
-    <div className="flex items-center justify-end text-[12px] gap-1 text-zinc-500 dark:text-zinc-400 dark:font-thin whitespace-nowrap">
-      <div className="flex text-[13px] dark:font-thin text-zinc-700 dark:text-zinc-300">
-        <span>{hours}</span>:<span>{minutes}</span>:<span>{seconds}</span>
+    <>
+      {/* <div className="flex items-center justify-end text-[12px] gap-1 text-zinc-500 dark:text-zinc-400 dark:font-thin whitespace-nowrap">
+        <div className="flex text-[13px] dark:font-thin text-zinc-700 dark:text-zinc-300">
+          <span>{hours}</span>:<span>{minutes}</span>:<span>{seconds}</span>
+        </div>
+      </div> */}
+      <div className="mr-1 flex items-center font-normal justify-end text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+        Closed
       </div>
-    </div>
+    </>
   );
 }

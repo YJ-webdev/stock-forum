@@ -163,3 +163,12 @@
 @theme {
   --roboto-mono: var(--font-roboto-mono);
 }
+
+.numeric {
+  font-family: var(--font-red-hat-display), sans-serif;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.jakarta {
+  font-family: var(--font-jakarta), sans-serif;
+}

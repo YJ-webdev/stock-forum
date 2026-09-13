@@ -8,6 +8,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Numeric } from "./numeric";
 
 export interface MarketDetailHeaderProps {
   symbol: string;
@@ -109,9 +110,9 @@ export function MarketDetailHeader({
   });
 
   return (
-    <div className="w-full relative p-4">
+    <div className="w-full relative px-4 py-2">
       {/* Navigation Breadcrumb */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-300 font-medium">
           <button
             onClick={handleHomeClick}
@@ -131,7 +132,7 @@ export function MarketDetailHeader({
       </div>
 
       {/* Header Title */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 my-4">
         <h1 className="text-[44px] font-bold text-gray-500/50 dark:text-zinc-700 tracking-tight leading-none">
           {name}
         </h1>
@@ -140,9 +141,9 @@ export function MarketDetailHeader({
       <div className="flex items-center gap-3 mt-1.5">
         <div className="flex flex-col">
           <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-medium text-zinc-900 dark:text-zinc-100">
+            <Numeric className="font-extrabold text-3xl text-zinc-900 dark:text-zinc-100">
               {displayPrice}
-            </span>
+            </Numeric>
 
             <div className={`flex items-center gap-1.5 text-lg ${colorClass}`}>
               {isPositive ? (
@@ -150,14 +151,14 @@ export function MarketDetailHeader({
               ) : (
                 <TrendingDown className="w-5 h-5" />
               )}
-              <span>{percent}</span>
-              <span>({change})</span>
-              <span>{rangeLabel}</span>
+              <span className="jakarta">{percent}</span>
+              <span className="jakarta">({change})</span>
+              <span className="">{rangeLabel}</span>
             </div>
           </div>
 
           {/* Timestamp Display */}
-          <div className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400 font-normal flex items-center gap-1.5">
+          <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 font-normal flex items-center gap-1.5">
             <span>{formatMarketTimestamp(updatedAt)}</span>
             <span>·</span>
             <span>Data delayed 15m</span>

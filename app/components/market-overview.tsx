@@ -9,6 +9,7 @@ import { AssetType, useMarketQuote } from "../hooks/useMarketQuote";
 import { MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { Sparkline } from "./sparkline";
 import Link from "next/link";
+import { Numeric } from "./numeric";
 
 function MarketCard({
   symbol,
@@ -70,32 +71,32 @@ function MarketCard({
                 15min delay
               </span>
             </div> */}
-            <div className="flex flex-col items-start mx-3.5 mt-5 ">
+            <div className="flex flex-col items-start mx-3.5 mt-5 mb-0.5 ">
               <h2 className=" line-clamp-2 text-zinc-800 text-[18px] font-medium dark:text-zinc-200 text-lg tracking-tight text-wrap leading-tight">
-                {data.displaySymbol}
-              </h2>
-              <h3 className=" line-clamp-2 text-zinc-600 text-[16px] font-normal dark:font-thin dark:text-zinc-200 text-lg tracking-tight text-wrap leading-tight">
                 {data.name}
-              </h3>
+              </h2>
+              {/* <h3 className=" line-clamp-2 text-zinc-600 text-[16px] font-normal dark:font-thin dark:text-zinc-200 text-lg tracking-tight text-wrap leading-tight">
+                {data.name}
+              </h3> */}
             </div>
-            <p className="text-zinc-700 dark:text-zinc-400 text-sm mx-3.5 ">
+            <Numeric className="text-zinc-700  dark:text-zinc-400 text-sm mx-3.5  ">
               {data.value}{" "}
-              <span className="text-zinc-500 dark:text-zinc-400 dark:font-thin tracking-tight">
+              <span className="text-zinc-500  dark:text-zinc-400 dark:font-thin tracking-tight">
                 ({data.change})
               </span>
-            </p>{" "}
+            </Numeric>
           </div>
 
           {/* Performance & Graph */}
           <div className="-translate-y-1">
-            <div className="flex items-center justify-end gap-1.5 font-semibold text-xl mx-2">
+            <Numeric className="flex items-center justify-end gap-1.5 font-semibold text-xl mx-2">
               <span
-                className={`${data.isPositive ? "text-emerald-700" : "text-[#cf0000]"}`}
+                className={` ${data.isPositive ? "text-emerald-700" : "text-[#cf0000]"}`}
               >
                 {data.percent}
               </span>
               <div
-                className={`flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${
+                className={` flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${
                   data.isPositive ? "bg-emerald-700" : "bg-[#cf0000]"
                 }`}
               >
@@ -111,7 +112,7 @@ function MarketCard({
                   />
                 )}
               </div>
-            </div>
+            </Numeric>
 
             {/* Curved Dynamic Sparkline */}
             <div className="-translate-y-4">

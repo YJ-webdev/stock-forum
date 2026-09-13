@@ -29,10 +29,7 @@ export function LeaderboardChart() {
     <div className="">
       <div className="flex flex-col gap-3 py-4">
         {leaders.map((user) => (
-          <div
-            key={user.id}
-            className="flex items-center justify-between text-sm"
-          >
+          <div key={user.id} className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* <span className="font-mono text-xs w-4 text-muted-foreground">
                 #{user.rank}
@@ -48,7 +45,7 @@ export function LeaderboardChart() {
                 </span>
               </div>
             </div>
-            <span className=" text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            <span className=" text-emerald-700 dark:text-emerald-400">
               +${user.totalProfit.toLocaleString()}
             </span>
           </div>
