@@ -123,8 +123,8 @@ export function MarketDetailHeader({
 
           <ChevronRight className="w-4 h-4" />
           <button
-            onClick={() => {}}
-            className="flex capitalize items-center gap-1.5 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+            // onClick={() => {}}
+            className="flex capitalize items-center gap-1.5 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
           >
             <span>{categoryTitle}</span>
           </button>
@@ -132,7 +132,7 @@ export function MarketDetailHeader({
       </div>
 
       {/* Header Title */}
-      <div className="flex items-center justify-between gap-4 my-4">
+      <div className="flex items-center justify-between gap-4 my-2">
         <h1 className="text-[44px] font-bold text-gray-500/50 dark:text-zinc-700 tracking-tight leading-none">
           {name}
         </h1>
@@ -140,20 +140,27 @@ export function MarketDetailHeader({
 
       <div className="flex items-center gap-3 mt-1.5">
         <div className="flex flex-col">
-          <div className="flex items-baseline gap-3">
+          <div className="flex items-baseline gap-3 tracking-tight md:tracking-normal">
             <Numeric className="font-extrabold text-3xl text-zinc-900 dark:text-zinc-100">
               {displayPrice}
             </Numeric>
 
-            <div className={`flex items-center gap-1.5 text-lg ${colorClass}`}>
+            <div
+              className={`flex items-center gap-1.5 text-lg ${colorClass} min-w-0`}
+            >
               {isPositive ? (
-                <TrendingUp className="w-5 h-5" />
+                <TrendingUp className="w-5 h-5 shrink-0" />
               ) : (
-                <TrendingDown className="w-5 h-5" />
+                <TrendingDown className="w-5 h-5 shrink-0" />
               )}
-              <span className="jakarta">{percent}</span>
-              <span className="jakarta">({change})</span>
-              <span className="">{rangeLabel}</span>
+
+              <span className="jakarta shrink-0">{percent}</span>
+
+              <span className="jakarta shrink-0">({change})</span>
+
+              <span className="jakarta whitespace-nowrap text-sm shrink-0">
+                {rangeLabel}
+              </span>
             </div>
           </div>
 

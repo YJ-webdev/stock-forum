@@ -18,7 +18,7 @@ function NewsRow({ item }: { item: NewsItem }) {
     >
       <div className="flex items-center gap-4 min-w-0 pr-2">
         {/* Publisher Brand Icon */}
-        <div className="relative h-7 w-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-200 dark:border-zinc-700/50 overflow-hidden">
+        <div className="relative h-7 w-7 rounded-full  flex items-center justify-center shrink-0 border overflow-hidden">
           {!imgError && item.sourceIcon ? (
             <Image
               src={item.sourceIcon}
@@ -62,7 +62,7 @@ export function NewsCarousel({ news }: { news: NewsItem[] }) {
   if (!news || news.length === 0) return null;
 
   return (
-    <div className="flex flex-col w-full bg-white dark:bg-zinc-900  sm:bg-gray-100 sm:dark:bg-zinc-800 px-4 py-4 mt-3">
+    <div className="flex flex-col w-full  px-4 py-4 mt-3">
       <div className="flex items-center gap-1 py-1">
         <div className="flex-1 overflow-hidden">
           <NewsRow item={news[currentIndex]} />

@@ -107,7 +107,7 @@ export default function MarketDetailPage() {
               previousClose={data.previousClose}
             />
           </div>
-          <div className="flex gap-2 flex-wrap m-4">
+          <div className="flex justify-between md:justify-start gap-2 flex-wrap mx-2 my-4 md:mx-4">
             {RANGES.map((r) => (
               <button
                 key={r}

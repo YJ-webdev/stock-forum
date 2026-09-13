@@ -66,7 +66,7 @@ export default function UserMenu({
       <Button
         variant="default"
         onClick={onLoginClick}
-        className="flex items-center text-auto bg-transparent hover:bg-transparent cursor-pointer"
+        className="flex items-center text-auto -ml-2.75 -mr-2 bg-transparent hover:bg-transparent cursor-pointer"
       >
         <TbUser className="size-6" strokeWidth={1.5} />
       </Button>

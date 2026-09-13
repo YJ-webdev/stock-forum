@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "./header";
 import PanelLeft from "./panel-left";
 import { LeaderboardChart } from "./leader-board-chart";
@@ -32,6 +32,51 @@ export default function LayoutShell({
 }: LayoutShellProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1280) {
+        setIsOpen(true);
+      } else {
+        setIsOpen(false);
+      }
+    };
+
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [setIsOpen]);
+
+  // Keyboard shortcuts: Ctrl+B / Cmd+B to toggle, Esc to close
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        setIsOpen(false);
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+        const activeElement = document.activeElement;
+        const isInputField =
+          activeElement?.tagName === "INPUT" ||
+          activeElement?.tagName === "TEXTAREA" ||
+          (activeElement as HTMLElement)?.isContentEditable;
+
+        if (!isInputField) {
+          e.preventDefault();
+          setIsOpen((prev) => !prev);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, setIsOpen]);
 
   return (
     <>
