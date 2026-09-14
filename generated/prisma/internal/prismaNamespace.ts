@@ -407,7 +407,9 @@ export const ModelName = {
   ForumCategory: 'ForumCategory',
   MarketAsset: 'MarketAsset',
   AccountBalance: 'AccountBalance',
-  Trade: 'Trade'
+  PortfolioPosition: 'PortfolioPosition',
+  Trade: 'Trade',
+  Watchlist: 'Watchlist'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -423,7 +425,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "post" | "comment" | "like" | "forumCategory" | "marketAsset" | "accountBalance" | "trade"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "post" | "comment" | "like" | "forumCategory" | "marketAsset" | "accountBalance" | "portfolioPosition" | "trade" | "watchlist"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1167,6 +1169,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PortfolioPosition: {
+      payload: Prisma.$PortfolioPositionPayload<ExtArgs>
+      fields: Prisma.PortfolioPositionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PortfolioPositionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PortfolioPositionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PortfolioPositionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PortfolioPositionPayload>
+        }
+        findFirst: {
+          args: Prisma.PortfolioPositionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PortfolioPositionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PortfolioPositionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PortfolioPositionPayload>
+        }
+        findMany: {
+          args: Prisma.PortfolioPositionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PortfolioPositionPayload>[]
+        }
+        create: {
+          args: Prisma.PortfolioPositionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PortfolioPositionPayload>
+        }
+        createMany: {
+          args: Prisma.PortfolioPositionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PortfolioPositionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PortfolioPositionPayload>[]
+        }
+        delete: {
+          args: Prisma.PortfolioPositionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PortfolioPositionPayload>
+        }
+        update: {
+          args: Prisma.PortfolioPositionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PortfolioPositionPayload>
+        }
+        deleteMany: {
+          args: Prisma.PortfolioPositionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PortfolioPositionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PortfolioPositionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PortfolioPositionPayload>[]
+        }
+        upsert: {
+          args: Prisma.PortfolioPositionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PortfolioPositionPayload>
+        }
+        aggregate: {
+          args: Prisma.PortfolioPositionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePortfolioPosition>
+        }
+        groupBy: {
+          args: Prisma.PortfolioPositionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PortfolioPositionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PortfolioPositionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PortfolioPositionCountAggregateOutputType> | number
+        }
+      }
+    }
     Trade: {
       payload: Prisma.$TradePayload<ExtArgs>
       fields: Prisma.TradeFieldRefs
@@ -1238,6 +1314,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.TradeCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.TradeCountAggregateOutputType> | number
+        }
+      }
+    }
+    Watchlist: {
+      payload: Prisma.$WatchlistPayload<ExtArgs>
+      fields: Prisma.WatchlistFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.WatchlistFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WatchlistPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.WatchlistFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WatchlistPayload>
+        }
+        findFirst: {
+          args: Prisma.WatchlistFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WatchlistPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.WatchlistFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WatchlistPayload>
+        }
+        findMany: {
+          args: Prisma.WatchlistFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WatchlistPayload>[]
+        }
+        create: {
+          args: Prisma.WatchlistCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WatchlistPayload>
+        }
+        createMany: {
+          args: Prisma.WatchlistCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.WatchlistCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WatchlistPayload>[]
+        }
+        delete: {
+          args: Prisma.WatchlistDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WatchlistPayload>
+        }
+        update: {
+          args: Prisma.WatchlistUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WatchlistPayload>
+        }
+        deleteMany: {
+          args: Prisma.WatchlistDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.WatchlistUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.WatchlistUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WatchlistPayload>[]
+        }
+        upsert: {
+          args: Prisma.WatchlistUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WatchlistPayload>
+        }
+        aggregate: {
+          args: Prisma.WatchlistAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWatchlist>
+        }
+        groupBy: {
+          args: Prisma.WatchlistGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WatchlistGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.WatchlistCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WatchlistCountAggregateOutputType> | number
         }
       }
     }
@@ -1337,7 +1487,9 @@ export const PostScalarFieldEnum = {
   title: 'title',
   content: 'content',
   stockTicker: 'stockTicker',
+  viewCount: 'viewCount',
   createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
   authorId: 'authorId',
   categoryId: 'categoryId'
 } as const
@@ -1382,8 +1534,11 @@ export type ForumCategoryScalarFieldEnum = (typeof ForumCategoryScalarFieldEnum)
 export const MarketAssetScalarFieldEnum = {
   id: 'id',
   symbol: 'symbol',
+  displaySymbol: 'displaySymbol',
   name: 'name',
   category: 'category',
+  assetType: 'assetType',
+  timezone: 'timezone',
   logoUrl: 'logoUrl',
   lastPrice: 'lastPrice',
   change: 'change',
@@ -1410,6 +1565,18 @@ export const AccountBalanceScalarFieldEnum = {
 export type AccountBalanceScalarFieldEnum = (typeof AccountBalanceScalarFieldEnum)[keyof typeof AccountBalanceScalarFieldEnum]
 
 
+export const PortfolioPositionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  symbol: 'symbol',
+  quantity: 'quantity',
+  avgCost: 'avgCost',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PortfolioPositionScalarFieldEnum = (typeof PortfolioPositionScalarFieldEnum)[keyof typeof PortfolioPositionScalarFieldEnum]
+
+
 export const TradeScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -1427,12 +1594,29 @@ export const TradeScalarFieldEnum = {
 export type TradeScalarFieldEnum = (typeof TradeScalarFieldEnum)[keyof typeof TradeScalarFieldEnum]
 
 
+export const WatchlistScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  symbol: 'symbol',
+  createdAt: 'createdAt'
+} as const
+
+export type WatchlistScalarFieldEnum = (typeof WatchlistScalarFieldEnum)[keyof typeof WatchlistScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -1449,6 +1633,15 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 
@@ -1514,16 +1707,30 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
- * Reference to a field of type 'Float'
+ * Reference to a field of type 'Json'
  */
-export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
     
 
 
 /**
- * Reference to a field of type 'Float[]'
+ * Reference to a field of type 'QueryMode'
  */
-export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'Decimal'
+ */
+export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
+    
+
+
+/**
+ * Reference to a field of type 'Decimal[]'
+ */
+export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
     
 
 
@@ -1552,6 +1759,20 @@ export type EnumTradeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
  * Reference to a field of type 'TradeStatus[]'
  */
 export type ListEnumTradeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TradeStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 /**
@@ -1715,7 +1936,9 @@ export type GlobalOmitConfig = {
   forumCategory?: Prisma.ForumCategoryOmit
   marketAsset?: Prisma.MarketAssetOmit
   accountBalance?: Prisma.AccountBalanceOmit
+  portfolioPosition?: Prisma.PortfolioPositionOmit
   trade?: Prisma.TradeOmit
+  watchlist?: Prisma.WatchlistOmit
 }
 
 /* Types for Logging */

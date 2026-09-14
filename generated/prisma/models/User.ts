@@ -221,6 +221,8 @@ export type UserWhereInput = {
   likes?: Prisma.LikeListRelationFilter
   balance?: Prisma.XOR<Prisma.AccountBalanceNullableScalarRelationFilter, Prisma.AccountBalanceWhereInput> | null
   trades?: Prisma.TradeListRelationFilter
+  positions?: Prisma.PortfolioPositionListRelationFilter
+  watchlist?: Prisma.WatchlistListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -240,6 +242,8 @@ export type UserOrderByWithRelationInput = {
   likes?: Prisma.LikeOrderByRelationAggregateInput
   balance?: Prisma.AccountBalanceOrderByWithRelationInput
   trades?: Prisma.TradeOrderByRelationAggregateInput
+  positions?: Prisma.PortfolioPositionOrderByRelationAggregateInput
+  watchlist?: Prisma.WatchlistOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -262,6 +266,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   likes?: Prisma.LikeListRelationFilter
   balance?: Prisma.XOR<Prisma.AccountBalanceNullableScalarRelationFilter, Prisma.AccountBalanceWhereInput> | null
   trades?: Prisma.TradeListRelationFilter
+  positions?: Prisma.PortfolioPositionListRelationFilter
+  watchlist?: Prisma.WatchlistListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -311,6 +317,8 @@ export type UserCreateInput = {
   likes?: Prisma.LikeCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -330,6 +338,8 @@ export type UserUncheckedCreateInput = {
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -349,6 +359,8 @@ export type UserUpdateInput = {
   likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -368,6 +380,8 @@ export type UserUncheckedUpdateInput = {
   likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -551,6 +565,20 @@ export type UserUpdateOneRequiredWithoutBalanceNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutBalanceInput, Prisma.UserUpdateWithoutBalanceInput>, Prisma.UserUncheckedUpdateWithoutBalanceInput>
 }
 
+export type UserCreateNestedOneWithoutPositionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPositionsInput, Prisma.UserUncheckedCreateWithoutPositionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPositionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutPositionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPositionsInput, Prisma.UserUncheckedCreateWithoutPositionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPositionsInput
+  upsert?: Prisma.UserUpsertWithoutPositionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPositionsInput, Prisma.UserUpdateWithoutPositionsInput>, Prisma.UserUncheckedUpdateWithoutPositionsInput>
+}
+
 export type UserCreateNestedOneWithoutTradesInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutTradesInput, Prisma.UserUncheckedCreateWithoutTradesInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutTradesInput
@@ -563,6 +591,20 @@ export type UserUpdateOneRequiredWithoutTradesNestedInput = {
   upsert?: Prisma.UserUpsertWithoutTradesInput
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutTradesInput, Prisma.UserUpdateWithoutTradesInput>, Prisma.UserUncheckedUpdateWithoutTradesInput>
+}
+
+export type UserCreateNestedOneWithoutWatchlistInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutWatchlistInput, Prisma.UserUncheckedCreateWithoutWatchlistInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWatchlistInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutWatchlistNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutWatchlistInput, Prisma.UserUncheckedCreateWithoutWatchlistInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWatchlistInput
+  upsert?: Prisma.UserUpsertWithoutWatchlistInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWatchlistInput, Prisma.UserUpdateWithoutWatchlistInput>, Prisma.UserUncheckedUpdateWithoutWatchlistInput>
 }
 
 export type UserCreateWithoutAccountsInput = {
@@ -581,6 +623,8 @@ export type UserCreateWithoutAccountsInput = {
   likes?: Prisma.LikeCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAccountsInput = {
@@ -599,6 +643,8 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAccountsInput = {
@@ -633,6 +679,8 @@ export type UserUpdateWithoutAccountsInput = {
   likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -651,6 +699,8 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionsInput = {
@@ -669,6 +719,8 @@ export type UserCreateWithoutSessionsInput = {
   likes?: Prisma.LikeCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -687,6 +739,8 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -721,6 +775,8 @@ export type UserUpdateWithoutSessionsInput = {
   likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -739,6 +795,8 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPostsInput = {
@@ -757,6 +815,8 @@ export type UserCreateWithoutPostsInput = {
   likes?: Prisma.LikeCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPostsInput = {
@@ -775,6 +835,8 @@ export type UserUncheckedCreateWithoutPostsInput = {
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPostsInput = {
@@ -809,6 +871,8 @@ export type UserUpdateWithoutPostsInput = {
   likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPostsInput = {
@@ -827,6 +891,8 @@ export type UserUncheckedUpdateWithoutPostsInput = {
   likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCommentsInput = {
@@ -845,6 +911,8 @@ export type UserCreateWithoutCommentsInput = {
   likes?: Prisma.LikeCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCommentsInput = {
@@ -863,6 +931,8 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCommentsInput = {
@@ -897,6 +967,8 @@ export type UserUpdateWithoutCommentsInput = {
   likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCommentsInput = {
@@ -915,6 +987,8 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutLikesInput = {
@@ -933,6 +1007,8 @@ export type UserCreateWithoutLikesInput = {
   comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutLikesInput = {
@@ -951,6 +1027,8 @@ export type UserUncheckedCreateWithoutLikesInput = {
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutLikesInput = {
@@ -985,6 +1063,8 @@ export type UserUpdateWithoutLikesInput = {
   comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLikesInput = {
@@ -1003,6 +1083,8 @@ export type UserUncheckedUpdateWithoutLikesInput = {
   comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutBalanceInput = {
@@ -1021,6 +1103,8 @@ export type UserCreateWithoutBalanceInput = {
   comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
   likes?: Prisma.LikeCreateNestedManyWithoutUserInput
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutBalanceInput = {
@@ -1039,6 +1123,8 @@ export type UserUncheckedCreateWithoutBalanceInput = {
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutBalanceInput = {
@@ -1073,6 +1159,8 @@ export type UserUpdateWithoutBalanceInput = {
   comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
   likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutBalanceInput = {
@@ -1091,6 +1179,104 @@ export type UserUncheckedUpdateWithoutBalanceInput = {
   comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
   likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutPositionsInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  country?: string | null
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  posts?: Prisma.PostCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
+  likes?: Prisma.LikeCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
+  trades?: Prisma.TradeCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutPositionsInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  country?: string | null
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  posts?: Prisma.PostUncheckedCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
+  likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
+  trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutPositionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPositionsInput, Prisma.UserUncheckedCreateWithoutPositionsInput>
+}
+
+export type UserUpsertWithoutPositionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPositionsInput, Prisma.UserUncheckedUpdateWithoutPositionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPositionsInput, Prisma.UserUncheckedCreateWithoutPositionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPositionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPositionsInput, Prisma.UserUncheckedUpdateWithoutPositionsInput>
+}
+
+export type UserUpdateWithoutPositionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  posts?: Prisma.PostUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
+  likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
+  trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPositionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  posts?: Prisma.PostUncheckedUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
+  likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
+  trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutTradesInput = {
@@ -1109,6 +1295,8 @@ export type UserCreateWithoutTradesInput = {
   comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
   likes?: Prisma.LikeCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutTradesInput = {
@@ -1127,6 +1315,8 @@ export type UserUncheckedCreateWithoutTradesInput = {
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutTradesInput = {
@@ -1161,6 +1351,8 @@ export type UserUpdateWithoutTradesInput = {
   comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
   likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTradesInput = {
@@ -1179,6 +1371,104 @@ export type UserUncheckedUpdateWithoutTradesInput = {
   comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
   likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutWatchlistInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  country?: string | null
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  posts?: Prisma.PostCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
+  likes?: Prisma.LikeCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
+  trades?: Prisma.TradeCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutWatchlistInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  country?: string | null
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  posts?: Prisma.PostUncheckedCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
+  likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
+  trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutWatchlistInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutWatchlistInput, Prisma.UserUncheckedCreateWithoutWatchlistInput>
+}
+
+export type UserUpsertWithoutWatchlistInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutWatchlistInput, Prisma.UserUncheckedUpdateWithoutWatchlistInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutWatchlistInput, Prisma.UserUncheckedCreateWithoutWatchlistInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutWatchlistInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutWatchlistInput, Prisma.UserUncheckedUpdateWithoutWatchlistInput>
+}
+
+export type UserUpdateWithoutWatchlistInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  posts?: Prisma.PostUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
+  likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
+  trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutWatchlistInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  posts?: Prisma.PostUncheckedUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
+  likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
+  trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -1193,6 +1483,8 @@ export type UserCountOutputType = {
   comments: number
   likes: number
   trades: number
+  positions: number
+  watchlist: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1202,6 +1494,8 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   comments?: boolean | UserCountOutputTypeCountCommentsArgs
   likes?: boolean | UserCountOutputTypeCountLikesArgs
   trades?: boolean | UserCountOutputTypeCountTradesArgs
+  positions?: boolean | UserCountOutputTypeCountPositionsArgs
+  watchlist?: boolean | UserCountOutputTypeCountWatchlistArgs
 }
 
 /**
@@ -1256,6 +1550,20 @@ export type UserCountOutputTypeCountTradesArgs<ExtArgs extends runtime.Types.Ext
   where?: Prisma.TradeWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountPositionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PortfolioPositionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountWatchlistArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WatchlistWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1274,6 +1582,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   likes?: boolean | Prisma.User$likesArgs<ExtArgs>
   balance?: boolean | Prisma.User$balanceArgs<ExtArgs>
   trades?: boolean | Prisma.User$tradesArgs<ExtArgs>
+  positions?: boolean | Prisma.User$positionsArgs<ExtArgs>
+  watchlist?: boolean | Prisma.User$watchlistArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1322,6 +1632,8 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   likes?: boolean | Prisma.User$likesArgs<ExtArgs>
   balance?: boolean | Prisma.User$balanceArgs<ExtArgs>
   trades?: boolean | Prisma.User$tradesArgs<ExtArgs>
+  positions?: boolean | Prisma.User$positionsArgs<ExtArgs>
+  watchlist?: boolean | Prisma.User$watchlistArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1337,6 +1649,8 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     likes: Prisma.$LikePayload<ExtArgs>[]
     balance: Prisma.$AccountBalancePayload<ExtArgs> | null
     trades: Prisma.$TradePayload<ExtArgs>[]
+    positions: Prisma.$PortfolioPositionPayload<ExtArgs>[]
+    watchlist: Prisma.$WatchlistPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1749,6 +2063,8 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   likes<T extends Prisma.User$likesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$likesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LikePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   balance<T extends Prisma.User$balanceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$balanceArgs<ExtArgs>>): Prisma.Prisma__AccountBalanceClient<runtime.Types.Result.GetResult<Prisma.$AccountBalancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   trades<T extends Prisma.User$tradesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$tradesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  positions<T extends Prisma.User$positionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$positionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PortfolioPositionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  watchlist<T extends Prisma.User$watchlistArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$watchlistArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WatchlistPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2340,6 +2656,54 @@ export type User$tradesArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   distinct?: Prisma.TradeScalarFieldEnum | Prisma.TradeScalarFieldEnum[]
+}
+
+/**
+ * User.positions
+ */
+export type User$positionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PortfolioPosition
+   */
+  select?: Prisma.PortfolioPositionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PortfolioPosition
+   */
+  omit?: Prisma.PortfolioPositionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PortfolioPositionInclude<ExtArgs> | null
+  where?: Prisma.PortfolioPositionWhereInput
+  orderBy?: Prisma.PortfolioPositionOrderByWithRelationInput | Prisma.PortfolioPositionOrderByWithRelationInput[]
+  cursor?: Prisma.PortfolioPositionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PortfolioPositionScalarFieldEnum | Prisma.PortfolioPositionScalarFieldEnum[]
+}
+
+/**
+ * User.watchlist
+ */
+export type User$watchlistArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Watchlist
+   */
+  select?: Prisma.WatchlistSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Watchlist
+   */
+  omit?: Prisma.WatchlistOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WatchlistInclude<ExtArgs> | null
+  where?: Prisma.WatchlistWhereInput
+  orderBy?: Prisma.WatchlistOrderByWithRelationInput | Prisma.WatchlistOrderByWithRelationInput[]
+  cursor?: Prisma.WatchlistWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WatchlistScalarFieldEnum | Prisma.WatchlistScalarFieldEnum[]
 }
 
 /**

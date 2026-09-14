@@ -27,20 +27,20 @@ export type AggregateAccountBalance = {
 }
 
 export type AccountBalanceAvgAggregateOutputType = {
-  cash: number | null
-  pnl: number | null
+  cash: runtime.Decimal | null
+  pnl: runtime.Decimal | null
 }
 
 export type AccountBalanceSumAggregateOutputType = {
-  cash: number | null
-  pnl: number | null
+  cash: runtime.Decimal | null
+  pnl: runtime.Decimal | null
 }
 
 export type AccountBalanceMinAggregateOutputType = {
   id: string | null
   userId: string | null
-  cash: number | null
-  pnl: number | null
+  cash: runtime.Decimal | null
+  pnl: runtime.Decimal | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -48,8 +48,8 @@ export type AccountBalanceMinAggregateOutputType = {
 export type AccountBalanceMaxAggregateOutputType = {
   id: string | null
   userId: string | null
-  cash: number | null
-  pnl: number | null
+  cash: runtime.Decimal | null
+  pnl: runtime.Decimal | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -192,8 +192,8 @@ export type AccountBalanceGroupByArgs<ExtArgs extends runtime.Types.Extensions.I
 export type AccountBalanceGroupByOutputType = {
   id: string
   userId: string
-  cash: number
-  pnl: number
+  cash: runtime.Decimal
+  pnl: runtime.Decimal
   createdAt: Date
   updatedAt: Date
   _count: AccountBalanceCountAggregateOutputType | null
@@ -224,8 +224,8 @@ export type AccountBalanceWhereInput = {
   NOT?: Prisma.AccountBalanceWhereInput | Prisma.AccountBalanceWhereInput[]
   id?: Prisma.StringFilter<"AccountBalance"> | string
   userId?: Prisma.StringFilter<"AccountBalance"> | string
-  cash?: Prisma.FloatFilter<"AccountBalance"> | number
-  pnl?: Prisma.FloatFilter<"AccountBalance"> | number
+  cash?: Prisma.DecimalFilter<"AccountBalance"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: Prisma.DecimalFilter<"AccountBalance"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Prisma.DateTimeFilter<"AccountBalance"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AccountBalance"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -247,8 +247,8 @@ export type AccountBalanceWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.AccountBalanceWhereInput | Prisma.AccountBalanceWhereInput[]
   OR?: Prisma.AccountBalanceWhereInput[]
   NOT?: Prisma.AccountBalanceWhereInput | Prisma.AccountBalanceWhereInput[]
-  cash?: Prisma.FloatFilter<"AccountBalance"> | number
-  pnl?: Prisma.FloatFilter<"AccountBalance"> | number
+  cash?: Prisma.DecimalFilter<"AccountBalance"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: Prisma.DecimalFilter<"AccountBalance"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Prisma.DateTimeFilter<"AccountBalance"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AccountBalance"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -274,16 +274,16 @@ export type AccountBalanceScalarWhereWithAggregatesInput = {
   NOT?: Prisma.AccountBalanceScalarWhereWithAggregatesInput | Prisma.AccountBalanceScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"AccountBalance"> | string
   userId?: Prisma.StringWithAggregatesFilter<"AccountBalance"> | string
-  cash?: Prisma.FloatWithAggregatesFilter<"AccountBalance"> | number
-  pnl?: Prisma.FloatWithAggregatesFilter<"AccountBalance"> | number
+  cash?: Prisma.DecimalWithAggregatesFilter<"AccountBalance"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: Prisma.DecimalWithAggregatesFilter<"AccountBalance"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"AccountBalance"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"AccountBalance"> | Date | string
 }
 
 export type AccountBalanceCreateInput = {
   id?: string
-  cash?: number
-  pnl?: number
+  cash?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutBalanceInput
@@ -292,16 +292,16 @@ export type AccountBalanceCreateInput = {
 export type AccountBalanceUncheckedCreateInput = {
   id?: string
   userId: string
-  cash?: number
-  pnl?: number
+  cash?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type AccountBalanceUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  cash?: Prisma.FloatFieldUpdateOperationsInput | number
-  pnl?: Prisma.FloatFieldUpdateOperationsInput | number
+  cash?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutBalanceNestedInput
@@ -310,8 +310,8 @@ export type AccountBalanceUpdateInput = {
 export type AccountBalanceUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
-  cash?: Prisma.FloatFieldUpdateOperationsInput | number
-  pnl?: Prisma.FloatFieldUpdateOperationsInput | number
+  cash?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -319,16 +319,16 @@ export type AccountBalanceUncheckedUpdateInput = {
 export type AccountBalanceCreateManyInput = {
   id?: string
   userId: string
-  cash?: number
-  pnl?: number
+  cash?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type AccountBalanceUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  cash?: Prisma.FloatFieldUpdateOperationsInput | number
-  pnl?: Prisma.FloatFieldUpdateOperationsInput | number
+  cash?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -336,8 +336,8 @@ export type AccountBalanceUpdateManyMutationInput = {
 export type AccountBalanceUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
-  cash?: Prisma.FloatFieldUpdateOperationsInput | number
-  pnl?: Prisma.FloatFieldUpdateOperationsInput | number
+  cash?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -418,16 +418,16 @@ export type AccountBalanceUncheckedUpdateOneWithoutUserNestedInput = {
 
 export type AccountBalanceCreateWithoutUserInput = {
   id?: string
-  cash?: number
-  pnl?: number
+  cash?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type AccountBalanceUncheckedCreateWithoutUserInput = {
   id?: string
-  cash?: number
-  pnl?: number
+  cash?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -450,16 +450,16 @@ export type AccountBalanceUpdateToOneWithWhereWithoutUserInput = {
 
 export type AccountBalanceUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  cash?: Prisma.FloatFieldUpdateOperationsInput | number
-  pnl?: Prisma.FloatFieldUpdateOperationsInput | number
+  cash?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type AccountBalanceUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  cash?: Prisma.FloatFieldUpdateOperationsInput | number
-  pnl?: Prisma.FloatFieldUpdateOperationsInput | number
+  cash?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  pnl?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -524,8 +524,8 @@ export type $AccountBalancePayload<ExtArgs extends runtime.Types.Extensions.Inte
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     userId: string
-    cash: number
-    pnl: number
+    cash: runtime.Decimal
+    pnl: runtime.Decimal
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["accountBalance"]>
@@ -954,8 +954,8 @@ export interface Prisma__AccountBalanceClient<T, Null = never, ExtArgs extends r
 export interface AccountBalanceFieldRefs {
   readonly id: Prisma.FieldRef<"AccountBalance", 'String'>
   readonly userId: Prisma.FieldRef<"AccountBalance", 'String'>
-  readonly cash: Prisma.FieldRef<"AccountBalance", 'Float'>
-  readonly pnl: Prisma.FieldRef<"AccountBalance", 'Float'>
+  readonly cash: Prisma.FieldRef<"AccountBalance", 'Decimal'>
+  readonly pnl: Prisma.FieldRef<"AccountBalance", 'Decimal'>
   readonly createdAt: Prisma.FieldRef<"AccountBalance", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"AccountBalance", 'DateTime'>
 }

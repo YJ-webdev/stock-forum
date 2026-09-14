@@ -46,7 +46,7 @@ export default async function MainLayout({
       user={user}
       news={news}
       categories={categories}
-      marketData={marketData}
+      // marketData={marketData}
     >
       {children}
     </LayoutShell>

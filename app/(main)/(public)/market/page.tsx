@@ -1,7 +1,7 @@
 // app/market/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ChartRange, useMarketQuote } from "@/app/hooks/useMarketQuote";
 import { DetailChart } from "@/app/components/detail-chart";
@@ -62,10 +62,37 @@ export default function MarketDetailPage() {
     activeRange as ChartRange,
     selectedDisplaySymbol,
     selectedAssetType as AssetType,
+
+    0, // polling
+
+    activeRange === "1D" ? "1m" : undefined,
   );
 
   // Fallback metadata lookup for timezone
   const symbolMeta = getMarketSymbolMeta(selectedSymbol);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const handleRangeChange = (range: string) => {
+    setActiveRange(range);
+
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    const rect = chart.getBoundingClientRect();
+
+    const visibleTop = Math.max(rect.top, 0);
+    const visibleBottom = Math.min(rect.bottom, window.innerHeight);
+
+    const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+    const visibleRatio = visibleHeight / rect.height;
+
+    // Only scroll when less than half of the chart is visible
+    if (visibleRatio < 0.7) {
+      chart.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto mt-4 ">
@@ -90,7 +117,7 @@ export default function MarketDetailPage() {
             }
           />
           {/* chart */}
-          <div className="md:mx-4">
+          <div ref={chartRef} className="scroll-mt-24 md:mx-4 mt-1">
             <DetailChart
               history={data.history}
               isPositive={data.isPositive}
@@ -105,7 +132,7 @@ export default function MarketDetailPage() {
             {RANGES.map((r) => (
               <button
                 key={r}
-                onClick={() => setActiveRange(r)}
+                onClick={() => handleRangeChange(r)}
                 className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all cursor-pointer ${
                   activeRange === r
                     ? "bg-zinc-300/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"

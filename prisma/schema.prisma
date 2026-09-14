@@ -1,9 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+  
 }
 
 enum Role {
@@ -27,7 +29,8 @@ model User {
   email         String?         @unique
   emailVerified DateTime?
   image         String?
-  country       String?         @default("US")
+  country       String?        
+    language String @default("en")  
   role          Role            @default(USER)
   
   accounts      Account[]
@@ -39,6 +42,7 @@ model User {
   trades        Trade[]
   positions     PortfolioPosition[]
   watchlist     Watchlist[]
+  predictions   Prediction[]
 
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
@@ -233,4 +237,59 @@ model Watchlist {
   createdAt DateTime    @default(now())
 
   @@unique([userId, symbol])
+}
+
+enum PredictionDirection {
+  BULL
+  BEAR
+}
+
+enum PredictionStatus {
+  PENDING
+  WON
+  LOST
+  VOID
+}
+
+model Prediction {
+  id        String @id @default(cuid())
+
+  // User
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Market
+  symbol        String
+  displaySymbol String?
+  assetName     String?
+
+  // User's prediction
+  direction PredictionDirection
+
+  // Snapshot when prediction was made
+  predictionPrice Decimal @db.Decimal(18, 4)
+
+  // Market session being predicted
+  sessionDate DateTime
+
+  // Filled when the prediction is settled
+  closingPrice Decimal?         @db.Decimal(18, 4)
+  status       PredictionStatus @default(PENDING)
+
+  // Points
+  pointsChange Int?
+
+  // Country at the time of prediction
+  country String?
+
+  createdAt DateTime @default(now())
+  settledAt DateTime?
+
+  // One prediction per user / asset / trading session
+  @@unique([userId, symbol, sessionDate])
+
+  @@index([symbol, sessionDate])
+  @@index([userId, createdAt])
+  @@index([country, symbol, sessionDate])
+  @@index([status])
 }

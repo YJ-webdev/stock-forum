@@ -61,7 +61,9 @@ export const ModelName = {
   ForumCategory: 'ForumCategory',
   MarketAsset: 'MarketAsset',
   AccountBalance: 'AccountBalance',
-  Trade: 'Trade'
+  PortfolioPosition: 'PortfolioPosition',
+  Trade: 'Trade',
+  Watchlist: 'Watchlist'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -137,7 +139,9 @@ export const PostScalarFieldEnum = {
   title: 'title',
   content: 'content',
   stockTicker: 'stockTicker',
+  viewCount: 'viewCount',
   createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
   authorId: 'authorId',
   categoryId: 'categoryId'
 } as const
@@ -182,8 +186,11 @@ export type ForumCategoryScalarFieldEnum = (typeof ForumCategoryScalarFieldEnum)
 export const MarketAssetScalarFieldEnum = {
   id: 'id',
   symbol: 'symbol',
+  displaySymbol: 'displaySymbol',
   name: 'name',
   category: 'category',
+  assetType: 'assetType',
+  timezone: 'timezone',
   logoUrl: 'logoUrl',
   lastPrice: 'lastPrice',
   change: 'change',
@@ -210,6 +217,18 @@ export const AccountBalanceScalarFieldEnum = {
 export type AccountBalanceScalarFieldEnum = (typeof AccountBalanceScalarFieldEnum)[keyof typeof AccountBalanceScalarFieldEnum]
 
 
+export const PortfolioPositionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  symbol: 'symbol',
+  quantity: 'quantity',
+  avgCost: 'avgCost',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PortfolioPositionScalarFieldEnum = (typeof PortfolioPositionScalarFieldEnum)[keyof typeof PortfolioPositionScalarFieldEnum]
+
+
 export const TradeScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -227,12 +246,29 @@ export const TradeScalarFieldEnum = {
 export type TradeScalarFieldEnum = (typeof TradeScalarFieldEnum)[keyof typeof TradeScalarFieldEnum]
 
 
+export const WatchlistScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  symbol: 'symbol',
+  createdAt: 'createdAt'
+} as const
+
+export type WatchlistScalarFieldEnum = (typeof WatchlistScalarFieldEnum)[keyof typeof WatchlistScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -249,4 +285,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

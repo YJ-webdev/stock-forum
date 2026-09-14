@@ -121,6 +121,8 @@ function RelativeStockRow({ item }: { item: MarketSymbolItem }) {
           <TrendSparkline
             data={quote?.history}
             isPositive={quote?.isPositive}
+            lunchStartMs={quote?.lunchStartMs}
+            lunchEndMs={quote?.lunchEndMs}
           />
         </div>
       </td>

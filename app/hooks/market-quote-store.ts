@@ -2,6 +2,7 @@
 
 import type {
   AssetType,
+  ChartInterval,
   ChartPoint,
   ChartRange,
   MarketItem,
@@ -31,12 +32,20 @@ interface StoreEntry {
 
 const store = new Map<string, StoreEntry>();
 
-function getKey(symbol: string, range: ChartRange) {
-  return `${symbol}::${range}`;
+function getKey(
+  symbol: string,
+  range: ChartRange,
+  chartInterval?: ChartInterval,
+) {
+  return `${symbol}::${range}::${chartInterval ?? "default"}`;
 }
 
-function getEntry(symbol: string, range: ChartRange): StoreEntry {
-  const key = getKey(symbol, range);
+function getEntry(
+  symbol: string,
+  range: ChartRange,
+  chartInterval?: ChartInterval,
+): StoreEntry {
+  const key = getKey(symbol, range, chartInterval);
 
   let entry = store.get(key);
 
@@ -44,14 +53,10 @@ function getEntry(symbol: string, range: ChartRange): StoreEntry {
     entry = {
       data: null,
       loading: false,
-
       listeners: new Set(),
-
       fetchPromise: null,
-
       subscribers: 0,
       pollingSubscribers: 0,
-
       pollingInterval: null,
 
       snapshot: {
@@ -85,23 +90,31 @@ async function fetchQuote(
   range: ChartRange,
   displaySymbol: string,
   assetType: AssetType,
+  chartInterval?: ChartInterval,
 ) {
-  const entry = getEntry(symbol, range);
+  const entry = getEntry(symbol, range, chartInterval);
 
-  // If a request is already running, reuse it.
   if (entry.fetchPromise) {
     return entry.fetchPromise;
   }
 
   entry.fetchPromise = (async () => {
     entry.loading = true;
+
     updateSnapshot(entry);
     notify(entry);
 
     try {
-      const res = await fetch(
-        `/api/candles?symbol=${encodeURIComponent(symbol)}&range=${encodeURIComponent(range)}`,
-      );
+      const params = new URLSearchParams({
+        symbol,
+        range,
+      });
+
+      if (chartInterval) {
+        params.set("interval", chartInterval);
+      }
+
+      const res = await fetch(`/api/candles?${params.toString()}`);
 
       if (!res.ok) {
         throw new Error("Fetch failed");
@@ -145,9 +158,7 @@ async function fetchQuote(
 
       entry.data = {
         id: symbol,
-
         name,
-
         displaySymbol,
 
         value: formattedValue,
@@ -166,9 +177,16 @@ async function fetchQuote(
 
         previousClose: json.previousClose,
 
-        updatedAt: points[points.length - 1]?.timestampMs ?? Date.now(),
+        updatedAt:
+          json.updatedAt ??
+          points[points.length - 1]?.timestampMs ??
+          Date.now(),
 
         exchangeTimezone: json.exchangeTimezone,
+
+        lunchStartMs: json.lunchStartMs ?? null,
+
+        lunchEndMs: json.lunchEndMs ?? null,
       };
     } catch (error) {
       console.error(`Market quote error for ${symbol}:`, error);
@@ -176,7 +194,6 @@ async function fetchQuote(
       entry.data = null;
     } finally {
       entry.loading = false;
-
       entry.fetchPromise = null;
 
       updateSnapshot(entry);
@@ -194,8 +211,9 @@ function startPolling(
   displaySymbol: string,
   assetType: AssetType,
   pollingInterval: number,
+  chartInterval?: ChartInterval,
 ) {
-  const entry = getEntry(symbol, range);
+  const entry = getEntry(symbol, range, chartInterval);
 
   // Already polling.
   if (entry.pollingInterval) {
@@ -207,16 +225,19 @@ function startPolling(
       return;
     }
 
-    fetchQuote(symbol, name, range, displaySymbol, assetType);
+    fetchQuote(symbol, name, range, displaySymbol, assetType, chartInterval);
   }, pollingInterval);
 }
 
-function stopPolling(symbol: string, range: ChartRange) {
-  const entry = getEntry(symbol, range);
+function stopPolling(
+  symbol: string,
+  range: ChartRange,
+  chartInterval?: ChartInterval,
+) {
+  const entry = getEntry(symbol, range, chartInterval);
 
   if (entry.pollingInterval) {
     clearInterval(entry.pollingInterval);
-
     entry.pollingInterval = null;
   }
 }
@@ -228,9 +249,10 @@ export function subscribeToMarketQuote(
   displaySymbol: string,
   assetType: AssetType,
   pollingInterval: number,
+  chartInterval: ChartInterval | undefined,
   listener: () => void,
 ) {
-  const entry = getEntry(symbol, range);
+  const entry = getEntry(symbol, range, chartInterval);
 
   entry.listeners.add(listener);
 
@@ -246,12 +268,12 @@ export function subscribeToMarketQuote(
       displaySymbol,
       assetType,
       pollingInterval,
+      chartInterval,
     );
   }
 
-  // Initial request.
   if (!entry.data && !entry.fetchPromise) {
-    fetchQuote(symbol, name, range, displaySymbol, assetType);
+    fetchQuote(symbol, name, range, displaySymbol, assetType, chartInterval);
   }
 
   return () => {
@@ -265,14 +287,18 @@ export function subscribeToMarketQuote(
       if (entry.pollingSubscribers <= 0) {
         entry.pollingSubscribers = 0;
 
-        stopPolling(symbol, range);
+        stopPolling(symbol, range, chartInterval);
       }
     }
   };
 }
 
-export function getMarketQuoteSnapshot(symbol: string, range: ChartRange) {
-  return getEntry(symbol, range).snapshot;
+export function getMarketQuoteSnapshot(
+  symbol: string,
+  range: ChartRange,
+  chartInterval?: ChartInterval,
+) {
+  return getEntry(symbol, range, chartInterval).snapshot;
 }
 
 export async function refreshMarketQuote(

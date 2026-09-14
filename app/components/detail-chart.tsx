@@ -24,21 +24,23 @@ export interface DetailChartProps {
   isClosed: boolean;
   range: string;
   previousClose?: number;
-  lunchStartMs?: number; // e.g. Timestamp for 11:30
-  lunchEndMs?: number; // e.g. Timestamp for 13:00
+  lunchStartMs?: number | null;
+  lunchEndMs?: number | null;
+  exchangeTimezone?: string;
 }
 
 export function DetailChart({
   history,
   isPositive,
-  isClosed,
   range,
   previousClose,
   lunchStartMs,
   lunchEndMs,
+  exchangeTimezone,
 }: DetailChartProps) {
   const [chartType, setChartType] = useState<ChartType>("area");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const [hoveredPoint, setHoveredPoint] = useState<{
     x: number;
     y: number;
@@ -55,69 +57,109 @@ export function DetailChart({
     );
   }
 
-  // Layout Dimensions
+  // --------------------------------------------------
+  // LAYOUT
+  // --------------------------------------------------
+
   const width = 800;
   const height = 320;
+
   const paddingLeft = 65;
   const paddingRight = 20;
   const paddingTop = 30;
+
+  // Reduced from 40 -> 30.
+  // This gives the plot/grid a little more vertical room.
   const paddingBottom = 40;
 
   const chartWidth = width - paddingLeft - paddingRight;
   const chartHeight = height - paddingTop - paddingBottom;
 
+  const chartBottom = paddingTop + chartHeight;
+
+  // --------------------------------------------------
+  // PRICE RANGE
+  // --------------------------------------------------
+
   const prices = history.map((p) => p.price);
-  const validPrices = previousClose ? [...prices, previousClose] : prices;
+
+  const validPrices =
+    previousClose != null ? [...prices, previousClose] : prices;
 
   const rawMin = Math.min(...validPrices);
   const rawMax = Math.max(...validPrices);
 
-  const min = rawMin - (rawMax - rawMin) * 0.05;
-  const max = rawMax + (rawMax - rawMin) * 0.05;
+  const rawPriceRange = rawMax - rawMin;
+
+  const min =
+    rawPriceRange === 0
+      ? rawMin - rawMin * 0.005
+      : rawMin - rawPriceRange * 0.05;
+
+  const max =
+    rawPriceRange === 0
+      ? rawMax + rawMax * 0.005
+      : rawMax + rawPriceRange * 0.05;
+
   const priceRange = max - min || 1;
 
   const baselinePrice = previousClose ?? history[0]?.price ?? 1;
 
-  // Map Coordinates
+  // --------------------------------------------------
+  // TIME RANGE
+  // --------------------------------------------------
+
+  const is1D = range === "1D";
+
+  const firstTimestamp = history[0]?.timestampMs ?? 0;
+
+  const lastTimestamp =
+    history[history.length - 1]?.timestampMs ?? firstTimestamp;
+
+  const fullTimeRange = Math.max(lastTimestamp - firstTimestamp, 1);
+
+  // --------------------------------------------------
+  // X POSITION
+  // --------------------------------------------------
+
+  function getX(timestampMs: number) {
+    const ratio = (timestampMs - firstTimestamp) / fullTimeRange;
+
+    return paddingLeft + Math.max(0, Math.min(1, ratio)) * chartWidth;
+  }
+
+  // --------------------------------------------------
+  // Y POSITION
+  // --------------------------------------------------
+
+  function getY(price: number) {
+    return (
+      paddingTop + chartHeight - ((price - min) / priceRange) * chartHeight
+    );
+  }
+
+  // --------------------------------------------------
+  // MAP DATA -> CHART COORDINATES
+  // --------------------------------------------------
+
   const coords = history.map((pt, idx) => {
-    const x =
-      paddingLeft + (idx / Math.max(history.length - 1, 1)) * chartWidth;
-    const y =
-      paddingTop + chartHeight - ((pt.price - min) / priceRange) * chartHeight;
+    const x = getX(pt.timestampMs);
+    const y = getY(pt.price);
 
     const prevPrice = idx > 0 ? history[idx - 1].price : pt.price;
+
     const open = pt.open ?? prevPrice;
     const close = pt.close ?? pt.price;
 
     const high =
       pt.high ?? Math.max(open, close) + Math.abs(close - open) * 0.5;
+
     const low = pt.low ?? Math.min(open, close) - Math.abs(close - open) * 0.5;
 
-    const openY =
-      paddingTop + chartHeight - ((open - min) / priceRange) * chartHeight;
-    const closeY =
-      paddingTop + chartHeight - ((close - min) / priceRange) * chartHeight;
-    const highY =
-      paddingTop + chartHeight - ((high - min) / priceRange) * chartHeight;
-    const lowY =
-      paddingTop + chartHeight - ((low - min) / priceRange) * chartHeight;
-
-    const isRising = close >= open;
-
-    const unclampedPrevCloseY = previousClose
-      ? paddingTop +
-        chartHeight -
-        ((previousClose - min) / priceRange) * chartHeight
-      : null;
-
-    // Clamp y-position within canvas padding bounds
-    const prevCloseY =
-      unclampedPrevCloseY !== null
-        ? Math.max(
-            paddingTop,
-            Math.min(paddingTop + chartHeight, unclampedPrevCloseY),
-          )
-        : null;
+    const openY = getY(open);
+    const closeY = getY(close);
+    const highY = getY(high);
+    const lowY = getY(low);
 
     return {
       x,
@@ -128,30 +170,60 @@ export function DetailChart({
       closeY,
       highY,
       lowY,
-      isRising,
+      isRising: close >= open,
     };
   });
 
   const lastPoint = coords[coords.length - 1];
 
-  // Identify Lunch indices when range === "1D"
-  const is1D = range === "1D";
+  // --------------------------------------------------
+  // LUNCH BREAK
+  // --------------------------------------------------
+
+  const hasLunch =
+    is1D &&
+    lunchStartMs != null &&
+    lunchEndMs != null &&
+    lunchStartMs > firstTimestamp &&
+    lunchEndMs < lastTimestamp;
+
   let preLunchCoords = coords;
   let postLunchCoords: typeof coords = [];
-  let lunchStartPt: (typeof coords)[0] | undefined;
-  let lunchEndPt: (typeof coords)[0] | undefined;
 
-  if (is1D && lunchStartMs && lunchEndMs) {
-    const startIdx = coords.findIndex((c) => c.timestampMs >= lunchStartMs);
-    const endIdx = coords.findIndex((c) => c.timestampMs >= lunchEndMs);
+  let lunchStartPt: (typeof coords)[number] | undefined;
 
-    if (startIdx !== -1 && endIdx !== -1) {
-      preLunchCoords = coords.slice(0, startIdx);
-      postLunchCoords = coords.slice(endIdx);
-      lunchStartPt = coords[startIdx - 1] || coords[0];
-      lunchEndPt = coords[endIdx];
+  let lunchEndPt: (typeof coords)[number] | undefined;
+
+  if (hasLunch && lunchStartMs != null && lunchEndMs != null) {
+    const beforeLunchIndex = coords.findLastIndex(
+      (point) => point.timestampMs <= lunchStartMs,
+    );
+
+    const afterLunchIndex = coords.findIndex(
+      (point) => point.timestampMs >= lunchEndMs,
+    );
+
+    if (
+      beforeLunchIndex !== -1 &&
+      afterLunchIndex !== -1 &&
+      afterLunchIndex > beforeLunchIndex
+    ) {
+      lunchStartPt = coords[beforeLunchIndex];
+      lunchEndPt = coords[afterLunchIndex];
+
+      preLunchCoords = coords.slice(0, beforeLunchIndex + 1);
+
+      postLunchCoords = coords.slice(afterLunchIndex);
     }
   }
+
+  const lunchStartX = lunchStartMs != null ? getX(lunchStartMs) : null;
+
+  const lunchEndX = lunchEndMs != null ? getX(lunchEndMs) : null;
+
+  // --------------------------------------------------
+  // PATH HELPERS
+  // --------------------------------------------------
 
   const buildPath = (pts: typeof coords) =>
     pts.reduce(
@@ -163,89 +235,212 @@ export function DetailChart({
   const prePathD = buildPath(preLunchCoords);
   const postPathD = buildPath(postLunchCoords);
 
-  const preAreaD = prePathD
-    ? `${prePathD} L ${
-        preLunchCoords[preLunchCoords.length - 1].x
-      },${paddingTop + chartHeight} L ${preLunchCoords[0].x},${
-        paddingTop + chartHeight
-      } Z`
-    : "";
+  const preAreaD =
+    prePathD && preLunchCoords.length > 0
+      ? `${prePathD} L ${
+          preLunchCoords[preLunchCoords.length - 1].x
+        },${chartBottom} L ${preLunchCoords[0].x},${chartBottom} Z`
+      : "";
 
-  const postAreaD = postPathD
-    ? `${postPathD} L ${
-        postLunchCoords[postLunchCoords.length - 1].x
-      },${paddingTop + chartHeight} L ${postLunchCoords[0].x},${
-        paddingTop + chartHeight
-      } Z`
-    : "";
+  const postAreaD =
+    postPathD && postLunchCoords.length > 0
+      ? `${postPathD} L ${
+          postLunchCoords[postLunchCoords.length - 1].x
+        },${chartBottom} L ${postLunchCoords[0].x},${chartBottom} Z`
+      : "";
 
-  // Grid Ticks
+  // --------------------------------------------------
+  // Y GRID / LABELS
+  // --------------------------------------------------
+
   const yTicks = Array.from({ length: 5 }, (_, i) => {
     const priceVal = min + (i / 4) * priceRange;
+
     const yPos = paddingTop + chartHeight - (i / 4) * chartHeight;
-    return { price: priceVal, y: yPos };
+
+    return {
+      price: priceVal,
+      y: yPos,
+    };
   });
 
-  const xTicks = Array.from({ length: 4 }, (_, i) => {
-    const index = Math.floor((i / 3) * (history.length - 1));
-    const pt = history[index] || history[0];
-    const xPos = paddingLeft + (i / 3) * chartWidth;
+  // --------------------------------------------------
+  // DATE / TIME FORMATTERS
+  // --------------------------------------------------
 
-    const d = new Date(pt.timestampMs);
-    let timeLabel = "";
-    if (range === "1D") {
-      timeLabel = d.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-    } else if (range === "5D") {
-      timeLabel = `${d.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      })} ${d.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      })}`;
-    } else {
-      timeLabel = d.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
+  const formatTimeLabel = (timestamp: number) => {
+    return new Date(timestamp).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      ...(exchangeTimezone
+        ? {
+            timeZone: exchangeTimezone,
+          }
+        : {}),
+    });
+  };
+
+  const formatDateLabel = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      ...(exchangeTimezone
+        ? {
+            timeZone: exchangeTimezone,
+          }
+        : {}),
+    });
+  };
+
+  // --------------------------------------------------
+  // EXCHANGE LOCAL TIME PARTS
+  // --------------------------------------------------
+
+  function getLocalTimeParts(timestamp: number) {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      ...(exchangeTimezone
+        ? {
+            timeZone: exchangeTimezone,
+          }
+        : {}),
+    });
+
+    const parts = formatter.formatToParts(new Date(timestamp));
+
+    const hour =
+      Number(parts.find((part) => part.type === "hour")?.value ?? 0) % 24;
+
+    const minute = Number(
+      parts.find((part) => part.type === "minute")?.value ?? 0,
+    );
+
+    return {
+      hour,
+      minute,
+    };
+  }
+
+  // --------------------------------------------------
+  // X GRID
+  // --------------------------------------------------
+
+  let xTicks: {
+    label: string;
+    x: number;
+  }[] = [];
+
+  if (is1D) {
+    const ONE_MINUTE = 60 * 1000;
+
+    const scanStart = Math.ceil(firstTimestamp / ONE_MINUTE) * ONE_MINUTE;
+
+    for (
+      let timestamp = scanStart;
+      timestamp < lastTimestamp;
+      timestamp += ONE_MINUTE
+    ) {
+      const { minute } = getLocalTimeParts(timestamp);
+
+      if (minute === 0) {
+        const distanceFromStart = timestamp - firstTimestamp;
+
+        const distanceFromEnd = lastTimestamp - timestamp;
+
+        const EDGE_MARGIN = 15 * 60 * 1000;
+
+        if (distanceFromStart > EDGE_MARGIN && distanceFromEnd > EDGE_MARGIN) {
+          xTicks.push({
+            label: formatTimeLabel(timestamp),
+            x: getX(timestamp),
+          });
+        }
+      }
     }
+  } else {
+    xTicks = Array.from({ length: 4 }, (_, i) => {
+      const ratio = i / 3;
 
-    return { label: timeLabel, x: xPos };
-  });
+      const timestamp = firstTimestamp + fullTimeRange * ratio;
 
-  const prevCloseY = previousClose
-    ? paddingTop +
-      chartHeight -
-      ((previousClose - min) / priceRange) * chartHeight
-    : null;
+      let label = "";
 
-  const strokeColor = isClosed ? "#94a3b8" : isPositive ? "#008549" : "#cf0000";
+      if (range === "5D") {
+        label = `${formatDateLabel(timestamp)} ${formatTimeLabel(timestamp)}`;
+      } else {
+        label = formatDateLabel(timestamp);
+      }
+
+      return {
+        label,
+        x: paddingLeft + ratio * chartWidth,
+      };
+    });
+  }
+
+  // --------------------------------------------------
+  // PREVIOUS CLOSE
+  // --------------------------------------------------
+
+  const prevCloseY = previousClose != null ? getY(previousClose) : null;
+
+  // --------------------------------------------------
+  // COLOR
+  // --------------------------------------------------
+
+  const strokeColor = isPositive ? "#008549" : "#cf0000";
+
   const gradientId = `detail-area-grad-${isPositive ? "pos" : "neg"}`;
 
+  // --------------------------------------------------
+  // CHART TYPE MENU
+  // --------------------------------------------------
+
   const chartTypeOptions = [
-    { id: "line", label: "Line", icon: TrendingUp },
-    { id: "area", label: "Area", icon: AreaChart },
-    { id: "candle", label: "Candle", icon: CandlestickChart },
-    { id: "bar", label: "Bar", icon: BarChart3 },
+    {
+      id: "line",
+      label: "Line",
+      icon: TrendingUp,
+    },
+    {
+      id: "area",
+      label: "Area",
+      icon: AreaChart,
+    },
+    {
+      id: "candle",
+      label: "Candle",
+      icon: CandlestickChart,
+    },
+    {
+      id: "bar",
+      label: "Bar",
+      icon: BarChart3,
+    },
   ];
 
   const CurrentIcon =
     chartTypeOptions.find((o) => o.id === chartType)?.icon || AreaChart;
 
+  // --------------------------------------------------
+  // HOVER
+  // --------------------------------------------------
+
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
+
     const mouseX = ((e.clientX - rect.left) / rect.width) * width;
 
     let closest = coords[0];
+
     let minDistance = Math.abs(coords[0].x - mouseX);
 
     for (let i = 1; i < coords.length; i++) {
       const dist = Math.abs(coords[i].x - mouseX);
+
       if (dist < minDistance) {
         minDistance = dist;
         closest = coords[i];
@@ -253,14 +448,26 @@ export function DetailChart({
     }
 
     const d = new Date(closest.timestampMs);
+
     const dateStr = d.toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
+      ...(exchangeTimezone
+        ? {
+            timeZone: exchangeTimezone,
+          }
+        : {}),
     });
+
     const timeStr = d.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
+      ...(exchangeTimezone
+        ? {
+            timeZone: exchangeTimezone,
+          }
+        : {}),
     });
 
     const percent = ((closest.price - baselinePrice) / baselinePrice) * 100;
@@ -270,28 +477,56 @@ export function DetailChart({
       y: closest.y,
       price: closest.price,
       percentChange: percent,
-      timeStr: `${dateStr}, ${timeStr} UTC-4`,
+      timeStr: `${dateStr}, ${timeStr}`,
     });
   };
 
+  // --------------------------------------------------
+  // CANDLE / BAR WIDTH
+  // --------------------------------------------------
+
+  let minimumPointSpacing = chartWidth / Math.max(coords.length, 1);
+
+  if (coords.length >= 2) {
+    for (let i = 1; i < coords.length; i++) {
+      const spacing = coords[i].x - coords[i - 1].x;
+
+      if (spacing > 0) {
+        minimumPointSpacing = Math.min(minimumPointSpacing, spacing);
+      }
+    }
+  }
+
+  const candleWidth = Math.max(Math.min(minimumPointSpacing * 0.7, 6), 1);
+
+  const barWidth = Math.max(Math.min(minimumPointSpacing * 0.75, 7), 1);
+
+  // --------------------------------------------------
+  // RENDER
+  // --------------------------------------------------
+
   return (
-    <div className="w-full relative bg-white dark:bg-zinc-900 md:rounded-2xl md:border border-zinc-200 dark:border-zinc-800 p-4 md:shadow-sm select-none">
+    <div className="w-full relative bg-zinc-50 dark:bg-zinc-800 md:rounded-2xl md:border border-zinc-200 dark:border-zinc-800 p-4 md:shadow-sm select-none">
       {/* TOP CONTROL BAR */}
+
       <div className="relative z-20 flex items-center gap-6 mb-4 px-2 dark:text-zinc-300">
         <div className="relative">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2 text-sm font-medium  hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-2 text-sm font-medium hover:text-black dark:hover:text-white transition-colors cursor-pointer"
           >
-            <CurrentIcon className="w-4 h-4 " />
-            <span className="capitalize ">{chartType}</span>
-            <ChevronDown className="hidden md:block w-3.5 h-3.5 " />
+            <CurrentIcon className="w-4 h-4" />
+
+            <span className="capitalize">{chartType}</span>
+
+            <ChevronDown className="hidden md:block w-3.5 h-3.5" />
           </button>
 
           {isMenuOpen && (
             <div className="absolute top-full left-0 mt-2 w-36 bg-zinc-100/90 dark:bg-zinc-800/90 backdrop-blur-md border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl p-1.5 shadow-xl space-y-0.5">
               {chartTypeOptions.map((opt) => {
                 const Icon = opt.icon;
+
                 return (
                   <button
                     key={opt.id}
@@ -299,7 +534,7 @@ export function DetailChart({
                       setChartType(opt.id as ChartType);
                       setIsMenuOpen(false);
                     }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-all cursor-pointer ${
                       chartType === opt.id
                         ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs"
                         : "text-zinc-600 dark:text-zinc-300! hover:bg-zinc-200/60 dark:hover:bg-zinc-700/50"
@@ -314,29 +549,34 @@ export function DetailChart({
           )}
         </div>
 
-        <button className="flex items-center gap-2 text-sm font-medium  hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
-          <TrendingUp className="w-4 h-4 " />
-          <span className="">Compare</span>
-          <ChevronDown className="hidden md:block w-3.5 h-3.5 " />
+        <button className="flex items-center gap-2 text-sm font-medium hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
+          <TrendingUp className="w-4 h-4" />
+          <span>Compare</span>
+          <ChevronDown className="hidden md:block w-3.5 h-3.5" />
         </button>
 
-        <button className="flex items-center gap-2 text-sm font-medium  hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
-          <BarChart3 className="w-4 h-4  " />
-          <span className="">Indicators</span>
-          <ChevronDown className="w-3.5 h-3.5 " />
+        <button className="flex items-center gap-2 text-sm font-medium hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
+          <BarChart3 className="w-4 h-4" />
+          <span>Indicators</span>
+          <ChevronDown className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* HOVER PRICE BADGE */}
+
       {hoveredPoint && (
-        <div className="absolute top-14 left-4 z-10 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2.5 py-1 rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5">
-          <span className="text-zinc-600 dark:text-zinc-400">Price:</span>
-          <span className="text-zinc-900 dark:text-zinc-100 font-bold">
+        <div className="absolute jakarta top-14 right-1/2 translate-x-12/29 z-10 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2.5 py-1 rounded-sm text-xs font-normal shadow-xs flex items-center gap-1.5">
+          <span className="text-zinc-600 jakarta dark:text-zinc-400">
+            Price:
+          </span>
+
+          <span className="text-zinc-900 dark:text-zinc-100">
             {hoveredPoint.price.toLocaleString("en-US", {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
           </span>
+
           <span
             className={
               hoveredPoint.percentChange >= 0
@@ -345,12 +585,14 @@ export function DetailChart({
             }
           >
             ({hoveredPoint.percentChange >= 0 ? "+" : ""}
-            {hoveredPoint.percentChange.toFixed(2)}%)
+            {hoveredPoint.percentChange.toFixed(2)}
+            %)
           </span>
         </div>
       )}
 
-      {/* MAIN SVG CHART */}
+      {/* MAIN SVG */}
+
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="w-full h-auto overflow-visible cursor-crosshair"
@@ -360,18 +602,20 @@ export function DetailChart({
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={strokeColor} stopOpacity="0.25" />
-            <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
+
+            <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
           </linearGradient>
         </defs>
 
-        {/* Y-AXIS LABELS */}
+        {/* Y AXIS LABELS */}
+
         {yTicks.map((tick, i) => (
           <text
             key={i}
             x={paddingLeft - 12}
             y={tick.y + 4}
             textAnchor="end"
-            className="fill-zinc-400 dark:fill-zinc-500 text-[13px] font-medium"
+            className="fill-zinc-800 jakarta dark:fill-zinc-300 dark:font-light text-[12px] font-normal"
           >
             {tick.price.toLocaleString("en-US", {
               minimumFractionDigits: 2,
@@ -380,46 +624,70 @@ export function DetailChart({
           </text>
         ))}
 
-        {/* X-AXIS LABELS & VERTICAL GRID LINES */}
+        {/* VERTICAL GRID */}
+
+        {/* LEFT + RIGHT GRID BOUNDARIES */}
+        <line
+          x1={paddingLeft}
+          y1={paddingTop}
+          x2={paddingLeft}
+          y2={chartBottom}
+          stroke="#e2e8f0"
+          strokeWidth="1"
+          className="dark:stroke-zinc-600/50"
+        />
+
+        <line
+          x1={paddingLeft + chartWidth}
+          y1={paddingTop}
+          x2={paddingLeft + chartWidth}
+          y2={chartBottom}
+          stroke="#e2e8f0"
+          strokeWidth="1"
+          className="dark:stroke-zinc-600/50"
+        />
+
         {xTicks.map((tick, i) => (
           <g key={i}>
             <line
               x1={tick.x}
               y1={paddingTop}
               x2={tick.x}
-              y2={paddingTop + chartHeight}
+              y2={chartBottom}
               stroke="#e2e8f0"
               strokeWidth="1"
-              className="dark:stroke-zinc-800"
+              className="dark:stroke-zinc-600/50"
             />
+
             <text
               x={tick.x}
-              y={height - 10}
+              y={chartBottom + 20}
               textAnchor="middle"
-              className="fill-zinc-400 dark:fill-zinc-500 text-[12px] font-medium"
+              className="fill-zinc-800 jakarta dark:fill-zinc-300 dark:font-light text-[12px] font-normal"
             >
               {tick.label}
             </text>
           </g>
         ))}
 
-        {/* PREVIOUS CLOSE DASHED BASELINE */}
-        {previousClose &&
-          prevCloseY !== null &&
+        {/* PREVIOUS CLOSE */}
+
+        {previousClose != null &&
+          prevCloseY != null &&
           (() => {
             const isAboveChart = previousClose > max;
+
             const isBelowChart = previousClose < min;
+
             const isOutOfBounds = isAboveChart || isBelowChart;
 
-            // Clamp line position so it stays inside chart area even when out of bounds
             const clampedY = Math.max(
               paddingTop,
-              Math.min(paddingTop + chartHeight, prevCloseY),
+              Math.min(chartBottom, prevCloseY),
             );
 
             return (
               <g>
-                {/* BASELINE (Dashed Line) */}
                 <line
                   x1={paddingLeft}
                   y1={clampedY}
@@ -427,28 +695,24 @@ export function DetailChart({
                   y2={clampedY}
                   stroke="#94a3b8"
                   strokeDasharray="2 3"
-                  strokeWidth="1"
+                  strokeWidth="1.5"
                 />
 
-                {/* CASE A: IN-BOUNDS TEXT (Renders right above the line inside the chart) */}
                 {!isOutOfBounds && (
                   <text
                     x={paddingLeft + chartWidth - 10}
                     y={prevCloseY - 6}
                     textAnchor="end"
-                    className="fill-zinc-500 dark:fill-zinc-400 text-[11px] font-semibold"
+                    className="fill-zinc-800 jakarta dark:fill-zinc-300 dark:font-light text-[12px] font-normal"
                   >
                     Prev. close {previousClose.toFixed(2)}
                   </text>
                 )}
 
-                {/* CASE B: OUT-OF-BOUNDS BADGE (Renders safely inside top or bottom margin) */}
                 {isOutOfBounds && (
                   <g
                     transform={`translate(${paddingLeft + chartWidth - 120}, ${
-                      isAboveChart
-                        ? paddingTop + 4
-                        : paddingTop + chartHeight - 20
+                      isAboveChart ? paddingTop + 4 : chartBottom - 20
                     })`}
                   >
                     <rect
@@ -459,13 +723,18 @@ export function DetailChart({
                       rx="4"
                       className="fill-zinc-100 dark:fill-zinc-800 stroke-zinc-300 dark:stroke-zinc-700 opacity-90"
                     />
+
                     <text
                       x="60"
                       y="13"
                       textAnchor="middle"
                       className="fill-zinc-600 dark:fill-zinc-300 text-[10px] font-semibold"
                     >
-                      Prev. close {previousClose.toFixed(2)}
+                      Prev. close{" "}
+                      {previousClose.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </text>
                   </g>
                 )}
@@ -474,50 +743,62 @@ export function DetailChart({
           })()}
 
         {/* AREA CHART */}
+
         {chartType === "area" && (
           <g>
-            <path d={preAreaD} fill={`url(#${gradientId})`} />
-            <path
-              d={prePathD}
-              fill="none"
-              stroke={strokeColor}
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            {preAreaD && <path d={preAreaD} fill={`url(#${gradientId})`} />}
+
+            {prePathD && (
+              <path
+                d={prePathD}
+                fill="none"
+                stroke={strokeColor}
+                strokeWidth="1.25"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )}
+
             {postLunchCoords.length > 0 && (
               <>
-                <path d={postAreaD} fill={`url(#${gradientId})`} />
-                <path
-                  d={postPathD}
-                  fill="none"
-                  stroke={strokeColor}
-                  strokeWidth="1"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                {postAreaD && (
+                  <path d={postAreaD} fill={`url(#${gradientId})`} />
+                )}
+
+                {postPathD && (
+                  <path
+                    d={postPathD}
+                    fill="none"
+                    stroke={strokeColor}
+                    strokeWidth="1.25"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
               </>
             )}
           </g>
         )}
 
         {/* LINE CHART */}
+
         {chartType === "line" && (
           <g>
             <path
               d={prePathD}
               fill="none"
               stroke={strokeColor}
-              strokeWidth="1"
+              strokeWidth="1.25"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
+
             {postLunchCoords.length > 0 && (
               <path
                 d={postPathD}
                 fill="none"
                 stroke={strokeColor}
-                strokeWidth="1"
+                strokeWidth="1.25"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -525,39 +806,59 @@ export function DetailChart({
           </g>
         )}
 
-        {/* LUNCH BREAK BRIDGE AND LABEL */}
-        {lunchStartPt && lunchEndPt && (
-          <g>
-            {/* Dashed Horizontal Bridge Line */}
-            <line
-              x1={lunchStartPt.x}
-              y1={lunchStartPt.y}
-              x2={lunchEndPt.x}
-              y2={lunchStartPt.y}
-              stroke={strokeColor}
-              strokeDasharray="3 3"
-              strokeWidth="1.2"
-              opacity="0.8"
-            />
-            {/* Lunch Break Text Label */}
-            <text
-              x={(lunchStartPt.x + lunchEndPt.x) / 2}
-              y={lunchStartPt.y - 12}
-              textAnchor="middle"
-              className="fill-zinc-600 dark:fill-zinc-300 text-[13px] font-semibold"
-            >
-              Lunch break
-            </text>
-          </g>
-        )}
+        {/* LUNCH BREAK */}
 
-        {/* CANDLESTICK CHART */}
+        {hasLunch &&
+          lunchStartPt &&
+          lunchEndPt &&
+          lunchStartX != null &&
+          lunchEndX != null && (
+            <g>
+              <line
+                x1={lunchStartX}
+                y1={lunchStartPt.y}
+                x2={lunchEndX}
+                y2={lunchStartPt.y}
+                stroke={strokeColor}
+                strokeDasharray="3 3"
+                strokeWidth="1.75"
+                opacity="0.5"
+              />
+
+              <text
+                x={(lunchStartX + lunchEndX) / 2}
+                y={lunchStartPt.y - 16}
+                textAnchor="middle"
+                className="fill-zinc-800 dark:fill-zinc-300 text-[13px] font-normal"
+              >
+                Lunch break
+              </text>
+            </g>
+          )}
+
+        {/* CANDLESTICK */}
+
         {chartType === "candle" && (
           <g>
             {coords.map((pt, i) => {
+              if (
+                hasLunch &&
+                lunchStartMs != null &&
+                lunchEndMs != null &&
+                pt.timestampMs > lunchStartMs &&
+                pt.timestampMs < lunchEndMs
+              ) {
+                return null;
+              }
+
               const color = pt.isRising ? "#008549" : "#cf0000";
+
               const candleTop = Math.min(pt.openY, pt.closeY);
-              const candleHeight = Math.max(Math.abs(pt.closeY - pt.openY), 2);
+
+              const candleHeight = Math.max(
+                Math.abs(pt.closeY - pt.openY),
+                1.5,
+              );
 
               return (
                 <g key={i}>
@@ -567,12 +868,13 @@ export function DetailChart({
                     x2={pt.x}
                     y2={pt.lowY}
                     stroke={color}
-                    strokeWidth="1.2"
+                    strokeWidth="1.25"
                   />
+
                   <rect
-                    x={pt.x - 3}
+                    x={pt.x - candleWidth / 2}
                     y={candleTop}
-                    width="6"
+                    width={candleWidth}
                     height={candleHeight}
                     fill={color}
                     rx="0.5"
@@ -583,15 +885,26 @@ export function DetailChart({
           </g>
         )}
 
-        {/* BAR CHART */}
+        {/* BAR */}
+
         {chartType === "bar" && (
           <g>
             {coords.map((pt, i) => {
+              if (
+                hasLunch &&
+                lunchStartMs != null &&
+                lunchEndMs != null &&
+                pt.timestampMs > lunchStartMs &&
+                pt.timestampMs < lunchEndMs
+              ) {
+                return null;
+              }
+
               const fillColor = pt.isRising
                 ? "rgba(0, 133, 73, 0.45)"
                 : "rgba(207, 0, 0, 0.45)";
+
               const barStroke = pt.isRising ? "#008549" : "#cf0000";
-              const barWidth = Math.max(chartWidth / coords.length - 1.5, 2);
 
               return (
                 <rect
@@ -599,7 +912,7 @@ export function DetailChart({
                   x={pt.x - barWidth / 2}
                   y={pt.y}
                   width={barWidth}
-                  height={paddingTop + chartHeight - pt.y}
+                  height={chartBottom - pt.y}
                   fill={fillColor}
                   stroke={barStroke}
                   strokeWidth="0.5"
@@ -610,7 +923,8 @@ export function DetailChart({
           </g>
         )}
 
-        {/* END POINT DOT */}
+        {/* END POINT */}
+
         {lastPoint &&
           !hoveredPoint &&
           (chartType === "line" || chartType === "area") && (
@@ -623,17 +937,19 @@ export function DetailChart({
           )}
 
         {/* HOVER CROSSHAIR */}
+
         {hoveredPoint && (
           <g>
             <line
               x1={hoveredPoint.x}
               y1={paddingTop}
               x2={hoveredPoint.x}
-              y2={paddingTop + chartHeight}
+              y2={chartBottom}
               stroke="#94a3b8"
               strokeDasharray="3 3"
               strokeWidth="1.5"
             />
+
             <circle
               cx={hoveredPoint.x}
               cy={hoveredPoint.y}
@@ -642,12 +958,13 @@ export function DetailChart({
               className="stroke-white dark:stroke-zinc-200"
               strokeWidth="2"
             />
+
             <g
               transform={`translate(${
                 hoveredPoint.x + 60 > width - paddingRight
                   ? hoveredPoint.x - 120
                   : hoveredPoint.x - 60
-              }, ${paddingTop + chartHeight - 5})`}
+              }, ${chartBottom - 5})`}
             >
               <rect
                 x="0"
@@ -657,6 +974,7 @@ export function DetailChart({
                 rx="6"
                 className="fill-white dark:fill-zinc-800 stroke-zinc-300 dark:stroke-zinc-700 shadow-sm"
               />
+
               <text
                 x="60"
                 y="16"

@@ -30,8 +30,8 @@ export interface MarketItem {
   previousClose?: number;
   updatedAt?: number | string;
   exchangeTimezone?: string;
-  lunchStartMs?: number;
-  lunchEndMs?: number;
+  lunchStartMs?: number | null;
+  lunchEndMs?: number | null;
 }
 
 export type ChartRange =
@@ -44,6 +44,16 @@ export type ChartRange =
   | "5Y"
   | "MAX";
 
+export type ChartInterval =
+  | "1m"
+  | "2m"
+  | "5m"
+  | "15m"
+  | "30m"
+  | "60m"
+  | "1d"
+  | "1wk";
+
 export type AssetType = "index" | "stock" | "crypto" | "currency" | "futures";
 
 export function useMarketQuote(
@@ -53,6 +63,7 @@ export function useMarketQuote(
   displaySymbol: string,
   assetType: AssetType,
   pollingInterval = 0,
+  chartInterval?: ChartInterval,
 ) {
   const subscribe = useCallback(
     (listener: () => void) => {
@@ -67,10 +78,19 @@ export function useMarketQuote(
         displaySymbol,
         assetType,
         pollingInterval,
+        chartInterval,
         listener,
       );
     },
-    [symbol, name, range, displaySymbol, assetType, pollingInterval],
+    [
+      symbol,
+      name,
+      range,
+      displaySymbol,
+      assetType,
+      pollingInterval,
+      chartInterval,
+    ],
   );
 
   const getSnapshot = useCallback(() => {
@@ -78,8 +98,8 @@ export function useMarketQuote(
       return EMPTY_SNAPSHOT;
     }
 
-    return getMarketQuoteSnapshot(symbol, range);
-  }, [symbol, range]);
+    return getMarketQuoteSnapshot(symbol, range, chartInterval);
+  }, [symbol, range, chartInterval]);
 
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }

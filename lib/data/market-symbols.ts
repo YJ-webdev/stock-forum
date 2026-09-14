@@ -218,8 +218,8 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       assetType: "index",
       timezone: "Asia/Jakarta",
       tradingBreak: {
-        start: "12:00",
-        end: "13:30",
+        start: "11:30",
+        end: "14:00",
       },
     },
     {

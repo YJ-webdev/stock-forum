@@ -20,16 +20,27 @@ export type PostModel = runtime.Types.Result.DefaultSelection<Prisma.$PostPayloa
 
 export type AggregatePost = {
   _count: PostCountAggregateOutputType | null
+  _avg: PostAvgAggregateOutputType | null
+  _sum: PostSumAggregateOutputType | null
   _min: PostMinAggregateOutputType | null
   _max: PostMaxAggregateOutputType | null
+}
+
+export type PostAvgAggregateOutputType = {
+  viewCount: number | null
+}
+
+export type PostSumAggregateOutputType = {
+  viewCount: number | null
 }
 
 export type PostMinAggregateOutputType = {
   id: string | null
   title: string | null
-  content: string | null
   stockTicker: string | null
+  viewCount: number | null
   createdAt: Date | null
+  updatedAt: Date | null
   authorId: string | null
   categoryId: string | null
 }
@@ -37,9 +48,10 @@ export type PostMinAggregateOutputType = {
 export type PostMaxAggregateOutputType = {
   id: string | null
   title: string | null
-  content: string | null
   stockTicker: string | null
+  viewCount: number | null
   createdAt: Date | null
+  updatedAt: Date | null
   authorId: string | null
   categoryId: string | null
 }
@@ -49,19 +61,30 @@ export type PostCountAggregateOutputType = {
   title: number
   content: number
   stockTicker: number
+  viewCount: number
   createdAt: number
+  updatedAt: number
   authorId: number
   categoryId: number
   _all: number
 }
 
 
+export type PostAvgAggregateInputType = {
+  viewCount?: true
+}
+
+export type PostSumAggregateInputType = {
+  viewCount?: true
+}
+
 export type PostMinAggregateInputType = {
   id?: true
   title?: true
-  content?: true
   stockTicker?: true
+  viewCount?: true
   createdAt?: true
+  updatedAt?: true
   authorId?: true
   categoryId?: true
 }
@@ -69,9 +92,10 @@ export type PostMinAggregateInputType = {
 export type PostMaxAggregateInputType = {
   id?: true
   title?: true
-  content?: true
   stockTicker?: true
+  viewCount?: true
   createdAt?: true
+  updatedAt?: true
   authorId?: true
   categoryId?: true
 }
@@ -81,7 +105,9 @@ export type PostCountAggregateInputType = {
   title?: true
   content?: true
   stockTicker?: true
+  viewCount?: true
   createdAt?: true
+  updatedAt?: true
   authorId?: true
   categoryId?: true
   _all?: true
@@ -125,6 +151,18 @@ export type PostAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: PostAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: PostSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: PostMinAggregateInputType
@@ -155,6 +193,8 @@ export type PostGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   _count?: PostCountAggregateInputType | true
+  _avg?: PostAvgAggregateInputType
+  _sum?: PostSumAggregateInputType
   _min?: PostMinAggregateInputType
   _max?: PostMaxAggregateInputType
 }
@@ -162,12 +202,16 @@ export type PostGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type PostGroupByOutputType = {
   id: string
   title: string
-  content: string
+  content: runtime.JsonValue
   stockTicker: string | null
+  viewCount: number
   createdAt: Date
+  updatedAt: Date
   authorId: string
   categoryId: string
   _count: PostCountAggregateOutputType | null
+  _avg: PostAvgAggregateOutputType | null
+  _sum: PostSumAggregateOutputType | null
   _min: PostMinAggregateOutputType | null
   _max: PostMaxAggregateOutputType | null
 }
@@ -193,9 +237,11 @@ export type PostWhereInput = {
   NOT?: Prisma.PostWhereInput | Prisma.PostWhereInput[]
   id?: Prisma.StringFilter<"Post"> | string
   title?: Prisma.StringFilter<"Post"> | string
-  content?: Prisma.StringFilter<"Post"> | string
+  content?: Prisma.JsonFilter<"Post">
   stockTicker?: Prisma.StringNullableFilter<"Post"> | string | null
+  viewCount?: Prisma.IntFilter<"Post"> | number
   createdAt?: Prisma.DateTimeFilter<"Post"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   authorId?: Prisma.StringFilter<"Post"> | string
   categoryId?: Prisma.StringFilter<"Post"> | string
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -209,7 +255,9 @@ export type PostOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   stockTicker?: Prisma.SortOrderInput | Prisma.SortOrder
+  viewCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
   categoryId?: Prisma.SortOrder
   author?: Prisma.UserOrderByWithRelationInput
@@ -224,9 +272,11 @@ export type PostWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.PostWhereInput[]
   NOT?: Prisma.PostWhereInput | Prisma.PostWhereInput[]
   title?: Prisma.StringFilter<"Post"> | string
-  content?: Prisma.StringFilter<"Post"> | string
+  content?: Prisma.JsonFilter<"Post">
   stockTicker?: Prisma.StringNullableFilter<"Post"> | string | null
+  viewCount?: Prisma.IntFilter<"Post"> | number
   createdAt?: Prisma.DateTimeFilter<"Post"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   authorId?: Prisma.StringFilter<"Post"> | string
   categoryId?: Prisma.StringFilter<"Post"> | string
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -240,12 +290,16 @@ export type PostOrderByWithAggregationInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   stockTicker?: Prisma.SortOrderInput | Prisma.SortOrder
+  viewCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
   categoryId?: Prisma.SortOrder
   _count?: Prisma.PostCountOrderByAggregateInput
+  _avg?: Prisma.PostAvgOrderByAggregateInput
   _max?: Prisma.PostMaxOrderByAggregateInput
   _min?: Prisma.PostMinOrderByAggregateInput
+  _sum?: Prisma.PostSumOrderByAggregateInput
 }
 
 export type PostScalarWhereWithAggregatesInput = {
@@ -254,9 +308,11 @@ export type PostScalarWhereWithAggregatesInput = {
   NOT?: Prisma.PostScalarWhereWithAggregatesInput | Prisma.PostScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Post"> | string
   title?: Prisma.StringWithAggregatesFilter<"Post"> | string
-  content?: Prisma.StringWithAggregatesFilter<"Post"> | string
+  content?: Prisma.JsonWithAggregatesFilter<"Post">
   stockTicker?: Prisma.StringNullableWithAggregatesFilter<"Post"> | string | null
+  viewCount?: Prisma.IntWithAggregatesFilter<"Post"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Post"> | Date | string
+  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Post"> | Date | string
   authorId?: Prisma.StringWithAggregatesFilter<"Post"> | string
   categoryId?: Prisma.StringWithAggregatesFilter<"Post"> | string
 }
@@ -264,9 +320,11 @@ export type PostScalarWhereWithAggregatesInput = {
 export type PostCreateInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutPostsInput
   category: Prisma.ForumCategoryCreateNestedOneWithoutPostsInput
   comments?: Prisma.CommentCreateNestedManyWithoutPostInput
@@ -276,9 +334,11 @@ export type PostCreateInput = {
 export type PostUncheckedCreateInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   authorId: string
   categoryId: string
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutPostInput
@@ -288,9 +348,11 @@ export type PostUncheckedCreateInput = {
 export type PostUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutPostsNestedInput
   category?: Prisma.ForumCategoryUpdateOneRequiredWithoutPostsNestedInput
   comments?: Prisma.CommentUpdateManyWithoutPostNestedInput
@@ -300,9 +362,11 @@ export type PostUpdateInput = {
 export type PostUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
   comments?: Prisma.CommentUncheckedUpdateManyWithoutPostNestedInput
@@ -312,9 +376,11 @@ export type PostUncheckedUpdateInput = {
 export type PostCreateManyInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   authorId: string
   categoryId: string
 }
@@ -322,17 +388,21 @@ export type PostCreateManyInput = {
 export type PostUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PostUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
 }
@@ -352,17 +422,24 @@ export type PostCountOrderByAggregateInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   stockTicker?: Prisma.SortOrder
+  viewCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
   categoryId?: Prisma.SortOrder
+}
+
+export type PostAvgOrderByAggregateInput = {
+  viewCount?: Prisma.SortOrder
 }
 
 export type PostMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
-  content?: Prisma.SortOrder
   stockTicker?: Prisma.SortOrder
+  viewCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
   categoryId?: Prisma.SortOrder
 }
@@ -370,11 +447,16 @@ export type PostMaxOrderByAggregateInput = {
 export type PostMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
-  content?: Prisma.SortOrder
   stockTicker?: Prisma.SortOrder
+  viewCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
   categoryId?: Prisma.SortOrder
+}
+
+export type PostSumOrderByAggregateInput = {
+  viewCount?: Prisma.SortOrder
 }
 
 export type PostScalarRelationFilter = {
@@ -422,6 +504,14 @@ export type PostUncheckedUpdateManyWithoutAuthorNestedInput = {
   update?: Prisma.PostUpdateWithWhereUniqueWithoutAuthorInput | Prisma.PostUpdateWithWhereUniqueWithoutAuthorInput[]
   updateMany?: Prisma.PostUpdateManyWithWhereWithoutAuthorInput | Prisma.PostUpdateManyWithWhereWithoutAuthorInput[]
   deleteMany?: Prisma.PostScalarWhereInput | Prisma.PostScalarWhereInput[]
+}
+
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type PostCreateNestedOneWithoutCommentsInput = {
@@ -497,9 +587,11 @@ export type PostUncheckedUpdateManyWithoutCategoryNestedInput = {
 export type PostCreateWithoutAuthorInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   category: Prisma.ForumCategoryCreateNestedOneWithoutPostsInput
   comments?: Prisma.CommentCreateNestedManyWithoutPostInput
   likes?: Prisma.LikeCreateNestedManyWithoutPostInput
@@ -508,9 +600,11 @@ export type PostCreateWithoutAuthorInput = {
 export type PostUncheckedCreateWithoutAuthorInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   categoryId: string
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutPostInput
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutPostInput
@@ -548,9 +642,11 @@ export type PostScalarWhereInput = {
   NOT?: Prisma.PostScalarWhereInput | Prisma.PostScalarWhereInput[]
   id?: Prisma.StringFilter<"Post"> | string
   title?: Prisma.StringFilter<"Post"> | string
-  content?: Prisma.StringFilter<"Post"> | string
+  content?: Prisma.JsonFilter<"Post">
   stockTicker?: Prisma.StringNullableFilter<"Post"> | string | null
+  viewCount?: Prisma.IntFilter<"Post"> | number
   createdAt?: Prisma.DateTimeFilter<"Post"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   authorId?: Prisma.StringFilter<"Post"> | string
   categoryId?: Prisma.StringFilter<"Post"> | string
 }
@@ -558,9 +654,11 @@ export type PostScalarWhereInput = {
 export type PostCreateWithoutCommentsInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutPostsInput
   category: Prisma.ForumCategoryCreateNestedOneWithoutPostsInput
   likes?: Prisma.LikeCreateNestedManyWithoutPostInput
@@ -569,9 +667,11 @@ export type PostCreateWithoutCommentsInput = {
 export type PostUncheckedCreateWithoutCommentsInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   authorId: string
   categoryId: string
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutPostInput
@@ -596,9 +696,11 @@ export type PostUpdateToOneWithWhereWithoutCommentsInput = {
 export type PostUpdateWithoutCommentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutPostsNestedInput
   category?: Prisma.ForumCategoryUpdateOneRequiredWithoutPostsNestedInput
   likes?: Prisma.LikeUpdateManyWithoutPostNestedInput
@@ -607,9 +709,11 @@ export type PostUpdateWithoutCommentsInput = {
 export type PostUncheckedUpdateWithoutCommentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
   likes?: Prisma.LikeUncheckedUpdateManyWithoutPostNestedInput
@@ -618,9 +722,11 @@ export type PostUncheckedUpdateWithoutCommentsInput = {
 export type PostCreateWithoutLikesInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutPostsInput
   category: Prisma.ForumCategoryCreateNestedOneWithoutPostsInput
   comments?: Prisma.CommentCreateNestedManyWithoutPostInput
@@ -629,9 +735,11 @@ export type PostCreateWithoutLikesInput = {
 export type PostUncheckedCreateWithoutLikesInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   authorId: string
   categoryId: string
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutPostInput
@@ -656,9 +764,11 @@ export type PostUpdateToOneWithWhereWithoutLikesInput = {
 export type PostUpdateWithoutLikesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutPostsNestedInput
   category?: Prisma.ForumCategoryUpdateOneRequiredWithoutPostsNestedInput
   comments?: Prisma.CommentUpdateManyWithoutPostNestedInput
@@ -667,9 +777,11 @@ export type PostUpdateWithoutLikesInput = {
 export type PostUncheckedUpdateWithoutLikesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
   comments?: Prisma.CommentUncheckedUpdateManyWithoutPostNestedInput
@@ -678,9 +790,11 @@ export type PostUncheckedUpdateWithoutLikesInput = {
 export type PostCreateWithoutCategoryInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutPostsInput
   comments?: Prisma.CommentCreateNestedManyWithoutPostInput
   likes?: Prisma.LikeCreateNestedManyWithoutPostInput
@@ -689,9 +803,11 @@ export type PostCreateWithoutCategoryInput = {
 export type PostUncheckedCreateWithoutCategoryInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   authorId: string
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutPostInput
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutPostInput
@@ -726,18 +842,22 @@ export type PostUpdateManyWithWhereWithoutCategoryInput = {
 export type PostCreateManyAuthorInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   categoryId: string
 }
 
 export type PostUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.ForumCategoryUpdateOneRequiredWithoutPostsNestedInput
   comments?: Prisma.CommentUpdateManyWithoutPostNestedInput
   likes?: Prisma.LikeUpdateManyWithoutPostNestedInput
@@ -746,9 +866,11 @@ export type PostUpdateWithoutAuthorInput = {
 export type PostUncheckedUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
   comments?: Prisma.CommentUncheckedUpdateManyWithoutPostNestedInput
   likes?: Prisma.LikeUncheckedUpdateManyWithoutPostNestedInput
@@ -757,27 +879,33 @@ export type PostUncheckedUpdateWithoutAuthorInput = {
 export type PostUncheckedUpdateManyWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type PostCreateManyCategoryInput = {
   id?: string
   title: string
-  content: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: string | null
+  viewCount?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   authorId: string
 }
 
 export type PostUpdateWithoutCategoryInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutPostsNestedInput
   comments?: Prisma.CommentUpdateManyWithoutPostNestedInput
   likes?: Prisma.LikeUpdateManyWithoutPostNestedInput
@@ -786,9 +914,11 @@ export type PostUpdateWithoutCategoryInput = {
 export type PostUncheckedUpdateWithoutCategoryInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   comments?: Prisma.CommentUncheckedUpdateManyWithoutPostNestedInput
   likes?: Prisma.LikeUncheckedUpdateManyWithoutPostNestedInput
@@ -797,9 +927,11 @@ export type PostUncheckedUpdateWithoutCategoryInput = {
 export type PostUncheckedUpdateManyWithoutCategoryInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
@@ -848,7 +980,9 @@ export type PostSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   title?: boolean
   content?: boolean
   stockTicker?: boolean
+  viewCount?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   authorId?: boolean
   categoryId?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -863,7 +997,9 @@ export type PostSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   title?: boolean
   content?: boolean
   stockTicker?: boolean
+  viewCount?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   authorId?: boolean
   categoryId?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -875,7 +1011,9 @@ export type PostSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   title?: boolean
   content?: boolean
   stockTicker?: boolean
+  viewCount?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   authorId?: boolean
   categoryId?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -887,12 +1025,14 @@ export type PostSelectScalar = {
   title?: boolean
   content?: boolean
   stockTicker?: boolean
+  viewCount?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   authorId?: boolean
   categoryId?: boolean
 }
 
-export type PostOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "content" | "stockTicker" | "createdAt" | "authorId" | "categoryId", ExtArgs["result"]["post"]>
+export type PostOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "content" | "stockTicker" | "viewCount" | "createdAt" | "updatedAt" | "authorId" | "categoryId", ExtArgs["result"]["post"]>
 export type PostInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   category?: boolean | Prisma.ForumCategoryDefaultArgs<ExtArgs>
@@ -920,9 +1060,11 @@ export type $PostPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     title: string
-    content: string
+    content: runtime.JsonValue
     stockTicker: string | null
+    viewCount: number
     createdAt: Date
+    updatedAt: Date
     authorId: string
     categoryId: string
   }, ExtArgs["result"]["post"]>
@@ -1354,9 +1496,11 @@ export interface Prisma__PostClient<T, Null = never, ExtArgs extends runtime.Typ
 export interface PostFieldRefs {
   readonly id: Prisma.FieldRef<"Post", 'String'>
   readonly title: Prisma.FieldRef<"Post", 'String'>
-  readonly content: Prisma.FieldRef<"Post", 'String'>
+  readonly content: Prisma.FieldRef<"Post", 'Json'>
   readonly stockTicker: Prisma.FieldRef<"Post", 'String'>
+  readonly viewCount: Prisma.FieldRef<"Post", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Post", 'DateTime'>
+  readonly updatedAt: Prisma.FieldRef<"Post", 'DateTime'>
   readonly authorId: Prisma.FieldRef<"Post", 'String'>
   readonly categoryId: Prisma.FieldRef<"Post", 'String'>
 }

@@ -27,17 +27,17 @@ export type AggregateTrade = {
 }
 
 export type TradeAvgAggregateOutputType = {
-  quantity: number | null
-  entryPrice: number | null
-  exitPrice: number | null
-  pnl: number | null
+  quantity: runtime.Decimal | null
+  entryPrice: runtime.Decimal | null
+  exitPrice: runtime.Decimal | null
+  pnl: runtime.Decimal | null
 }
 
 export type TradeSumAggregateOutputType = {
-  quantity: number | null
-  entryPrice: number | null
-  exitPrice: number | null
-  pnl: number | null
+  quantity: runtime.Decimal | null
+  entryPrice: runtime.Decimal | null
+  exitPrice: runtime.Decimal | null
+  pnl: runtime.Decimal | null
 }
 
 export type TradeMinAggregateOutputType = {
@@ -46,10 +46,10 @@ export type TradeMinAggregateOutputType = {
   symbol: string | null
   type: $Enums.TradeType | null
   status: $Enums.TradeStatus | null
-  quantity: number | null
-  entryPrice: number | null
-  exitPrice: number | null
-  pnl: number | null
+  quantity: runtime.Decimal | null
+  entryPrice: runtime.Decimal | null
+  exitPrice: runtime.Decimal | null
+  pnl: runtime.Decimal | null
   createdAt: Date | null
   closedAt: Date | null
 }
@@ -60,10 +60,10 @@ export type TradeMaxAggregateOutputType = {
   symbol: string | null
   type: $Enums.TradeType | null
   status: $Enums.TradeStatus | null
-  quantity: number | null
-  entryPrice: number | null
-  exitPrice: number | null
-  pnl: number | null
+  quantity: runtime.Decimal | null
+  entryPrice: runtime.Decimal | null
+  exitPrice: runtime.Decimal | null
+  pnl: runtime.Decimal | null
   createdAt: Date | null
   closedAt: Date | null
 }
@@ -233,10 +233,10 @@ export type TradeGroupByOutputType = {
   symbol: string
   type: $Enums.TradeType
   status: $Enums.TradeStatus
-  quantity: number
-  entryPrice: number
-  exitPrice: number | null
-  pnl: number | null
+  quantity: runtime.Decimal
+  entryPrice: runtime.Decimal
+  exitPrice: runtime.Decimal | null
+  pnl: runtime.Decimal | null
   createdAt: Date
   closedAt: Date | null
   _count: TradeCountAggregateOutputType | null
@@ -270,10 +270,10 @@ export type TradeWhereInput = {
   symbol?: Prisma.StringFilter<"Trade"> | string
   type?: Prisma.EnumTradeTypeFilter<"Trade"> | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFilter<"Trade"> | $Enums.TradeStatus
-  quantity?: Prisma.FloatFilter<"Trade"> | number
-  entryPrice?: Prisma.FloatFilter<"Trade"> | number
-  exitPrice?: Prisma.FloatNullableFilter<"Trade"> | number | null
-  pnl?: Prisma.FloatNullableFilter<"Trade"> | number | null
+  quantity?: Prisma.DecimalFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.DecimalNullableFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.DecimalNullableFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFilter<"Trade"> | Date | string
   closedAt?: Prisma.DateTimeNullableFilter<"Trade"> | Date | string | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -305,10 +305,10 @@ export type TradeWhereUniqueInput = Prisma.AtLeast<{
   symbol?: Prisma.StringFilter<"Trade"> | string
   type?: Prisma.EnumTradeTypeFilter<"Trade"> | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFilter<"Trade"> | $Enums.TradeStatus
-  quantity?: Prisma.FloatFilter<"Trade"> | number
-  entryPrice?: Prisma.FloatFilter<"Trade"> | number
-  exitPrice?: Prisma.FloatNullableFilter<"Trade"> | number | null
-  pnl?: Prisma.FloatNullableFilter<"Trade"> | number | null
+  quantity?: Prisma.DecimalFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.DecimalNullableFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.DecimalNullableFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFilter<"Trade"> | Date | string
   closedAt?: Prisma.DateTimeNullableFilter<"Trade"> | Date | string | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -343,10 +343,10 @@ export type TradeScalarWhereWithAggregatesInput = {
   symbol?: Prisma.StringWithAggregatesFilter<"Trade"> | string
   type?: Prisma.EnumTradeTypeWithAggregatesFilter<"Trade"> | $Enums.TradeType
   status?: Prisma.EnumTradeStatusWithAggregatesFilter<"Trade"> | $Enums.TradeStatus
-  quantity?: Prisma.FloatWithAggregatesFilter<"Trade"> | number
-  entryPrice?: Prisma.FloatWithAggregatesFilter<"Trade"> | number
-  exitPrice?: Prisma.FloatNullableWithAggregatesFilter<"Trade"> | number | null
-  pnl?: Prisma.FloatNullableWithAggregatesFilter<"Trade"> | number | null
+  quantity?: Prisma.DecimalWithAggregatesFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalWithAggregatesFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.DecimalNullableWithAggregatesFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.DecimalNullableWithAggregatesFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Trade"> | Date | string
   closedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Trade"> | Date | string | null
 }
@@ -355,10 +355,10 @@ export type TradeCreateInput = {
   id?: string
   type: $Enums.TradeType
   status?: $Enums.TradeStatus
-  quantity: number
-  entryPrice: number
-  exitPrice?: number | null
-  pnl?: number | null
+  quantity: runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   closedAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutTradesInput
@@ -371,10 +371,10 @@ export type TradeUncheckedCreateInput = {
   symbol: string
   type: $Enums.TradeType
   status?: $Enums.TradeStatus
-  quantity: number
-  entryPrice: number
-  exitPrice?: number | null
-  pnl?: number | null
+  quantity: runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   closedAt?: Date | string | null
 }
@@ -383,10 +383,10 @@ export type TradeUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTradeTypeFieldUpdateOperationsInput | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFieldUpdateOperationsInput | $Enums.TradeStatus
-  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
-  entryPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  exitPrice?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  pnl?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutTradesNestedInput
@@ -399,10 +399,10 @@ export type TradeUncheckedUpdateInput = {
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTradeTypeFieldUpdateOperationsInput | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFieldUpdateOperationsInput | $Enums.TradeStatus
-  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
-  entryPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  exitPrice?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  pnl?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -413,10 +413,10 @@ export type TradeCreateManyInput = {
   symbol: string
   type: $Enums.TradeType
   status?: $Enums.TradeStatus
-  quantity: number
-  entryPrice: number
-  exitPrice?: number | null
-  pnl?: number | null
+  quantity: runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   closedAt?: Date | string | null
 }
@@ -425,10 +425,10 @@ export type TradeUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTradeTypeFieldUpdateOperationsInput | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFieldUpdateOperationsInput | $Enums.TradeStatus
-  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
-  entryPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  exitPrice?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  pnl?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -439,10 +439,10 @@ export type TradeUncheckedUpdateManyInput = {
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTradeTypeFieldUpdateOperationsInput | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFieldUpdateOperationsInput | $Enums.TradeStatus
-  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
-  entryPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  exitPrice?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  pnl?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -605,22 +605,22 @@ export type EnumTradeStatusFieldUpdateOperationsInput = {
   set?: $Enums.TradeStatus
 }
 
-export type NullableFloatFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
+export type NullableDecimalFieldUpdateOperationsInput = {
+  set?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
 export type TradeCreateWithoutUserInput = {
   id?: string
   type: $Enums.TradeType
   status?: $Enums.TradeStatus
-  quantity: number
-  entryPrice: number
-  exitPrice?: number | null
-  pnl?: number | null
+  quantity: runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   closedAt?: Date | string | null
   asset: Prisma.MarketAssetCreateNestedOneWithoutTradesInput
@@ -631,10 +631,10 @@ export type TradeUncheckedCreateWithoutUserInput = {
   symbol: string
   type: $Enums.TradeType
   status?: $Enums.TradeStatus
-  quantity: number
-  entryPrice: number
-  exitPrice?: number | null
-  pnl?: number | null
+  quantity: runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   closedAt?: Date | string | null
 }
@@ -674,10 +674,10 @@ export type TradeScalarWhereInput = {
   symbol?: Prisma.StringFilter<"Trade"> | string
   type?: Prisma.EnumTradeTypeFilter<"Trade"> | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFilter<"Trade"> | $Enums.TradeStatus
-  quantity?: Prisma.FloatFilter<"Trade"> | number
-  entryPrice?: Prisma.FloatFilter<"Trade"> | number
-  exitPrice?: Prisma.FloatNullableFilter<"Trade"> | number | null
-  pnl?: Prisma.FloatNullableFilter<"Trade"> | number | null
+  quantity?: Prisma.DecimalFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.DecimalNullableFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.DecimalNullableFilter<"Trade"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFilter<"Trade"> | Date | string
   closedAt?: Prisma.DateTimeNullableFilter<"Trade"> | Date | string | null
 }
@@ -686,10 +686,10 @@ export type TradeCreateWithoutAssetInput = {
   id?: string
   type: $Enums.TradeType
   status?: $Enums.TradeStatus
-  quantity: number
-  entryPrice: number
-  exitPrice?: number | null
-  pnl?: number | null
+  quantity: runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   closedAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutTradesInput
@@ -700,10 +700,10 @@ export type TradeUncheckedCreateWithoutAssetInput = {
   userId: string
   type: $Enums.TradeType
   status?: $Enums.TradeStatus
-  quantity: number
-  entryPrice: number
-  exitPrice?: number | null
-  pnl?: number | null
+  quantity: runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   closedAt?: Date | string | null
 }
@@ -739,10 +739,10 @@ export type TradeCreateManyUserInput = {
   symbol: string
   type: $Enums.TradeType
   status?: $Enums.TradeStatus
-  quantity: number
-  entryPrice: number
-  exitPrice?: number | null
-  pnl?: number | null
+  quantity: runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   closedAt?: Date | string | null
 }
@@ -751,10 +751,10 @@ export type TradeUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTradeTypeFieldUpdateOperationsInput | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFieldUpdateOperationsInput | $Enums.TradeStatus
-  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
-  entryPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  exitPrice?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  pnl?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   asset?: Prisma.MarketAssetUpdateOneRequiredWithoutTradesNestedInput
@@ -765,10 +765,10 @@ export type TradeUncheckedUpdateWithoutUserInput = {
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTradeTypeFieldUpdateOperationsInput | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFieldUpdateOperationsInput | $Enums.TradeStatus
-  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
-  entryPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  exitPrice?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  pnl?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -778,10 +778,10 @@ export type TradeUncheckedUpdateManyWithoutUserInput = {
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTradeTypeFieldUpdateOperationsInput | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFieldUpdateOperationsInput | $Enums.TradeStatus
-  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
-  entryPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  exitPrice?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  pnl?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -791,10 +791,10 @@ export type TradeCreateManyAssetInput = {
   userId: string
   type: $Enums.TradeType
   status?: $Enums.TradeStatus
-  quantity: number
-  entryPrice: number
-  exitPrice?: number | null
-  pnl?: number | null
+  quantity: runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   closedAt?: Date | string | null
 }
@@ -803,10 +803,10 @@ export type TradeUpdateWithoutAssetInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTradeTypeFieldUpdateOperationsInput | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFieldUpdateOperationsInput | $Enums.TradeStatus
-  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
-  entryPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  exitPrice?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  pnl?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutTradesNestedInput
@@ -817,10 +817,10 @@ export type TradeUncheckedUpdateWithoutAssetInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTradeTypeFieldUpdateOperationsInput | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFieldUpdateOperationsInput | $Enums.TradeStatus
-  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
-  entryPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  exitPrice?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  pnl?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -830,10 +830,10 @@ export type TradeUncheckedUpdateManyWithoutAssetInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTradeTypeFieldUpdateOperationsInput | $Enums.TradeType
   status?: Prisma.EnumTradeStatusFieldUpdateOperationsInput | $Enums.TradeStatus
-  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
-  entryPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  exitPrice?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  pnl?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  entryPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  exitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pnl?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -928,10 +928,10 @@ export type $TradePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     symbol: string
     type: $Enums.TradeType
     status: $Enums.TradeStatus
-    quantity: number
-    entryPrice: number
-    exitPrice: number | null
-    pnl: number | null
+    quantity: runtime.Decimal
+    entryPrice: runtime.Decimal
+    exitPrice: runtime.Decimal | null
+    pnl: runtime.Decimal | null
     createdAt: Date
     closedAt: Date | null
   }, ExtArgs["result"]["trade"]>
@@ -1364,10 +1364,10 @@ export interface TradeFieldRefs {
   readonly symbol: Prisma.FieldRef<"Trade", 'String'>
   readonly type: Prisma.FieldRef<"Trade", 'TradeType'>
   readonly status: Prisma.FieldRef<"Trade", 'TradeStatus'>
-  readonly quantity: Prisma.FieldRef<"Trade", 'Float'>
-  readonly entryPrice: Prisma.FieldRef<"Trade", 'Float'>
-  readonly exitPrice: Prisma.FieldRef<"Trade", 'Float'>
-  readonly pnl: Prisma.FieldRef<"Trade", 'Float'>
+  readonly quantity: Prisma.FieldRef<"Trade", 'Decimal'>
+  readonly entryPrice: Prisma.FieldRef<"Trade", 'Decimal'>
+  readonly exitPrice: Prisma.FieldRef<"Trade", 'Decimal'>
+  readonly pnl: Prisma.FieldRef<"Trade", 'Decimal'>
   readonly createdAt: Prisma.FieldRef<"Trade", 'DateTime'>
   readonly closedAt: Prisma.FieldRef<"Trade", 'DateTime'>
 }

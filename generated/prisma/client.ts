@@ -92,7 +92,17 @@ export type MarketAsset = Prisma.MarketAssetModel
  */
 export type AccountBalance = Prisma.AccountBalanceModel
 /**
+ * Model PortfolioPosition
+ * 
+ */
+export type PortfolioPosition = Prisma.PortfolioPositionModel
+/**
  * Model Trade
  * 
  */
 export type Trade = Prisma.TradeModel
+/**
+ * Model Watchlist
+ * 
+ */
+export type Watchlist = Prisma.WatchlistModel

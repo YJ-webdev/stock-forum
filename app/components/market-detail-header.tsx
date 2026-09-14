@@ -110,7 +110,7 @@ export function MarketDetailHeader({
   });
 
   return (
-    <div className="w-full relative px-4 py-2">
+    <div className="w-full relative px-4 py-2 space-y-2">
       {/* Navigation Breadcrumb */}
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-300 font-medium">
@@ -141,7 +141,7 @@ export function MarketDetailHeader({
       <div className="flex items-center gap-3 mt-1.5">
         <div className="flex flex-col">
           <div className="flex items-baseline gap-3 tracking-tight md:tracking-normal">
-            <Numeric className="font-extrabold text-3xl text-zinc-900 dark:text-zinc-100">
+            <Numeric className="font-extrabold text-3xl text-zinc-900 dark:text-zinc-300">
               {displayPrice}
             </Numeric>
 

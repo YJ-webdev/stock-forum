@@ -128,6 +128,8 @@ function MarketCard({
                 points={data.history.map((p) => p.price)}
                 isPositive={data.isPositive}
                 isClosed={data.isClosed}
+                lunchStartMs={data.lunchStartMs || undefined}
+                lunchEndMs={data.lunchEndMs || undefined}
               />
             </div>
           </div>

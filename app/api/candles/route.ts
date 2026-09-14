@@ -16,36 +16,36 @@ function getPeriod1(range: string): Date {
 
   switch (range) {
     case "1D":
+      // Fetch several days so we can always find
+      // the latest available trading session,
+      // including after market close / weekends.
       return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
     case "5D":
       return new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
+
     case "1M":
       return new Date(now.setMonth(now.getMonth() - 1));
+
     case "6M":
       return new Date(now.setMonth(now.getMonth() - 6));
+
     case "YTD":
       return new Date(now.getFullYear(), 0, 1);
+
     case "1Y":
       return new Date(now.setFullYear(now.getFullYear() - 1));
+
     case "5Y":
       return new Date(now.setFullYear(now.getFullYear() - 5));
+
     case "MAX":
       return new Date("1980-01-01");
+
     default:
       return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   }
 }
-
-const INTERVALS: Record<string, "15m" | "1d" | "1wk"> = {
-  "1D": "15m",
-  "5D": "15m",
-  "1M": "1d",
-  "6M": "1d",
-  YTD: "1d",
-  "1Y": "1d",
-  "5Y": "1wk",
-  MAX: "1wk",
-};
 
 function getExchangeDate(date: Date, timezone?: string): string {
   if (!timezone) {
@@ -77,7 +77,9 @@ function getLatestTradingSession(quotes: any[], timezone?: string): any[] {
   );
 
   return quotes.filter((quote) => {
-    if (!quote?.date) return false;
+    if (!quote?.date) {
+      return false;
+    }
 
     return (
       getExchangeDate(new Date(quote.date), timezone) === latestTradingDate
@@ -92,35 +94,76 @@ function isRegularMarketClosed(
 ): boolean {
   const regularPeriod = meta?.currentTradingPeriod?.regular;
 
-  if (regularPeriod?.start && regularPeriod?.end) {
-    const now = Date.now();
-
-    const start = new Date(regularPeriod.start).getTime();
-    const end = new Date(regularPeriod.end).getTime();
-
-    if (now < start || now >= end) {
-      return true;
-    }
-    if (
-      lunchStartMs != null &&
-      lunchEndMs != null &&
-      now >= lunchStartMs &&
-      now < lunchEndMs
-    ) {
-      return true;
-    }
-    return false;
+  if (!regularPeriod?.start || !regularPeriod?.end) {
+    return true;
   }
-  return true;
+
+  const now = Date.now();
+
+  const start = new Date(regularPeriod.start).getTime();
+
+  const end = new Date(regularPeriod.end).getTime();
+
+  // Outside regular session
+  if (now < start || now >= end) {
+    return true;
+  }
+
+  // Inside manual lunch break
+  if (
+    lunchStartMs != null &&
+    lunchEndMs != null &&
+    now >= lunchStartMs &&
+    now < lunchEndMs
+  ) {
+    return true;
+  }
+
+  return false;
 }
+
+type YahooInterval = "1m" | "2m" | "5m" | "15m" | "30m" | "60m" | "1d" | "1wk";
+
+const INTERVALS: Record<string, YahooInterval> = {
+  "1D": "15m",
+  "5D": "15m",
+  "1M": "1d",
+  "6M": "1d",
+  YTD: "1d",
+  "1Y": "1d",
+  "5Y": "1wk",
+  MAX: "1wk",
+};
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+
   const rawSymbol = searchParams.get("symbol") || "^GSPC";
+
   const range = searchParams.get("range") || "1D";
+
   const symbol = PROVIDER_SYMBOLS[rawSymbol] || rawSymbol;
+
   const period1 = getPeriod1(range);
-  const interval = INTERVALS[range] || "15m";
+
+  const requestedInterval = searchParams.get("interval");
+
+  const allowedIntervals = new Set<YahooInterval>([
+    "1m",
+    "2m",
+    "5m",
+    "15m",
+    "30m",
+    "60m",
+    "1d",
+    "1wk",
+  ]);
+
+  const interval: YahooInterval =
+    requestedInterval &&
+    allowedIntervals.has(requestedInterval as YahooInterval)
+      ? (requestedInterval as YahooInterval)
+      : INTERVALS[range] || "5m";
 
   try {
     const chartResult = (await yahoo.chart(symbol, {
@@ -134,18 +177,38 @@ export async function GET(request: Request) {
       : [];
 
     const meta = chartResult?.meta || {};
+
     const exchangeTimezone = meta.exchangeTimezoneName;
+
     const market = ALL_MARKET_SYMBOLS.find(
-      (item) => item.symbol === rawSymbol || item.symbol === symbol,
+      (item) =>
+        item.symbol === rawSymbol ||
+        item.symbol === symbol ||
+        item.providerSymbol === symbol,
     );
+
+    // --------------------------------------------------
+    // SELECT CHART DATA
+    // --------------------------------------------------
+
+    let sessionQuotes = rawQuotes;
+
+    if (range === "1D") {
+      // IMPORTANT:
+      // 1D = full latest trading session.
+      //
+      // Do NOT slice to the last 6 hours.
+      // This keeps the complete Yahoo intraday session,
+      // even after the market has closed.
+      sessionQuotes = getLatestTradingSession(rawQuotes, exchangeTimezone);
+    }
+
+    // --------------------------------------------------
+    // LUNCH BREAK
+    // --------------------------------------------------
 
     let lunchStartMs: number | null = null;
     let lunchEndMs: number | null = null;
-
-    const sessionQuotes =
-      range === "1D"
-        ? getLatestTradingSession(rawQuotes, exchangeTimezone)
-        : rawQuotes;
 
     if (
       range === "1D" &&
@@ -175,10 +238,22 @@ export async function GET(request: Request) {
       }
     }
 
+    // --------------------------------------------------
+    // MARKET STATE
+    // --------------------------------------------------
+
+    const isClosed = isRegularMarketClosed(meta, lunchStartMs, lunchEndMs);
+
+    // --------------------------------------------------
+    // NO DATA
+    // --------------------------------------------------
+
     if (sessionQuotes.length === 0) {
       return NextResponse.json({
         points: [],
+
         currentPrice: meta.regularMarketPrice ?? 0,
+
         previousClose:
           meta.chartPreviousClose ??
           meta.previousClose ??
@@ -187,7 +262,9 @@ export async function GET(request: Request) {
 
         dailyChangePercent: 0,
         rangeChangePercent: 0,
-        isClosed: isRegularMarketClosed(meta, lunchStartMs, lunchEndMs),
+
+        isClosed,
+
         requestedSymbol: rawSymbol,
         providerSymbol: symbol,
         exchangeTimezone,
@@ -197,6 +274,10 @@ export async function GET(request: Request) {
       });
     }
 
+    // --------------------------------------------------
+    // NORMALIZE CANDLES
+    // --------------------------------------------------
+
     const points = sessionQuotes
       .filter(
         (quote: any) =>
@@ -205,24 +286,35 @@ export async function GET(request: Request) {
       .map((quote: any) => {
         const close = Number(quote.close);
 
+        const normalizedClose = Number(close.toFixed(2));
+
         return {
           timestampMs: new Date(quote.date).getTime(),
-          price: Number(close.toFixed(2)),
+
+          price: normalizedClose,
+
           open:
             quote.open != null
               ? Number(Number(quote.open).toFixed(2))
-              : Number(close.toFixed(2)),
+              : normalizedClose,
+
           high:
             quote.high != null
               ? Number(Number(quote.high).toFixed(2))
-              : Number(close.toFixed(2)),
+              : normalizedClose,
+
           low:
             quote.low != null
               ? Number(Number(quote.low).toFixed(2))
-              : Number(close.toFixed(2)),
-          close: Number(close.toFixed(2)),
+              : normalizedClose,
+
+          close: normalizedClose,
         };
       });
+
+    // --------------------------------------------------
+    // NO VALID POINTS
+    // --------------------------------------------------
 
     if (points.length === 0) {
       return NextResponse.json({
@@ -238,14 +330,21 @@ export async function GET(request: Request) {
 
         dailyChangePercent: 0,
         rangeChangePercent: 0,
-        isClosed: isRegularMarketClosed(meta, lunchStartMs, lunchEndMs),
+
+        isClosed,
+
         requestedSymbol: rawSymbol,
         providerSymbol: symbol,
         exchangeTimezone,
+
         lunchStartMs,
         lunchEndMs,
       });
     }
+
+    // --------------------------------------------------
+    // PRICE VALUES
+    // --------------------------------------------------
 
     const currentPrice =
       typeof meta.regularMarketPrice === "number"
@@ -271,17 +370,25 @@ export async function GET(request: Request) {
         ? ((currentPrice - rangeStartPrice) / rangeStartPrice) * 100
         : 0;
 
-    const isClosed = isRegularMarketClosed(meta, lunchStartMs, lunchEndMs);
+    // --------------------------------------------------
+    // RESPONSE
+    // --------------------------------------------------
+
     return NextResponse.json({
       points,
+
       currentPrice,
       previousClose,
+
       dailyChangePercent,
       rangeChangePercent,
-      isClosed: isRegularMarketClosed(meta, lunchStartMs, lunchEndMs),
+
+      isClosed,
+
       requestedSymbol: rawSymbol,
       providerSymbol: symbol,
       exchangeTimezone,
+
       updatedAt: meta.regularMarketTime
         ? new Date(meta.regularMarketTime).getTime()
         : (points[points.length - 1]?.timestampMs ?? Date.now()),

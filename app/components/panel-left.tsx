@@ -5,8 +5,8 @@ import { useEffect } from "react";
 
 import { CategoryWithCount, ForumList } from "./forum-card";
 
-import { PostCard } from "./post-card";
-import { PostWithRelations } from "./post-card";
+// import { PostCard } from "./post-card";
+// import { PostWithRelations } from "./post-card";
 import { NewsCarousel } from "./news-card";
 import { NewsItem } from "@/types";
 import { ModeToggle } from "./mode-toggle";
@@ -16,14 +16,14 @@ interface PanelLeftProps {
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   news: NewsItem[];
   categories: CategoryWithCount[]; // Add live categories prop
-  posts?: PostWithRelations[];
+  // posts?: PostWithRelations[];
 }
 
 export default function PanelLeft({
   isOpen,
   setIsOpen,
   news,
-  posts,
+  // posts,
   categories,
 }: PanelLeftProps) {
   return (
@@ -54,9 +54,9 @@ export default function PanelLeft({
               <p className="text-muted-foreground text-xs text-light mb-2 tracking-wider">
                 RECENT POSTS
               </p>
-              {posts?.map((post) => (
+              {/* {posts?.map((post) => (
                 <PostCard key={post.id} post={post} />
-              ))}
+              ))} */}
             </div>
             <div className="md:hidden mt-auto p-3 -translate-y-10 self-end">
               <ModeToggle />

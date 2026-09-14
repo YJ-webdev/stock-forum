@@ -1,4 +1,4 @@
-import { PostCard } from "@/app/components/post-card";
+// import { PostCard } from "@/app/components/post-card";
 import { notFound } from "next/navigation";
 import { getForumCategories } from "@/app/actions/forum-categories";
 import { getForumPosts } from "@/app/actions/posts";
@@ -29,13 +29,13 @@ export default async function CategoryPage({
         )}
       </div>
 
-      {posts.length === 0 ? (
+      {/* {posts.length === 0 ? (
         <p className="text-muted-foreground text-sm py-8">
           No posts in this topic yet.
         </p>
       ) : (
         posts.map((post) => <PostCard key={post.id} post={post} />)
-      )}
+      )} */}
     </div>
   );
 }

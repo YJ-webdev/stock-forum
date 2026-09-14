@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { NavbarBalance } from "./navbar-balance";
+
 import { UserAccountNav } from "./user-account-nav";
 
 export function Navbar() {
@@ -9,9 +9,6 @@ export function Navbar() {
         <Link href="/" className="font-bold text-lg tracking-tight">
           TradingHub
         </Link>
-
-        {/* Live Equity & Cash Widget */}
-        <NavbarBalance />
 
         <div className="flex items-center gap-4">
           <UserAccountNav />

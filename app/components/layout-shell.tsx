@@ -6,6 +6,11 @@ import PanelLeft from "./panel-left";
 import { LeaderboardChart } from "./leader-board-chart";
 import { CategoryWithCount } from "./forum-card";
 import { MarketAssetClient, NewsItem } from "@/types";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 
 interface User {
   name?: string | null;
@@ -15,7 +20,7 @@ interface User {
 
 interface LayoutShellProps {
   user: User | null;
-  marketData: MarketAssetClient[];
+  // marketData: MarketAssetClient[];
   news: NewsItem[];
   categories: CategoryWithCount[];
   children: React.ReactNode;
@@ -101,30 +106,39 @@ export default function LayoutShell({
             : "ml-0 w-full"
         }`}
       >
-        <section className="relative w-full border-blue-700 flex-1 min-w-0 bg-white dark:bg-zinc-900">
-          <div className="">{children}</div>
-        </section>
+        <ResizablePanelGroup orientation="horizontal">
+          <ResizablePanel>
+            <section className="relative w-full flex-1 min-w-0 bg-white dark:bg-zinc-900">
+              <div className="">{children}</div>
+            </section>
+          </ResizablePanel>
+          <ResizableHandle className="border-gray-50 w-0" />
+          <ResizablePanel
+            defaultSize="30%"
+            className="bg-white dark:bg-zinc-900 "
+          >
+            <section
+              className={`hidden lg:flex transition-all duration-300 border-l h-full w-full border-gray-100 dark:border-zinc-800 ease-in-out delay-75 z-5 p-4 flex-col gap-4 ${
+                isOpen ? "xl:w-78" : "xl:w-90"
+              }`}
+            >
+              {onWrite && <>Write</>}
+              {onAccount && <>Account</>}
+              {onNotification && <>Notifications</>}
 
-        <section
-          className={`hidden lg:flex transition-all duration-300 ease-in-out delay-75 z-5 p-4 border-l border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900  flex-col gap-4 ${
-            isOpen ? "xl:w-78" : "xl:w-90"
-          }`}
-        >
-          {onWrite && <>Write</>}
-          {onAccount && <>Account</>}
-          {onNotification && <>Notifications</>}
-
-          {!onWrite && !onAccount && !onNotification && (
-            <div className="flex flex-col w-full max-w-2xs gap-4">
-              <div>
-                <p className="text-muted-foreground text-xs text-light tracking-wider uppercase">
-                  top traders
-                </p>
-                <LeaderboardChart />
-              </div>
-            </div>
-          )}
-        </section>
+              {!onWrite && !onAccount && !onNotification && (
+                <div className="flex flex-col w-full max-w-2xs gap-4">
+                  <div>
+                    <p className="text-muted-foreground text-xs text-light tracking-wider uppercase">
+                      top traders
+                    </p>
+                    <LeaderboardChart />
+                  </div>
+                </div>
+              )}
+            </section>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </>
   );
