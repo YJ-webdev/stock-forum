@@ -36,7 +36,7 @@ function NewsRow({ item }: { item: NewsItem }) {
         {/* Details & Title */}
         <div className="flex flex-col min-w-0 gap-1">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+            <span className="font-semibold text-zinc-800 dark:text-zinc-300">
               {item.source}
             </span>
             {/* <span>•</span> */}

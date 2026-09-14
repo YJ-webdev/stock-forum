@@ -2,11 +2,10 @@
 
 import React, { useState } from "react";
 import {
-  TrendingUp,
   AreaChart,
   CandlestickChart,
   BarChart3,
-  ChevronDown,
+  ChartLine,
 } from "lucide-react";
 
 export type ChartType = "line" | "area" | "candle" | "bar";
@@ -180,27 +179,35 @@ export function DetailChart({
   // LUNCH BREAK
   // --------------------------------------------------
 
+  // --------------------------------------------------
+  // LUNCH BREAK
+  // --------------------------------------------------
+
+  // --------------------------------------------------
+  // LUNCH BREAK
+  // --------------------------------------------------
+
   const hasLunch =
     is1D &&
     lunchStartMs != null &&
     lunchEndMs != null &&
-    lunchStartMs > firstTimestamp &&
-    lunchEndMs < lastTimestamp;
+    lunchEndMs > lunchStartMs;
 
   let preLunchCoords = coords;
   let postLunchCoords: typeof coords = [];
 
   let lunchStartPt: (typeof coords)[number] | undefined;
-
   let lunchEndPt: (typeof coords)[number] | undefined;
 
-  if (hasLunch && lunchStartMs != null && lunchEndMs != null) {
+  if (hasLunch) {
+    // Last real candle before the lunch break
     const beforeLunchIndex = coords.findLastIndex(
-      (point) => point.timestampMs <= lunchStartMs,
+      (point) => point.timestampMs < lunchStartMs!,
     );
 
+    // First real candle after the lunch break
     const afterLunchIndex = coords.findIndex(
-      (point) => point.timestampMs >= lunchEndMs,
+      (point) => point.timestampMs >= lunchEndMs!,
     );
 
     if (
@@ -211,15 +218,11 @@ export function DetailChart({
       lunchStartPt = coords[beforeLunchIndex];
       lunchEndPt = coords[afterLunchIndex];
 
+      // IMPORTANT: two completely separate paths
       preLunchCoords = coords.slice(0, beforeLunchIndex + 1);
-
       postLunchCoords = coords.slice(afterLunchIndex);
     }
   }
-
-  const lunchStartX = lunchStartMs != null ? getX(lunchStartMs) : null;
-
-  const lunchEndX = lunchEndMs != null ? getX(lunchEndMs) : null;
 
   // --------------------------------------------------
   // PATH HELPERS
@@ -403,7 +406,7 @@ export function DetailChart({
     {
       id: "line",
       label: "Line",
-      icon: TrendingUp,
+      icon: ChartLine,
     },
     {
       id: "area",
@@ -509,57 +512,29 @@ export function DetailChart({
     <div className="w-full relative bg-zinc-50 dark:bg-zinc-800 md:rounded-2xl md:border border-zinc-200 dark:border-zinc-800 p-4 md:shadow-sm select-none">
       {/* TOP CONTROL BAR */}
 
-      <div className="relative z-20 flex items-center gap-6 mb-4 px-2 dark:text-zinc-300">
-        <div className="relative">
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2 text-sm font-medium hover:text-black dark:hover:text-white transition-colors cursor-pointer"
-          >
-            <CurrentIcon className="w-4 h-4" />
+      <div className="relative z-20 flex items-center gap-6 dark:text-zinc-300">
+        <div className="relative flex">
+          {chartTypeOptions.map((opt) => {
+            const Icon = opt.icon;
 
-            <span className="capitalize">{chartType}</span>
-
-            <ChevronDown className="hidden md:block w-3.5 h-3.5" />
-          </button>
-
-          {isMenuOpen && (
-            <div className="absolute top-full left-0 mt-2 w-36 bg-zinc-100/90 dark:bg-zinc-800/90 backdrop-blur-md border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl p-1.5 shadow-xl space-y-0.5">
-              {chartTypeOptions.map((opt) => {
-                const Icon = opt.icon;
-
-                return (
-                  <button
-                    key={opt.id}
-                    onClick={() => {
-                      setChartType(opt.id as ChartType);
-                      setIsMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-all cursor-pointer ${
-                      chartType === opt.id
-                        ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs"
-                        : "text-zinc-600 dark:text-zinc-300! hover:bg-zinc-200/60 dark:hover:bg-zinc-700/50"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{opt.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+            return (
+              <button
+                key={opt.id}
+                onClick={() => {
+                  setChartType(opt.id as ChartType);
+                  setIsMenuOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-all cursor-pointer ${
+                  chartType === opt.id
+                    ? " text-zinc-900 dark:text-white"
+                    : "text-zinc-600 dark:text-zinc-300! hover:bg-zinc-200/60 dark:hover:bg-zinc-700/50"
+                }`}
+              >
+                <Icon className="md:w-4 md:h-4" />
+              </button>
+            );
+          })}
         </div>
-
-        <button className="flex items-center gap-2 text-sm font-medium hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
-          <TrendingUp className="w-4 h-4" />
-          <span>Compare</span>
-          <ChevronDown className="hidden md:block w-3.5 h-3.5" />
-        </button>
-
-        <button className="flex items-center gap-2 text-sm font-medium hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
-          <BarChart3 className="w-4 h-4" />
-          <span>Indicators</span>
-          <ChevronDown className="w-3.5 h-3.5" />
-        </button>
       </div>
 
       {/* HOVER PRICE BADGE */}
@@ -807,50 +782,47 @@ export function DetailChart({
         )}
 
         {/* LUNCH BREAK */}
+        {hasLunch && lunchStartPt && lunchEndPt && (
+          <g>
+            {/* Dashed break line */}
+            <line
+              x1={lunchStartPt.x}
+              y1={lunchStartPt.y}
+              x2={lunchEndPt.x}
+              y2={lunchStartPt.y}
+              stroke={strokeColor}
+              strokeDasharray="2.5 2.5"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              opacity="0.6"
+            />
 
-        {hasLunch &&
-          lunchStartPt &&
-          lunchEndPt &&
-          lunchStartX != null &&
-          lunchEndX != null && (
-            <g>
-              <line
-                x1={lunchStartX}
-                y1={lunchStartPt.y}
-                x2={lunchEndX}
-                y2={lunchStartPt.y}
-                stroke={strokeColor}
-                strokeDasharray="3 3"
-                strokeWidth="1.75"
-                opacity="0.5"
-              />
+            {/* Break label */}
+            {(() => {
+              const labelX = (lunchStartPt.x + lunchEndPt.x) / 2;
+              const labelY = (lunchStartPt.y + lunchEndPt.y) / 2;
 
-              <text
-                x={(lunchStartX + lunchEndX) / 2}
-                y={lunchStartPt.y - 16}
-                textAnchor="middle"
-                className="fill-zinc-800 dark:fill-zinc-300 text-[13px] font-normal"
-              >
-                Lunch break
-              </text>
-            </g>
-          )}
+              return (
+                <g>
+                  <text
+                    x={labelX}
+                    y={labelY - 10}
+                    textAnchor="middle"
+                    className="fill-zinc-700 dark:fill-zinc-400 text-[15px] tracking-wide font-medium"
+                  >
+                    Lunch Break
+                  </text>
+                </g>
+              );
+            })()}
+          </g>
+        )}
 
         {/* CANDLESTICK */}
 
         {chartType === "candle" && (
           <g>
             {coords.map((pt, i) => {
-              if (
-                hasLunch &&
-                lunchStartMs != null &&
-                lunchEndMs != null &&
-                pt.timestampMs > lunchStartMs &&
-                pt.timestampMs < lunchEndMs
-              ) {
-                return null;
-              }
-
               const color = pt.isRising ? "#008549" : "#cf0000";
 
               const candleTop = Math.min(pt.openY, pt.closeY);
@@ -890,16 +862,6 @@ export function DetailChart({
         {chartType === "bar" && (
           <g>
             {coords.map((pt, i) => {
-              if (
-                hasLunch &&
-                lunchStartMs != null &&
-                lunchEndMs != null &&
-                pt.timestampMs > lunchStartMs &&
-                pt.timestampMs < lunchEndMs
-              ) {
-                return null;
-              }
-
               const fillColor = pt.isRising
                 ? "rgba(0, 133, 73, 0.45)"
                 : "rgba(207, 0, 0, 0.45)";

@@ -86,7 +86,7 @@ export function MarketOverviewHeader({
         {/* Scroll Left Button */}
         <button
           onClick={() => scroll("left")}
-          className="absolute left-0 z-10 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-md flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:scale-105 transition-transform"
+          className="absolute left-0 z-10 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-md flex items-center justify-center text-zinc-700 dark:text-zinc-300 hover:scale-105 transition-transform"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -125,7 +125,7 @@ export function MarketOverviewHeader({
         {/* Scroll Right Button */}
         <button
           onClick={() => scroll("right")}
-          className="absolute right-0 z-10 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-md flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:scale-105 transition-transform"
+          className="absolute right-0 z-10 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-md flex items-center justify-center text-zinc-700 dark:text-zinc-300 hover:scale-105 transition-transform"
         >
           <ChevronRight className="w-4 h-4" />
         </button>

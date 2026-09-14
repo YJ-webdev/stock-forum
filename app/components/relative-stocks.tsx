@@ -37,7 +37,7 @@ interface RelativeStockRowProps {
 interface VoteButtonProps {
   displaySymbol: string;
   name: string;
-  marketCloseMs: number | null;
+  marketOpenMs: number;
 }
 
 interface VoteClosedProps {
@@ -111,10 +111,9 @@ function RelativeStockRow({ item, setActiveRange }: RelativeStockRowProps) {
     item.symbol,
   )}&name=${encodeURIComponent(item.name)}&category=${encodeURIComponent(
     item.assetType === "index" ? item.region : item.assetType,
-  )}`;
+  )}&range=1D`;
 
   const handleRowClick = () => {
-    setActiveRange("1D");
     router.push(href);
   };
 
@@ -195,30 +194,30 @@ function VoteStatus({
   }
 
   if (!quote) {
-    return <ClosedLabel />;
+    return <VotingUnavailable />;
   }
 
-  // 1. Market is OPEN → Bull / Bear
+  // Market OPEN → voting disabled
   if (!quote.isClosed) {
+    return <VotingDisabled />;
+  }
+
+  // Market CLOSED + next open known → voting available
+  if (quote.marketOpenMs) {
     return (
       <VoteButton
         displaySymbol={item.displaySymbol}
         name={item.name}
-        marketCloseMs={quote.marketCloseMs ?? null}
+        marketOpenMs={quote.marketOpenMs}
       />
     );
   }
 
-  // 2. Market CLOSED → let countdown component decide
-  if (quote.marketOpenMs) {
-    return <MarketOpenCountdown marketOpenMs={quote.marketOpenMs} />;
-  }
-
-  // 3. No next opening time → Closed
-  return <ClosedLabel />;
+  // Closed, but we don't know when it opens again
+  return <VotingUnavailable />;
 }
 
-function VoteButton({ displaySymbol, name, marketCloseMs }: VoteButtonProps) {
+function VoteButton({ displaySymbol, name, marketOpenMs }: VoteButtonProps) {
   const [selectedSide, setSelectedSide] = useState<"bull" | "bear" | null>(
     null,
   );
@@ -318,9 +317,9 @@ function VoteButton({ displaySymbol, name, marketCloseMs }: VoteButtonProps) {
 
         {/* Balance */}
         <div className="flex items-center justify-end text-[12px] gap-1 mt-2.5 mb-1 dark:font-thin">
-          <span className="text-zinc-800 dark:text-zinc-200">Balance.</span>
+          <span className="text-zinc-800 dark:text-zinc-300">Balance.</span>
 
-          <span className="text-zinc-800 dark:text-zinc-200">1,250</span>
+          <span className="text-zinc-800 dark:text-zinc-300">1,250</span>
         </div>
 
         {/* Bid */}
@@ -412,19 +411,15 @@ function VoteButton({ displaySymbol, name, marketCloseMs }: VoteButtonProps) {
           </button>
         </div>
 
-        {/* Time remaining until market closes */}
-        {marketCloseMs != null && (
-          <MarketCloseCountdown marketCloseMs={marketCloseMs} />
-        )}
+        {/* Time remaining to vote */}
+        <VotingCountdown marketOpenMs={marketOpenMs} />
       </PopoverContent>
     </Popover>
   );
 }
 
-function MarketCloseCountdown({ marketCloseMs }: { marketCloseMs: number }) {
-  const targetDate = useMemo(() => new Date(marketCloseMs), [marketCloseMs]);
-
-  const { hours, minutes, seconds } = useCountdown(targetDate);
+function VotingCountdown({ marketOpenMs }: { marketOpenMs: number }) {
+  const { hours, minutes, seconds } = useCountdown(marketOpenMs);
 
   return (
     <div className="flex items-center gap-1.5 text-[11px] justify-end -mb-1.5 mt-1 min-h-4">
@@ -432,7 +427,7 @@ function MarketCloseCountdown({ marketCloseMs }: { marketCloseMs: number }) {
         <RefreshCw className="w-2.5 h-2.5 shrink-0" />
 
         <div className="flex gap-1">
-          <span>Adjustable within</span>
+          <span>Voting closes in</span>
 
           <div className="flex">
             <span>{hours}</span>:<span>{minutes}</span>:<span>{seconds}</span>
@@ -443,25 +438,17 @@ function MarketCloseCountdown({ marketCloseMs }: { marketCloseMs: number }) {
   );
 }
 
-function MarketOpenCountdown({ marketOpenMs }: { marketOpenMs: number }) {
-  const { hours, minutes, seconds } = useCountdown(marketOpenMs);
-
-  if (Number(hours) >= 12) {
-    return <ClosedLabel />;
-  }
-
+function VotingUnavailable() {
   return (
-    <div className="flex items-center justify-end text-[12px] gap-1 text-zinc-500 dark:text-zinc-400 dark:font-thin whitespace-nowrap">
-      <div className="flex text-[13px] dark:font-thin text-zinc-700 dark:text-zinc-300">
-        <span>{hours}</span>:<span>{minutes}</span>:<span>{seconds}</span>
-      </div>
+    <div className="mr-1 flex items-center font-normal justify-end text-zinc-400 dark:text-zinc-600 whitespace-nowrap">
+      -
     </div>
   );
 }
 
-function ClosedLabel() {
+function VotingDisabled() {
   return (
-    <div className="mr-1 flex items-center font-normal justify-end text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+    <div className="mr-1 flex items-center font-normal justify-end text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
       Closed
     </div>
   );

@@ -34,6 +34,10 @@ export default function MarketDetailPage() {
   const selectedCategory = searchParams.get("category") ?? "us";
   const selectedAssetType = searchParams.get("assetType") ?? "index";
 
+  const [unavailableRanges, setUnavailableRanges] = useState<
+    Record<string, Set<ChartRange>>
+  >({});
+
   const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
   const matchedItem = ALL_MARKET_SYMBOLS.find(
     (item) => item.symbol === selectedSymbol,
@@ -79,6 +83,11 @@ export default function MarketDetailPage() {
   const handleRangeChange = async (range: SelectedRange) => {
     if (range === activeRange) return;
 
+    // Don't retry a range already known to be unavailable for this symbol.
+    if (unavailableRanges[selectedSymbol]?.has(range as ChartRange)) {
+      return;
+    }
+
     const chartInterval = range === "1D" ? "1m" : undefined;
 
     const result = await refreshMarketQuote(
@@ -91,13 +100,29 @@ export default function MarketDetailPage() {
     );
 
     if (result.error || !result.data) {
-      console.error(`Failed to load ${selectedName} ${range}:`, result.error);
+      setUnavailableRanges((prev) => ({
+        ...prev,
+        [selectedSymbol]: new Set([
+          ...(prev[selectedSymbol] ?? []),
+          range as ChartRange,
+        ]),
+      }));
+
       return;
     }
 
     // Only switch after the new range is ready.
     setActiveRange(range);
   };
+
+  console.log("MARKET PAGE DATA", {
+    symbol: selectedSymbol,
+    range: activeRange,
+    lunchStartMs: data?.lunchStartMs,
+    lunchEndMs: data?.lunchEndMs,
+    exchangeTimezone: data?.exchangeTimezone,
+  });
+
   return (
     <div className="max-w-4xl mx-auto mt-6">
       <div>
@@ -125,8 +150,8 @@ export default function MarketDetailPage() {
         </div>
         {/* Chart */}
         {error ? (
-          <div className="md:mx-4 mt-4">
-            <div className="w-full aspect-5/2 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 p-4 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
+          <div className="md:mx-4 mt-5">
+            <div className="w-full aspect-20/11 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 p-4 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
               <span className="text-xs text-zinc-400">{error}</span>
             </div>
           </div>
@@ -154,10 +179,13 @@ export default function MarketDetailPage() {
                 isPositive={data.isPositive}
                 isClosed={data.isClosed}
                 previousClose={data.previousClose}
-                lunchStartMs={data.lunchStartMs}
-                lunchEndMs={data.lunchEndMs}
+                lunchStartMs={activeRange === "1D" ? data.lunchStartMs : null}
+                lunchEndMs={activeRange === "1D" ? data.lunchEndMs : null}
+                exchangeTimezone={
+                  data.exchangeTimezone || symbolMeta?.timezone || "UTC"
+                }
                 range={activeRange}
-              />{" "}
+              />
             </div>{" "}
           </>
         ) : (
@@ -175,20 +203,30 @@ export default function MarketDetailPage() {
           </>
         )}
 
-        <div className="flex justify-between md:justify-start gap-2 flex-wrap mx-2 my-4 md:mx-4">
-          {RANGES.map((r) => (
-            <button
-              key={r}
-              onClick={() => handleRangeChange(r as SelectedRange)}
-              className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all cursor-pointer ${
-                activeRange === r
-                  ? "bg-zinc-300/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
-                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600/50"
-              }`}
-            >
-              {r}
-            </button>
-          ))}
+        <div className="flex justify-between sm:justify-start gap-2 flex-wrap mx-2 my-4 md:mx-4">
+          {RANGES.map((r) => {
+            const isUnavailable =
+              unavailableRanges[selectedSymbol]?.has(r as ChartRange) ||
+              (r === activeRange && !!error);
+
+            return (
+              <button
+                key={r}
+                title={isUnavailable ? "Data unavailable" : undefined}
+                disabled={isUnavailable}
+                onClick={() => handleRangeChange(r as ChartRange)}
+                className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all ${
+                  isUnavailable
+                    ? "bg-zinc-100 dark:bg-zinc-700/50 text-zinc-400 font-thin dark:text-zinc-600 cursor-default"
+                    : activeRange === r
+                      ? "bg-zinc-300/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400 cursor-pointer"
+                      : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600/50 cursor-pointer"
+                }`}
+              >
+                {r}
+              </button>
+            );
+          })}
         </div>
 
         <div className="flex flex-col gap-3 md:mx-4 mb-20 mt-10">

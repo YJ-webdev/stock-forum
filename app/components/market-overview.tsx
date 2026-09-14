@@ -79,7 +79,7 @@ function MarketCard({
           {/* Header */}
           <div className="flex flex-col">
             <div className="flex flex-col items-start mx-3.5 mt-5 mb-0.5">
-              <h2 className="line-clamp-2 text-zinc-800 text-[18px] font-medium dark:text-zinc-200 tracking-tight text-wrap leading-tight">
+              <h2 className="line-clamp-2 text-zinc-800 text-[18px] font-medium dark:text-zinc-300 tracking-tight text-wrap leading-tight">
                 {data.name}
               </h2>
             </div>
@@ -230,7 +230,7 @@ export default function MarketOverview() {
             onClick={() => handleScroll("left")}
             disabled={!canSlideLeft}
             aria-label="Previous items"
-            className="p-2 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            className="p-2 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -239,7 +239,7 @@ export default function MarketOverview() {
             onClick={() => handleScroll("right")}
             disabled={!canSlideRight}
             aria-label="Next items"
-            className="p-2 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            className="p-2 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

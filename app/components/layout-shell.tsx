@@ -11,6 +11,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { Footer } from "./footer";
 
 interface User {
   name?: string | null;
@@ -108,14 +109,16 @@ export default function LayoutShell({
       >
         <ResizablePanelGroup orientation="horizontal">
           <ResizablePanel>
-            <section className="relative w-full flex-1 min-w-0 bg-white dark:bg-zinc-900">
-              <div className="">{children}</div>
+            <section className="w-full min-h-[calc(100vh-56px)] flex flex-col min-w-0 bg-white dark:bg-zinc-900">
+              <div className="flex-1">{children}</div>
+
+              <Footer />
             </section>
           </ResizablePanel>
           <ResizableHandle className="border-gray-50 w-0" />
           <ResizablePanel
             defaultSize="30%"
-            className="bg-white dark:bg-zinc-900 "
+            className="bg-white h-full dark:bg-zinc-900 "
           >
             <section
               className={`hidden lg:flex transition-all duration-300 border-l h-full w-full border-gray-100 dark:border-zinc-800 ease-in-out delay-75 z-5 p-4 flex-col gap-4 ${

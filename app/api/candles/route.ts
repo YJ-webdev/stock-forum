@@ -245,6 +245,81 @@ function getLatestTradingSession(quotes: any[], timezone?: string): any[] {
 // DETECT INTRADAY BREAK
 // -----------------------------------------------------------------------------
 
+// function detectTradingBreak(
+//   quotes: any[],
+//   interval: YahooInterval,
+// ): {
+//   lunchStartMs: number | null;
+//   lunchEndMs: number | null;
+// } {
+//   /*
+//    * Only intraday candles can tell us about an
+//    * intraday trading break.
+//    */
+//   if (interval === "1d" || interval === "1wk") {
+//     return {
+//       lunchStartMs: null,
+//       lunchEndMs: null,
+//     };
+//   }
+
+//   const timestamps = quotes
+//     .filter((quote) => quote?.date)
+//     .map((quote) => new Date(quote.date).getTime())
+//     .filter(Number.isFinite)
+//     .sort((a, b) => a - b);
+
+//   if (timestamps.length < 2) {
+//     return {
+//       lunchStartMs: null,
+//       lunchEndMs: null,
+//     };
+//   }
+
+//   const expectedInterval = INTERVAL_MS[interval];
+
+//   /*
+//    * Require a gap of at least 3 normal candle intervals.
+//    *
+//    * Example with 15m candles:
+//    *
+//    * 15m = normal
+//    * 30m = possibly missing candle
+//    * 45m+ = meaningful session gap
+//    */
+//   const minimumGap = expectedInterval * 3;
+
+//   let largestGap = 0;
+//   let lunchStartMs: number | null = null;
+//   let lunchEndMs: number | null = null;
+
+//   for (let index = 1; index < timestamps.length; index++) {
+//     const previous = timestamps[index - 1];
+
+//     const current = timestamps[index];
+
+//     const gap = current - previous;
+
+//     if (gap >= minimumGap && gap > largestGap) {
+//       largestGap = gap;
+
+//       /*
+//        * previous = last candle before break
+//        *
+//        * Its candle covers one interval, therefore the
+//        * actual gap begins one candle interval later.
+//        */
+//       lunchStartMs = previous + expectedInterval;
+
+//       lunchEndMs = current;
+//     }
+//   }
+
+//   return {
+//     lunchStartMs,
+//     lunchEndMs,
+//   };
+// }
 function detectTradingBreak(
   quotes: any[],
   interval: YahooInterval,
@@ -252,10 +327,6 @@ function detectTradingBreak(
   lunchStartMs: number | null;
   lunchEndMs: number | null;
 } {
-  /*
-   * Only intraday candles can tell us about an
-   * intraday trading break.
-   */
   if (interval === "1d" || interval === "1wk") {
     return {
       lunchStartMs: null,
@@ -263,13 +334,7 @@ function detectTradingBreak(
     };
   }
 
-  const timestamps = quotes
-    .filter((quote) => quote?.date)
-    .map((quote) => new Date(quote.date).getTime())
-    .filter(Number.isFinite)
-    .sort((a, b) => a - b);
-
-  if (timestamps.length < 2) {
+  if (quotes.length < 2) {
     return {
       lunchStartMs: null,
       lunchEndMs: null,
@@ -278,46 +343,91 @@ function detectTradingBreak(
 
   const expectedInterval = INTERVAL_MS[interval];
 
-  /*
-   * Require a gap of at least 3 normal candle intervals.
-   *
-   * Example with 15m candles:
-   *
-   * 15m = normal
-   * 30m = possibly missing candle
-   * 45m+ = meaningful session gap
-   */
-  const minimumGap = expectedInterval * 3;
+  // At least 10 minutes of consecutive null candles
+  // so we don't mistake a few missing candles for a lunch break.
+  const minimumBreakDuration = 10 * 60 * 1000;
 
-  let largestGap = 0;
-  let lunchStartMs: number | null = null;
-  let lunchEndMs: number | null = null;
+  // Don't consider anything longer than 3 hours a lunch break.
+  const maximumBreakDuration = 3 * 60 * 60 * 1000;
 
-  for (let index = 1; index < timestamps.length; index++) {
-    const previous = timestamps[index - 1];
+  let bestStartMs: number | null = null;
+  let bestEndMs: number | null = null;
+  let bestDuration = 0;
 
-    const current = timestamps[index];
+  let nullStartIndex: number | null = null;
 
-    const gap = current - previous;
+  for (let i = 0; i < quotes.length; i++) {
+    const quote = quotes[i];
 
-    if (gap >= minimumGap && gap > largestGap) {
-      largestGap = gap;
+    const hasPrice =
+      quote?.close != null && Number.isFinite(Number(quote.close));
 
-      /*
-       * previous = last candle before break
-       *
-       * Its candle covers one interval, therefore the
-       * actual gap begins one candle interval later.
-       */
-      lunchStartMs = previous + expectedInterval;
+    if (!hasPrice) {
+      if (nullStartIndex === null) {
+        nullStartIndex = i;
+      }
 
-      lunchEndMs = current;
+      continue;
+    }
+
+    // We just reached the first valid candle after a null run.
+    if (nullStartIndex !== null) {
+      const firstNullQuote = quotes[nullStartIndex];
+      const firstValidAfterBreak = quote;
+
+      const startMs = new Date(firstNullQuote.date).getTime();
+      const endMs = new Date(firstValidAfterBreak.date).getTime();
+
+      const duration = endMs - startMs;
+
+      if (
+        duration >= minimumBreakDuration &&
+        duration <= maximumBreakDuration &&
+        duration > bestDuration
+      ) {
+        bestDuration = duration;
+        bestStartMs = startMs;
+        bestEndMs = endMs;
+      }
+
+      nullStartIndex = null;
+    }
+  }
+
+  // --------------------------------------------------
+  // FALLBACK: actual timestamp gap
+  // --------------------------------------------------
+
+  if (bestStartMs == null || bestEndMs == null) {
+    const validQuotes = quotes.filter(
+      (quote) =>
+        quote?.date &&
+        quote?.close != null &&
+        Number.isFinite(Number(quote.close)),
+    );
+
+    for (let i = 1; i < validQuotes.length; i++) {
+      const previous = new Date(validQuotes[i - 1].date).getTime();
+      const current = new Date(validQuotes[i].date).getTime();
+
+      const gap = current - previous;
+
+      if (
+        gap >= expectedInterval * 3 &&
+        gap <= maximumBreakDuration &&
+        gap > bestDuration
+      ) {
+        bestDuration = gap;
+
+        bestStartMs = previous + expectedInterval;
+        bestEndMs = current;
+      }
     }
   }
 
   return {
-    lunchStartMs,
-    lunchEndMs,
+    lunchStartMs: bestStartMs,
+    lunchEndMs: bestEndMs,
   };
 }
 
@@ -598,17 +708,14 @@ export async function GET(request: Request) {
     // -------------------------------------------------------------------------
 
     let lunchStartMs: number | null = null;
-
     let lunchEndMs: number | null = null;
 
     if (range === "1D" && sessionQuotes.length > 0) {
       const detectedBreak = detectTradingBreak(sessionQuotes, interval);
 
       lunchStartMs = detectedBreak.lunchStartMs;
-
       lunchEndMs = detectedBreak.lunchEndMs;
     }
-
     // -------------------------------------------------------------------------
     // NO QUOTES
     // -------------------------------------------------------------------------
