@@ -147,7 +147,7 @@ export default function MarketDetailPage() {
                 }
               />{" "}
             </div>{" "}
-            <div ref={chartRef} className="scroll-mt-70 md:mx-4 mt-1">
+            <div ref={chartRef} className="scroll-mt-70 md:mx-4 mt-2">
               {" "}
               <DetailChart
                 history={data.history}
@@ -165,12 +165,12 @@ export default function MarketDetailPage() {
             <div className="w-full relative px-3 mt-4 space-y-2">
               <div className="w-full flex flex-col gap-2 mb-2">
                 <Skeleton className="h-9 w-44 rounded-xl" />
-                <Skeleton className="h-4 w-36 rounded-full" />
+                <Skeleton className="h-5 w-36 rounded-full" />
               </div>
             </div>
 
             <div className="md:mx-4 mt-1">
-              <Skeleton className="w-full aspect-800/370 rounded-lg" />
+              <Skeleton className="w-full aspect-800/372 rounded-lg" />
             </div>
           </>
         )}
