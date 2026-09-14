@@ -8,9 +8,16 @@ import type {
   MarketItem,
 } from "./useMarketQuote";
 
+interface MarketQuoteSnapshot {
+  data: MarketItem | null;
+  loading: boolean;
+  error: string | null;
+}
+
 interface StoreEntry {
   data: MarketItem | null;
   loading: boolean;
+  error: string | null;
 
   listeners: Set<() => void>;
 
@@ -21,13 +28,12 @@ interface StoreEntry {
 
   pollingInterval: ReturnType<typeof setInterval> | null;
 
-  // IMPORTANT:
-  // This object is only replaced when data/loading actually changes.
-  // useSyncExternalStore needs a stable snapshot reference.
-  snapshot: {
-    data: MarketItem | null;
-    loading: boolean;
-  };
+  /*
+   * IMPORTANT:
+   * This object is only replaced when data/loading/error changes.
+   * useSyncExternalStore needs a stable snapshot reference.
+   */
+  snapshot: MarketQuoteSnapshot;
 }
 
 const store = new Map<string, StoreEntry>();
@@ -53,15 +59,21 @@ function getEntry(
     entry = {
       data: null,
       loading: false,
+      error: null,
+
       listeners: new Set(),
+
       fetchPromise: null,
+
       subscribers: 0,
       pollingSubscribers: 0,
+
       pollingInterval: null,
 
       snapshot: {
         data: null,
         loading: false,
+        error: null,
       },
     };
 
@@ -75,6 +87,7 @@ function updateSnapshot(entry: StoreEntry) {
   entry.snapshot = {
     data: entry.data,
     loading: entry.loading,
+    error: entry.error,
   };
 }
 
@@ -94,12 +107,17 @@ async function fetchQuote(
 ) {
   const entry = getEntry(symbol, range, chartInterval);
 
+  /*
+   * Prevent duplicate requests for the same
+   * symbol/range/interval.
+   */
   if (entry.fetchPromise) {
     return entry.fetchPromise;
   }
 
   entry.fetchPromise = (async () => {
     entry.loading = true;
+    entry.error = null;
 
     updateSnapshot(entry);
     notify(entry);
@@ -117,17 +135,18 @@ async function fetchQuote(
       const res = await fetch(`/api/candles?${params.toString()}`);
 
       if (!res.ok) {
-        throw new Error("Fetch failed");
+        throw new Error(`Failed to load market data (${res.status})`);
       }
 
       const json = await res.json();
 
+      /*
+       * Request succeeded, but Yahoo/API returned no usable
+       * chart points.
+       */
       if (!json?.points?.length) {
         entry.data = null;
-
-        updateSnapshot(entry);
-        notify(entry);
-
+        entry.error = "No market data available";
         return;
       }
 
@@ -146,6 +165,13 @@ async function fetchQuote(
       const percentVal =
         range === "1D" ? json.dailyChangePercent : json.rangeChangePercent;
 
+      /*
+       * Make sure percentVal is actually usable.
+       */
+      if (typeof percentVal !== "number" || !Number.isFinite(percentVal)) {
+        throw new Error("Invalid percentage data received");
+      }
+
       const formattedValue = currentPrice.toLocaleString("en-US", {
         style: assetType === "crypto" ? "currency" : "decimal",
 
@@ -156,9 +182,16 @@ async function fetchQuote(
         maximumFractionDigits: assetType === "currency" ? 4 : 2,
       });
 
+      /*
+       * Successful request.
+       */
+      entry.error = null;
+
       entry.data = {
         id: symbol,
+
         name,
+
         displaySymbol,
 
         value: formattedValue,
@@ -192,6 +225,9 @@ async function fetchQuote(
       console.error(`Market quote error for ${symbol}:`, error);
 
       entry.data = null;
+
+      entry.error =
+        error instanceof Error ? error.message : "Failed to load market data";
     } finally {
       entry.loading = false;
       entry.fetchPromise = null;
@@ -238,6 +274,7 @@ function stopPolling(
 
   if (entry.pollingInterval) {
     clearInterval(entry.pollingInterval);
+
     entry.pollingInterval = null;
   }
 }
@@ -272,6 +309,10 @@ export function subscribeToMarketQuote(
     );
   }
 
+  /*
+   * Fetch only when this cache entry has no data
+   * and isn't already fetching.
+   */
   if (!entry.data && !entry.fetchPromise) {
     fetchQuote(symbol, name, range, displaySymbol, assetType, chartInterval);
   }
@@ -307,6 +348,16 @@ export async function refreshMarketQuote(
   range: ChartRange,
   displaySymbol: string,
   assetType: AssetType,
+  chartInterval?: ChartInterval,
 ) {
-  return fetchQuote(symbol, name, range, displaySymbol, assetType);
+  await fetchQuote(
+    symbol,
+    name,
+    range,
+    displaySymbol,
+    assetType,
+    chartInterval,
+  );
+
+  return getEntry(symbol, range, chartInterval).snapshot;
 }

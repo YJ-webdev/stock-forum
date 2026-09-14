@@ -34,6 +34,12 @@ export interface MarketItem {
   lunchEndMs?: number | null;
 }
 
+export interface MarketQuoteSnapshot {
+  data: MarketItem | null;
+  loading: boolean;
+  error: string | null;
+}
+
 export type ChartRange =
   | "1D"
   | "5D"
@@ -55,6 +61,14 @@ export type ChartInterval =
   | "1wk";
 
 export type AssetType = "index" | "stock" | "crypto" | "currency" | "futures";
+
+export type SelectedRange = "1D" | "5D" | "1M" | "3M" | "1Y" | "5Y" | "MAX";
+
+const EMPTY_SNAPSHOT: MarketQuoteSnapshot = {
+  data: null,
+  loading: false,
+  error: null,
+};
 
 export function useMarketQuote(
   symbol: string,
@@ -92,8 +106,7 @@ export function useMarketQuote(
       chartInterval,
     ],
   );
-
-  const getSnapshot = useCallback(() => {
+  const getSnapshot = useCallback((): MarketQuoteSnapshot => {
     if (!symbol) {
       return EMPTY_SNAPSHOT;
     }
@@ -103,8 +116,3 @@ export function useMarketQuote(
 
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
-
-const EMPTY_SNAPSHOT = {
-  data: null,
-  loading: false,
-};

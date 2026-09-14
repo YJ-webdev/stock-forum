@@ -11,8 +11,7 @@ import { useRouter } from "next/navigation";
 import { Numeric } from "./numeric";
 
 export interface MarketDetailHeaderProps {
-  symbol: string;
-  name: string;
+  // name: string;
   rawPrice?: number;
   value?: string;
   change: string;
@@ -22,13 +21,13 @@ export interface MarketDetailHeaderProps {
   updatedAt?: number | string;
   onBack?: () => void;
   onAddToList?: () => void;
-  categoryTitle?: string;
-  displaySymbol: string;
+  // categoryTitle?: string;
+  // displaySymbol: string;
   exchangeTimezone: string;
 }
 
 export function MarketDetailHeader({
-  name,
+  // name,
   rawPrice,
   value,
   change = "+0.00",
@@ -36,7 +35,7 @@ export function MarketDetailHeader({
   isPositive,
   selectedRange = "1D",
   updatedAt,
-  categoryTitle,
+  // categoryTitle,
   exchangeTimezone,
 }: MarketDetailHeaderProps) {
   const router = useRouter();
@@ -110,77 +109,46 @@ export function MarketDetailHeader({
   });
 
   return (
-    <div className="w-full relative px-4 py-2 space-y-2">
-      {/* Navigation Breadcrumb */}
-      <div className="flex items-center justify-between mb-10">
-        <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-300 font-medium">
-          <button
-            onClick={handleHomeClick}
-            className="flex items-center gap-1.5 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors cursor-pointer"
-          >
-            <span>Home</span>
-          </button>
+    <div className="flex items-center gap-3">
+      <div className="flex flex-col">
+        <div className="flex items-baseline gap-3 tracking-tight md:tracking-normal">
+          <Numeric className="font-extrabold text-3xl text-zinc-900 dark:text-zinc-300">
+            {displayPrice}
+          </Numeric>
 
-          <ChevronRight className="w-4 h-4" />
-          <button
-            // onClick={() => {}}
-            className="flex capitalize items-center gap-1.5  transition-colors"
+          <div
+            className={`flex items-center gap-1.5 text-lg ${colorClass} min-w-0`}
           >
-            <span>{categoryTitle}</span>
-          </button>
+            {isPositive ? (
+              <TrendingUp className="w-5 h-5 shrink-0" />
+            ) : (
+              <TrendingDown className="w-5 h-5 shrink-0" />
+            )}
+
+            <span className="jakarta shrink-0">{percent}</span>
+
+            <span className="jakarta shrink-0">({change})</span>
+
+            <span className="jakarta whitespace-nowrap text-sm shrink-0">
+              {rangeLabel}
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* Header Title */}
-      <div className="flex items-center justify-between gap-4 my-2">
-        <h1 className="text-[44px] font-bold text-gray-500/50 dark:text-zinc-700 tracking-tight leading-none">
-          {name}
-        </h1>
-      </div>
-
-      <div className="flex items-center gap-3 mt-1.5">
-        <div className="flex flex-col">
-          <div className="flex items-baseline gap-3 tracking-tight md:tracking-normal">
-            <Numeric className="font-extrabold text-3xl text-zinc-900 dark:text-zinc-300">
-              {displayPrice}
-            </Numeric>
-
-            <div
-              className={`flex items-center gap-1.5 text-lg ${colorClass} min-w-0`}
-            >
-              {isPositive ? (
-                <TrendingUp className="w-5 h-5 shrink-0" />
-              ) : (
-                <TrendingDown className="w-5 h-5 shrink-0" />
-              )}
-
-              <span className="jakarta shrink-0">{percent}</span>
-
-              <span className="jakarta shrink-0">({change})</span>
-
-              <span className="jakarta whitespace-nowrap text-sm shrink-0">
-                {rangeLabel}
-              </span>
-            </div>
-          </div>
-
-          {/* Timestamp Display */}
-          <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 font-normal flex items-center gap-1.5">
-            <span>{formatMarketTimestamp(updatedAt)}</span>
-            <span>·</span>
-            <span>Data delayed 15m</span>
-            <span>·</span>
-            <button
-              onClick={() =>
-                alert(
-                  "Market data is provided for informational purposes only.",
-                )
-              }
-              className="hover:underline cursor-pointer"
-            >
-              Disclaimer
-            </button>
-          </div>
+        {/* Timestamp Display */}
+        <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 font-normal flex items-center gap-1.5">
+          <span>{formatMarketTimestamp(updatedAt)}</span>
+          <span>·</span>
+          <span>Data delayed 15m</span>
+          <span>·</span>
+          <button
+            onClick={() =>
+              alert("Market data is provided for informational purposes only.")
+            }
+            className="hover:underline cursor-pointer"
+          >
+            Disclaimer
+          </button>
         </div>
       </div>
     </div>

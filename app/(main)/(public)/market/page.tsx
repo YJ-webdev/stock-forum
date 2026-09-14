@@ -3,12 +3,19 @@
 
 import React, { useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ChartRange, useMarketQuote } from "@/app/hooks/useMarketQuote";
+import {
+  ChartRange,
+  SelectedRange,
+  useMarketQuote,
+} from "@/app/hooks/useMarketQuote";
 import { DetailChart } from "@/app/components/detail-chart";
 import { ALL_MARKET_SYMBOLS, AssetType } from "@/lib/data/market-symbols";
 import { MarketDetailHeader } from "@/app/components/market-detail-header";
 import { RelativeStocks } from "@/app/components/relative-stocks";
 import { MarketSymbolItem } from "@/lib/data/market-symbols";
+import { ChevronRight } from "lucide-react";
+import { refreshMarketQuote } from "@/app/hooks/market-quote-store";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const RANGES = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
@@ -27,8 +34,7 @@ export default function MarketDetailPage() {
   const selectedCategory = searchParams.get("category") ?? "us";
   const selectedAssetType = searchParams.get("assetType") ?? "index";
 
-  const [activeRange, setActiveRange] = useState("1D");
-
+  const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
   const matchedItem = ALL_MARKET_SYMBOLS.find(
     (item) => item.symbol === selectedSymbol,
   );
@@ -56,104 +62,147 @@ export default function MarketDetailPage() {
     return false;
   });
 
-  const { data } = useMarketQuote(
+  const { data, error } = useMarketQuote(
     selectedSymbol,
     selectedName,
     activeRange as ChartRange,
     selectedDisplaySymbol,
     selectedAssetType as AssetType,
-
     0, // polling
-
     activeRange === "1D" ? "1m" : undefined,
   );
 
   // Fallback metadata lookup for timezone
   const symbolMeta = getMarketSymbolMeta(selectedSymbol);
   const chartRef = useRef<HTMLDivElement>(null);
-  const handleRangeChange = (range: string) => {
-    setActiveRange(range);
 
-    const chart = chartRef.current;
-    if (!chart) return;
+  const handleRangeChange = async (range: SelectedRange) => {
+    if (range === activeRange) return;
 
-    const rect = chart.getBoundingClientRect();
+    const chartInterval = range === "1D" ? "1m" : undefined;
 
-    const visibleTop = Math.max(rect.top, 0);
-    const visibleBottom = Math.min(rect.bottom, window.innerHeight);
+    const result = await refreshMarketQuote(
+      selectedSymbol,
+      selectedName,
+      range as ChartRange,
+      selectedDisplaySymbol,
+      selectedAssetType as AssetType,
+      chartInterval,
+    );
 
-    const visibleHeight = Math.max(0, visibleBottom - visibleTop);
-    const visibleRatio = visibleHeight / rect.height;
-
-    // Only scroll when less than half of the chart is visible
-    if (visibleRatio < 0.7) {
-      chart.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+    if (result.error || !result.data) {
+      console.error(`Failed to load ${selectedName} ${range}:`, result.error);
+      return;
     }
+
+    // Only switch after the new range is ready.
+    setActiveRange(range);
   };
-
   return (
-    <div className="max-w-4xl mx-auto mt-4 ">
-      {data && (
-        <>
-          <MarketDetailHeader
-            key={data.id}
-            symbol={data.id}
-            name={data.name}
-            rawPrice={data.rawPrice}
-            displaySymbol={selectedDisplaySymbol}
-            // value={data?.value}
-            change={data.change}
-            percent={data.percent}
-            isPositive={data.isPositive}
-            selectedRange={activeRange}
-            onBack={() => router.back()}
-            categoryTitle={selectedCategory}
-            updatedAt={data.updatedAt}
-            exchangeTimezone={
-              data?.exchangeTimezone || symbolMeta?.timezone || "UTC"
-            }
-          />
-          {/* chart */}
-          <div ref={chartRef} className="scroll-mt-24 md:mx-4 mt-1">
-            <DetailChart
-              history={data.history}
-              isPositive={data.isPositive}
-              isClosed={data.isClosed}
-              range={activeRange}
-              previousClose={data.previousClose}
-              lunchStartMs={data.lunchStartMs}
-              lunchEndMs={data.lunchEndMs}
-            />
-          </div>
-          <div className="flex justify-between md:justify-start gap-2 flex-wrap mx-2 my-4 md:mx-4">
-            {RANGES.map((r) => (
+    <div className="max-w-4xl mx-auto mt-6">
+      <div>
+        <div className="w-full relative px-3 space-y-2">
+          <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-300 font-medium">
               <button
-                key={r}
-                onClick={() => handleRangeChange(r)}
-                className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all cursor-pointer ${
-                  activeRange === r
-                    ? "bg-zinc-300/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
-                    : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600/50"
-                }`}
+                onClick={() => router.push("/")}
+                className="flex items-center gap-1.5 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors cursor-pointer"
               >
-                {r}
+                <span>Home</span>
               </button>
-            ))}
-          </div>
 
-          <div className="flex flex-col gap-3 md:mx-4 mb-20 mt-10">
-            <div className="flex justify-between items-baseline mx-3 md:mx-0">
-              <p className="text-[15px] text-zinc-600 dark:text-zinc-300 ">
-                Related assets
-              </p>
+              <ChevronRight className="w-4 h-4" />
+              <button className="flex capitalize items-center cursor-auto gap-1.5 transition-colors">
+                <span>{selectedCategory}</span>
+              </button>
             </div>
-            <RelativeStocks items={relativeStocks} />
           </div>
-        </>
-      )}
+          <div className="flex items-center justify-between gap-4 mt-2">
+            <h1 className="text-[44px] font-bold text-gray-500/50 dark:text-zinc-700 tracking-tight leading-none">
+              {selectedName}
+            </h1>
+          </div>
+        </div>
+        {/* Chart */}
+        {error ? (
+          <div className="md:mx-4 mt-4">
+            <div className="w-full aspect-5/2 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 p-4 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
+              <span className="text-xs text-zinc-400">{error}</span>
+            </div>
+          </div>
+        ) : data ? (
+          <>
+            <div className="w-full relative px-3 mt-4 space-y-2">
+              {" "}
+              <MarketDetailHeader
+                rawPrice={data.rawPrice}
+                change={data.change}
+                percent={data.percent}
+                isPositive={data.isPositive}
+                updatedAt={data.updatedAt}
+                selectedRange={activeRange}
+                onBack={() => router.back()}
+                exchangeTimezone={
+                  data.exchangeTimezone || symbolMeta?.timezone || "UTC"
+                }
+              />{" "}
+            </div>{" "}
+            <div ref={chartRef} className="scroll-mt-70 md:mx-4 mt-1">
+              {" "}
+              <DetailChart
+                history={data.history}
+                isPositive={data.isPositive}
+                isClosed={data.isClosed}
+                previousClose={data.previousClose}
+                lunchStartMs={data.lunchStartMs}
+                lunchEndMs={data.lunchEndMs}
+                range={activeRange}
+              />{" "}
+            </div>{" "}
+          </>
+        ) : (
+          <>
+            <div className="w-full relative px-3 mt-4 space-y-2">
+              <div className="w-full flex flex-col gap-2 mb-2">
+                <Skeleton className="h-9 w-44 rounded-xl" />
+                <Skeleton className="h-4 w-36 rounded-full" />
+              </div>
+            </div>
+
+            <div className="md:mx-4 mt-1">
+              <Skeleton className="w-full aspect-800/370 rounded-lg" />
+            </div>
+          </>
+        )}
+
+        <div className="flex justify-between md:justify-start gap-2 flex-wrap mx-2 my-4 md:mx-4">
+          {RANGES.map((r) => (
+            <button
+              key={r}
+              onClick={() => handleRangeChange(r as SelectedRange)}
+              className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all cursor-pointer ${
+                activeRange === r
+                  ? "bg-zinc-300/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
+                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600/50"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-3 md:mx-4 mb-20 mt-10">
+          <div className="flex justify-between items-baseline mx-3 md:mx-0">
+            <p className="text-[15px] text-zinc-600 dark:text-zinc-300 ">
+              Related assets
+            </p>
+          </div>
+          <RelativeStocks
+            items={relativeStocks}
+            setActiveRange={setActiveRange}
+          />
+        </div>
+      </div>
     </div>
   );
 }

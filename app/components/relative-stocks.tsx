@@ -1,6 +1,6 @@
 "use client";
 
-import { useMarketQuote } from "@/app/hooks/useMarketQuote";
+import { SelectedRange, useMarketQuote } from "@/app/hooks/useMarketQuote";
 import {
   getMarketCloseTarget,
   getMarketOpenTarget,
@@ -23,8 +23,10 @@ import { Numeric } from "./numeric";
 
 interface RelativeStocksProps {
   items: MarketSymbolItem[]; // 🟢 Accepts the filtered list directly
+  setActiveRange: React.Dispatch<React.SetStateAction<SelectedRange>>;
 }
-export function RelativeStocks({ items }: RelativeStocksProps) {
+
+export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
   return (
     <div className="w-full flex flex-col">
       {/* Container: No margins, paddings, or extra constraints */}
@@ -52,7 +54,11 @@ export function RelativeStocks({ items }: RelativeStocksProps) {
           </thead>
           <tbody className="font-medium">
             {items.map((item) => (
-              <RelativeStockRow key={item.symbol} item={item} />
+              <RelativeStockRow
+                key={item.symbol}
+                item={item}
+                setActiveRange={setActiveRange}
+              />
             ))}
           </tbody>
         </table>
@@ -61,7 +67,13 @@ export function RelativeStocks({ items }: RelativeStocksProps) {
   );
 }
 
-function RelativeStockRow({ item }: { item: MarketSymbolItem }) {
+function RelativeStockRow({
+  item,
+  setActiveRange,
+}: {
+  item: MarketSymbolItem;
+  setActiveRange: React.Dispatch<React.SetStateAction<SelectedRange>>;
+}) {
   const { data: quote } = useMarketQuote(
     item.symbol,
     item.name,
@@ -88,6 +100,7 @@ function RelativeStockRow({ item }: { item: MarketSymbolItem }) {
   )}`;
 
   const handleRowClick = () => {
+    setActiveRange("1D");
     router.push(href);
   };
 
