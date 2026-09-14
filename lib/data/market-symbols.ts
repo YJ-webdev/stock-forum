@@ -1,5 +1,45 @@
 export type MarketRegion = "America" | "APEC" | "EMEA" | "Global";
+
 export type AssetType = "index" | "stock" | "crypto" | "currency" | "futures";
+
+// -----------------------------------------------------------------------------
+// MARKET SCHEDULE
+// -----------------------------------------------------------------------------
+
+export type MarketSchedule =
+  | "US_EQUITY"
+  | "CA_EQUITY"
+  | "BR_EQUITY"
+  | "MX_EQUITY"
+  | "JP_EQUITY"
+  | "CN_EQUITY"
+  | "HK_EQUITY"
+  | "IN_EQUITY"
+  | "TW_EQUITY"
+  | "KR_EQUITY"
+  | "AU_EQUITY"
+  | "SG_EQUITY"
+  | "ID_EQUITY"
+  | "EU_EQUITY"
+  | "DE_EQUITY"
+  | "GB_EQUITY"
+  | "FR_EQUITY"
+  | "IT_EQUITY"
+  | "CH_EQUITY"
+  | "ES_EQUITY"
+  | "NL_EQUITY"
+  | "SE_EQUITY"
+  | "SA_EQUITY";
+
+export interface TradingHours {
+  timezone: string;
+  open: string;
+  close: string;
+}
+
+// -----------------------------------------------------------------------------
+// SYMBOL TYPE
+// -----------------------------------------------------------------------------
 
 export interface MarketSymbolItem {
   name: string;
@@ -8,24 +48,196 @@ export interface MarketSymbolItem {
   country: string;
   region: MarketRegion;
   assetType: AssetType;
+
   providerSymbol?: string;
   isProxy?: boolean;
+
   timezone?: string;
   exchangeTimezone?: string;
-  tradingBreak?: {
-    start: string;
-    end: string;
-  };
+
+  marketSchedule?: MarketSchedule;
 }
+
+// -----------------------------------------------------------------------------
+// NORMAL TRADING HOURS
+//
+// These are normal weekday sessions only.
+//
+// Holidays, half-days, lunch breaks and special sessions
+// will be handled separately.
+// -----------------------------------------------------------------------------
+
+export const TRADING_HOURS: Record<MarketSchedule, TradingHours> = {
+  // ---------------------------------------------------------------------------
+  // AMERICA
+  // ---------------------------------------------------------------------------
+
+  US_EQUITY: {
+    timezone: "America/New_York",
+    open: "09:30",
+    close: "16:00",
+  },
+
+  CA_EQUITY: {
+    timezone: "America/Toronto",
+    open: "09:30",
+    close: "16:00",
+  },
+
+  BR_EQUITY: {
+    timezone: "America/Sao_Paulo",
+    open: "10:00",
+    close: "17:55",
+  },
+
+  MX_EQUITY: {
+    timezone: "America/Mexico_City",
+    open: "08:30",
+    close: "15:00",
+  },
+
+  // ---------------------------------------------------------------------------
+  // APEC
+  // ---------------------------------------------------------------------------
+
+  JP_EQUITY: {
+    timezone: "Asia/Tokyo",
+    open: "09:00",
+    close: "15:30",
+  },
+
+  CN_EQUITY: {
+    timezone: "Asia/Shanghai",
+    open: "09:30",
+    close: "15:00",
+  },
+
+  HK_EQUITY: {
+    timezone: "Asia/Hong_Kong",
+    open: "09:30",
+    close: "16:00",
+  },
+
+  IN_EQUITY: {
+    timezone: "Asia/Kolkata",
+    open: "09:15",
+    close: "15:30",
+  },
+
+  TW_EQUITY: {
+    timezone: "Asia/Taipei",
+    open: "09:00",
+    close: "13:30",
+  },
+
+  KR_EQUITY: {
+    timezone: "Asia/Seoul",
+    open: "09:00",
+    close: "15:30",
+  },
+
+  AU_EQUITY: {
+    timezone: "Australia/Sydney",
+    open: "10:00",
+    close: "16:00",
+  },
+
+  SG_EQUITY: {
+    timezone: "Asia/Singapore",
+    open: "09:00",
+    close: "17:00",
+  },
+
+  ID_EQUITY: {
+    timezone: "Asia/Jakarta",
+    open: "09:00",
+    close: "16:00",
+  },
+
+  // ---------------------------------------------------------------------------
+  // EMEA
+  // ---------------------------------------------------------------------------
+
+  EU_EQUITY: {
+    timezone: "Europe/Berlin",
+    open: "09:00",
+    close: "17:30",
+  },
+
+  DE_EQUITY: {
+    timezone: "Europe/Berlin",
+    open: "09:00",
+    close: "17:30",
+  },
+
+  GB_EQUITY: {
+    timezone: "Europe/London",
+    open: "08:00",
+    close: "16:30",
+  },
+
+  FR_EQUITY: {
+    timezone: "Europe/Paris",
+    open: "09:00",
+    close: "17:30",
+  },
+
+  IT_EQUITY: {
+    timezone: "Europe/Rome",
+    open: "09:00",
+    close: "17:30",
+  },
+
+  CH_EQUITY: {
+    timezone: "Europe/Zurich",
+    open: "09:00",
+    close: "17:30",
+  },
+
+  ES_EQUITY: {
+    timezone: "Europe/Madrid",
+    open: "09:00",
+    close: "17:30",
+  },
+
+  NL_EQUITY: {
+    timezone: "Europe/Amsterdam",
+    open: "09:00",
+    close: "17:30",
+  },
+
+  SE_EQUITY: {
+    timezone: "Europe/Stockholm",
+    open: "09:00",
+    close: "17:30",
+  },
+
+  SA_EQUITY: {
+    timezone: "Asia/Riyadh",
+    open: "10:00",
+    close: "15:00",
+  },
+};
+
+// -----------------------------------------------------------------------------
+// ICON
+// -----------------------------------------------------------------------------
 
 export const getSymbolIcon = (symbol: string): string => {
   const cleanSymbol = symbol.replace(/[\^=]/g, "").split(".")[0];
+
   return `https://financialmodelingprep.com/image-stock/${cleanSymbol}.png`;
 };
 
-// --- SYMBOL LISTS ---
+// -----------------------------------------------------------------------------
+// MARKET SYMBOLS
+// -----------------------------------------------------------------------------
 
 export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
+  // ===========================================================================
+  // AMERICA
+  // ===========================================================================
+
   America: [
     {
       name: "S&P 500",
@@ -35,7 +247,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "America",
       assetType: "index",
       timezone: "America/New_York",
+      marketSchedule: "US_EQUITY",
     },
+
     {
       name: "Nasdaq 100",
       symbol: "^NDX",
@@ -44,7 +258,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "America",
       assetType: "index",
       timezone: "America/New_York",
+      marketSchedule: "US_EQUITY",
     },
+
     {
       name: "Dow Jones Industrial Average",
       symbol: "^DJI",
@@ -53,7 +269,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "America",
       assetType: "index",
       timezone: "America/New_York",
+      marketSchedule: "US_EQUITY",
     },
+
     {
       name: "Russell 2000",
       symbol: "^RUT",
@@ -62,7 +280,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "America",
       assetType: "index",
       timezone: "America/New_York",
+      marketSchedule: "US_EQUITY",
     },
+
     {
       name: "S&P/TSX Composite Index",
       symbol: "^GSPTSE",
@@ -71,7 +291,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "America",
       assetType: "index",
       timezone: "America/Toronto",
+      marketSchedule: "CA_EQUITY",
     },
+
     {
       name: "Bovespa Index",
       symbol: "^BVSP",
@@ -80,7 +302,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "America",
       assetType: "index",
       timezone: "America/Sao_Paulo",
+      marketSchedule: "BR_EQUITY",
     },
+
     {
       name: "S&P/BMV IPC",
       symbol: "^MXX",
@@ -89,8 +313,14 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "America",
       assetType: "index",
       timezone: "America/Mexico_City",
+      marketSchedule: "MX_EQUITY",
     },
   ],
+
+  // ===========================================================================
+  // APEC
+  // ===========================================================================
+
   APEC: [
     {
       name: "Nikkei 225",
@@ -100,11 +330,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Tokyo",
-      tradingBreak: {
-        start: "11:30",
-        end: "12:30",
-      },
+      marketSchedule: "JP_EQUITY",
     },
+
     {
       name: "TOPIX",
       symbol: "TOPIX",
@@ -115,11 +343,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       providerSymbol: "1306.T",
       isProxy: true,
       timezone: "Asia/Tokyo",
-      tradingBreak: {
-        start: "11:30",
-        end: "12:30",
-      },
+      marketSchedule: "JP_EQUITY",
     },
+
     {
       name: "Shanghai Composite Index",
       symbol: "000001.SS",
@@ -128,11 +354,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Shanghai",
-      tradingBreak: {
-        start: "11:30",
-        end: "13:00",
-      },
+      marketSchedule: "CN_EQUITY",
     },
+
     {
       name: "CSI 300 Index",
       symbol: "000300.SS",
@@ -141,7 +365,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Shanghai",
+      marketSchedule: "CN_EQUITY",
     },
+
     {
       name: "Hang Seng Index",
       symbol: "^HSI",
@@ -150,11 +376,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Hong_Kong",
-      tradingBreak: {
-        start: "12:00",
-        end: "13:00",
-      },
+      marketSchedule: "HK_EQUITY",
     },
+
     {
       name: "Nifty 50",
       symbol: "^NSEI",
@@ -163,7 +387,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Kolkata",
+      marketSchedule: "IN_EQUITY",
     },
+
     {
       name: "TAIEX",
       symbol: "^TWII",
@@ -172,7 +398,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Taipei",
+      marketSchedule: "TW_EQUITY",
     },
+
     {
       name: "KOSPI",
       symbol: "^KS11",
@@ -181,7 +409,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Seoul",
+      marketSchedule: "KR_EQUITY",
     },
+
     {
       name: "KOSDAQ",
       symbol: "^KQ11",
@@ -190,7 +420,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Seoul",
+      marketSchedule: "KR_EQUITY",
     },
+
     {
       name: "S&P/ASX 200",
       symbol: "^AXJO",
@@ -199,7 +431,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Australia/Sydney",
+      marketSchedule: "AU_EQUITY",
     },
+
     {
       name: "Straits Times Index",
       symbol: "^STI",
@@ -208,7 +442,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Singapore",
+      marketSchedule: "SG_EQUITY",
     },
+
     {
       name: "IDX Composite",
       symbol: "^JKSE",
@@ -217,11 +453,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Jakarta",
-      tradingBreak: {
-        start: "11:30",
-        end: "14:00",
-      },
+      marketSchedule: "ID_EQUITY",
     },
+
     {
       name: "Shenzhen Component",
       symbol: "399001.SZ",
@@ -230,12 +464,14 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "APEC",
       assetType: "index",
       timezone: "Asia/Shanghai",
-      tradingBreak: {
-        start: "11:30",
-        end: "13:00",
-      },
+      marketSchedule: "CN_EQUITY",
     },
   ],
+
+  // ===========================================================================
+  // EMEA
+  // ===========================================================================
+
   EMEA: [
     {
       name: "EURO STOXX 50",
@@ -245,7 +481,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "EMEA",
       assetType: "index",
       timezone: "Europe/Berlin",
+      marketSchedule: "EU_EQUITY",
     },
+
     {
       name: "DAX",
       symbol: "^GDAXI",
@@ -254,7 +492,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "EMEA",
       assetType: "index",
       timezone: "Europe/Berlin",
+      marketSchedule: "DE_EQUITY",
     },
+
     {
       name: "FTSE 100",
       symbol: "^FTSE",
@@ -263,7 +503,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "EMEA",
       assetType: "index",
       timezone: "Europe/London",
+      marketSchedule: "GB_EQUITY",
     },
+
     {
       name: "CAC 40",
       symbol: "^FCHI",
@@ -272,7 +514,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "EMEA",
       assetType: "index",
       timezone: "Europe/Paris",
+      marketSchedule: "FR_EQUITY",
     },
+
     {
       name: "FTSE MIB",
       symbol: "FTSEMIB.MI",
@@ -281,7 +525,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "EMEA",
       assetType: "index",
       timezone: "Europe/Rome",
+      marketSchedule: "IT_EQUITY",
     },
+
     {
       name: "Swiss Market Index",
       symbol: "^SSMI",
@@ -290,7 +536,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "EMEA",
       assetType: "index",
       timezone: "Europe/Zurich",
+      marketSchedule: "CH_EQUITY",
     },
+
     {
       name: "IBEX 35",
       symbol: "^IBEX",
@@ -299,7 +547,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "EMEA",
       assetType: "index",
       timezone: "Europe/Madrid",
+      marketSchedule: "ES_EQUITY",
     },
+
     {
       name: "AEX Index",
       symbol: "^AEX",
@@ -308,7 +558,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "EMEA",
       assetType: "index",
       timezone: "Europe/Amsterdam",
+      marketSchedule: "NL_EQUITY",
     },
+
     {
       name: "OMX Stockholm 30",
       symbol: "^OMX",
@@ -317,7 +569,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "EMEA",
       assetType: "index",
       timezone: "Europe/Stockholm",
+      marketSchedule: "SE_EQUITY",
     },
+
     {
       name: "Tadawul All Share Index",
       symbol: "^TASI.SR",
@@ -326,9 +580,16 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       region: "EMEA",
       assetType: "index",
       timezone: "Asia/Riyadh",
+      marketSchedule: "SA_EQUITY",
     },
   ],
 };
+
+// -----------------------------------------------------------------------------
+// CRYPTO
+//
+// Crypto is 24/7, so it intentionally has no marketSchedule.
+// -----------------------------------------------------------------------------
 
 export const CRYPTO_SYMBOLS: MarketSymbolItem[] = [
   {
@@ -340,6 +601,7 @@ export const CRYPTO_SYMBOLS: MarketSymbolItem[] = [
     assetType: "crypto",
     timezone: "UTC",
   },
+
   {
     name: "Ethereum",
     symbol: "ETH-USD",
@@ -349,6 +611,7 @@ export const CRYPTO_SYMBOLS: MarketSymbolItem[] = [
     assetType: "crypto",
     timezone: "UTC",
   },
+
   {
     name: "Tether",
     symbol: "USDT-USD",
@@ -358,6 +621,7 @@ export const CRYPTO_SYMBOLS: MarketSymbolItem[] = [
     assetType: "crypto",
     timezone: "UTC",
   },
+
   {
     name: "USD Coin",
     symbol: "USDC-USD",
@@ -367,6 +631,7 @@ export const CRYPTO_SYMBOLS: MarketSymbolItem[] = [
     assetType: "crypto",
     timezone: "UTC",
   },
+
   {
     name: "BNB",
     symbol: "BNB-USD",
@@ -376,6 +641,7 @@ export const CRYPTO_SYMBOLS: MarketSymbolItem[] = [
     assetType: "crypto",
     timezone: "UTC",
   },
+
   {
     name: "Solana",
     symbol: "SOL-USD",
@@ -385,6 +651,7 @@ export const CRYPTO_SYMBOLS: MarketSymbolItem[] = [
     assetType: "crypto",
     timezone: "UTC",
   },
+
   {
     name: "XRP",
     symbol: "XRP-USD",
@@ -394,6 +661,7 @@ export const CRYPTO_SYMBOLS: MarketSymbolItem[] = [
     assetType: "crypto",
     timezone: "UTC",
   },
+
   {
     name: "TRON",
     symbol: "TRX-USD",
@@ -403,6 +671,7 @@ export const CRYPTO_SYMBOLS: MarketSymbolItem[] = [
     assetType: "crypto",
     timezone: "UTC",
   },
+
   {
     name: "Dogecoin",
     symbol: "DOGE-USD",
@@ -412,6 +681,7 @@ export const CRYPTO_SYMBOLS: MarketSymbolItem[] = [
     assetType: "crypto",
     timezone: "UTC",
   },
+
   {
     name: "Cardano",
     symbol: "ADA-USD",
@@ -423,6 +693,13 @@ export const CRYPTO_SYMBOLS: MarketSymbolItem[] = [
   },
 ];
 
+// -----------------------------------------------------------------------------
+// CURRENCIES
+//
+// Forex has a different weekly session model.
+// We will handle that separately rather than forcing it into equity hours.
+// -----------------------------------------------------------------------------
+
 export const CURRENCY_SYMBOLS: MarketSymbolItem[] = [
   {
     name: "EUR / USD",
@@ -433,6 +710,7 @@ export const CURRENCY_SYMBOLS: MarketSymbolItem[] = [
     assetType: "currency",
     timezone: "America/New_York",
   },
+
   {
     name: "USD / JPY",
     symbol: "JPY=X",
@@ -442,6 +720,7 @@ export const CURRENCY_SYMBOLS: MarketSymbolItem[] = [
     assetType: "currency",
     timezone: "America/New_York",
   },
+
   {
     name: "GBP / USD",
     symbol: "GBPUSD=X",
@@ -451,6 +730,7 @@ export const CURRENCY_SYMBOLS: MarketSymbolItem[] = [
     assetType: "currency",
     timezone: "America/New_York",
   },
+
   {
     name: "USD / CAD",
     symbol: "CAD=X",
@@ -460,6 +740,7 @@ export const CURRENCY_SYMBOLS: MarketSymbolItem[] = [
     assetType: "currency",
     timezone: "America/New_York",
   },
+
   {
     name: "USD / CHF",
     symbol: "CHF=X",
@@ -469,6 +750,7 @@ export const CURRENCY_SYMBOLS: MarketSymbolItem[] = [
     assetType: "currency",
     timezone: "America/New_York",
   },
+
   {
     name: "AUD / USD",
     symbol: "AUDUSD=X",
@@ -480,6 +762,13 @@ export const CURRENCY_SYMBOLS: MarketSymbolItem[] = [
   },
 ];
 
+// -----------------------------------------------------------------------------
+// FUTURES
+//
+// Futures also have their own sessions and maintenance breaks.
+// We'll handle those separately.
+// -----------------------------------------------------------------------------
+
 export const FUTURES_SYMBOLS: MarketSymbolItem[] = [
   {
     name: "Crude Oil Futures",
@@ -490,6 +779,7 @@ export const FUTURES_SYMBOLS: MarketSymbolItem[] = [
     assetType: "futures",
     timezone: "America/New_York",
   },
+
   {
     name: "Gold Futures",
     symbol: "GC=F",
@@ -499,6 +789,7 @@ export const FUTURES_SYMBOLS: MarketSymbolItem[] = [
     assetType: "futures",
     timezone: "America/New_York",
   },
+
   {
     name: "Silver Futures",
     symbol: "SI=F",
@@ -508,6 +799,7 @@ export const FUTURES_SYMBOLS: MarketSymbolItem[] = [
     assetType: "futures",
     timezone: "America/New_York",
   },
+
   {
     name: "Natural Gas Futures",
     symbol: "NG=F",
@@ -519,129 +811,13 @@ export const FUTURES_SYMBOLS: MarketSymbolItem[] = [
   },
 ];
 
+// -----------------------------------------------------------------------------
+// ALL SYMBOLS
+// -----------------------------------------------------------------------------
+
 export const ALL_MARKET_SYMBOLS: MarketSymbolItem[] = [
   ...Object.values(MARKET_SYMBOLS).flat(),
   ...CRYPTO_SYMBOLS,
   ...CURRENCY_SYMBOLS,
   ...FUTURES_SYMBOLS,
 ];
-
-// --- TIMEZONE-AWARE SCHEDULE HELPER ---
-
-interface ExchangeSchedule {
-  open: string; // "HH:mm" in local exchange timezone
-  close: string; // "HH:mm" in local exchange timezone
-  breakStart?: string;
-  breakEnd?: string;
-}
-
-const LOCAL_SCHEDULES: Record<string, ExchangeSchedule> = {
-  US: { open: "09:30", close: "16:00" },
-  CA: { open: "09:30", close: "16:00" },
-  JP: { open: "09:00", close: "15:00", breakStart: "11:30", breakEnd: "12:30" },
-  CN: { open: "09:30", close: "15:00", breakStart: "11:30", breakEnd: "13:00" },
-  HK: { open: "09:30", close: "16:00", breakStart: "12:00", breakEnd: "13:00" },
-  KR: { open: "09:00", close: "15:30" },
-  GB: { open: "08:00", close: "16:30" },
-  DE: { open: "09:00", close: "17:30" },
-  EU: { open: "09:00", close: "17:30" },
-  MX: { open: "08:30", close: "15:00" },
-  BR: { open: "10:00", close: "17:55" },
-  SA: { open: "10:00", close: "15:00" },
-};
-
-function getLocalMinutes(
-  date: Date,
-  timezone: string,
-): { day: number; mins: number } {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    weekday: "short",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: false,
-  }).formatToParts(date);
-
-  let hour = 0;
-  let minute = 0;
-  let dayName = "";
-
-  for (const part of parts) {
-    if (part.type === "weekday") dayName = part.value;
-    if (part.type === "hour") hour = parseInt(part.value, 10) % 24;
-    if (part.type === "minute") minute = parseInt(part.value, 10);
-  }
-
-  const dayMap: Record<string, number> = {
-    Sun: 0,
-    Mon: 1,
-    Tue: 2,
-    Wed: 3,
-    Thu: 4,
-    Fri: 5,
-    Sat: 6,
-  };
-  return { day: dayMap[dayName] ?? date.getUTCDay(), mins: hour * 60 + minute };
-}
-
-function parseMins(timeStr: string): number {
-  const [h, m] = timeStr.split(":").map(Number);
-  return h * 60 + m;
-}
-
-export function isMarketOpen(item: MarketSymbolItem): boolean {
-  if (item.assetType === "crypto") return true;
-
-  const now = new Date();
-  const tz = item.timezone || "America/New_York";
-  const { day, mins } = getLocalMinutes(now, tz);
-
-  // Forex market hours
-  if (item.assetType === "currency") {
-    if (day === 6) return false;
-    if (day === 0 && mins < 17 * 60) return false; // Opens ~17:00 EST Sunday
-    if (day === 5 && mins >= 17 * 60) return false; // Closes ~17:00 EST Friday
-    return true;
-  }
-
-  // Stock/Index weekend check
-  if (day === 0 || day === 6) return false;
-
-  const sched = LOCAL_SCHEDULES[item.country] || LOCAL_SCHEDULES.US;
-  const openMins = parseMins(sched.open);
-  const closeMins = parseMins(sched.close);
-
-  if (mins < openMins || mins >= closeMins) return false;
-
-  if (sched.breakStart && sched.breakEnd) {
-    const bStart = parseMins(sched.breakStart);
-    const bEnd = parseMins(sched.breakEnd);
-    if (mins >= bStart && mins < bEnd) return false;
-  }
-
-  return true;
-}
-
-export function getMarketCloseTarget(item: MarketSymbolItem): Date {
-  const target = new Date();
-  if (item.assetType === "crypto") {
-    target.setUTCHours(23, 59, 59, 999);
-    return target;
-  }
-
-  // Use dynamic market state verification
-  if (!isMarketOpen(item)) {
-    target.setMinutes(target.getMinutes() + 15);
-    return target;
-  }
-
-  target.setHours(target.getHours() + 1);
-  return target;
-}
-
-export function getMarketOpenTarget(item: MarketSymbolItem): Date {
-  const now = new Date();
-  const target = new Date(now);
-  target.setMinutes(target.getMinutes() + 30);
-  return target;
-}

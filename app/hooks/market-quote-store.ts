@@ -206,6 +206,10 @@ async function fetchQuote(
 
         isClosed: json.isClosed ?? true,
 
+        marketOpenMs: json.marketOpenMs ?? null,
+
+        marketCloseMs: json.marketCloseMs ?? null,
+
         rawPrice: currentPrice,
 
         previousClose: json.previousClose,

@@ -7,38 +7,11 @@ import {
   subscribeToMarketQuote,
 } from "./market-quote-store";
 
-export interface ChartPoint {
-  timestampMs: number;
-  price: number;
-  open?: number;
-  high?: number;
-  low?: number;
-  close?: number;
-}
+// -----------------------------------------------------------------------------
+// TYPES
+// -----------------------------------------------------------------------------
 
-export interface MarketItem {
-  id: string;
-  name: string;
-  value: string;
-  change: string;
-  percent: string;
-  isPositive: boolean;
-  history: ChartPoint[];
-  isClosed: boolean;
-  rawPrice: number;
-  displaySymbol?: string;
-  previousClose?: number;
-  updatedAt?: number | string;
-  exchangeTimezone?: string;
-  lunchStartMs?: number | null;
-  lunchEndMs?: number | null;
-}
-
-export interface MarketQuoteSnapshot {
-  data: MarketItem | null;
-  loading: boolean;
-  error: string | null;
-}
+export type AssetType = "index" | "stock" | "crypto" | "currency" | "futures";
 
 export type ChartRange =
   | "1D"
@@ -50,6 +23,8 @@ export type ChartRange =
   | "5Y"
   | "MAX";
 
+export type SelectedRange = ChartRange;
+
 export type ChartInterval =
   | "1m"
   | "2m"
@@ -57,35 +32,75 @@ export type ChartInterval =
   | "15m"
   | "30m"
   | "60m"
+  | "90m"
+  | "1h"
   | "1d"
-  | "1wk";
+  | "5d"
+  | "1wk"
+  | "1mo"
+  | "3mo";
 
-export type AssetType = "index" | "stock" | "crypto" | "currency" | "futures";
+export interface ChartPoint {
+  timestampMs: number;
+  price: number;
 
-export type SelectedRange = "1D" | "5D" | "1M" | "3M" | "1Y" | "5Y" | "MAX";
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
+}
 
-const EMPTY_SNAPSHOT: MarketQuoteSnapshot = {
-  data: null,
-  loading: false,
-  error: null,
-};
+export interface MarketItem {
+  id: string;
+  name: string;
+  displaySymbol?: string;
+
+  value: string;
+  change: string;
+  percent: string;
+
+  isPositive: boolean;
+
+  history: ChartPoint[];
+
+  rawPrice: number;
+  previousClose?: number;
+
+  updatedAt?: number | string;
+
+  exchangeTimezone?: string;
+
+  // Runtime market-session state returned by /api/candles
+  isClosed: boolean;
+
+  marketOpenMs?: number | null;
+  marketCloseMs?: number | null;
+
+  // Runtime intraday break detected from candle data
+  lunchStartMs?: number | null;
+  lunchEndMs?: number | null;
+}
+
+// -----------------------------------------------------------------------------
+// HOOK
+// -----------------------------------------------------------------------------
 
 export function useMarketQuote(
   symbol: string,
   name: string,
-  range: ChartRange,
-  displaySymbol: string,
-  assetType: AssetType,
+  range: ChartRange = "1D",
+  displaySymbol: string = symbol,
+  assetType: AssetType = "index",
   pollingInterval = 0,
   chartInterval?: ChartInterval,
 ) {
+  /*
+   * useSyncExternalStore expects the subscribe function itself
+   * to remain stable between renders.
+   */
   const subscribe = useCallback(
-    (listener: () => void) => {
-      if (!symbol) {
-        return () => {};
-      }
-
-      return subscribeToMarketQuote(
+    (listener: () => void) =>
+      subscribeToMarketQuote(
         symbol,
         name,
         range,
@@ -94,8 +109,7 @@ export function useMarketQuote(
         pollingInterval,
         chartInterval,
         listener,
-      );
-    },
+      ),
     [
       symbol,
       name,
@@ -106,13 +120,15 @@ export function useMarketQuote(
       chartInterval,
     ],
   );
-  const getSnapshot = useCallback((): MarketQuoteSnapshot => {
-    if (!symbol) {
-      return EMPTY_SNAPSHOT;
-    }
 
-    return getMarketQuoteSnapshot(symbol, range, chartInterval);
-  }, [symbol, range, chartInterval]);
+  /*
+   * Snapshot must correspond to the exact same
+   * symbol/range/chartInterval cache key.
+   */
+  const getSnapshot = useCallback(
+    () => getMarketQuoteSnapshot(symbol, range, chartInterval),
+    [symbol, range, chartInterval],
+  );
 
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
