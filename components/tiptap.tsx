@@ -37,7 +37,7 @@ const Tiptap = ({ content, onChange }: TiptapProps) => {
         resize: {
           enabled: true,
           alwaysPreserveAspectRatio: true,
-          directions: ["left", "right"],
+          directions: ["left", "right", "top", "bottom"],
           minWidth: 50,
         },
       }),

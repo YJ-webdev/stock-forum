@@ -1,6 +1,5 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { getForumCategories } from "../actions/forum-categories";
 import LayoutShell from "../components/layout-shell";
 
 async function getNews() {
@@ -13,6 +12,38 @@ async function getNews() {
   } catch {
     return [];
   }
+}
+
+async function getMostViewedPost(limit = 5) {
+  return prisma.post.findMany({
+    take: limit,
+
+    orderBy: {
+      viewCount: "desc",
+    },
+
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      thumbnail: true,
+      createdAt: true,
+
+      asset: {
+        select: {
+          name: true,
+          symbol: true,
+          displaySymbol: true,
+        },
+      },
+
+      author: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
 }
 
 export default async function MainLayout({
@@ -30,24 +61,10 @@ export default async function MainLayout({
     : null;
 
   const news = await getNews();
-  const categories = await getForumCategories();
-  const rawMarketData = await prisma.marketAsset.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-
-  const marketData = rawMarketData.map((asset) => ({
-    ...asset,
-    createdAt: asset.createdAt.toISOString(),
-    updatedAt: asset.updatedAt.toISOString(),
-  }));
+  const mostViewedPosts = await getMostViewedPost();
 
   return (
-    <LayoutShell
-      user={user}
-      news={news}
-      categories={categories}
-      // marketData={marketData}
-    >
+    <LayoutShell user={user} news={news} posts={mostViewedPosts}>
       {children}
     </LayoutShell>
   );

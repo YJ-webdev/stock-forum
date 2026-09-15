@@ -14,6 +14,7 @@ const eslintConfig = defineConfig([
       // Disable Tailwind class order/simplification warnings if triggered via ESLint
       "tailwindcss/classnames-order": "off",
       "tailwindcss/no-custom-classname": "off",
+      "@next/next/no-img-element": "off",
     },
   },
   // Override default ignores of eslint-config-next.

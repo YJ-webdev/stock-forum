@@ -1,31 +1,20 @@
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useEffect } from "react";
-
-import { CategoryWithCount, ForumList } from "./forum-card";
-
-// import { PostCard } from "./post-card";
-// import { PostWithRelations } from "./post-card";
 import { NewsCarousel } from "./news-card";
 import { NewsItem } from "@/types";
 import { ModeToggle } from "./mode-toggle";
+import Link from "next/link";
+import { MostViewedPost } from "./layout-shell";
 
 interface PanelLeftProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   news: NewsItem[];
-  categories: CategoryWithCount[]; // Add live categories prop
-  // posts?: PostWithRelations[];
+  posts: MostViewedPost[];
 }
 
-export default function PanelLeft({
-  isOpen,
-  setIsOpen,
-  news,
-  // posts,
-  categories,
-}: PanelLeftProps) {
+export default function PanelLeft({ isOpen, news, posts }: PanelLeftProps) {
   return (
     <>
       {/* Sidebar Panel - No overlay, stays open on outside click */}
@@ -44,20 +33,15 @@ export default function PanelLeft({
             {/* Topics */}
             <div className="mt-5 p-4">
               <p className="text-muted-foreground text-xs text-light mb-2 tracking-wider">
-                TOPICS
+                MOST VIEWED
               </p>
-              <ForumList categories={categories} />
+              {posts?.map((post) => (
+                <Link key={post.id} href={`/post/${post.slug}`}>
+                  {post.title}
+                </Link>
+              ))}
             </div>
 
-            {/* Recent Posts Section */}
-            <div className="mt-8 p-4">
-              <p className="text-muted-foreground text-xs text-light mb-2 tracking-wider">
-                RECENT POSTS
-              </p>
-              {/* {posts?.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))} */}
-            </div>
             <div className="md:hidden mt-auto p-3 -translate-y-10 self-end">
               <ModeToggle />
             </div>

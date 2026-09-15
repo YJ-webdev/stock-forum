@@ -1,7 +1,5 @@
-// import { PostCard } from "@/app/components/post-card";
 import { notFound } from "next/navigation";
-import { getForumCategories } from "@/app/actions/forum-categories";
-import { getForumPosts } from "@/app/actions/posts";
+import { getPostsByAsset } from "@/app/actions/forum-categories";
 
 export default async function CategoryPage({
   params,
@@ -9,24 +7,16 @@ export default async function CategoryPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const categories = await getForumCategories();
-  const category = categories.find((c) => c.slug === slug);
+  const posts = await getPostsByAsset(slug);
 
-  if (!category) {
-    notFound();
+  if (!posts) {
+    return notFound();
   }
-
-  const posts = await getForumPosts(slug);
 
   return (
     <div className="flex flex-col gap-4">
       <div className="border-b pb-4 mb-2">
-        <h1 className="text-2xl font-bold">{category.name}</h1>
-        {category.description && (
-          <p className="text-sm text-muted-foreground">
-            {category.description}
-          </p>
-        )}
+        <h1 className="text-2xl font-bold">{slug}</h1>
       </div>
 
       {/* {posts.length === 0 ? (

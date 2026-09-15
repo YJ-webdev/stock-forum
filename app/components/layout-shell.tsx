@@ -12,28 +12,44 @@ import {
 } from "@/components/ui/resizable";
 import { Footer } from "./footer";
 import { PostEditor } from "@/components/post-editor";
-import { CategoryWithCount } from "@/types/forum";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 
-interface User {
+export interface User {
   name?: string | null;
   email?: string | null;
   image?: string | null;
 }
 
+export interface MostViewedPost {
+  id: string;
+  title: string;
+  slug: string;
+  thumbnail: string | null;
+  createdAt: Date;
+
+  author: {
+    name: string | null;
+  };
+
+  asset: {
+    name: string;
+    symbol: string;
+    displaySymbol: string | null; // ← FIX
+  } | null;
+}
+
 interface LayoutShellProps {
   user: User | null;
-  // marketData: MarketAssetClient[];
   news: NewsItem[];
-  categories: CategoryWithCount[];
   children: React.ReactNode;
+  posts: MostViewedPost[];
 }
 
 export default function LayoutShell({
   user,
   news,
-  categories,
   children,
+  posts,
 }: LayoutShellProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [onWrite, setOnWrite] = useState(false);
@@ -159,7 +175,7 @@ export default function LayoutShell({
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         news={news}
-        categories={categories}
+        posts={posts}
       />
       <div
         className={`pt-14 flex flex-col md:flex-row transition-all duration-300 ease-in-out ${
@@ -202,17 +218,11 @@ export default function LayoutShell({
                   width: sectionBPosition.width,
                 }}
               >
-                {onWrite && (
-                  <PostEditor
-                    categories={categories}
-                    onCancel={() => setOnWrite(false)}
-                  />
+                {user && onWrite && (
+                  <PostEditor onCancel={() => setOnWrite(false)} />
                 )}
-
-                {onAccount && <>Account</>}
-
-                {onNotification && <>Notifications</>}
-
+                {user && onAccount && <>Account</>}
+                {user && onNotification && <>Notifications</>}
                 {!onWrite && !onAccount && !onNotification && (
                   <div className="flex flex-col w-full min-w-0 gap-4">
                     <div>

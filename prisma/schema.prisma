@@ -84,31 +84,29 @@ model VerificationToken {
 }
 
 model Post {
-  id          String        @id @default(cuid())
-  title       String
-  content     Json
-  thumbnail   String?
-  stockTicker String?
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   Json
+  thumbnail String?
 
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  viewCount   Int           @default(0)
+  authorId String
+  author   User @relation(fields: [authorId], references: [id])
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  assetSymbol String?
+  asset       MarketAsset? @relation(fields: [assetSymbol], references: [symbol])
 
-  author      User          @relation(fields: [authorId], references: [id])
-  authorId    String
+  comments Comment[]
+  likes    Like[]
 
-  categoryId  String
-  category    ForumCategory @relation(fields: [categoryId], references: [id])
-
-  comments    Comment[]
-  likes       Like[]
-
-  @@index([categoryId, createdAt])
   @@index([authorId, createdAt])
-  @@index([stockTicker, createdAt])
+  @@index([assetSymbol, createdAt])
 }
+
 
 model Comment {
   id        String   @id @default(cuid())
@@ -143,39 +141,31 @@ model Like {
   @@index([postId])
 }
 
-model ForumCategory {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
-  description String?
-  posts       Post[]
-  createdAt   DateTime @default(now())
-}
-
 model MarketAsset {
-  id            String              @id @default(cuid())
-  symbol        String              @unique
+  id            String  @id @default(cuid())
+  symbol        String  @unique
   displaySymbol String?
   name          String
   category      String
-  assetType     String              @default("index")
-  timezone      String              @default("UTC")
+  assetType     String  @default("index")
+  timezone      String  @default("UTC")
   logoUrl       String?
-  
-  // Use Decimal for high precision values
-  lastPrice     Decimal             @default(0.0) @db.Decimal(18, 4)
-  change        Decimal             @default(0.0) @db.Decimal(18, 4)
-  changePercent Decimal             @default(0.0) @db.Decimal(10, 4)
-  high          Decimal             @default(0.0) @db.Decimal(18, 4)
-  low           Decimal             @default(0.0) @db.Decimal(18, 4)
-  volume        Decimal             @default(0.0) @db.Decimal(18, 2)
-  
+
+  lastPrice     Decimal @default(0.0) @db.Decimal(18, 4)
+  change        Decimal @default(0.0) @db.Decimal(18, 4)
+  changePercent Decimal @default(0.0) @db.Decimal(10, 4)
+  high          Decimal @default(0.0) @db.Decimal(18, 4)
+  low           Decimal @default(0.0) @db.Decimal(18, 4)
+  volume        Decimal @default(0.0) @db.Decimal(18, 2)
+
   trades        Trade[]
   positions     PortfolioPosition[]
   watchlistItems Watchlist[]
 
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+posts Post[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model AccountBalance {

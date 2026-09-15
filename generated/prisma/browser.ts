@@ -53,11 +53,6 @@ export type Comment = Prisma.CommentModel
  */
 export type Like = Prisma.LikeModel
 /**
- * Model ForumCategory
- * 
- */
-export type ForumCategory = Prisma.ForumCategoryModel
-/**
  * Model MarketAsset
  * 
  */

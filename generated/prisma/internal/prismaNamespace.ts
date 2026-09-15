@@ -404,7 +404,6 @@ export const ModelName = {
   Post: 'Post',
   Comment: 'Comment',
   Like: 'Like',
-  ForumCategory: 'ForumCategory',
   MarketAsset: 'MarketAsset',
   AccountBalance: 'AccountBalance',
   PortfolioPosition: 'PortfolioPosition',
@@ -426,7 +425,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "post" | "comment" | "like" | "forumCategory" | "marketAsset" | "accountBalance" | "portfolioPosition" | "trade" | "watchlist" | "prediction"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "post" | "comment" | "like" | "marketAsset" | "accountBalance" | "portfolioPosition" | "trade" | "watchlist" | "prediction"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -945,80 +944,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.LikeCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.LikeCountAggregateOutputType> | number
-        }
-      }
-    }
-    ForumCategory: {
-      payload: Prisma.$ForumCategoryPayload<ExtArgs>
-      fields: Prisma.ForumCategoryFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.ForumCategoryFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ForumCategoryPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.ForumCategoryFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ForumCategoryPayload>
-        }
-        findFirst: {
-          args: Prisma.ForumCategoryFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ForumCategoryPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.ForumCategoryFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ForumCategoryPayload>
-        }
-        findMany: {
-          args: Prisma.ForumCategoryFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ForumCategoryPayload>[]
-        }
-        create: {
-          args: Prisma.ForumCategoryCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ForumCategoryPayload>
-        }
-        createMany: {
-          args: Prisma.ForumCategoryCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.ForumCategoryCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ForumCategoryPayload>[]
-        }
-        delete: {
-          args: Prisma.ForumCategoryDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ForumCategoryPayload>
-        }
-        update: {
-          args: Prisma.ForumCategoryUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ForumCategoryPayload>
-        }
-        deleteMany: {
-          args: Prisma.ForumCategoryDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.ForumCategoryUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.ForumCategoryUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ForumCategoryPayload>[]
-        }
-        upsert: {
-          args: Prisma.ForumCategoryUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ForumCategoryPayload>
-        }
-        aggregate: {
-          args: Prisma.ForumCategoryAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateForumCategory>
-        }
-        groupBy: {
-          args: Prisma.ForumCategoryGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ForumCategoryGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.ForumCategoryCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ForumCategoryCountAggregateOutputType> | number
         }
       }
     }
@@ -1560,14 +1485,15 @@ export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFi
 
 export const PostScalarFieldEnum = {
   id: 'id',
+  slug: 'slug',
   title: 'title',
   content: 'content',
-  stockTicker: 'stockTicker',
+  thumbnail: 'thumbnail',
   viewCount: 'viewCount',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   authorId: 'authorId',
-  categoryId: 'categoryId'
+  assetSymbol: 'assetSymbol'
 } as const
 
 export type PostScalarFieldEnum = (typeof PostScalarFieldEnum)[keyof typeof PostScalarFieldEnum]
@@ -1594,17 +1520,6 @@ export const LikeScalarFieldEnum = {
 } as const
 
 export type LikeScalarFieldEnum = (typeof LikeScalarFieldEnum)[keyof typeof LikeScalarFieldEnum]
-
-
-export const ForumCategoryScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  slug: 'slug',
-  description: 'description',
-  createdAt: 'createdAt'
-} as const
-
-export type ForumCategoryScalarFieldEnum = (typeof ForumCategoryScalarFieldEnum)[keyof typeof ForumCategoryScalarFieldEnum]
 
 
 export const MarketAssetScalarFieldEnum = {
@@ -2057,7 +1972,6 @@ export type GlobalOmitConfig = {
   post?: Prisma.PostOmit
   comment?: Prisma.CommentOmit
   like?: Prisma.LikeOmit
-  forumCategory?: Prisma.ForumCategoryOmit
   marketAsset?: Prisma.MarketAssetOmit
   accountBalance?: Prisma.AccountBalanceOmit
   portfolioPosition?: Prisma.PortfolioPositionOmit

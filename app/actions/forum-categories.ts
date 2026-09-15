@@ -2,18 +2,41 @@
 
 import { prisma } from "@/lib/prisma";
 
-export async function getForumCategories() {
-  try {
-    return await prisma.forumCategory.findMany({
-      orderBy: { name: "asc" },
-      include: {
-        _count: {
-          select: { posts: true },
+export async function getPostsByAsset(symbol: string) {
+  return prisma.post.findMany({
+    where: {
+      assetSymbol: symbol,
+    },
+
+    orderBy: {
+      createdAt: "desc",
+    },
+
+    include: {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
         },
       },
-    });
-  } catch (error) {
-    console.error("Failed to fetch forum categories:", error);
-    return [];
-  }
+
+      asset: {
+        select: {
+          symbol: true,
+          displaySymbol: true,
+          name: true,
+          assetType: true,
+          category: true,
+        },
+      },
+
+      _count: {
+        select: {
+          comments: true,
+          likes: true,
+        },
+      },
+    },
+  });
 }

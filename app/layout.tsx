@@ -68,13 +68,13 @@ export default function RootLayout({
         <SessionProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
+            defaultTheme="light"
             enableSystem
             disableTransitionOnChange
           >
             <TooltipProvider>{children}</TooltipProvider>
 
-            <Toaster position="bottom-right" richColors />
+            <Toaster position="bottom-right" theme="system" />
           </ThemeProvider>
         </SessionProvider>
       </body>

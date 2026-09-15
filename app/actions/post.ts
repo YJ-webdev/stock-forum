@@ -2,19 +2,21 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import type { JSONContent } from "@tiptap/react";
+import { getFirstImage } from "@/lib/utils/post-content";
+import { detectPostMarket } from "@/lib/utils/detect-post-market";
+import { createSlug } from "@/lib/utils/slugify";
 
-interface CreatePostInput {
+export interface CreatePostInput {
   title: string;
-  content: object;
-  categoryId: string;
-  stockTicker?: string;
+  content: JSONContent;
+  thumbnail?: string | null;
 }
 
 export async function createPost({
   title,
   content,
-  categoryId,
-  stockTicker,
+  thumbnail,
 }: CreatePostInput) {
   const session = await auth();
 
@@ -28,35 +30,95 @@ export async function createPost({
     throw new Error("Title is required.");
   }
 
-  if (!categoryId) {
-    throw new Error("Category is required.");
+  const slug = createSlug(cleanTitle);
+
+  // Detect one primary asset
+  const detectedMarket = detectPostMarket(cleanTitle, content);
+
+  // Make sure the detected asset exists in MarketAsset
+  if (detectedMarket) {
+    await prisma.marketAsset.upsert({
+      where: {
+        symbol: detectedMarket.symbol,
+      },
+
+      update: {
+        name: detectedMarket.name,
+
+        displaySymbol: detectedMarket.displaySymbol,
+        category: detectedMarket.region,
+        assetType: detectedMarket.assetType,
+        timezone: detectedMarket.timezone ?? "UTC",
+      },
+
+      create: {
+        symbol: detectedMarket.symbol,
+        name: detectedMarket.name,
+        displaySymbol: detectedMarket.displaySymbol,
+        category: detectedMarket.region,
+        assetType: detectedMarket.assetType,
+        timezone: detectedMarket.timezone ?? "UTC",
+      },
+    });
   }
 
-  const category = await prisma.forumCategory.findUnique({
-    where: {
-      id: categoryId,
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  if (!category) {
-    throw new Error("Invalid category.");
-  }
-
-  const post = await prisma.post.create({
+  return prisma.post.create({
     data: {
       title: cleanTitle,
       content,
-      categoryId,
+      thumbnail: thumbnail ?? getFirstImage(content),
+      slug: slug,
       authorId: session.user.id,
-      stockTicker: stockTicker?.trim().toUpperCase() || null,
+      assetSymbol: detectedMarket?.symbol ?? null,
     },
+
     select: {
       id: true,
+      title: true,
+      thumbnail: true,
+      slug: true,
+      asset: {
+        select: {
+          name: true,
+          symbol: true,
+          displaySymbol: true,
+        },
+      },
     },
   });
+}
 
-  return post;
+export async function getMostViewedPosts(limit = 5) {
+  return prisma.post.findMany({
+    take: limit,
+
+    orderBy: {
+      viewCount: "desc",
+    },
+
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      thumbnail: true,
+      viewCount: true,
+      createdAt: true,
+
+      asset: {
+        select: {
+          name: true,
+          symbol: true,
+          displaySymbol: true,
+        },
+      },
+
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
+  });
 }

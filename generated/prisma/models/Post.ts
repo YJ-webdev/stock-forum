@@ -36,36 +36,39 @@ export type PostSumAggregateOutputType = {
 
 export type PostMinAggregateOutputType = {
   id: string | null
+  slug: string | null
   title: string | null
-  stockTicker: string | null
+  thumbnail: string | null
   viewCount: number | null
   createdAt: Date | null
   updatedAt: Date | null
   authorId: string | null
-  categoryId: string | null
+  assetSymbol: string | null
 }
 
 export type PostMaxAggregateOutputType = {
   id: string | null
+  slug: string | null
   title: string | null
-  stockTicker: string | null
+  thumbnail: string | null
   viewCount: number | null
   createdAt: Date | null
   updatedAt: Date | null
   authorId: string | null
-  categoryId: string | null
+  assetSymbol: string | null
 }
 
 export type PostCountAggregateOutputType = {
   id: number
+  slug: number
   title: number
   content: number
-  stockTicker: number
+  thumbnail: number
   viewCount: number
   createdAt: number
   updatedAt: number
   authorId: number
-  categoryId: number
+  assetSymbol: number
   _all: number
 }
 
@@ -80,36 +83,39 @@ export type PostSumAggregateInputType = {
 
 export type PostMinAggregateInputType = {
   id?: true
+  slug?: true
   title?: true
-  stockTicker?: true
+  thumbnail?: true
   viewCount?: true
   createdAt?: true
   updatedAt?: true
   authorId?: true
-  categoryId?: true
+  assetSymbol?: true
 }
 
 export type PostMaxAggregateInputType = {
   id?: true
+  slug?: true
   title?: true
-  stockTicker?: true
+  thumbnail?: true
   viewCount?: true
   createdAt?: true
   updatedAt?: true
   authorId?: true
-  categoryId?: true
+  assetSymbol?: true
 }
 
 export type PostCountAggregateInputType = {
   id?: true
+  slug?: true
   title?: true
   content?: true
-  stockTicker?: true
+  thumbnail?: true
   viewCount?: true
   createdAt?: true
   updatedAt?: true
   authorId?: true
-  categoryId?: true
+  assetSymbol?: true
   _all?: true
 }
 
@@ -201,14 +207,15 @@ export type PostGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 
 export type PostGroupByOutputType = {
   id: string
+  slug: string
   title: string
   content: runtime.JsonValue
-  stockTicker: string | null
+  thumbnail: string | null
   viewCount: number
   createdAt: Date
   updatedAt: Date
   authorId: string
-  categoryId: string
+  assetSymbol: string | null
   _count: PostCountAggregateOutputType | null
   _avg: PostAvgAggregateOutputType | null
   _sum: PostSumAggregateOutputType | null
@@ -236,65 +243,69 @@ export type PostWhereInput = {
   OR?: Prisma.PostWhereInput[]
   NOT?: Prisma.PostWhereInput | Prisma.PostWhereInput[]
   id?: Prisma.StringFilter<"Post"> | string
+  slug?: Prisma.StringFilter<"Post"> | string
   title?: Prisma.StringFilter<"Post"> | string
   content?: Prisma.JsonFilter<"Post">
-  stockTicker?: Prisma.StringNullableFilter<"Post"> | string | null
+  thumbnail?: Prisma.StringNullableFilter<"Post"> | string | null
   viewCount?: Prisma.IntFilter<"Post"> | number
   createdAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   authorId?: Prisma.StringFilter<"Post"> | string
-  categoryId?: Prisma.StringFilter<"Post"> | string
+  assetSymbol?: Prisma.StringNullableFilter<"Post"> | string | null
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  category?: Prisma.XOR<Prisma.ForumCategoryScalarRelationFilter, Prisma.ForumCategoryWhereInput>
+  asset?: Prisma.XOR<Prisma.MarketAssetNullableScalarRelationFilter, Prisma.MarketAssetWhereInput> | null
   comments?: Prisma.CommentListRelationFilter
   likes?: Prisma.LikeListRelationFilter
 }
 
 export type PostOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  slug?: Prisma.SortOrder
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
-  stockTicker?: Prisma.SortOrderInput | Prisma.SortOrder
+  thumbnail?: Prisma.SortOrderInput | Prisma.SortOrder
   viewCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
-  categoryId?: Prisma.SortOrder
+  assetSymbol?: Prisma.SortOrderInput | Prisma.SortOrder
   author?: Prisma.UserOrderByWithRelationInput
-  category?: Prisma.ForumCategoryOrderByWithRelationInput
+  asset?: Prisma.MarketAssetOrderByWithRelationInput
   comments?: Prisma.CommentOrderByRelationAggregateInput
   likes?: Prisma.LikeOrderByRelationAggregateInput
 }
 
 export type PostWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  slug?: string
   AND?: Prisma.PostWhereInput | Prisma.PostWhereInput[]
   OR?: Prisma.PostWhereInput[]
   NOT?: Prisma.PostWhereInput | Prisma.PostWhereInput[]
   title?: Prisma.StringFilter<"Post"> | string
   content?: Prisma.JsonFilter<"Post">
-  stockTicker?: Prisma.StringNullableFilter<"Post"> | string | null
+  thumbnail?: Prisma.StringNullableFilter<"Post"> | string | null
   viewCount?: Prisma.IntFilter<"Post"> | number
   createdAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   authorId?: Prisma.StringFilter<"Post"> | string
-  categoryId?: Prisma.StringFilter<"Post"> | string
+  assetSymbol?: Prisma.StringNullableFilter<"Post"> | string | null
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  category?: Prisma.XOR<Prisma.ForumCategoryScalarRelationFilter, Prisma.ForumCategoryWhereInput>
+  asset?: Prisma.XOR<Prisma.MarketAssetNullableScalarRelationFilter, Prisma.MarketAssetWhereInput> | null
   comments?: Prisma.CommentListRelationFilter
   likes?: Prisma.LikeListRelationFilter
-}, "id">
+}, "id" | "slug">
 
 export type PostOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  slug?: Prisma.SortOrder
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
-  stockTicker?: Prisma.SortOrderInput | Prisma.SortOrder
+  thumbnail?: Prisma.SortOrderInput | Prisma.SortOrder
   viewCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
-  categoryId?: Prisma.SortOrder
+  assetSymbol?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.PostCountOrderByAggregateInput
   _avg?: Prisma.PostAvgOrderByAggregateInput
   _max?: Prisma.PostMaxOrderByAggregateInput
@@ -307,89 +318,96 @@ export type PostScalarWhereWithAggregatesInput = {
   OR?: Prisma.PostScalarWhereWithAggregatesInput[]
   NOT?: Prisma.PostScalarWhereWithAggregatesInput | Prisma.PostScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Post"> | string
+  slug?: Prisma.StringWithAggregatesFilter<"Post"> | string
   title?: Prisma.StringWithAggregatesFilter<"Post"> | string
   content?: Prisma.JsonWithAggregatesFilter<"Post">
-  stockTicker?: Prisma.StringNullableWithAggregatesFilter<"Post"> | string | null
+  thumbnail?: Prisma.StringNullableWithAggregatesFilter<"Post"> | string | null
   viewCount?: Prisma.IntWithAggregatesFilter<"Post"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Post"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Post"> | Date | string
   authorId?: Prisma.StringWithAggregatesFilter<"Post"> | string
-  categoryId?: Prisma.StringWithAggregatesFilter<"Post"> | string
+  assetSymbol?: Prisma.StringNullableWithAggregatesFilter<"Post"> | string | null
 }
 
 export type PostCreateInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutPostsInput
-  category: Prisma.ForumCategoryCreateNestedOneWithoutPostsInput
+  asset?: Prisma.MarketAssetCreateNestedOneWithoutPostsInput
   comments?: Prisma.CommentCreateNestedManyWithoutPostInput
   likes?: Prisma.LikeCreateNestedManyWithoutPostInput
 }
 
 export type PostUncheckedCreateInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   authorId: string
-  categoryId: string
+  assetSymbol?: string | null
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutPostInput
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutPostInput
 }
 
 export type PostUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutPostsNestedInput
-  category?: Prisma.ForumCategoryUpdateOneRequiredWithoutPostsNestedInput
+  asset?: Prisma.MarketAssetUpdateOneWithoutPostsNestedInput
   comments?: Prisma.CommentUpdateManyWithoutPostNestedInput
   likes?: Prisma.LikeUpdateManyWithoutPostNestedInput
 }
 
 export type PostUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
-  categoryId?: Prisma.StringFieldUpdateOperationsInput | string
+  assetSymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   comments?: Prisma.CommentUncheckedUpdateManyWithoutPostNestedInput
   likes?: Prisma.LikeUncheckedUpdateManyWithoutPostNestedInput
 }
 
 export type PostCreateManyInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   authorId: string
-  categoryId: string
+  assetSymbol?: string | null
 }
 
 export type PostUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -397,14 +415,15 @@ export type PostUpdateManyMutationInput = {
 
 export type PostUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
-  categoryId?: Prisma.StringFieldUpdateOperationsInput | string
+  assetSymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type PostListRelationFilter = {
@@ -419,14 +438,15 @@ export type PostOrderByRelationAggregateInput = {
 
 export type PostCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  slug?: Prisma.SortOrder
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
-  stockTicker?: Prisma.SortOrder
+  thumbnail?: Prisma.SortOrder
   viewCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
-  categoryId?: Prisma.SortOrder
+  assetSymbol?: Prisma.SortOrder
 }
 
 export type PostAvgOrderByAggregateInput = {
@@ -435,24 +455,26 @@ export type PostAvgOrderByAggregateInput = {
 
 export type PostMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  slug?: Prisma.SortOrder
   title?: Prisma.SortOrder
-  stockTicker?: Prisma.SortOrder
+  thumbnail?: Prisma.SortOrder
   viewCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
-  categoryId?: Prisma.SortOrder
+  assetSymbol?: Prisma.SortOrder
 }
 
 export type PostMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  slug?: Prisma.SortOrder
   title?: Prisma.SortOrder
-  stockTicker?: Prisma.SortOrder
+  thumbnail?: Prisma.SortOrder
   viewCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
-  categoryId?: Prisma.SortOrder
+  assetSymbol?: Prisma.SortOrder
 }
 
 export type PostSumOrderByAggregateInput = {
@@ -542,70 +564,72 @@ export type PostUpdateOneRequiredWithoutLikesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PostUpdateToOneWithWhereWithoutLikesInput, Prisma.PostUpdateWithoutLikesInput>, Prisma.PostUncheckedUpdateWithoutLikesInput>
 }
 
-export type PostCreateNestedManyWithoutCategoryInput = {
-  create?: Prisma.XOR<Prisma.PostCreateWithoutCategoryInput, Prisma.PostUncheckedCreateWithoutCategoryInput> | Prisma.PostCreateWithoutCategoryInput[] | Prisma.PostUncheckedCreateWithoutCategoryInput[]
-  connectOrCreate?: Prisma.PostCreateOrConnectWithoutCategoryInput | Prisma.PostCreateOrConnectWithoutCategoryInput[]
-  createMany?: Prisma.PostCreateManyCategoryInputEnvelope
+export type PostCreateNestedManyWithoutAssetInput = {
+  create?: Prisma.XOR<Prisma.PostCreateWithoutAssetInput, Prisma.PostUncheckedCreateWithoutAssetInput> | Prisma.PostCreateWithoutAssetInput[] | Prisma.PostUncheckedCreateWithoutAssetInput[]
+  connectOrCreate?: Prisma.PostCreateOrConnectWithoutAssetInput | Prisma.PostCreateOrConnectWithoutAssetInput[]
+  createMany?: Prisma.PostCreateManyAssetInputEnvelope
   connect?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
 }
 
-export type PostUncheckedCreateNestedManyWithoutCategoryInput = {
-  create?: Prisma.XOR<Prisma.PostCreateWithoutCategoryInput, Prisma.PostUncheckedCreateWithoutCategoryInput> | Prisma.PostCreateWithoutCategoryInput[] | Prisma.PostUncheckedCreateWithoutCategoryInput[]
-  connectOrCreate?: Prisma.PostCreateOrConnectWithoutCategoryInput | Prisma.PostCreateOrConnectWithoutCategoryInput[]
-  createMany?: Prisma.PostCreateManyCategoryInputEnvelope
+export type PostUncheckedCreateNestedManyWithoutAssetInput = {
+  create?: Prisma.XOR<Prisma.PostCreateWithoutAssetInput, Prisma.PostUncheckedCreateWithoutAssetInput> | Prisma.PostCreateWithoutAssetInput[] | Prisma.PostUncheckedCreateWithoutAssetInput[]
+  connectOrCreate?: Prisma.PostCreateOrConnectWithoutAssetInput | Prisma.PostCreateOrConnectWithoutAssetInput[]
+  createMany?: Prisma.PostCreateManyAssetInputEnvelope
   connect?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
 }
 
-export type PostUpdateManyWithoutCategoryNestedInput = {
-  create?: Prisma.XOR<Prisma.PostCreateWithoutCategoryInput, Prisma.PostUncheckedCreateWithoutCategoryInput> | Prisma.PostCreateWithoutCategoryInput[] | Prisma.PostUncheckedCreateWithoutCategoryInput[]
-  connectOrCreate?: Prisma.PostCreateOrConnectWithoutCategoryInput | Prisma.PostCreateOrConnectWithoutCategoryInput[]
-  upsert?: Prisma.PostUpsertWithWhereUniqueWithoutCategoryInput | Prisma.PostUpsertWithWhereUniqueWithoutCategoryInput[]
-  createMany?: Prisma.PostCreateManyCategoryInputEnvelope
+export type PostUpdateManyWithoutAssetNestedInput = {
+  create?: Prisma.XOR<Prisma.PostCreateWithoutAssetInput, Prisma.PostUncheckedCreateWithoutAssetInput> | Prisma.PostCreateWithoutAssetInput[] | Prisma.PostUncheckedCreateWithoutAssetInput[]
+  connectOrCreate?: Prisma.PostCreateOrConnectWithoutAssetInput | Prisma.PostCreateOrConnectWithoutAssetInput[]
+  upsert?: Prisma.PostUpsertWithWhereUniqueWithoutAssetInput | Prisma.PostUpsertWithWhereUniqueWithoutAssetInput[]
+  createMany?: Prisma.PostCreateManyAssetInputEnvelope
   set?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
   disconnect?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
   delete?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
   connect?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
-  update?: Prisma.PostUpdateWithWhereUniqueWithoutCategoryInput | Prisma.PostUpdateWithWhereUniqueWithoutCategoryInput[]
-  updateMany?: Prisma.PostUpdateManyWithWhereWithoutCategoryInput | Prisma.PostUpdateManyWithWhereWithoutCategoryInput[]
+  update?: Prisma.PostUpdateWithWhereUniqueWithoutAssetInput | Prisma.PostUpdateWithWhereUniqueWithoutAssetInput[]
+  updateMany?: Prisma.PostUpdateManyWithWhereWithoutAssetInput | Prisma.PostUpdateManyWithWhereWithoutAssetInput[]
   deleteMany?: Prisma.PostScalarWhereInput | Prisma.PostScalarWhereInput[]
 }
 
-export type PostUncheckedUpdateManyWithoutCategoryNestedInput = {
-  create?: Prisma.XOR<Prisma.PostCreateWithoutCategoryInput, Prisma.PostUncheckedCreateWithoutCategoryInput> | Prisma.PostCreateWithoutCategoryInput[] | Prisma.PostUncheckedCreateWithoutCategoryInput[]
-  connectOrCreate?: Prisma.PostCreateOrConnectWithoutCategoryInput | Prisma.PostCreateOrConnectWithoutCategoryInput[]
-  upsert?: Prisma.PostUpsertWithWhereUniqueWithoutCategoryInput | Prisma.PostUpsertWithWhereUniqueWithoutCategoryInput[]
-  createMany?: Prisma.PostCreateManyCategoryInputEnvelope
+export type PostUncheckedUpdateManyWithoutAssetNestedInput = {
+  create?: Prisma.XOR<Prisma.PostCreateWithoutAssetInput, Prisma.PostUncheckedCreateWithoutAssetInput> | Prisma.PostCreateWithoutAssetInput[] | Prisma.PostUncheckedCreateWithoutAssetInput[]
+  connectOrCreate?: Prisma.PostCreateOrConnectWithoutAssetInput | Prisma.PostCreateOrConnectWithoutAssetInput[]
+  upsert?: Prisma.PostUpsertWithWhereUniqueWithoutAssetInput | Prisma.PostUpsertWithWhereUniqueWithoutAssetInput[]
+  createMany?: Prisma.PostCreateManyAssetInputEnvelope
   set?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
   disconnect?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
   delete?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
   connect?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
-  update?: Prisma.PostUpdateWithWhereUniqueWithoutCategoryInput | Prisma.PostUpdateWithWhereUniqueWithoutCategoryInput[]
-  updateMany?: Prisma.PostUpdateManyWithWhereWithoutCategoryInput | Prisma.PostUpdateManyWithWhereWithoutCategoryInput[]
+  update?: Prisma.PostUpdateWithWhereUniqueWithoutAssetInput | Prisma.PostUpdateWithWhereUniqueWithoutAssetInput[]
+  updateMany?: Prisma.PostUpdateManyWithWhereWithoutAssetInput | Prisma.PostUpdateManyWithWhereWithoutAssetInput[]
   deleteMany?: Prisma.PostScalarWhereInput | Prisma.PostScalarWhereInput[]
 }
 
 export type PostCreateWithoutAuthorInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
-  category: Prisma.ForumCategoryCreateNestedOneWithoutPostsInput
+  asset?: Prisma.MarketAssetCreateNestedOneWithoutPostsInput
   comments?: Prisma.CommentCreateNestedManyWithoutPostInput
   likes?: Prisma.LikeCreateNestedManyWithoutPostInput
 }
 
 export type PostUncheckedCreateWithoutAuthorInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
-  categoryId: string
+  assetSymbol?: string | null
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutPostInput
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutPostInput
 }
@@ -641,39 +665,42 @@ export type PostScalarWhereInput = {
   OR?: Prisma.PostScalarWhereInput[]
   NOT?: Prisma.PostScalarWhereInput | Prisma.PostScalarWhereInput[]
   id?: Prisma.StringFilter<"Post"> | string
+  slug?: Prisma.StringFilter<"Post"> | string
   title?: Prisma.StringFilter<"Post"> | string
   content?: Prisma.JsonFilter<"Post">
-  stockTicker?: Prisma.StringNullableFilter<"Post"> | string | null
+  thumbnail?: Prisma.StringNullableFilter<"Post"> | string | null
   viewCount?: Prisma.IntFilter<"Post"> | number
   createdAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   authorId?: Prisma.StringFilter<"Post"> | string
-  categoryId?: Prisma.StringFilter<"Post"> | string
+  assetSymbol?: Prisma.StringNullableFilter<"Post"> | string | null
 }
 
 export type PostCreateWithoutCommentsInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutPostsInput
-  category: Prisma.ForumCategoryCreateNestedOneWithoutPostsInput
+  asset?: Prisma.MarketAssetCreateNestedOneWithoutPostsInput
   likes?: Prisma.LikeCreateNestedManyWithoutPostInput
 }
 
 export type PostUncheckedCreateWithoutCommentsInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   authorId: string
-  categoryId: string
+  assetSymbol?: string | null
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutPostInput
 }
 
@@ -695,53 +722,57 @@ export type PostUpdateToOneWithWhereWithoutCommentsInput = {
 
 export type PostUpdateWithoutCommentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutPostsNestedInput
-  category?: Prisma.ForumCategoryUpdateOneRequiredWithoutPostsNestedInput
+  asset?: Prisma.MarketAssetUpdateOneWithoutPostsNestedInput
   likes?: Prisma.LikeUpdateManyWithoutPostNestedInput
 }
 
 export type PostUncheckedUpdateWithoutCommentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
-  categoryId?: Prisma.StringFieldUpdateOperationsInput | string
+  assetSymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   likes?: Prisma.LikeUncheckedUpdateManyWithoutPostNestedInput
 }
 
 export type PostCreateWithoutLikesInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutPostsInput
-  category: Prisma.ForumCategoryCreateNestedOneWithoutPostsInput
+  asset?: Prisma.MarketAssetCreateNestedOneWithoutPostsInput
   comments?: Prisma.CommentCreateNestedManyWithoutPostInput
 }
 
 export type PostUncheckedCreateWithoutLikesInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   authorId: string
-  categoryId: string
+  assetSymbol?: string | null
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutPostInput
 }
 
@@ -763,35 +794,38 @@ export type PostUpdateToOneWithWhereWithoutLikesInput = {
 
 export type PostUpdateWithoutLikesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutPostsNestedInput
-  category?: Prisma.ForumCategoryUpdateOneRequiredWithoutPostsNestedInput
+  asset?: Prisma.MarketAssetUpdateOneWithoutPostsNestedInput
   comments?: Prisma.CommentUpdateManyWithoutPostNestedInput
 }
 
 export type PostUncheckedUpdateWithoutLikesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
-  categoryId?: Prisma.StringFieldUpdateOperationsInput | string
+  assetSymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   comments?: Prisma.CommentUncheckedUpdateManyWithoutPostNestedInput
 }
 
-export type PostCreateWithoutCategoryInput = {
+export type PostCreateWithoutAssetInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -800,11 +834,12 @@ export type PostCreateWithoutCategoryInput = {
   likes?: Prisma.LikeCreateNestedManyWithoutPostInput
 }
 
-export type PostUncheckedCreateWithoutCategoryInput = {
+export type PostUncheckedCreateWithoutAssetInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -813,96 +848,102 @@ export type PostUncheckedCreateWithoutCategoryInput = {
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutPostInput
 }
 
-export type PostCreateOrConnectWithoutCategoryInput = {
+export type PostCreateOrConnectWithoutAssetInput = {
   where: Prisma.PostWhereUniqueInput
-  create: Prisma.XOR<Prisma.PostCreateWithoutCategoryInput, Prisma.PostUncheckedCreateWithoutCategoryInput>
+  create: Prisma.XOR<Prisma.PostCreateWithoutAssetInput, Prisma.PostUncheckedCreateWithoutAssetInput>
 }
 
-export type PostCreateManyCategoryInputEnvelope = {
-  data: Prisma.PostCreateManyCategoryInput | Prisma.PostCreateManyCategoryInput[]
+export type PostCreateManyAssetInputEnvelope = {
+  data: Prisma.PostCreateManyAssetInput | Prisma.PostCreateManyAssetInput[]
   skipDuplicates?: boolean
 }
 
-export type PostUpsertWithWhereUniqueWithoutCategoryInput = {
+export type PostUpsertWithWhereUniqueWithoutAssetInput = {
   where: Prisma.PostWhereUniqueInput
-  update: Prisma.XOR<Prisma.PostUpdateWithoutCategoryInput, Prisma.PostUncheckedUpdateWithoutCategoryInput>
-  create: Prisma.XOR<Prisma.PostCreateWithoutCategoryInput, Prisma.PostUncheckedCreateWithoutCategoryInput>
+  update: Prisma.XOR<Prisma.PostUpdateWithoutAssetInput, Prisma.PostUncheckedUpdateWithoutAssetInput>
+  create: Prisma.XOR<Prisma.PostCreateWithoutAssetInput, Prisma.PostUncheckedCreateWithoutAssetInput>
 }
 
-export type PostUpdateWithWhereUniqueWithoutCategoryInput = {
+export type PostUpdateWithWhereUniqueWithoutAssetInput = {
   where: Prisma.PostWhereUniqueInput
-  data: Prisma.XOR<Prisma.PostUpdateWithoutCategoryInput, Prisma.PostUncheckedUpdateWithoutCategoryInput>
+  data: Prisma.XOR<Prisma.PostUpdateWithoutAssetInput, Prisma.PostUncheckedUpdateWithoutAssetInput>
 }
 
-export type PostUpdateManyWithWhereWithoutCategoryInput = {
+export type PostUpdateManyWithWhereWithoutAssetInput = {
   where: Prisma.PostScalarWhereInput
-  data: Prisma.XOR<Prisma.PostUpdateManyMutationInput, Prisma.PostUncheckedUpdateManyWithoutCategoryInput>
+  data: Prisma.XOR<Prisma.PostUpdateManyMutationInput, Prisma.PostUncheckedUpdateManyWithoutAssetInput>
 }
 
 export type PostCreateManyAuthorInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
-  categoryId: string
+  assetSymbol?: string | null
 }
 
 export type PostUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  category?: Prisma.ForumCategoryUpdateOneRequiredWithoutPostsNestedInput
+  asset?: Prisma.MarketAssetUpdateOneWithoutPostsNestedInput
   comments?: Prisma.CommentUpdateManyWithoutPostNestedInput
   likes?: Prisma.LikeUpdateManyWithoutPostNestedInput
 }
 
 export type PostUncheckedUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  categoryId?: Prisma.StringFieldUpdateOperationsInput | string
+  assetSymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   comments?: Prisma.CommentUncheckedUpdateManyWithoutPostNestedInput
   likes?: Prisma.LikeUncheckedUpdateManyWithoutPostNestedInput
 }
 
 export type PostUncheckedUpdateManyWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  categoryId?: Prisma.StringFieldUpdateOperationsInput | string
+  assetSymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
-export type PostCreateManyCategoryInput = {
+export type PostCreateManyAssetInput = {
   id?: string
+  slug: string
   title: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: string | null
+  thumbnail?: string | null
   viewCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   authorId: string
 }
 
-export type PostUpdateWithoutCategoryInput = {
+export type PostUpdateWithoutAssetInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -911,11 +952,12 @@ export type PostUpdateWithoutCategoryInput = {
   likes?: Prisma.LikeUpdateManyWithoutPostNestedInput
 }
 
-export type PostUncheckedUpdateWithoutCategoryInput = {
+export type PostUncheckedUpdateWithoutAssetInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -924,11 +966,12 @@ export type PostUncheckedUpdateWithoutCategoryInput = {
   likes?: Prisma.LikeUncheckedUpdateManyWithoutPostNestedInput
 }
 
-export type PostUncheckedUpdateManyWithoutCategoryInput = {
+export type PostUncheckedUpdateManyWithoutAssetInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  stockTicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -977,16 +1020,17 @@ export type PostCountOutputTypeCountLikesArgs<ExtArgs extends runtime.Types.Exte
 
 export type PostSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  slug?: boolean
   title?: boolean
   content?: boolean
-  stockTicker?: boolean
+  thumbnail?: boolean
   viewCount?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   authorId?: boolean
-  categoryId?: boolean
+  assetSymbol?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  category?: boolean | Prisma.ForumCategoryDefaultArgs<ExtArgs>
+  asset?: boolean | Prisma.Post$assetArgs<ExtArgs>
   comments?: boolean | Prisma.Post$commentsArgs<ExtArgs>
   likes?: boolean | Prisma.Post$likesArgs<ExtArgs>
   _count?: boolean | Prisma.PostCountOutputTypeDefaultArgs<ExtArgs>
@@ -994,79 +1038,83 @@ export type PostSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 
 export type PostSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  slug?: boolean
   title?: boolean
   content?: boolean
-  stockTicker?: boolean
+  thumbnail?: boolean
   viewCount?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   authorId?: boolean
-  categoryId?: boolean
+  assetSymbol?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  category?: boolean | Prisma.ForumCategoryDefaultArgs<ExtArgs>
+  asset?: boolean | Prisma.Post$assetArgs<ExtArgs>
 }, ExtArgs["result"]["post"]>
 
 export type PostSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  slug?: boolean
   title?: boolean
   content?: boolean
-  stockTicker?: boolean
+  thumbnail?: boolean
   viewCount?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   authorId?: boolean
-  categoryId?: boolean
+  assetSymbol?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  category?: boolean | Prisma.ForumCategoryDefaultArgs<ExtArgs>
+  asset?: boolean | Prisma.Post$assetArgs<ExtArgs>
 }, ExtArgs["result"]["post"]>
 
 export type PostSelectScalar = {
   id?: boolean
+  slug?: boolean
   title?: boolean
   content?: boolean
-  stockTicker?: boolean
+  thumbnail?: boolean
   viewCount?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   authorId?: boolean
-  categoryId?: boolean
+  assetSymbol?: boolean
 }
 
-export type PostOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "content" | "stockTicker" | "viewCount" | "createdAt" | "updatedAt" | "authorId" | "categoryId", ExtArgs["result"]["post"]>
+export type PostOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "title" | "content" | "thumbnail" | "viewCount" | "createdAt" | "updatedAt" | "authorId" | "assetSymbol", ExtArgs["result"]["post"]>
 export type PostInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  category?: boolean | Prisma.ForumCategoryDefaultArgs<ExtArgs>
+  asset?: boolean | Prisma.Post$assetArgs<ExtArgs>
   comments?: boolean | Prisma.Post$commentsArgs<ExtArgs>
   likes?: boolean | Prisma.Post$likesArgs<ExtArgs>
   _count?: boolean | Prisma.PostCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PostIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  category?: boolean | Prisma.ForumCategoryDefaultArgs<ExtArgs>
+  asset?: boolean | Prisma.Post$assetArgs<ExtArgs>
 }
 export type PostIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  category?: boolean | Prisma.ForumCategoryDefaultArgs<ExtArgs>
+  asset?: boolean | Prisma.Post$assetArgs<ExtArgs>
 }
 
 export type $PostPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Post"
   objects: {
     author: Prisma.$UserPayload<ExtArgs>
-    category: Prisma.$ForumCategoryPayload<ExtArgs>
+    asset: Prisma.$MarketAssetPayload<ExtArgs> | null
     comments: Prisma.$CommentPayload<ExtArgs>[]
     likes: Prisma.$LikePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    slug: string
     title: string
     content: runtime.JsonValue
-    stockTicker: string | null
+    thumbnail: string | null
     viewCount: number
     createdAt: Date
     updatedAt: Date
     authorId: string
-    categoryId: string
+    assetSymbol: string | null
   }, ExtArgs["result"]["post"]>
   composites: {}
 }
@@ -1462,7 +1510,7 @@ readonly fields: PostFieldRefs;
 export interface Prisma__PostClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   author<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  category<T extends Prisma.ForumCategoryDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ForumCategoryDefaultArgs<ExtArgs>>): Prisma.Prisma__ForumCategoryClient<runtime.Types.Result.GetResult<Prisma.$ForumCategoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  asset<T extends Prisma.Post$assetArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Post$assetArgs<ExtArgs>>): Prisma.Prisma__MarketAssetClient<runtime.Types.Result.GetResult<Prisma.$MarketAssetPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   comments<T extends Prisma.Post$commentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Post$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   likes<T extends Prisma.Post$likesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Post$likesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LikePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1495,14 +1543,15 @@ export interface Prisma__PostClient<T, Null = never, ExtArgs extends runtime.Typ
  */
 export interface PostFieldRefs {
   readonly id: Prisma.FieldRef<"Post", 'String'>
+  readonly slug: Prisma.FieldRef<"Post", 'String'>
   readonly title: Prisma.FieldRef<"Post", 'String'>
   readonly content: Prisma.FieldRef<"Post", 'Json'>
-  readonly stockTicker: Prisma.FieldRef<"Post", 'String'>
+  readonly thumbnail: Prisma.FieldRef<"Post", 'String'>
   readonly viewCount: Prisma.FieldRef<"Post", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Post", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Post", 'DateTime'>
   readonly authorId: Prisma.FieldRef<"Post", 'String'>
-  readonly categoryId: Prisma.FieldRef<"Post", 'String'>
+  readonly assetSymbol: Prisma.FieldRef<"Post", 'String'>
 }
     
 
@@ -1901,6 +1950,25 @@ export type PostDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Limit how many Posts to delete.
    */
   limit?: number
+}
+
+/**
+ * Post.asset
+ */
+export type Post$assetArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MarketAsset
+   */
+  select?: Prisma.MarketAssetSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MarketAsset
+   */
+  omit?: Prisma.MarketAssetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketAssetInclude<ExtArgs> | null
+  where?: Prisma.MarketAssetWhereInput
 }
 
 /**

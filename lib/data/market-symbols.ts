@@ -220,16 +220,6 @@ export const TRADING_HOURS: Record<MarketSchedule, TradingHours> = {
 };
 
 // -----------------------------------------------------------------------------
-// ICON
-// -----------------------------------------------------------------------------
-
-export const getSymbolIcon = (symbol: string): string => {
-  const cleanSymbol = symbol.replace(/[\^=]/g, "").split(".")[0];
-
-  return `https://financialmodelingprep.com/image-stock/${cleanSymbol}.png`;
-};
-
-// -----------------------------------------------------------------------------
 // MARKET SYMBOLS
 // -----------------------------------------------------------------------------
 

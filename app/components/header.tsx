@@ -123,7 +123,10 @@ export default function UserMenu({
         onClick={onLoginClick}
         className="flex items-center text-auto -ml-2.75 -mr-2 bg-transparent hover:bg-transparent cursor-pointer"
       >
-        <TbUser className="size-6" strokeWidth={1.5} />
+        <TbUser
+          className="size-6 text-zinc-700 dark:text-zinc-200"
+          strokeWidth={1.5}
+        />
       </Button>
     );
   }
@@ -159,7 +162,7 @@ export default function UserMenu({
           <div className="flex items-center gap-2">
             {/* Small Screens: Icon/Avatar */}
             <div className="sm:hidden flex items-center justify-center">
-              <Avatar className="h-12 w-12">
+              <Avatar className="h-12 w-12 ">
                 {user.image && (
                   <AvatarImage
                     src={user.image}

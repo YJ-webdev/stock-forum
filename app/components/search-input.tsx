@@ -24,8 +24,7 @@ export default function SearchInput() {
       {/* Search Icon */}
       {/* <SearchIcon className="h-6 w-6 shrink-0 mr-2.5" strokeWidth={1.5} /> */}
       {/* Google Material Symbol search_spark */}
-      <SearchSparkIcon className="h-6 w-6 shrink-0 mr-2.5" />
-
+      <SearchSparkIcon className="h-6 w-6 shrink-0 mr-2.5 text-zinc-700 dark:text-zinc-200" />
       {/* Input Field - dynamic width */}
       <input
         ref={inputRef}

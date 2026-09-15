@@ -32,9 +32,15 @@ export function ModeToggle() {
         // Placeholder to prevent hydration shift
         <span className="size-6" />
       ) : resolvedTheme === "dark" ? (
-        <BsMoon className="size-4.5 transition-all" strokeWidth={0.25} />
+        <BsMoon
+          className="size-4.5 transition-all text-zinc-700 dark:text-zinc-200"
+          strokeWidth={0.25}
+        />
       ) : (
-        <Sun className="size-5 transition-all" strokeWidth={1.75} />
+        <Sun
+          className="size-5 transition-all text-zinc-700 dark:text-zinc-200"
+          strokeWidth={1.75}
+        />
       )}
       <span className="sr-only">Toggle theme</span>
     </Button>
