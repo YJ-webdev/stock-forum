@@ -71,7 +71,7 @@ export const SlashMenu = forwardRef<SlashMenuRef, SlashMenuProps>(
     }
 
     return (
-      <div className="max-h-[320px] w-[260px] overflow-y-auto rounded-lg border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="max-h-80 w-65 overflow-y-auto rounded-lg border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
         {items.map((item, index) => {
           const Icon = item.icon;
           const selected = index === selectedIndex;

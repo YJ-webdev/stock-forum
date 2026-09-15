@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Header } from "./header";
 import PanelLeft from "./panel-left";
 import { LeaderboardChart } from "./leader-board-chart";
-import { MarketAssetClient, NewsItem } from "@/types";
+import { NewsItem } from "@/types";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -13,6 +13,7 @@ import {
 import { Footer } from "./footer";
 import { PostEditor } from "@/components/post-editor";
 import { CategoryWithCount } from "@/types/forum";
+import type { PanelImperativeHandle } from "react-resizable-panels";
 
 interface User {
   name?: string | null;
@@ -44,6 +45,36 @@ export default function LayoutShell({
     left: 0,
     width: 0,
   });
+
+  const panelBRef = useRef<PanelImperativeHandle>(null);
+  const resetPanelB = () => {
+    panelBRef.current?.resize("30%");
+  };
+
+  const handleWrite = () => {
+    resetPanelB();
+
+    setOnWrite(true);
+    setOnAccount(false);
+    setOnNotification(false);
+  };
+
+  const handleAccount = () => {
+    resetPanelB();
+
+    setOnWrite(false);
+    setOnAccount(true);
+    setOnNotification(false);
+  };
+
+  const handleNotification = () => {
+    resetPanelB();
+
+    setOnWrite(false);
+    setOnAccount(false);
+    setOnNotification(true);
+  };
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1280) {
@@ -120,9 +151,9 @@ export default function LayoutShell({
       <Header
         user={user}
         onTogglePanel={() => setIsOpen((prev) => !prev)}
-        setOnWrite={setOnWrite}
-        setOnAccount={setOnAccount}
-        setOnNotification={setOnNotification}
+        onWrite={handleWrite}
+        onAccount={handleAccount}
+        onNotification={handleNotification}
       />
       <PanelLeft
         isOpen={isOpen}
@@ -145,6 +176,7 @@ export default function LayoutShell({
           </ResizablePanel>
           <ResizableHandle className="border-gray-50 w-0" />
           <ResizablePanel
+            panelRef={panelBRef}
             defaultSize="30%"
             className="
     bg-white dark:bg-zinc-900

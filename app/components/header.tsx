@@ -34,17 +34,19 @@ import { useRouter } from "next/navigation";
 interface HeaderProps {
   user?: User | null;
   onTogglePanel: () => void;
-  setOnWrite: (value: boolean) => void;
-  setOnAccount: (value: boolean) => void;
-  setOnNotification: (value: boolean) => void;
+
+  onWrite: () => void;
+  onAccount: () => void;
+  onNotification: () => void;
 }
 
 export function Header({
   user,
   onTogglePanel,
-  setOnWrite,
-  setOnAccount,
-  setOnNotification,
+
+  onWrite,
+  onAccount,
+  onNotification,
 }: HeaderProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
@@ -71,9 +73,9 @@ export function Header({
           user={user}
           onSignOut={handleSignOut}
           onLoginClick={() => setIsLoginOpen(true)}
-          setOnWrite={setOnWrite}
-          setOnAccount={setOnAccount}
-          setOnNotification={setOnNotification}
+          onWrite={onWrite}
+          onAccount={onAccount}
+          onNotification={onNotification}
         />
 
         <div className="hidden sm:flex items-center">
@@ -96,18 +98,18 @@ interface UserMenuProps {
   user?: User | null;
   onSignOut?: () => Promise<void>;
   onLoginClick?: () => void;
-  setOnWrite: (value: boolean) => void;
-  setOnAccount: (value: boolean) => void;
-  setOnNotification: (value: boolean) => void;
+  onWrite: () => void;
+  onAccount: () => void;
+  onNotification: () => void;
 }
 
 export default function UserMenu({
   user,
   onSignOut,
   onLoginClick,
-  setOnWrite,
-  setOnAccount,
-  setOnNotification,
+  onWrite,
+  onAccount,
+  onNotification,
 }: UserMenuProps) {
   const [isPending, startTransition] = useTransition();
   const { setTheme, theme } = useTheme();
@@ -145,26 +147,6 @@ export default function UserMenu({
   const toggleTheme = (e: React.MouseEvent) => {
     e.preventDefault();
     setTheme(theme === "dark" ? "light" : "dark");
-  };
-
-  const handleWrite = () => {
-    console.log("handleWrite fired");
-
-    setOnWrite(true);
-    setOnAccount(false);
-    setOnNotification(false);
-  };
-
-  const handleAccount = () => {
-    setOnWrite(false);
-    setOnAccount(true);
-    setOnNotification(false);
-  };
-
-  const handleNotification = () => {
-    setOnWrite(false);
-    setOnAccount(false);
-    setOnNotification(true);
   };
 
   return (
@@ -205,7 +187,7 @@ export default function UserMenu({
           <DropdownMenuGroup>
             {/* Attached window trigger here */}
             <DropdownMenuItem
-              onClick={handleWrite}
+              onClick={onWrite}
               className="cursor-pointer h-11 text-[15px]"
             >
               <SquarePen className="mr-2 size-4.5" strokeWidth={1.5} />
@@ -214,7 +196,7 @@ export default function UserMenu({
 
             <DropdownMenuItem
               className="cursor-pointer h-11 text-[15px]"
-              onClick={handleAccount}
+              onClick={onAccount}
             >
               <BadgeCheckIcon className="mr-2 size-4.5" strokeWidth={1.5} />
               Account
@@ -222,7 +204,7 @@ export default function UserMenu({
 
             <DropdownMenuItem
               className="cursor-pointer h-11 text-[15px]"
-              onClick={handleNotification}
+              onClick={onNotification}
             >
               <BellIcon className="mr-2 size-4.5" strokeWidth={1.5} />
               Notifications
