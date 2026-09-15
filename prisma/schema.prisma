@@ -87,7 +87,9 @@ model Post {
   id          String        @id @default(cuid())
   title       String
   content     Json
+  thumbnail   String?
   stockTicker String?
+
 
   viewCount   Int           @default(0)
 

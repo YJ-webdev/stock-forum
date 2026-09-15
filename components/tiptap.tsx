@@ -6,8 +6,6 @@ import { SlashCommand } from "./extensions/slash-command";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
-import Underline from "@tiptap/extension-underline";
-import Link from "@tiptap/extension-link";
 
 import type { JSONContent } from "@tiptap/react";
 import { EditorBubbleMenu } from "./editor-bubble-menu";
@@ -39,9 +37,8 @@ const Tiptap = ({ content, onChange }: TiptapProps) => {
         resize: {
           enabled: true,
           alwaysPreserveAspectRatio: true,
-          directions: ["top", "bottom", "left", "right"],
+          directions: ["left", "right"],
           minWidth: 50,
-          minHeight: 50,
         },
       }),
       SlashCommand,
@@ -61,7 +58,7 @@ const Tiptap = ({ content, onChange }: TiptapProps) => {
     editorProps: {
       attributes: {
         class:
-          "min-h-[300px] w-full outline-none text-[20px] leading-8 text-zinc-800 dark:text-zinc-200",
+          "tiptap min-h-[300px] w-full max-w-full min-w-0 outline-none text-[20px] leading-8 text-zinc-800 dark:text-zinc-200",
       },
     },
 

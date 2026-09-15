@@ -184,7 +184,7 @@ export default function LayoutShell({
   "
           >
             {/* This stays inside ResizablePanel and tracks its actual width */}
-            <div ref={sectionBRef} className="hidden lg:block w-full min-w-0">
+            <div ref={sectionBRef} className="w-full min-w-0">
               <div
                 className="
         fixed

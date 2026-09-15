@@ -356,20 +356,86 @@
 }
 
 /* Images */
-
+/* Image */
 .tiptap img {
   display: block;
-  max-width: 100%;
-  height: auto;
+  max-width: 100% !important;
+  height: auto !important;
   margin: 1rem 0;
   border-radius: 0.5rem;
 }
 
-/* Selected node */
+/* Small screens → center */
+.tiptap [data-resize-container] {
+  justify-content: center;
+}
 
+/* Larger screens → left */
+@media (min-width: 768px) {
+  .tiptap [data-resize-container] {
+    justify-content: flex-start;
+  }
+}
+
+/* Remove default TipTap selection outline */
 .tiptap .ProseMirror-selectednode {
-  outline: 2px solid var(--color-zinc-300);
-  outline-offset: 2px;
+  outline: none !important;
+}
+
+/* Keep resize wrapper within editor */
+.tiptap [data-resize-wrapper] {
+  position: relative;
+  max-width: 100%;
+}
+
+/* We only want horizontal resizing */
+.tiptap [data-resize-handle="top"],
+.tiptap [data-resize-handle="bottom"] {
+  display: none;
+}
+
+/* Notion-style handles */
+.tiptap [data-resize-handle="left"],
+.tiptap [data-resize-handle="right"] {
+  top: 50% !important;
+  bottom: auto !important;
+
+  width: 5px;
+  height: 48px;
+
+  transform: translateY(-50%);
+
+  background: rgb(161 161 170);
+  border-radius: 9999px;
+
+  cursor: ew-resize;
+  z-index: 10;
+
+  opacity: 0;
+}
+
+/* Show handles when image is selected */
+.tiptap
+  [data-resize-container].ProseMirror-selectednode
+  [data-resize-handle="left"],
+.tiptap
+  [data-resize-container].ProseMirror-selectednode
+  [data-resize-handle="right"] {
+  opacity: 1;
+}
+
+.tiptap [data-resize-handle="left"] {
+  left: 4px !important;
+}
+
+.tiptap [data-resize-handle="right"] {
+  right: 4px !important;
+}
+/* Selected node */
+.tiptap .ProseMirror-selectednode {
+  outline: none;
+  /* outline: 2px solid var(--color-zinc-300); */
+  /* outline-offset: 2px; */
 }
 
 .dark .tiptap .ProseMirror-selectednode {

@@ -79,8 +79,10 @@ export function PostEditor({ categories, onCancel }: PostEditorProps) {
       </div>
 
       {/* MIDDLE — takes all remaining space */}
-      <div className="min-h-0 flex-1 overflow-y-auto  hide-scrollbar">
-        <Tiptap content={content} onChange={setContent} />
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto hide-scrollbar">
+        <div className="w-full min-w-0 max-w-full">
+          <Tiptap content={content} onChange={setContent} />
+        </div>
       </div>
 
       {/* BOTTOM */}
