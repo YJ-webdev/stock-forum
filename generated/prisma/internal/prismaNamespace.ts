@@ -409,7 +409,8 @@ export const ModelName = {
   AccountBalance: 'AccountBalance',
   PortfolioPosition: 'PortfolioPosition',
   Trade: 'Trade',
-  Watchlist: 'Watchlist'
+  Watchlist: 'Watchlist',
+  Prediction: 'Prediction'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -425,7 +426,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "post" | "comment" | "like" | "forumCategory" | "marketAsset" | "accountBalance" | "portfolioPosition" | "trade" | "watchlist"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "post" | "comment" | "like" | "forumCategory" | "marketAsset" | "accountBalance" | "portfolioPosition" | "trade" | "watchlist" | "prediction"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1391,6 +1392,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Prediction: {
+      payload: Prisma.$PredictionPayload<ExtArgs>
+      fields: Prisma.PredictionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PredictionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PredictionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
+        }
+        findFirst: {
+          args: Prisma.PredictionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PredictionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
+        }
+        findMany: {
+          args: Prisma.PredictionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>[]
+        }
+        create: {
+          args: Prisma.PredictionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
+        }
+        createMany: {
+          args: Prisma.PredictionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PredictionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>[]
+        }
+        delete: {
+          args: Prisma.PredictionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
+        }
+        update: {
+          args: Prisma.PredictionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
+        }
+        deleteMany: {
+          args: Prisma.PredictionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PredictionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PredictionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>[]
+        }
+        upsert: {
+          args: Prisma.PredictionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
+        }
+        aggregate: {
+          args: Prisma.PredictionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePrediction>
+        }
+        groupBy: {
+          args: Prisma.PredictionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PredictionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PredictionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PredictionCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1437,6 +1512,7 @@ export const UserScalarFieldEnum = {
   emailVerified: 'emailVerified',
   image: 'image',
   country: 'country',
+  language: 'language',
   role: 'role',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1604,6 +1680,26 @@ export const WatchlistScalarFieldEnum = {
 export type WatchlistScalarFieldEnum = (typeof WatchlistScalarFieldEnum)[keyof typeof WatchlistScalarFieldEnum]
 
 
+export const PredictionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  symbol: 'symbol',
+  displaySymbol: 'displaySymbol',
+  assetName: 'assetName',
+  direction: 'direction',
+  predictionPrice: 'predictionPrice',
+  sessionDate: 'sessionDate',
+  closingPrice: 'closingPrice',
+  status: 'status',
+  pointsChange: 'pointsChange',
+  country: 'country',
+  createdAt: 'createdAt',
+  settledAt: 'settledAt'
+} as const
+
+export type PredictionScalarFieldEnum = (typeof PredictionScalarFieldEnum)[keyof typeof PredictionScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1759,6 +1855,34 @@ export type EnumTradeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
  * Reference to a field of type 'TradeStatus[]'
  */
 export type ListEnumTradeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TradeStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'PredictionDirection'
+ */
+export type EnumPredictionDirectionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionDirection'>
+    
+
+
+/**
+ * Reference to a field of type 'PredictionDirection[]'
+ */
+export type ListEnumPredictionDirectionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionDirection[]'>
+    
+
+
+/**
+ * Reference to a field of type 'PredictionStatus'
+ */
+export type EnumPredictionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'PredictionStatus[]'
+ */
+export type ListEnumPredictionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionStatus[]'>
     
 
 
@@ -1939,6 +2063,7 @@ export type GlobalOmitConfig = {
   portfolioPosition?: Prisma.PortfolioPositionOmit
   trade?: Prisma.TradeOmit
   watchlist?: Prisma.WatchlistOmit
+  prediction?: Prisma.PredictionOmit
 }
 
 /* Types for Logging */

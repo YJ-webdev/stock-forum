@@ -31,6 +31,7 @@ export type UserMinAggregateOutputType = {
   emailVerified: Date | null
   image: string | null
   country: string | null
+  language: string | null
   role: $Enums.Role | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -43,6 +44,7 @@ export type UserMaxAggregateOutputType = {
   emailVerified: Date | null
   image: string | null
   country: string | null
+  language: string | null
   role: $Enums.Role | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -55,6 +57,7 @@ export type UserCountAggregateOutputType = {
   emailVerified: number
   image: number
   country: number
+  language: number
   role: number
   createdAt: number
   updatedAt: number
@@ -69,6 +72,7 @@ export type UserMinAggregateInputType = {
   emailVerified?: true
   image?: true
   country?: true
+  language?: true
   role?: true
   createdAt?: true
   updatedAt?: true
@@ -81,6 +85,7 @@ export type UserMaxAggregateInputType = {
   emailVerified?: true
   image?: true
   country?: true
+  language?: true
   role?: true
   createdAt?: true
   updatedAt?: true
@@ -93,6 +98,7 @@ export type UserCountAggregateInputType = {
   emailVerified?: true
   image?: true
   country?: true
+  language?: true
   role?: true
   createdAt?: true
   updatedAt?: true
@@ -178,6 +184,7 @@ export type UserGroupByOutputType = {
   emailVerified: Date | null
   image: string | null
   country: string | null
+  language: string
   role: $Enums.Role
   createdAt: Date
   updatedAt: Date
@@ -211,6 +218,7 @@ export type UserWhereInput = {
   emailVerified?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   image?: Prisma.StringNullableFilter<"User"> | string | null
   country?: Prisma.StringNullableFilter<"User"> | string | null
+  language?: Prisma.StringFilter<"User"> | string
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -223,6 +231,7 @@ export type UserWhereInput = {
   trades?: Prisma.TradeListRelationFilter
   positions?: Prisma.PortfolioPositionListRelationFilter
   watchlist?: Prisma.WatchlistListRelationFilter
+  predictions?: Prisma.PredictionListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -232,6 +241,7 @@ export type UserOrderByWithRelationInput = {
   emailVerified?: Prisma.SortOrderInput | Prisma.SortOrder
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   country?: Prisma.SortOrderInput | Prisma.SortOrder
+  language?: Prisma.SortOrder
   role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -244,6 +254,7 @@ export type UserOrderByWithRelationInput = {
   trades?: Prisma.TradeOrderByRelationAggregateInput
   positions?: Prisma.PortfolioPositionOrderByRelationAggregateInput
   watchlist?: Prisma.WatchlistOrderByRelationAggregateInput
+  predictions?: Prisma.PredictionOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -256,6 +267,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   emailVerified?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   image?: Prisma.StringNullableFilter<"User"> | string | null
   country?: Prisma.StringNullableFilter<"User"> | string | null
+  language?: Prisma.StringFilter<"User"> | string
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -268,6 +280,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   trades?: Prisma.TradeListRelationFilter
   positions?: Prisma.PortfolioPositionListRelationFilter
   watchlist?: Prisma.WatchlistListRelationFilter
+  predictions?: Prisma.PredictionListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -277,6 +290,7 @@ export type UserOrderByWithAggregationInput = {
   emailVerified?: Prisma.SortOrderInput | Prisma.SortOrder
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   country?: Prisma.SortOrderInput | Prisma.SortOrder
+  language?: Prisma.SortOrder
   role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -295,6 +309,7 @@ export type UserScalarWhereWithAggregatesInput = {
   emailVerified?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   image?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   country?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  language?: Prisma.StringWithAggregatesFilter<"User"> | string
   role?: Prisma.EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
@@ -307,6 +322,7 @@ export type UserCreateInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -319,6 +335,7 @@ export type UserCreateInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -328,6 +345,7 @@ export type UserUncheckedCreateInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -340,6 +358,7 @@ export type UserUncheckedCreateInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -349,6 +368,7 @@ export type UserUpdateInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -361,6 +381,7 @@ export type UserUpdateInput = {
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -370,6 +391,7 @@ export type UserUncheckedUpdateInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -382,6 +404,7 @@ export type UserUncheckedUpdateInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -391,6 +414,7 @@ export type UserCreateManyInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -403,6 +427,7 @@ export type UserUpdateManyMutationInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -415,6 +440,7 @@ export type UserUncheckedUpdateManyInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -427,6 +453,7 @@ export type UserCountOrderByAggregateInput = {
   emailVerified?: Prisma.SortOrder
   image?: Prisma.SortOrder
   country?: Prisma.SortOrder
+  language?: Prisma.SortOrder
   role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -439,6 +466,7 @@ export type UserMaxOrderByAggregateInput = {
   emailVerified?: Prisma.SortOrder
   image?: Prisma.SortOrder
   country?: Prisma.SortOrder
+  language?: Prisma.SortOrder
   role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -451,6 +479,7 @@ export type UserMinOrderByAggregateInput = {
   emailVerified?: Prisma.SortOrder
   image?: Prisma.SortOrder
   country?: Prisma.SortOrder
+  language?: Prisma.SortOrder
   role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -607,6 +636,20 @@ export type UserUpdateOneRequiredWithoutWatchlistNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWatchlistInput, Prisma.UserUpdateWithoutWatchlistInput>, Prisma.UserUncheckedUpdateWithoutWatchlistInput>
 }
 
+export type UserCreateNestedOneWithoutPredictionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPredictionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutPredictionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPredictionsInput
+  upsert?: Prisma.UserUpsertWithoutPredictionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPredictionsInput, Prisma.UserUpdateWithoutPredictionsInput>, Prisma.UserUncheckedUpdateWithoutPredictionsInput>
+}
+
 export type UserCreateWithoutAccountsInput = {
   id?: string
   name?: string | null
@@ -614,6 +657,7 @@ export type UserCreateWithoutAccountsInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -625,6 +669,7 @@ export type UserCreateWithoutAccountsInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAccountsInput = {
@@ -634,6 +679,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -645,6 +691,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAccountsInput = {
@@ -670,6 +717,7 @@ export type UserUpdateWithoutAccountsInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -681,6 +729,7 @@ export type UserUpdateWithoutAccountsInput = {
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -690,6 +739,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -701,6 +751,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionsInput = {
@@ -710,6 +761,7 @@ export type UserCreateWithoutSessionsInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -721,6 +773,7 @@ export type UserCreateWithoutSessionsInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -730,6 +783,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -741,6 +795,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -766,6 +821,7 @@ export type UserUpdateWithoutSessionsInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -777,6 +833,7 @@ export type UserUpdateWithoutSessionsInput = {
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -786,6 +843,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -797,6 +855,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPostsInput = {
@@ -806,6 +865,7 @@ export type UserCreateWithoutPostsInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -817,6 +877,7 @@ export type UserCreateWithoutPostsInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPostsInput = {
@@ -826,6 +887,7 @@ export type UserUncheckedCreateWithoutPostsInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -837,6 +899,7 @@ export type UserUncheckedCreateWithoutPostsInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPostsInput = {
@@ -862,6 +925,7 @@ export type UserUpdateWithoutPostsInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -873,6 +937,7 @@ export type UserUpdateWithoutPostsInput = {
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPostsInput = {
@@ -882,6 +947,7 @@ export type UserUncheckedUpdateWithoutPostsInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -893,6 +959,7 @@ export type UserUncheckedUpdateWithoutPostsInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCommentsInput = {
@@ -902,6 +969,7 @@ export type UserCreateWithoutCommentsInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -913,6 +981,7 @@ export type UserCreateWithoutCommentsInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCommentsInput = {
@@ -922,6 +991,7 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -933,6 +1003,7 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCommentsInput = {
@@ -958,6 +1029,7 @@ export type UserUpdateWithoutCommentsInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -969,6 +1041,7 @@ export type UserUpdateWithoutCommentsInput = {
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCommentsInput = {
@@ -978,6 +1051,7 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -989,6 +1063,7 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutLikesInput = {
@@ -998,6 +1073,7 @@ export type UserCreateWithoutLikesInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1009,6 +1085,7 @@ export type UserCreateWithoutLikesInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutLikesInput = {
@@ -1018,6 +1095,7 @@ export type UserUncheckedCreateWithoutLikesInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1029,6 +1107,7 @@ export type UserUncheckedCreateWithoutLikesInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutLikesInput = {
@@ -1054,6 +1133,7 @@ export type UserUpdateWithoutLikesInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1065,6 +1145,7 @@ export type UserUpdateWithoutLikesInput = {
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLikesInput = {
@@ -1074,6 +1155,7 @@ export type UserUncheckedUpdateWithoutLikesInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1085,6 +1167,7 @@ export type UserUncheckedUpdateWithoutLikesInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutBalanceInput = {
@@ -1094,6 +1177,7 @@ export type UserCreateWithoutBalanceInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1105,6 +1189,7 @@ export type UserCreateWithoutBalanceInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutBalanceInput = {
@@ -1114,6 +1199,7 @@ export type UserUncheckedCreateWithoutBalanceInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1125,6 +1211,7 @@ export type UserUncheckedCreateWithoutBalanceInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutBalanceInput = {
@@ -1150,6 +1237,7 @@ export type UserUpdateWithoutBalanceInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1161,6 +1249,7 @@ export type UserUpdateWithoutBalanceInput = {
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutBalanceInput = {
@@ -1170,6 +1259,7 @@ export type UserUncheckedUpdateWithoutBalanceInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1181,6 +1271,7 @@ export type UserUncheckedUpdateWithoutBalanceInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPositionsInput = {
@@ -1190,6 +1281,7 @@ export type UserCreateWithoutPositionsInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1201,6 +1293,7 @@ export type UserCreateWithoutPositionsInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPositionsInput = {
@@ -1210,6 +1303,7 @@ export type UserUncheckedCreateWithoutPositionsInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1221,6 +1315,7 @@ export type UserUncheckedCreateWithoutPositionsInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPositionsInput = {
@@ -1246,6 +1341,7 @@ export type UserUpdateWithoutPositionsInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1257,6 +1353,7 @@ export type UserUpdateWithoutPositionsInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPositionsInput = {
@@ -1266,6 +1363,7 @@ export type UserUncheckedUpdateWithoutPositionsInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1277,6 +1375,7 @@ export type UserUncheckedUpdateWithoutPositionsInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutTradesInput = {
@@ -1286,6 +1385,7 @@ export type UserCreateWithoutTradesInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1297,6 +1397,7 @@ export type UserCreateWithoutTradesInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutTradesInput = {
@@ -1306,6 +1407,7 @@ export type UserUncheckedCreateWithoutTradesInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1317,6 +1419,7 @@ export type UserUncheckedCreateWithoutTradesInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutTradesInput = {
@@ -1342,6 +1445,7 @@ export type UserUpdateWithoutTradesInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1353,6 +1457,7 @@ export type UserUpdateWithoutTradesInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTradesInput = {
@@ -1362,6 +1467,7 @@ export type UserUncheckedUpdateWithoutTradesInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1373,6 +1479,7 @@ export type UserUncheckedUpdateWithoutTradesInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutWatchlistInput = {
@@ -1382,6 +1489,7 @@ export type UserCreateWithoutWatchlistInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1393,6 +1501,7 @@ export type UserCreateWithoutWatchlistInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWatchlistInput = {
@@ -1402,6 +1511,7 @@ export type UserUncheckedCreateWithoutWatchlistInput = {
   emailVerified?: Date | string | null
   image?: string | null
   country?: string | null
+  language?: string
   role?: $Enums.Role
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1413,6 +1523,7 @@ export type UserUncheckedCreateWithoutWatchlistInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWatchlistInput = {
@@ -1438,6 +1549,7 @@ export type UserUpdateWithoutWatchlistInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1449,6 +1561,7 @@ export type UserUpdateWithoutWatchlistInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWatchlistInput = {
@@ -1458,6 +1571,7 @@ export type UserUncheckedUpdateWithoutWatchlistInput = {
   emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1469,6 +1583,111 @@ export type UserUncheckedUpdateWithoutWatchlistInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutPredictionsInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  country?: string | null
+  language?: string
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  posts?: Prisma.PostCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
+  likes?: Prisma.LikeCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
+  trades?: Prisma.TradeCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutPredictionsInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  country?: string | null
+  language?: string
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  posts?: Prisma.PostUncheckedCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
+  likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
+  trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutPredictionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
+}
+
+export type UserUpsertWithoutPredictionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPredictionsInput, Prisma.UserUncheckedUpdateWithoutPredictionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPredictionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPredictionsInput, Prisma.UserUncheckedUpdateWithoutPredictionsInput>
+}
+
+export type UserUpdateWithoutPredictionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  posts?: Prisma.PostUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
+  likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
+  trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPredictionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  posts?: Prisma.PostUncheckedUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
+  likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
+  trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -1485,6 +1704,7 @@ export type UserCountOutputType = {
   trades: number
   positions: number
   watchlist: number
+  predictions: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1496,6 +1716,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   trades?: boolean | UserCountOutputTypeCountTradesArgs
   positions?: boolean | UserCountOutputTypeCountPositionsArgs
   watchlist?: boolean | UserCountOutputTypeCountWatchlistArgs
+  predictions?: boolean | UserCountOutputTypeCountPredictionsArgs
 }
 
 /**
@@ -1564,6 +1785,13 @@ export type UserCountOutputTypeCountWatchlistArgs<ExtArgs extends runtime.Types.
   where?: Prisma.WatchlistWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountPredictionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PredictionWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1572,6 +1800,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   emailVerified?: boolean
   image?: boolean
   country?: boolean
+  language?: boolean
   role?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1584,6 +1813,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   trades?: boolean | Prisma.User$tradesArgs<ExtArgs>
   positions?: boolean | Prisma.User$positionsArgs<ExtArgs>
   watchlist?: boolean | Prisma.User$watchlistArgs<ExtArgs>
+  predictions?: boolean | Prisma.User$predictionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1594,6 +1824,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   emailVerified?: boolean
   image?: boolean
   country?: boolean
+  language?: boolean
   role?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1606,6 +1837,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   emailVerified?: boolean
   image?: boolean
   country?: boolean
+  language?: boolean
   role?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1618,12 +1850,13 @@ export type UserSelectScalar = {
   emailVerified?: boolean
   image?: boolean
   country?: boolean
+  language?: boolean
   role?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "image" | "country" | "role" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "image" | "country" | "language" | "role" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
@@ -1634,6 +1867,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   trades?: boolean | Prisma.User$tradesArgs<ExtArgs>
   positions?: boolean | Prisma.User$positionsArgs<ExtArgs>
   watchlist?: boolean | Prisma.User$watchlistArgs<ExtArgs>
+  predictions?: boolean | Prisma.User$predictionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1651,6 +1885,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     trades: Prisma.$TradePayload<ExtArgs>[]
     positions: Prisma.$PortfolioPositionPayload<ExtArgs>[]
     watchlist: Prisma.$WatchlistPayload<ExtArgs>[]
+    predictions: Prisma.$PredictionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1659,6 +1894,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     emailVerified: Date | null
     image: string | null
     country: string | null
+    language: string
     role: $Enums.Role
     createdAt: Date
     updatedAt: Date
@@ -2065,6 +2301,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   trades<T extends Prisma.User$tradesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$tradesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   positions<T extends Prisma.User$positionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$positionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PortfolioPositionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   watchlist<T extends Prisma.User$watchlistArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$watchlistArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WatchlistPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  predictions<T extends Prisma.User$predictionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$predictionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PredictionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2100,6 +2337,7 @@ export interface UserFieldRefs {
   readonly emailVerified: Prisma.FieldRef<"User", 'DateTime'>
   readonly image: Prisma.FieldRef<"User", 'String'>
   readonly country: Prisma.FieldRef<"User", 'String'>
+  readonly language: Prisma.FieldRef<"User", 'String'>
   readonly role: Prisma.FieldRef<"User", 'Role'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
@@ -2704,6 +2942,30 @@ export type User$watchlistArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.WatchlistScalarFieldEnum | Prisma.WatchlistScalarFieldEnum[]
+}
+
+/**
+ * User.predictions
+ */
+export type User$predictionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Prediction
+   */
+  select?: Prisma.PredictionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Prediction
+   */
+  omit?: Prisma.PredictionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PredictionInclude<ExtArgs> | null
+  where?: Prisma.PredictionWhereInput
+  orderBy?: Prisma.PredictionOrderByWithRelationInput | Prisma.PredictionOrderByWithRelationInput[]
+  cursor?: Prisma.PredictionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PredictionScalarFieldEnum | Prisma.PredictionScalarFieldEnum[]
 }
 
 /**

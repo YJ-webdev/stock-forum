@@ -31,3 +31,21 @@ export const TradeStatus = {
 } as const
 
 export type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus]
+
+
+export const PredictionDirection = {
+  BULL: 'BULL',
+  BEAR: 'BEAR'
+} as const
+
+export type PredictionDirection = (typeof PredictionDirection)[keyof typeof PredictionDirection]
+
+
+export const PredictionStatus = {
+  PENDING: 'PENDING',
+  WON: 'WON',
+  LOST: 'LOST',
+  VOID: 'VOID'
+} as const
+
+export type PredictionStatus = (typeof PredictionStatus)[keyof typeof PredictionStatus]

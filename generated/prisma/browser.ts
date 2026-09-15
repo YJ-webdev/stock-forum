@@ -82,3 +82,8 @@ export type Trade = Prisma.TradeModel
  * 
  */
 export type Watchlist = Prisma.WatchlistModel
+/**
+ * Model Prediction
+ * 
+ */
+export type Prediction = Prisma.PredictionModel

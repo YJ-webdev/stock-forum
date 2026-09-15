@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "./components/theme-provider";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -71,7 +72,8 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <TooltipProvider>{children}</TooltipProvider>
+
             <Toaster position="bottom-right" richColors />
           </ThemeProvider>
         </SessionProvider>

@@ -1,12 +1,5 @@
+import { CategoryWithCount } from "@/types/forum";
 import Link from "next/link";
-
-export interface CategoryWithCount {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string | null;
-  _count?: { posts: number };
-}
 
 export function ForumList({ categories }: { categories: CategoryWithCount[] }) {
   return (

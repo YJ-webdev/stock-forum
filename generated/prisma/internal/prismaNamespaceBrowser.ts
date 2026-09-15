@@ -63,7 +63,8 @@ export const ModelName = {
   AccountBalance: 'AccountBalance',
   PortfolioPosition: 'PortfolioPosition',
   Trade: 'Trade',
-  Watchlist: 'Watchlist'
+  Watchlist: 'Watchlist',
+  Prediction: 'Prediction'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -89,6 +90,7 @@ export const UserScalarFieldEnum = {
   emailVerified: 'emailVerified',
   image: 'image',
   country: 'country',
+  language: 'language',
   role: 'role',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -254,6 +256,26 @@ export const WatchlistScalarFieldEnum = {
 } as const
 
 export type WatchlistScalarFieldEnum = (typeof WatchlistScalarFieldEnum)[keyof typeof WatchlistScalarFieldEnum]
+
+
+export const PredictionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  symbol: 'symbol',
+  displaySymbol: 'displaySymbol',
+  assetName: 'assetName',
+  direction: 'direction',
+  predictionPrice: 'predictionPrice',
+  sessionDate: 'sessionDate',
+  closingPrice: 'closingPrice',
+  status: 'status',
+  pointsChange: 'pointsChange',
+  country: 'country',
+  createdAt: 'createdAt',
+  settledAt: 'settledAt'
+} as const
+
+export type PredictionScalarFieldEnum = (typeof PredictionScalarFieldEnum)[keyof typeof PredictionScalarFieldEnum]
 
 
 export const SortOrder = {

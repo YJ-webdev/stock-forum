@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Header } from "./header";
 import PanelLeft from "./panel-left";
 import { LeaderboardChart } from "./leader-board-chart";
-import { CategoryWithCount } from "./forum-card";
 import { MarketAssetClient, NewsItem } from "@/types";
 import {
   ResizableHandle,
@@ -12,6 +11,8 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { Footer } from "./footer";
+import { PostEditor } from "@/components/post-editor";
+import { CategoryWithCount } from "@/types/forum";
 
 interface User {
   name?: string | null;
@@ -37,7 +38,12 @@ export default function LayoutShell({
   const [onWrite, setOnWrite] = useState(false);
   const [onAccount, setOnAccount] = useState(false);
   const [onNotification, setOnNotification] = useState(false);
+  const sectionBRef = useRef<HTMLDivElement>(null);
 
+  const [sectionBPosition, setSectionBPosition] = useState({
+    left: 0,
+    width: 0,
+  });
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1280) {
@@ -83,8 +89,34 @@ export default function LayoutShell({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, setIsOpen]);
 
+  useEffect(() => {
+    const panel = sectionBRef.current;
+    if (!panel) return;
+
+    const updatePosition = () => {
+      const rect = panel.getBoundingClientRect();
+
+      setSectionBPosition({
+        left: rect.left,
+        width: rect.width,
+      });
+    };
+
+    updatePosition();
+
+    const observer = new ResizeObserver(updatePosition);
+
+    observer.observe(panel);
+    window.addEventListener("resize", updatePosition);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, []);
+
   return (
-    <>
+    <div className="relative flex flex-col min-h-screen">
       <Header
         user={user}
         onTogglePanel={() => setIsOpen((prev) => !prev)}
@@ -92,57 +124,80 @@ export default function LayoutShell({
         setOnAccount={setOnAccount}
         setOnNotification={setOnNotification}
       />
-
       <PanelLeft
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         news={news}
         categories={categories}
       />
-
       <div
-        className={`pt-14 min-h-screen flex flex-col md:flex-row transition-all duration-300 ease-in-out ${
+        className={`pt-14 flex flex-col md:flex-row transition-all duration-300 ease-in-out ${
           isOpen
             ? "xl:ml-80 xl:w-[calc(100%-320px)] w-full ml-0"
             : "ml-0 w-full"
         }`}
       >
-        <ResizablePanelGroup orientation="horizontal">
+        <ResizablePanelGroup orientation="horizontal" className="">
           <ResizablePanel>
-            <section className="w-full min-h-[calc(100vh-56px)] flex flex-col min-w-0 bg-white dark:bg-zinc-900">
+            <section className="w-full flex flex-col min-w-0 bg-white dark:bg-zinc-900">
               <div className="flex-1">{children}</div>
-
-              <Footer />
             </section>
           </ResizablePanel>
           <ResizableHandle className="border-gray-50 w-0" />
           <ResizablePanel
             defaultSize="30%"
-            className="bg-white h-full dark:bg-zinc-900 "
+            className="
+    bg-white dark:bg-zinc-900
+    border-l border-gray-100 dark:border-zinc-800
+  "
           >
-            <section
-              className={`hidden lg:flex transition-all duration-300 border-l h-full w-full border-gray-100 dark:border-zinc-800 ease-in-out delay-75 z-5 p-4 flex-col gap-4 ${
-                isOpen ? "xl:w-78" : "xl:w-90"
-              }`}
-            >
-              {onWrite && <>Write</>}
-              {onAccount && <>Account</>}
-              {onNotification && <>Notifications</>}
+            {/* This stays inside ResizablePanel and tracks its actual width */}
+            <div ref={sectionBRef} className="hidden lg:block w-full min-w-0">
+              <div
+                className="
+        fixed
+        top-14
+        bottom-0
+        min-w-0
+        overflow-x-hidden
+        overflow-y-auto
+        p-4
+        flex flex-col gap-4
+        bg-white dark:bg-zinc-900
+      "
+                style={{
+                  left: sectionBPosition.left,
+                  width: sectionBPosition.width,
+                }}
+              >
+                {onWrite && (
+                  <PostEditor
+                    categories={categories}
+                    onCancel={() => setOnWrite(false)}
+                  />
+                )}
 
-              {!onWrite && !onAccount && !onNotification && (
-                <div className="flex flex-col w-full max-w-2xs gap-4">
-                  <div>
-                    <p className="text-muted-foreground text-xs text-light tracking-wider uppercase">
-                      top traders
-                    </p>
-                    <LeaderboardChart />
+                {onAccount && <>Account</>}
+
+                {onNotification && <>Notifications</>}
+
+                {!onWrite && !onAccount && !onNotification && (
+                  <div className="flex flex-col w-full min-w-0 gap-4">
+                    <div>
+                      <p className="text-muted-foreground text-xs font-light tracking-wider uppercase">
+                        top traders
+                      </p>
+
+                      <LeaderboardChart />
+                    </div>
                   </div>
-                </div>
-              )}
-            </section>
+                )}
+              </div>
+            </div>
           </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
-    </>
+        </ResizablePanelGroup>{" "}
+      </div>{" "}
+      <Footer />
+    </div>
   );
 }

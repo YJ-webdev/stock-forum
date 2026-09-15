@@ -115,14 +115,6 @@ export default function MarketDetailPage() {
     setActiveRange(range);
   };
 
-  console.log("MARKET PAGE DATA", {
-    symbol: selectedSymbol,
-    range: activeRange,
-    lunchStartMs: data?.lunchStartMs,
-    lunchEndMs: data?.lunchEndMs,
-    exchangeTimezone: data?.exchangeTimezone,
-  });
-
   return (
     <div className="max-w-4xl mx-auto mt-6">
       <div>
