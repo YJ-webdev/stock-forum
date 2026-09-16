@@ -109,15 +109,15 @@ export function MarketDetailHeader({
   });
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex flex-col">
-        <div className="flex items-baseline gap-3 tracking-tight md:tracking-normal">
+    <div className="px-3 flex items-center gap-3 min-w-0">
+      <div className="flex flex-col min-w-0">
+        <div className="flex flex-wrap sm:flex-nowrap items-baseline gap-x-3 gap-y-1 tracking-tight md:tracking-normal">
           <Numeric className="font-extrabold text-3xl text-zinc-900 dark:text-zinc-300">
             {displayPrice}
           </Numeric>
 
           <div
-            className={`flex items-center gap-1.5 text-lg ${colorClass} min-w-0`}
+            className={`flex flex-wrap items-center gap-x-1.5 gap-y-1 text-lg ${colorClass} min-w-0`}
           >
             {isPositive ? (
               <TrendingUp className="w-5 h-5 shrink-0" />
@@ -125,11 +125,11 @@ export function MarketDetailHeader({
               <TrendingDown className="w-5 h-5 shrink-0" />
             )}
 
-            <span className="jakarta shrink-0">{percent}</span>
+            <span className="jakarta">{percent}</span>
 
-            <span className="jakarta shrink-0">({change})</span>
+            <span className="jakarta">({change})</span>
 
-            <span className="jakarta whitespace-nowrap text-sm shrink-0">
+            <span className="jakarta whitespace-nowrap text-sm">
               {rangeLabel}
             </span>
           </div>

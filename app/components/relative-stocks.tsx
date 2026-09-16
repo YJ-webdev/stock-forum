@@ -64,13 +64,11 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
 
               <th className="hidden md:table-cell py-3 text-right">24h %</th>
 
-              <th className="hidden md:table-cell py-3 text-right pr-4">
-                Change
-              </th>
+              <th className="hidden md:table-cell py-3 text-right">Change</th>
 
-              {/* <th className="w-[25%] md:w-auto py-3 pl-2 pr-3 md:pr-4 text-right">
+              <th className="w-[25%] md:w-auto py-3 pl-2 pr-3 md:pr-4 text-right">
                 VOTE
-              </th> */}
+              </th>
             </tr>
           </thead>
 
@@ -127,12 +125,12 @@ function RelativeStockRow({ item, setActiveRange }: RelativeStockRowProps) {
       className="h-8 hover:cursor-pointer border-b last:border-b-0 border-zinc-200/80 dark:border-zinc-700/50 hover:bg-zinc-100/60 dark:hover:bg-zinc-900 text-zinc-800 dark:text-zinc-100 transition-colors text-[14px] md:text-[15px]"
     >
       {/* Symbol & Name */}
-      <td className="pl-3 md:pl-4 overflow-hidden text-ellipsis">
-        <div className="shrink-0 font-medium text-[15.5px] -mb-0.75">
+      <td className="pl-3 md:pl-4 overflow-hidden text-ellipsis leading-snug">
+        <div className="shrink-0 font-medium text-[17px] -mb-0.75">
           {item.displaySymbol}
         </div>
 
-        <p className="truncate block w-full text-sm font-normal text-zinc-900/50 dark:text-zinc-300/70 dark:font-normal">
+        <p className="truncate block w-full text-[13px] font-normal text-zinc-900/50 dark:text-zinc-300/70 dark:font-normal">
           {item.name}
         </p>
       </td>
@@ -170,9 +168,26 @@ function RelativeStockRow({ item, setActiveRange }: RelativeStockRowProps) {
 
       {/* Change */}
       <td
-        className={`hidden md:table-cell py-3.5 pr-4 font-medium dark:font-semibold text-right self-end whitespace-nowrap ${priceColor}`}
+        className={`hidden md:table-cell py-3.5 font-medium dark:font-semibold text-right self-end whitespace-nowrap ${priceColor}`}
       >
         <Numeric>{quote?.change ?? "-"}</Numeric>
+      </td>
+
+      {/* Vote */}
+      <td
+        className={` py-3.5 pr-4 md:pl-5 font-medium dark:font-semibold text-right self-end whitespace-nowrap ${priceColor}`}
+      >
+        <div className="flex h-2 w-full overflow-hidden bg-zinc-200 dark:bg-zinc-700 ml-auto">
+          <div
+            className="bg-emerald-600 transition-[width] duration-300"
+            style={{ width: `${50}%` }}
+          />
+
+          <div
+            className="bg-rose-600 transition-[width] duration-300"
+            style={{ width: `${50}%` }}
+          />
+        </div>
       </td>
     </tr>
   );

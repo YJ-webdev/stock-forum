@@ -14,23 +14,18 @@ import { PostEditor } from "@/components/post-editor";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 import { usePathname } from "next/navigation";
 import { SectionBContext } from "../context/section-b-context";
+import { UserProvider } from "../context/user-context";
 import { AccountPanel } from "./account-panel";
 import { NotificationPanel } from "./notification-panel";
 import { BreadCrumbs } from "./breadcrumbs";
-
-export interface User {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-  nationality?: string | null;
-}
+import { User } from "@/types/user";
 
 export interface MostViewedPost {
   id: string;
   title: string | null;
   slug: string | null;
   thumbnail: string | null;
+  assetSymbol: string | null;
   createdAt: Date;
 
   author: {
@@ -178,49 +173,50 @@ export default function LayoutShell({
         showNotification: handleNotification,
       }}
     >
-      <div className="relative flex flex-col min-h-screen">
-        <Header
-          user={user}
-          onTogglePanel={() => setIsOpen((prev) => !prev)}
-          onWrite={handleWrite}
-          onAccount={handleAccount}
-          onNotification={handleNotification}
-        />
-        <PanelLeft
-          isOpen={isOpen}
-          setIsOpen={setIsOpen}
-          news={news}
-          posts={posts}
-        />
-        <div
-          className={`pt-14 flex flex-col md:flex-row transition-all duration-300 ease-in-out ${
-            isOpen
-              ? "xl:ml-80 xl:w-[calc(100%-320px)] w-full ml-0"
-              : "ml-0 w-full"
-          }`}
-        >
-          <ResizablePanelGroup orientation="horizontal" className="">
-            <ResizablePanel>
-              <section className="w-full flex flex-col min-w-0 bg-white dark:bg-zinc-900">
-                <div className="flex-1">
-                  {pathname !== "/" && <BreadCrumbs />}
-                  {children}
-                </div>
-              </section>
-            </ResizablePanel>
-            <ResizableHandle className="border-gray-50 w-0" />
-            <ResizablePanel
-              panelRef={panelBRef}
-              defaultSize="30%"
-              className="z-20 
+      <UserProvider user={user}>
+        <div className="relative flex flex-col min-h-screen">
+          <Header
+            user={user}
+            onTogglePanel={() => setIsOpen((prev) => !prev)}
+            onWrite={handleWrite}
+            onAccount={handleAccount}
+            onNotification={handleNotification}
+          />
+          <PanelLeft
+            isOpen={isOpen}
+            setIsOpen={setIsOpen}
+            news={news}
+            posts={posts}
+          />
+          <div
+            className={`pt-14 flex flex-col md:flex-row transition-all duration-300 ease-in-out ${
+              isOpen
+                ? "xl:ml-80 xl:w-[calc(100%-320px)] w-full ml-0"
+                : "ml-0 w-full"
+            }`}
+          >
+            <ResizablePanelGroup orientation="horizontal" className="">
+              <ResizablePanel>
+                <section className="w-full flex flex-col min-w-0 bg-white dark:bg-zinc-900">
+                  <div className="flex-1">
+                    {pathname !== "/" && <BreadCrumbs />}
+                    {children}
+                  </div>
+                </section>
+              </ResizablePanel>
+              <ResizableHandle className="border-gray-50 w-0" />
+              <ResizablePanel
+                panelRef={panelBRef}
+                defaultSize="30%"
+                className="z-20 
     bg-white dark:bg-zinc-900
     border-l border-gray-100 dark:border-zinc-800
   "
-            >
-              {/* This stays inside ResizablePanel and tracks its actual width */}
-              <div ref={sectionBRef} className="w-full min-w-0">
-                <div
-                  className="
+              >
+                {/* This stays inside ResizablePanel and tracks its actual width */}
+                <div ref={sectionBRef} className="w-full min-w-0">
+                  <div
+                    className="
         fixed
         top-14
         bottom-0
@@ -231,29 +227,30 @@ export default function LayoutShell({
         flex flex-col gap-4
         bg-white dark:bg-zinc-900
       "
-                  style={{
-                    left: sectionBPosition.left,
-                    width: sectionBPosition.width,
-                  }}
-                >
-                  {(onWrite ||
-                    (isMarketPage && !onAccount && !onNotification)) && (
-                    <PostEditor
-                      isLoggedIn={!!user}
-                      nationality={user?.nationality ?? null}
-                    />
-                  )}
-                  {user && onAccount && !onWrite && (
-                    <AccountPanel user={user} />
-                  )}
-                  {user && onNotification && <NotificationPanel />}
+                    style={{
+                      left: sectionBPosition.left,
+                      width: sectionBPosition.width,
+                    }}
+                  >
+                    {(onWrite ||
+                      (isMarketPage && !onAccount && !onNotification)) && (
+                      <PostEditor
+                        isLoggedIn={!!user}
+                        nationality={user?.nationality ?? null}
+                      />
+                    )}
+                    {user && onAccount && !onWrite && (
+                      <AccountPanel user={user} />
+                    )}
+                    {user && onNotification && <NotificationPanel />}
+                  </div>
                 </div>
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>{" "}
-        </div>{" "}
-        <Footer />
-      </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>{" "}
+          </div>{" "}
+          <Footer />
+        </div>
+      </UserProvider>
     </SectionBContext.Provider>
   );
 }

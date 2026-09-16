@@ -530,7 +530,7 @@ export function DetailChart({
                     : "text-zinc-600 dark:text-zinc-300! hover:bg-zinc-200/60 dark:hover:bg-zinc-700/50"
                 }`}
               >
-                <Icon className="md:w-4 md:h-4" />
+                <Icon className="w-3 h-3 md:w-4 md:h-4" />
               </button>
             );
           })}

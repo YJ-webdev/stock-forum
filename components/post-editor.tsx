@@ -138,7 +138,7 @@ export function PostEditor({
           name={name || "..."}
         />
       </div>
-      <div className="flex shrink-0 items-center justify-end gap-2 pt-4">
+      {/* <div className="flex shrink-0 items-center justify-end gap-2 pt-4">
         <VoteButton
           voteDirection="BULL"
           onClick={() => handleVote("BULL")}
@@ -165,7 +165,7 @@ export function PostEditor({
             onExpire={handleCountdownExpire}
           />
         </div>
-      )}
+      )} */}
     </div>
   );
 }

@@ -28,6 +28,7 @@ async function getMostViewedPost(limit = 5) {
       slug: true,
       thumbnail: true,
       createdAt: true,
+      assetSymbol: true,
 
       asset: {
         select: {
@@ -68,8 +69,10 @@ export default async function MainLayout({
       })
     : null;
 
-  const news = await getNews();
-  const mostViewedPosts = await getMostViewedPost();
+  const [news, mostViewedPosts] = await Promise.all([
+    getNews(),
+    getMostViewedPost(),
+  ]);
 
   return (
     <LayoutShell user={user} news={news} posts={mostViewedPosts}>

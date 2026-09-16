@@ -17,6 +17,7 @@ export type ChartRange =
   | "1D"
   | "5D"
   | "1M"
+  | "3M"
   | "6M"
   | "YTD"
   | "1Y"

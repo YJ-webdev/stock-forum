@@ -30,19 +30,28 @@ export const BreadCrumbs = () => {
   // Asset / [symbol]
   // -------------------------
 
-  const routeSymbol =
+  const rawRouteSymbol =
     section && section !== "market" && section !== "news" ? section : null;
 
-  const matchedRouteItem = routeSymbol
-    ? ALL_MARKET_SYMBOLS.find(
-        (item) =>
-          item.displaySymbol?.toLowerCase() === routeSymbol.toLowerCase(),
-      )
+  // pathname can contain encoded symbols such as %5EN225
+  const routeSymbol = rawRouteSymbol
+    ? decodeURIComponent(rawRouteSymbol)
     : null;
 
-  const routeDisplaySymbol: string =
-    matchedRouteItem?.displaySymbol ??
-    (routeSymbol === "null" ? "General" : (routeSymbol ?? "General"));
+  const isGeneral = routeSymbol?.toLowerCase() === "general";
+
+  const matchedRouteItem =
+    routeSymbol && !isGeneral
+      ? ALL_MARKET_SYMBOLS.find(
+          (item) =>
+            item.symbol === routeSymbol ||
+            item.displaySymbol?.toLowerCase() === routeSymbol.toLowerCase(),
+        )
+      : null;
+
+  const routeDisplaySymbol: string = isGeneral
+    ? "General"
+    : (matchedRouteItem?.displaySymbol ?? routeSymbol ?? "General");
 
   // -------------------------
   // Breadcrumb items
@@ -69,7 +78,9 @@ export const BreadCrumbs = () => {
   if (routeSymbol) {
     items.push({
       label: routeDisplaySymbol,
-      href: `/${routeSymbol}`,
+      href: isGeneral
+        ? "/general"
+        : `/${matchedRouteItem?.displaySymbol ?? encodeURIComponent(routeSymbol)}`,
     });
 
     if (segments[1] === "post") {
@@ -92,12 +103,18 @@ export const BreadCrumbs = () => {
 
     handleScroll();
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  // -------------------------
+  // Render
+  // -------------------------
 
   return (
     <div
@@ -109,6 +126,7 @@ export const BreadCrumbs = () => {
     >
       <div className="flex items-center gap-2 text-sm font-medium text-zinc-500 dark:text-zinc-300">
         <button
+          type="button"
           onClick={() => router.push("/")}
           className="cursor-pointer transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
         >
@@ -124,6 +142,7 @@ export const BreadCrumbs = () => {
 
             {item.href ? (
               <button
+                type="button"
                 onClick={() => router.push(item.href!)}
                 className="cursor-pointer transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
               >

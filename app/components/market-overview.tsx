@@ -206,7 +206,7 @@ export default function MarketOverview() {
   };
 
   return (
-    <div className="w-full max-w-6xl pt-4 px-4">
+    <div className="w-full max-w-6xl pt-4">
       {/* Navigation & Controls */}
       <div className="flex items-center justify-between mb-4">
         {/* Tab Navigation */}
@@ -271,8 +271,8 @@ export default function MarketOverview() {
           ))}
         </div>
       </div> */}
-      <div className="flex flex-col gap-3 md:mx-4 mb-40">
-        <div className="flex gap-1 md:gap-2 space-x-2.5 md:space-x-0 flex-wrap justify-start">
+      <div className="flex flex-col gap-3 md:mx-4 mb-24">
+        <div className="flex gap-1 md:gap-2 space-x-2.5 md:space-x-0 flex-wrap justify-start px-2">
           {categories.map((category) => {
             const isActive = activeTab === category;
 
