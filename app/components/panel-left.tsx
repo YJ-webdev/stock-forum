@@ -36,10 +36,7 @@ export default function PanelLeft({ isOpen, news, posts }: PanelLeftProps) {
                 MOST VIEWED
               </p>
               {posts?.map((post) => (
-                <Link
-                  key={post.id}
-                  href={`/forum/${post.asset}/post/${post.slug}`}
-                >
+                <Link key={post.id} href={`${post.asset}/post/${post.slug}`}>
                   {post.title}
                 </Link>
               ))}

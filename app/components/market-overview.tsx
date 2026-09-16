@@ -6,7 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { ArrowUp, ArrowDown, ChevronRight, ChevronLeft } from "lucide-react";
 
-import { AssetType, useMarketQuote } from "../hooks/useMarketQuote";
+import {
+  AssetType,
+  SelectedRange,
+  useMarketQuote,
+} from "../hooks/useMarketQuote";
 import {
   MARKET_SYMBOLS,
   CRYPTO_SYMBOLS,
@@ -18,6 +22,7 @@ import {
 import { Sparkline } from "./sparkline";
 import Link from "next/link";
 import { Numeric } from "./numeric";
+import { RelativeStocks } from "./relative-stocks";
 
 function MarketCard({
   symbol,
@@ -153,6 +158,7 @@ export default function MarketOverview() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canSlideLeft, setCanSlideLeft] = useState(false);
   const [canSlideRight, setCanSlideRight] = useState(true);
+  const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
 
   const checkScrollPosition = () => {
     const el = scrollContainerRef.current;
@@ -200,7 +206,7 @@ export default function MarketOverview() {
   };
 
   return (
-    <div className="w-full max-w-6xl pt-10 px-4">
+    <div className="w-full max-w-6xl pt-4 px-4">
       {/* Navigation & Controls */}
       <div className="flex items-center justify-between mb-4">
         {/* Tab Navigation */}
@@ -225,7 +231,7 @@ export default function MarketOverview() {
         </div> */}
 
         {/* Carousel Arrow Buttons */}
-        <div className="hidden md:flex items-center gap-2">
+        {/* <div className="hidden md:flex items-center gap-2">
           <button
             onClick={() => handleScroll("left")}
             disabled={!canSlideLeft}
@@ -243,11 +249,11 @@ export default function MarketOverview() {
           >
             <ChevronRight className="w-4 h-4" />
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Market Cards */}
-      <div
+      {/* <div
         ref={scrollContainerRef}
         className="overflow-x-auto scrollbar-none snap-x snap-mandatory scroll-smooth"
       >
@@ -264,6 +270,31 @@ export default function MarketOverview() {
             </div>
           ))}
         </div>
+      </div> */}
+      <div className="flex flex-col gap-3 md:mx-4 mb-40">
+        <div className="flex gap-1 md:gap-2 space-x-2.5 md:space-x-0 flex-wrap justify-start">
+          {categories.map((category) => {
+            const isActive = activeTab === category;
+
+            return (
+              <button
+                key={category}
+                onClick={() => setActiveTab(category)}
+                className={`px-2 md:px-4 py-1.5 rounded-full uppercase text-sm font-medium dark:font-normal transition-all cursor-pointer border ${
+                  isActive
+                    ? "bg-zinc-100 text-zinc-900 border-zinc-300 dark:bg-zinc-800 dark:text-white dark:border-zinc-700"
+                    : "bg-transparent text-zinc-500 dark:text-zinc-300 border-transparent hover:text-zinc-500 hover:border-zinc-200 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 hover:bg-zinc-100 dark:hover:text-zinc-300"
+                }`}
+              >
+                {category}
+              </button>
+            );
+          })}
+        </div>
+        <RelativeStocks
+          items={currentMarketSymbols}
+          setActiveRange={setActiveRange}
+        />
       </div>
     </div>
   );

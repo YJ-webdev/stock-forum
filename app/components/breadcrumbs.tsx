@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { ChevronRight } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -10,7 +11,6 @@ export const BreadCrumbs = () => {
   const searchParams = useSearchParams();
 
   const segments = pathname.split("/").filter(Boolean);
-
   const section = segments[0];
 
   // -------------------------
@@ -27,18 +27,22 @@ export const BreadCrumbs = () => {
     matchedMarketItem?.displaySymbol ?? selectedSymbol;
 
   // -------------------------
-  // Forum
+  // Asset / [symbol]
   // -------------------------
 
-  const forumSlug = section === "forum" ? segments[1] : null;
+  const routeSymbol =
+    section && section !== "market" && section !== "news" ? section : null;
 
-  const matchedForumItem = forumSlug
+  const matchedRouteItem = routeSymbol
     ? ALL_MARKET_SYMBOLS.find(
-        (item) => item.displaySymbol?.toLowerCase() === forumSlug.toLowerCase(),
+        (item) =>
+          item.displaySymbol?.toLowerCase() === routeSymbol.toLowerCase(),
       )
     : null;
 
-  const forumDisplaySymbol = matchedForumItem?.displaySymbol ?? forumSlug;
+  const routeDisplaySymbol: string =
+    matchedRouteItem?.displaySymbol ??
+    (routeSymbol === "null" ? "General" : (routeSymbol ?? "General"));
 
   // -------------------------
   // Breadcrumb items
@@ -46,40 +50,63 @@ export const BreadCrumbs = () => {
 
   const items: { label: string; href?: string }[] = [];
 
+  // /market
   if (section === "market") {
     items.push({
       label: selectedDisplaySymbol,
     });
   }
 
+  // /news/[id]
   if (section === "news") {
     items.push({
       label: "News",
     });
   }
 
-  if (section === "forum") {
+  // /[symbol]
+  // /[symbol]/post/[slug]
+  if (routeSymbol) {
     items.push({
-      label: "Forum",
-      href: "/forum",
+      label: routeDisplaySymbol,
+      href: `/${routeSymbol}`,
     });
 
-    if (forumDisplaySymbol) {
-      items.push({
-        label: forumDisplaySymbol,
-        href: `/forum/${forumSlug}`,
-      });
-    }
-
-    if (segments[2] === "post") {
+    if (segments[1] === "post") {
       items.push({
         label: "Post",
       });
     }
   }
 
+  // -------------------------
+  // Scroll border
+  // -------------------------
+
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+
+    handleScroll();
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   return (
-    <div className="fixed top-14 w-full z-10 pl-3 mx-1 pt-6 pb-2 mb-10 flex items-center justify-between bg-white dark:bg-zinc-900">
+    <div
+      className={`fixed top-14 z-10 mb-10 flex w-full items-center justify-between
+        border-zinc-100 bg-white pl-3 pt-6 pb-2
+        dark:border-zinc-800 dark:bg-zinc-900
+        ${isScrolled ? "border-b" : ""}
+      `}
+    >
       <div className="flex items-center gap-2 text-sm font-medium text-zinc-500 dark:text-zinc-300">
         <button
           onClick={() => router.push("/")}

@@ -1,4 +1,4 @@
-// app/market/page.tsx
+// app/[symbol]/page.tsx
 "use client";
 
 import React, { useRef, useState } from "react";
@@ -239,8 +239,8 @@ export default function MarketDetailPage() {
         </div>
         <div className="mx-4 my-10 rounded border">discussion</div>
 
-        <div className="flex flex-col gap-3 md:mx-4 mb-40 mt-10">
-          {/* Tab Navigation */}
+        {/* Other Assets */}
+        {/* <div className="flex flex-col gap-3 md:mx-4 mb-40 mt-10">
           <div className="flex gap-1 md:gap-2 space-x-2.5 md:space-x-0 flex-wrap justify-start">
             {categories.map((category) => {
               const isActive = activeTab === category;
@@ -264,7 +264,7 @@ export default function MarketDetailPage() {
             items={currentMarketSymbols}
             setActiveRange={setActiveRange}
           />
-        </div>
+        </div> */}
       </div>
     </div>
   );
