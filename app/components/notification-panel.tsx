@@ -1,18 +1,38 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 
-export function NotificationPanel() {
+interface NotificationPanelProps {
+  setOnNotification: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export function NotificationPanel({
+  setOnNotification,
+}: NotificationPanelProps) {
   return (
     <div className="flex h-full min-h-0 flex-col pt-4">
       <div className="shrink-0 pb-5">
-        <div className="flex items-center gap-2">
-          <Bell className="size-4 text-zinc-500" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bell className="size-4 text-zinc-500" />
 
-          <h2 className="text-[16px] font-medium text-zinc-900 dark:text-zinc-100">
-            Notifications
-          </h2>
+            <h2 className="text-[16px] font-medium text-zinc-900 dark:text-zinc-100">
+              Notifications
+            </h2>
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setOnNotification(false)}
+            className="size-8"
+            aria-label="Close notifications"
+          >
+            <X className="size-4" />
+          </Button>
         </div>
 
         <p className="mt-1 text-[13px] text-zinc-500 dark:text-zinc-400">

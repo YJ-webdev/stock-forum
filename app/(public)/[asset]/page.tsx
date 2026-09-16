@@ -1,7 +1,7 @@
 // app/[asset]/page.tsx
 "use client";
 
-import { useCallback, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -21,6 +21,7 @@ import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { ALL_MARKET_SYMBOLS, AssetType } from "@/lib/data/market-symbols";
 
 import {
+  getMarketVote,
   submitMarketVote,
   type VoteDirection,
 } from "@/app/actions/market-vote";
@@ -35,13 +36,17 @@ export default function MarketDetailPage() {
   const searchParams = useSearchParams();
   const user = useCurrentUser();
 
+  const name = searchParams.get("name");
+  const symbol = searchParams.get("symbol");
+
+  const [voteLoading, setVoteLoading] = useState(true);
+
   const chartRef = useRef<HTMLDivElement>(null);
 
   const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
 
   const [selectedVote, setSelectedVote] = useState<VoteDirection | null>(null);
 
-  const [voteLoading] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   const [unavailableRanges, setUnavailableRanges] = useState<
@@ -95,6 +100,37 @@ export default function MarketDetailPage() {
 
   const isMarketOpen = votingWindow?.isMarketOpen ?? false;
 
+  // Load existing vote
+  useEffect(() => {
+    if (!symbol) return;
+
+    let cancelled = false;
+
+    async function loadVote() {
+      try {
+        const vote = await getMarketVote({
+          symbol: symbol!,
+        });
+
+        if (!cancelled) {
+          setSelectedVote(vote);
+          setVoteLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setSelectedVote(null);
+          setVoteLoading(false);
+        }
+      }
+    }
+
+    loadVote();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [symbol]);
+
   const handleCountdownExpire = useCallback(() => {
     setNow(Date.now());
   }, []);
@@ -102,6 +138,11 @@ export default function MarketDetailPage() {
   const handleVote = (direction: VoteDirection) => {
     if (!isLoggedIn) {
       toast.error("Please log in to vote.");
+      return;
+    }
+
+    if (!symbol) {
+      toast.error("Market asset not found.");
       return;
     }
 
@@ -118,7 +159,7 @@ export default function MarketDetailPage() {
     startTransition(async () => {
       try {
         const vote = await submitMarketVote({
-          symbol: selectedSymbol,
+          symbol,
           nationality,
           direction,
         });
@@ -127,8 +168,8 @@ export default function MarketDetailPage() {
 
         toast.success(
           direction === "BULL"
-            ? "Prediction to Bullish."
-            : "Prediction to Bearish.",
+            ? "Prediction submitted."
+            : "Prediction submitted.",
         );
       } catch (error) {
         toast.error(
@@ -220,7 +261,7 @@ export default function MarketDetailPage() {
               className="
     fixed bottom-0 left-0 z-50
     flex w-full flex-row-reverse items-end justify-start gap-2
-    bg-white px-3 py-2 dark:bg-zinc-900 border-t border-zinc-100
+    bg-white px-3 py-2 dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-700/50
 
     md:static md:z-auto
     md:mr-3 md:w-auto md:flex-col md:items-stretch md:gap-0
@@ -322,7 +363,7 @@ export default function MarketDetailPage() {
         })}
       </div>
 
-      <div className="mb-24 mt-10 w-full bg-zinc-100 h-20 rounded-lg">
+      <div className="mb-24 px-3 mt-10 w-full bg-white dark:bg-zinc-900 h-20 rounded-lg">
         Discussion
       </div>
     </div>

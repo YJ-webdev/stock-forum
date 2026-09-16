@@ -26,23 +26,33 @@ export default function PanelLeft({ isOpen, news, posts }: PanelLeftProps) {
         <ScrollArea className="h-full w-full mt-10">
           <div className="flex min-h-full flex-col">
             {/* News Section */}
-            <div className="mt-8">
+            <div className="mt-6">
               <NewsCarousel news={news} />
             </div>
 
             {/* Topics */}
-            <div className="mt-5 p-4">
+            <div className=" p-4">
               <p className="text-muted-foreground text-xs text-light mb-2 tracking-wider">
-                MOST VIEWED
+                Most discussed
               </p>
-              {posts?.map((post) => (
-                <Link
-                  key={post.id}
-                  href={`/${post.assetSymbol ?? "general"}/post/${post.slug}`}
-                >
-                  {post.title}
-                </Link>
-              ))}
+              <div className="flex flex-col gap-2">
+                {posts?.map((post) => (
+                  <Link
+                    key={post.id}
+                    href={`/${post.assetSymbol ?? "general"}/post/${post.slug}`}
+                  >
+                    <p className="text-lg">{post.title}</p>
+
+                    {/* {post.thumbnail && (
+                      <img
+                        src={post.thumbnail}
+                        alt={post.title ?? ""}
+                        className="aspect-7/3 w-full object-cover"
+                      />
+                    )} */}
+                  </Link>
+                ))}
+              </div>
             </div>
 
             <div className="md:hidden mt-auto p-3 -translate-y-10 self-end">

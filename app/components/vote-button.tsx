@@ -23,7 +23,7 @@ export function VoteButton({
       disabled={isPending || isMarketOpen}
       className={`
         text-[15px] text-white
-        ${voteDirection === "BULL" ? "bg-emerald-600 hover:bg-emerald-600/50" : "bg-rose-700 hover:bg-rose-700/50"}
+        ${voteDirection === "BULL" ? "bg-emerald-600 hover:bg-emerald-600/80" : "bg-rose-700 hover:bg-rose-700/80"}
         ${isPending || isMarketOpen ? "opacity-50 cursor-default" : ""}
         ${selectedVote === voteDirection ? "opacity-50" : "opacity-100"}
         ${!isPending && !isMarketOpen ? "cursor-pointer" : ""}

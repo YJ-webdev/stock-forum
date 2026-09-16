@@ -17,10 +17,6 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
-        bullishdisabled:
-          "cursor-default bg-emerald-600/50 text-white dark:text-zinc-400",
-        bearishdisabled:
-          "cursor-default bg-rose-700/50 text-white dark:text-zinc-400",
       },
       size: {
         default:

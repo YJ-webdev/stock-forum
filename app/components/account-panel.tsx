@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Globe2, Languages, UserRound } from "lucide-react";
+import { Globe2, Languages, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { NATIONALITIES } from "@/lib/data/nationalities";
 import { LANGUAGES } from "@/lib/data/languages";
 import { updateAccountPreferences } from "@/app/actions/update-account-preferences";
+import { useRouter } from "next/navigation";
 
 interface AccountPanelProps {
   user: {
@@ -27,20 +28,20 @@ interface AccountPanelProps {
     nationality?: string | null;
     language?: string | null;
   };
+  setOnAccount: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function AccountPanel({ user }: AccountPanelProps) {
+export function AccountPanel({ user, setOnAccount }: AccountPanelProps) {
   const initialNationality = user.nationality ?? "";
   const initialLanguage = user.language ?? "en";
 
   const [nationality, setNationality] = useState(initialNationality);
   const [language, setLanguage] = useState(initialLanguage);
-
   const [savedNationality, setSavedNationality] = useState(initialNationality);
-
   const [savedLanguage, setSavedLanguage] = useState(initialLanguage);
-
   const [isPending, startTransition] = useTransition();
+
+  const router = useRouter();
 
   const hasChanges =
     nationality !== savedNationality || language !== savedLanguage;
@@ -66,7 +67,8 @@ export function AccountPanel({ user }: AccountPanelProps) {
         setSavedNationality(updatedUser.nationality ?? "");
         setSavedLanguage(updatedUser.language);
 
-        toast.success("Account preferences updated.");
+        toast.success("Account updated.");
+        router.refresh();
       } catch (error) {
         console.error(error);
 
@@ -81,12 +83,25 @@ export function AccountPanel({ user }: AccountPanelProps) {
     <div className="flex h-full min-h-0 w-full flex-col pt-4">
       {/* HEADER */}
       <div className="shrink-0 pb-5">
-        <div className="flex items-center gap-2">
-          <UserRound className="size-4 text-zinc-500 dark:text-zinc-400" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <UserRound className="size-4 text-zinc-500 dark:text-zinc-400" />
 
-          <h2 className="text-[16px] font-medium text-zinc-900 dark:text-zinc-100">
-            Account
-          </h2>
+            <h2 className="text-[16px] font-medium text-zinc-900 dark:text-zinc-100">
+              Account
+            </h2>
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setOnAccount(false)}
+            className="size-8"
+            aria-label="Close account"
+          >
+            <X className="size-4" />
+          </Button>
         </div>
 
         <p className="mt-1 text-[13px] text-zinc-500 dark:text-zinc-400">

@@ -232,17 +232,28 @@ export default function LayoutShell({
                       width: sectionBPosition.width,
                     }}
                   >
-                    {(onWrite ||
-                      (isMarketPage && !onAccount && !onNotification)) && (
+                    {user && onWrite && (
                       <PostEditor
                         isLoggedIn={!!user}
                         nationality={user?.nationality ?? null}
+                        setOnWrite={setOnWrite}
                       />
                     )}
                     {user && onAccount && !onWrite && (
-                      <AccountPanel user={user} />
+                      <AccountPanel user={user} setOnAccount={setOnAccount} />
                     )}
-                    {user && onNotification && <NotificationPanel />}
+                    {user && onNotification && (
+                      <NotificationPanel
+                        setOnNotification={setOnNotification}
+                      />
+                    )}
+                    {!onWrite && !onAccount && !onNotification && (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <div className="text-center text-sm text-muted-foreground">
+                          Write a post or manage your account.
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
