@@ -512,7 +512,7 @@ export function DetailChart({
     <div className="w-full relative bg-zinc-50 dark:bg-zinc-800 md:rounded-2xl md:border border-zinc-200 dark:border-zinc-800 p-4 md:shadow-sm select-none">
       {/* TOP CONTROL BAR */}
 
-      <div className="relative z-20 flex items-center gap-6 dark:text-zinc-300">
+      <div className="relative z-5 flex items-center gap-6 dark:text-zinc-300">
         <div className="relative flex">
           {chartTypeOptions.map((opt) => {
             const Icon = opt.icon;

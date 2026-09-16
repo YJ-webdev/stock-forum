@@ -135,7 +135,7 @@ export default function MarketDetailPage() {
   const currentMarketSymbols = MARKET_CATEGORIES[activeTab] || [];
 
   return (
-    <div className="max-w-4xl mx-auto mt-6">
+    <div className="max-w-4xl mx-auto mt-20">
       <div>
         <div className="w-full relative px-3 space-y-2">
           {/* <div className="flex items-center justify-between mb-10  bg-white dark:bg-zinc-900">

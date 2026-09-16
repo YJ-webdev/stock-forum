@@ -203,7 +203,7 @@ export default function LayoutShell({
             <ResizablePanel>
               <section className="w-full flex flex-col min-w-0 bg-white dark:bg-zinc-900">
                 <div className="flex-1">
-                  <BreadCrumbs />
+                  {pathname !== "/" && <BreadCrumbs />}
                   {children}
                 </div>
               </section>
@@ -212,7 +212,7 @@ export default function LayoutShell({
             <ResizablePanel
               panelRef={panelBRef}
               defaultSize="30%"
-              className="
+              className="z-20 
     bg-white dark:bg-zinc-900
     border-l border-gray-100 dark:border-zinc-800
   "

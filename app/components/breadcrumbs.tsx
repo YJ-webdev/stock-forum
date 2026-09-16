@@ -79,7 +79,7 @@ export const BreadCrumbs = () => {
   }
 
   return (
-    <div className="mb-10 flex items-center justify-between bg-white dark:bg-zinc-900">
+    <div className="fixed top-14 w-full z-10 pl-3 mx-1 pt-6 pb-2 mb-10 flex items-center justify-between bg-white dark:bg-zinc-900">
       <div className="flex items-center gap-2 text-sm font-medium text-zinc-500 dark:text-zinc-300">
         <button
           onClick={() => router.push("/")}
