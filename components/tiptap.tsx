@@ -84,9 +84,17 @@ const Tiptap = ({ content, onChange, name }: TiptapProps) => {
   }
 
   return (
-    <div className="h-full w-full">
+    <div
+      className="relative flex-1 h-full "
+      onClick={() => {
+        if (!editor.isFocused) {
+          editor.commands.focus();
+        }
+      }}
+    >
       <EditorBubbleMenu editor={editor} />
-      <EditorContent editor={editor} />
+
+      <EditorContent editor={editor} className="tiptap-editor-content flex-1" />
     </div>
   );
 };

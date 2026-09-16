@@ -36,6 +36,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role || "USER";
+        token.nationality =
+          (user as { nationality?: string }).nationality || "";
+        token.language = (user as { language?: string }).language || "";
       }
       return token;
     },
@@ -45,6 +48,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = (token.id as string) || token.sub!;
         // Pass role to the client/server session
         session.user.role = token.role as string;
+        session.user.nationality = token.nationality as string;
+        session.user.language = token.language as string;
       }
       return session;
     },

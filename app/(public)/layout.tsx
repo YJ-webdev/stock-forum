@@ -52,13 +52,20 @@ export default async function MainLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  const user = session?.user
-    ? {
-        id: session.user.id,
-        name: session.user.name,
-        email: session.user.email,
-        image: session.user.image,
-      }
+  const user = session?.user?.id
+    ? await prisma.user.findUnique({
+        where: {
+          id: session.user.id,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          nationality: true,
+          language: true,
+        },
+      })
     : null;
 
   const news = await getNews();

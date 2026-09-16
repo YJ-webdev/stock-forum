@@ -13,8 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+
 import { NATIONALITIES } from "@/lib/data/nationalities";
 import { LANGUAGES } from "@/lib/data/languages";
+import { updateAccountPreferences } from "@/app/actions/update-account-preferences";
 
 interface AccountPanelProps {
   user: {
@@ -28,19 +30,20 @@ interface AccountPanelProps {
 }
 
 export function AccountPanel({ user }: AccountPanelProps) {
-  const [nationality, setNationality] = useState<string>(
-    user.nationality ?? "",
-  );
+  const initialNationality = user.nationality ?? "";
+  const initialLanguage = user.language ?? "en";
 
-  const [language, setLanguage] = useState<string>(user.language ?? "en");
+  const [nationality, setNationality] = useState(initialNationality);
+  const [language, setLanguage] = useState(initialLanguage);
+
+  const [savedNationality, setSavedNationality] = useState(initialNationality);
+
+  const [savedLanguage, setSavedLanguage] = useState(initialLanguage);
 
   const [isPending, startTransition] = useTransition();
 
-  const originalNationality = user.nationality ?? "";
-  const originalLanguage = user.language ?? "en";
-
   const hasChanges =
-    nationality !== originalNationality || language !== originalLanguage;
+    nationality !== savedNationality || language !== savedLanguage;
 
   const handleSave = () => {
     if (!nationality) {
@@ -48,22 +51,28 @@ export function AccountPanel({ user }: AccountPanelProps) {
       return;
     }
 
+    if (!language) {
+      toast.error("Please select your language.");
+      return;
+    }
+
     startTransition(async () => {
       try {
-        /*
-         * We'll replace this with the Prisma
-         * updateAccountPreferences server action.
-         */
-        console.log({
+        const updatedUser = await updateAccountPreferences({
           nationality,
           language,
         });
+
+        setSavedNationality(updatedUser.nationality ?? "");
+        setSavedLanguage(updatedUser.language);
 
         toast.success("Account preferences updated.");
       } catch (error) {
         console.error(error);
 
-        toast.error("Failed to update account.");
+        toast.error(
+          error instanceof Error ? error.message : "Failed to update account.",
+        );
       }
     });
   };

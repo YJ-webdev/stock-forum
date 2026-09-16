@@ -2,31 +2,42 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getVotingWindow } from "@/lib/utils/get-voting-window";
 
 export type VoteDirection = "BULL" | "BEAR";
 
 interface SubmitMarketVoteInput {
   symbol: string;
   nationality: string;
-  predictionFor: Date;
   direction: VoteDirection;
 }
 
 interface GetMarketVoteInput {
   symbol: string;
-  predictionFor: Date;
 }
 
 /**
- * Get the logged-in user's vote for this asset/session.
+ * Get the logged-in user's vote for the CURRENT
+ * prediction session of this asset.
  */
 export async function getMarketVote({
   symbol,
-  predictionFor,
 }: GetMarketVoteInput): Promise<VoteDirection | null> {
   const session = await auth();
 
   if (!session?.user?.id) {
+    return null;
+  }
+
+  if (!symbol) {
+    return null;
+  }
+
+  const votingWindow = getVotingWindow(symbol);
+
+  const predictionFor = votingWindow.predictionFor;
+
+  if (!predictionFor) {
     return null;
   }
 
@@ -62,12 +73,14 @@ export async function getMarketVote({
 /**
  * Create a new vote or change the existing vote.
  *
- * Voting is allowed only before the market opens.
+ * Voting is allowed only while the market is closed.
+ *
+ * The server calculates the voting session itself.
+ * The client cannot choose predictionFor.
  */
 export async function submitMarketVote({
   symbol,
   nationality,
-  predictionFor,
   direction,
 }: SubmitMarketVoteInput) {
   const session = await auth();
@@ -88,17 +101,25 @@ export async function submitMarketVote({
     throw new Error("Invalid vote direction.");
   }
 
-  /*
-   * predictionFor is the upcoming market-open timestamp.
-   *
-   * Once that timestamp has passed, the vote can no longer
-   * be created or changed.
-   */
-  const now = new Date();
+  // --------------------------------------------------
+  // Calculate the CURRENT voting window on the server.
+  // --------------------------------------------------
 
-  if (now >= predictionFor) {
-    throw new Error("Voting for this market is closed.");
+  const votingWindow = getVotingWindow(symbol);
+
+  if (!votingWindow.predictionFor) {
+    throw new Error("Prediction session is not available.");
   }
+
+  if (!votingWindow.canVote) {
+    throw new Error("Voting for this market is currently closed.");
+  }
+
+  const predictionFor = votingWindow.predictionFor;
+
+  // --------------------------------------------------
+  // Find asset
+  // --------------------------------------------------
 
   const asset = await prisma.marketAsset.findUnique({
     where: {
@@ -112,6 +133,10 @@ export async function submitMarketVote({
   if (!asset) {
     throw new Error("Market asset not found.");
   }
+
+  // --------------------------------------------------
+  // Create / update vote
+  // --------------------------------------------------
 
   const vote = await prisma.marketVote.upsert({
     where: {

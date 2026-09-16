@@ -29,7 +29,7 @@ model User {
   email         String?         @unique
   emailVerified DateTime?
   image         String?
-  country       String?        
+  nationality          String?        
     language String @default("en")  
   role          Role            @default(USER)
   

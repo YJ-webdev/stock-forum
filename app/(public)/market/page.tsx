@@ -138,7 +138,7 @@ export default function MarketDetailPage() {
     <div className="max-w-4xl mx-auto mt-6">
       <div>
         <div className="w-full relative px-3 space-y-2">
-          <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center justify-between mb-10  bg-white dark:bg-zinc-900">
             <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-300 font-medium">
               <button
                 onClick={() => router.push("/")}
@@ -148,8 +148,8 @@ export default function MarketDetailPage() {
               </button>
 
               <ChevronRight className="w-4 h-4" />
-              <button className="flex capitalize items-center cursor-auto gap-1.5 transition-colors">
-                <span>{selectedCategory}</span>
+              <button className="flex  capitalize items-center cursor-auto gap-1.5 transition-colors">
+                <span>{selectedDisplaySymbol}</span>
               </button>
             </div>
           </div>
@@ -239,7 +239,7 @@ export default function MarketDetailPage() {
         </div>
         <div className="mx-4 my-10 rounded border">discussion</div>
 
-        <div className="flex flex-col gap-3 md:mx-4 mb-20 mt-10">
+        <div className="flex flex-col gap-3 md:mx-4 mb-40 mt-10">
           {/* Tab Navigation */}
           <div className="flex gap-1 md:gap-2 space-x-2.5 md:space-x-0 flex-wrap justify-start">
             {categories.map((category) => {

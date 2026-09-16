@@ -235,25 +235,14 @@ export default function LayoutShell({
                   {(onWrite ||
                     (isMarketPage && !onAccount && !onNotification)) && (
                     <PostEditor
-                      nationality={user?.nationality || null}
-                      predictionFor={new Date()}
+                      isLoggedIn={!!user}
+                      nationality={user?.nationality ?? null}
                     />
                   )}
                   {user && onAccount && !onWrite && (
                     <AccountPanel user={user} />
                   )}
                   {user && onNotification && <NotificationPanel />}
-                  {/* {!onWrite && !onAccount && !onNotification && (
-                  <div className="flex flex-col w-full min-w-0 gap-4">
-                    <div>
-                      <p className="text-muted-foreground text-xs font-light tracking-wider uppercase">
-                        top traders
-                      </p>
-
-                      <LeaderboardChart />
-                    </div>
-                  </div>
-                )} */}
                 </div>
               </div>
             </ResizablePanel>

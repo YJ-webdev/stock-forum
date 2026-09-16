@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 
-// useCountdown.ts
 export function useCountdown(
-  targetDate: Date | string | number,
+  targetDate: Date | string | number | null,
   onExpire?: () => void,
 ) {
   const [timeLeft, setTimeLeft] = useState({
@@ -13,8 +12,12 @@ export function useCountdown(
   });
 
   useEffect(() => {
+    if (targetDate === null) {
+      return;
+    }
+
     const updateCountdown = () => {
-      const now = new Date().getTime();
+      const now = Date.now();
       const target = new Date(targetDate).getTime();
       const difference = target - now;
 
@@ -25,25 +28,33 @@ export function useCountdown(
           seconds: "00",
           isExpired: true,
         });
-        if (onExpire) onExpire(); // 카운트다운 종료 시 부모에게 알림
+
+        onExpire?.();
+
         return;
       }
 
       const totalHours = Math.floor(difference / (1000 * 60 * 60));
-      const m = Math.floor((difference / (1000 * 60)) % 60);
-      const s = Math.floor((difference / 1000) % 60);
+
+      const minutes = Math.floor((difference / (1000 * 60)) % 60);
+
+      const seconds = Math.floor((difference / 1000) % 60);
 
       setTimeLeft({
         hours: String(totalHours).padStart(2, "0"),
-        minutes: String(m).padStart(2, "0"),
-        seconds: String(s).padStart(2, "0"),
+        minutes: String(minutes).padStart(2, "0"),
+        seconds: String(seconds).padStart(2, "0"),
         isExpired: false,
       });
     };
 
     updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
+
+    const interval = window.setInterval(updateCountdown, 1000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
   }, [targetDate, onExpire]);
 
   return timeLeft;
