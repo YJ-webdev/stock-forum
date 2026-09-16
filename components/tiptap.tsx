@@ -65,7 +65,12 @@ const Tiptap = ({ content, onChange, name }: TiptapProps) => {
       },
 
       onUpdate: ({ editor }) => {
-        onChange?.(editor.getJSON());
+        const json = editor.getJSON();
+
+        // force plain serializable object
+        const plainJson = JSON.parse(JSON.stringify(json));
+
+        onChange?.(plainJson);
       },
     },
 

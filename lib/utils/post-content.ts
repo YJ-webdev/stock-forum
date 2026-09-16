@@ -1,34 +1,31 @@
 // lib/utils/post-content.ts
 
-type TiptapNode = {
+type PostContentNode = {
   type?: string;
-  attrs?: {
-    src?: string | null;
-    [key: string]: unknown;
-  };
-  content?: TiptapNode[];
+  attrs?: Record<string, unknown>;
+  content?: PostContentNode[];
 };
 
-import type { JSONContent } from "@tiptap/react";
+export function getFirstImage(
+  content: PostContentNode | null | undefined,
+): string | null {
+  if (!content) return null;
 
-export function getFirstImage(node: JSONContent): string | null {
   if (
-    node.type === "image" &&
-    node.attrs &&
-    typeof node.attrs.src === "string"
+    content.type === "image" &&
+    content.attrs &&
+    typeof content.attrs["src"] === "string"
   ) {
-    return node.attrs.src;
+    return content.attrs["src"];
   }
 
-  if (!Array.isArray(node.content)) {
-    return null;
-  }
+  if (Array.isArray(content.content)) {
+    for (const node of content.content) {
+      const src = getFirstImage(node);
 
-  for (const child of node.content) {
-    const src = getFirstImage(child);
-
-    if (src) {
-      return src;
+      if (src) {
+        return src;
+      }
     }
   }
 

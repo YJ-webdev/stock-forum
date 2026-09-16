@@ -391,27 +391,27 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       marketSchedule: "TW_EQUITY",
     },
 
-    {
-      name: "KOSPI",
-      symbol: "^KS11",
-      displaySymbol: "KOSPI",
-      country: "KR",
-      region: "APEC",
-      assetType: "index",
-      timezone: "Asia/Seoul",
-      marketSchedule: "KR_EQUITY",
-    },
+    // {
+    //   name: "KOSPI",
+    //   symbol: "^KS11",
+    //   displaySymbol: "KOSPI",
+    //   country: "KR",
+    //   region: "APEC",
+    //   assetType: "index",
+    //   timezone: "Asia/Seoul",
+    //   marketSchedule: "KR_EQUITY",
+    // },
 
-    {
-      name: "KOSDAQ",
-      symbol: "^KQ11",
-      displaySymbol: "KOSDAQ",
-      country: "KR",
-      region: "APEC",
-      assetType: "index",
-      timezone: "Asia/Seoul",
-      marketSchedule: "KR_EQUITY",
-    },
+    // {
+    //   name: "KOSDAQ",
+    //   symbol: "^KQ11",
+    //   displaySymbol: "KOSDAQ",
+    //   country: "KR",
+    //   region: "APEC",
+    //   assetType: "index",
+    //   timezone: "Asia/Seoul",
+    //   marketSchedule: "KR_EQUITY",
+    // },
 
     {
       name: "S&P/ASX 200",

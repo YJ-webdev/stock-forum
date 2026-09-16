@@ -35,33 +35,17 @@ export function PostEditor({
   const [editorKey] = useState(0);
   const [isPending, startTransition] = useTransition();
 
-  const handlePost = () => {
-    if (!isLoggedIn) {
-      toast.error("You must be logged in to post.");
-      return;
-    }
-
-    if (!title.trim()) {
-      toast.error("Title is required.");
-      return;
-    }
-
+  const handleSubmit = () => {
     startTransition(async () => {
       try {
-        const post = await createPost({
+        const plainContent = JSON.parse(JSON.stringify(content));
+
+        await createPost({
           title,
-          content,
+          content: plainContent,
         });
 
-        toast.success("Post published.");
-
-        setTitle("");
-        setContent({
-          type: "doc",
-          content: [{ type: "paragraph" }],
-        });
-
-        console.log("Created post:", post);
+        toast.success("Post created.");
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to create post.",
@@ -119,7 +103,7 @@ export function PostEditor({
           type="button"
           className="w-18 text-[15px]"
           disabled={isPending || !title.trim()}
-          onClick={handlePost}
+          onClick={handleSubmit}
         >
           {isPending ? "Posting..." : "Post"}
         </Button>
