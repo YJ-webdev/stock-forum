@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Header } from "./header";
 import PanelLeft from "./panel-left";
-import { LeaderboardChart } from "./leader-board-chart";
 import { NewsItem } from "@/types";
 import {
   ResizableHandle,
@@ -13,17 +12,23 @@ import {
 import { Footer } from "./footer";
 import { PostEditor } from "@/components/post-editor";
 import type { PanelImperativeHandle } from "react-resizable-panels";
+import { usePathname } from "next/navigation";
+import { SectionBContext } from "../context/section-b-context";
+import { AccountPanel } from "./account-panel";
+import { NotificationPanel } from "./notification-panel";
 
 export interface User {
+  id: string;
   name?: string | null;
   email?: string | null;
   image?: string | null;
+  nationality?: string | null;
 }
 
 export interface MostViewedPost {
   id: string;
-  title: string;
-  slug: string;
+  title: string | null;
+  slug: string | null;
   thumbnail: string | null;
   createdAt: Date;
 
@@ -66,6 +71,8 @@ export default function LayoutShell({
   const resetPanelB = () => {
     panelBRef.current?.resize("30%");
   };
+  const pathname = usePathname();
+  const isMarketPage = pathname === "/market";
 
   const handleWrite = () => {
     resetPanelB();
@@ -163,46 +170,53 @@ export default function LayoutShell({
   }, []);
 
   return (
-    <div className="relative flex flex-col min-h-screen">
-      <Header
-        user={user}
-        onTogglePanel={() => setIsOpen((prev) => !prev)}
-        onWrite={handleWrite}
-        onAccount={handleAccount}
-        onNotification={handleNotification}
-      />
-      <PanelLeft
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        news={news}
-        posts={posts}
-      />
-      <div
-        className={`pt-14 flex flex-col md:flex-row transition-all duration-300 ease-in-out ${
-          isOpen
-            ? "xl:ml-80 xl:w-[calc(100%-320px)] w-full ml-0"
-            : "ml-0 w-full"
-        }`}
-      >
-        <ResizablePanelGroup orientation="horizontal" className="">
-          <ResizablePanel>
-            <section className="w-full flex flex-col min-w-0 bg-white dark:bg-zinc-900">
-              <div className="flex-1">{children}</div>
-            </section>
-          </ResizablePanel>
-          <ResizableHandle className="border-gray-50 w-0" />
-          <ResizablePanel
-            panelRef={panelBRef}
-            defaultSize="30%"
-            className="
+    <SectionBContext.Provider
+      value={{
+        showWrite: handleWrite,
+        showAccount: handleAccount,
+        showNotification: handleNotification,
+      }}
+    >
+      <div className="relative flex flex-col min-h-screen">
+        <Header
+          user={user}
+          onTogglePanel={() => setIsOpen((prev) => !prev)}
+          onWrite={handleWrite}
+          onAccount={handleAccount}
+          onNotification={handleNotification}
+        />
+        <PanelLeft
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          news={news}
+          posts={posts}
+        />
+        <div
+          className={`pt-14 flex flex-col md:flex-row transition-all duration-300 ease-in-out ${
+            isOpen
+              ? "xl:ml-80 xl:w-[calc(100%-320px)] w-full ml-0"
+              : "ml-0 w-full"
+          }`}
+        >
+          <ResizablePanelGroup orientation="horizontal" className="">
+            <ResizablePanel>
+              <section className="w-full flex flex-col min-w-0 bg-white dark:bg-zinc-900">
+                <div className="flex-1">{children}</div>
+              </section>
+            </ResizablePanel>
+            <ResizableHandle className="border-gray-50 w-0" />
+            <ResizablePanel
+              panelRef={panelBRef}
+              defaultSize="30%"
+              className="
     bg-white dark:bg-zinc-900
     border-l border-gray-100 dark:border-zinc-800
   "
-          >
-            {/* This stays inside ResizablePanel and tracks its actual width */}
-            <div ref={sectionBRef} className="w-full min-w-0">
-              <div
-                className="
+            >
+              {/* This stays inside ResizablePanel and tracks its actual width */}
+              <div ref={sectionBRef} className="w-full min-w-0">
+                <div
+                  className="
         fixed
         top-14
         bottom-0
@@ -213,17 +227,23 @@ export default function LayoutShell({
         flex flex-col gap-4
         bg-white dark:bg-zinc-900
       "
-                style={{
-                  left: sectionBPosition.left,
-                  width: sectionBPosition.width,
-                }}
-              >
-                {user && onWrite && (
-                  <PostEditor onCancel={() => setOnWrite(false)} />
-                )}
-                {user && onAccount && <>Account</>}
-                {user && onNotification && <>Notifications</>}
-                {!onWrite && !onAccount && !onNotification && (
+                  style={{
+                    left: sectionBPosition.left,
+                    width: sectionBPosition.width,
+                  }}
+                >
+                  {(onWrite ||
+                    (isMarketPage && !onAccount && !onNotification)) && (
+                    <PostEditor
+                      nationality={user?.nationality || null}
+                      predictionFor={new Date()}
+                    />
+                  )}
+                  {user && onAccount && !onWrite && (
+                    <AccountPanel user={user} />
+                  )}
+                  {user && onNotification && <NotificationPanel />}
+                  {/* {!onWrite && !onAccount && !onNotification && (
                   <div className="flex flex-col w-full min-w-0 gap-4">
                     <div>
                       <p className="text-muted-foreground text-xs font-light tracking-wider uppercase">
@@ -233,13 +253,14 @@ export default function LayoutShell({
                       <LeaderboardChart />
                     </div>
                   </div>
-                )}
+                )} */}
+                </div>
               </div>
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>{" "}
-      </div>{" "}
-      <Footer />
-    </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>{" "}
+        </div>{" "}
+        <Footer />
+      </div>
+    </SectionBContext.Provider>
   );
 }

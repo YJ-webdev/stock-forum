@@ -204,7 +204,7 @@ export default function MarketOverview() {
       {/* Navigation & Controls */}
       <div className="flex items-center justify-between mb-4">
         {/* Tab Navigation */}
-        <div className="flex gap-1 md:gap-2 space-x-2.5 md:space-x-0 flex-wrap justify-start">
+        {/* <div className="flex gap-1 md:gap-2 space-x-2.5 md:space-x-0 flex-wrap justify-start">
           {categories.map((category) => {
             const isActive = activeTab === category;
 
@@ -222,7 +222,7 @@ export default function MarketOverview() {
               </button>
             );
           })}
-        </div>
+        </div> */}
 
         {/* Carousel Arrow Buttons */}
         <div className="hidden md:flex items-center gap-2">

@@ -49,3 +49,11 @@ export const PredictionStatus = {
 } as const
 
 export type PredictionStatus = (typeof PredictionStatus)[keyof typeof PredictionStatus]
+
+
+export const VoteDirection = {
+  BULL: 'BULL',
+  BEAR: 'BEAR'
+} as const
+
+export type VoteDirection = (typeof VoteDirection)[keyof typeof VoteDirection]

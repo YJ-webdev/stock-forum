@@ -232,6 +232,7 @@ export type UserWhereInput = {
   positions?: Prisma.PortfolioPositionListRelationFilter
   watchlist?: Prisma.WatchlistListRelationFilter
   predictions?: Prisma.PredictionListRelationFilter
+  marketVotes?: Prisma.MarketVoteListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -255,6 +256,7 @@ export type UserOrderByWithRelationInput = {
   positions?: Prisma.PortfolioPositionOrderByRelationAggregateInput
   watchlist?: Prisma.WatchlistOrderByRelationAggregateInput
   predictions?: Prisma.PredictionOrderByRelationAggregateInput
+  marketVotes?: Prisma.MarketVoteOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -281,6 +283,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   positions?: Prisma.PortfolioPositionListRelationFilter
   watchlist?: Prisma.WatchlistListRelationFilter
   predictions?: Prisma.PredictionListRelationFilter
+  marketVotes?: Prisma.MarketVoteListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -336,6 +339,7 @@ export type UserCreateInput = {
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -359,6 +363,7 @@ export type UserUncheckedCreateInput = {
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -382,6 +387,7 @@ export type UserUpdateInput = {
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -405,6 +411,7 @@ export type UserUncheckedUpdateInput = {
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -650,6 +657,20 @@ export type UserUpdateOneRequiredWithoutPredictionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPredictionsInput, Prisma.UserUpdateWithoutPredictionsInput>, Prisma.UserUncheckedUpdateWithoutPredictionsInput>
 }
 
+export type UserCreateNestedOneWithoutMarketVotesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutMarketVotesInput, Prisma.UserUncheckedCreateWithoutMarketVotesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutMarketVotesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutMarketVotesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutMarketVotesInput, Prisma.UserUncheckedCreateWithoutMarketVotesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutMarketVotesInput
+  upsert?: Prisma.UserUpsertWithoutMarketVotesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutMarketVotesInput, Prisma.UserUpdateWithoutMarketVotesInput>, Prisma.UserUncheckedUpdateWithoutMarketVotesInput>
+}
+
 export type UserCreateWithoutAccountsInput = {
   id?: string
   name?: string | null
@@ -670,6 +691,7 @@ export type UserCreateWithoutAccountsInput = {
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAccountsInput = {
@@ -692,6 +714,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAccountsInput = {
@@ -730,6 +753,7 @@ export type UserUpdateWithoutAccountsInput = {
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -752,6 +776,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionsInput = {
@@ -774,6 +799,7 @@ export type UserCreateWithoutSessionsInput = {
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -796,6 +822,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -834,6 +861,7 @@ export type UserUpdateWithoutSessionsInput = {
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -856,6 +884,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPostsInput = {
@@ -878,6 +907,7 @@ export type UserCreateWithoutPostsInput = {
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPostsInput = {
@@ -900,6 +930,7 @@ export type UserUncheckedCreateWithoutPostsInput = {
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPostsInput = {
@@ -938,6 +969,7 @@ export type UserUpdateWithoutPostsInput = {
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPostsInput = {
@@ -960,6 +992,7 @@ export type UserUncheckedUpdateWithoutPostsInput = {
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCommentsInput = {
@@ -982,6 +1015,7 @@ export type UserCreateWithoutCommentsInput = {
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCommentsInput = {
@@ -1004,6 +1038,7 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCommentsInput = {
@@ -1042,6 +1077,7 @@ export type UserUpdateWithoutCommentsInput = {
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCommentsInput = {
@@ -1064,6 +1100,7 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutLikesInput = {
@@ -1086,6 +1123,7 @@ export type UserCreateWithoutLikesInput = {
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutLikesInput = {
@@ -1108,6 +1146,7 @@ export type UserUncheckedCreateWithoutLikesInput = {
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutLikesInput = {
@@ -1146,6 +1185,7 @@ export type UserUpdateWithoutLikesInput = {
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLikesInput = {
@@ -1168,6 +1208,7 @@ export type UserUncheckedUpdateWithoutLikesInput = {
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutBalanceInput = {
@@ -1190,6 +1231,7 @@ export type UserCreateWithoutBalanceInput = {
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutBalanceInput = {
@@ -1212,6 +1254,7 @@ export type UserUncheckedCreateWithoutBalanceInput = {
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutBalanceInput = {
@@ -1250,6 +1293,7 @@ export type UserUpdateWithoutBalanceInput = {
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutBalanceInput = {
@@ -1272,6 +1316,7 @@ export type UserUncheckedUpdateWithoutBalanceInput = {
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPositionsInput = {
@@ -1294,6 +1339,7 @@ export type UserCreateWithoutPositionsInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPositionsInput = {
@@ -1316,6 +1362,7 @@ export type UserUncheckedCreateWithoutPositionsInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPositionsInput = {
@@ -1354,6 +1401,7 @@ export type UserUpdateWithoutPositionsInput = {
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPositionsInput = {
@@ -1376,6 +1424,7 @@ export type UserUncheckedUpdateWithoutPositionsInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutTradesInput = {
@@ -1398,6 +1447,7 @@ export type UserCreateWithoutTradesInput = {
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutTradesInput = {
@@ -1420,6 +1470,7 @@ export type UserUncheckedCreateWithoutTradesInput = {
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutTradesInput = {
@@ -1458,6 +1509,7 @@ export type UserUpdateWithoutTradesInput = {
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTradesInput = {
@@ -1480,6 +1532,7 @@ export type UserUncheckedUpdateWithoutTradesInput = {
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutWatchlistInput = {
@@ -1502,6 +1555,7 @@ export type UserCreateWithoutWatchlistInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWatchlistInput = {
@@ -1524,6 +1578,7 @@ export type UserUncheckedCreateWithoutWatchlistInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWatchlistInput = {
@@ -1562,6 +1617,7 @@ export type UserUpdateWithoutWatchlistInput = {
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWatchlistInput = {
@@ -1584,6 +1640,7 @@ export type UserUncheckedUpdateWithoutWatchlistInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPredictionsInput = {
@@ -1606,6 +1663,7 @@ export type UserCreateWithoutPredictionsInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPredictionsInput = {
@@ -1628,6 +1686,7 @@ export type UserUncheckedCreateWithoutPredictionsInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  marketVotes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPredictionsInput = {
@@ -1666,6 +1725,7 @@ export type UserUpdateWithoutPredictionsInput = {
   trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPredictionsInput = {
@@ -1688,6 +1748,115 @@ export type UserUncheckedUpdateWithoutPredictionsInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  marketVotes?: Prisma.MarketVoteUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutMarketVotesInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  country?: string | null
+  language?: string
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  posts?: Prisma.PostCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
+  likes?: Prisma.LikeCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
+  trades?: Prisma.TradeCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutMarketVotesInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  country?: string | null
+  language?: string
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  posts?: Prisma.PostUncheckedCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
+  likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
+  trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutMarketVotesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutMarketVotesInput, Prisma.UserUncheckedCreateWithoutMarketVotesInput>
+}
+
+export type UserUpsertWithoutMarketVotesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutMarketVotesInput, Prisma.UserUncheckedUpdateWithoutMarketVotesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutMarketVotesInput, Prisma.UserUncheckedCreateWithoutMarketVotesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutMarketVotesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutMarketVotesInput, Prisma.UserUncheckedUpdateWithoutMarketVotesInput>
+}
+
+export type UserUpdateWithoutMarketVotesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  posts?: Prisma.PostUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
+  likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
+  trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutMarketVotesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  posts?: Prisma.PostUncheckedUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
+  likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
+  trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -1705,6 +1874,7 @@ export type UserCountOutputType = {
   positions: number
   watchlist: number
   predictions: number
+  marketVotes: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1717,6 +1887,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   positions?: boolean | UserCountOutputTypeCountPositionsArgs
   watchlist?: boolean | UserCountOutputTypeCountWatchlistArgs
   predictions?: boolean | UserCountOutputTypeCountPredictionsArgs
+  marketVotes?: boolean | UserCountOutputTypeCountMarketVotesArgs
 }
 
 /**
@@ -1792,6 +1963,13 @@ export type UserCountOutputTypeCountPredictionsArgs<ExtArgs extends runtime.Type
   where?: Prisma.PredictionWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountMarketVotesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MarketVoteWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1814,6 +1992,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   positions?: boolean | Prisma.User$positionsArgs<ExtArgs>
   watchlist?: boolean | Prisma.User$watchlistArgs<ExtArgs>
   predictions?: boolean | Prisma.User$predictionsArgs<ExtArgs>
+  marketVotes?: boolean | Prisma.User$marketVotesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1868,6 +2047,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   positions?: boolean | Prisma.User$positionsArgs<ExtArgs>
   watchlist?: boolean | Prisma.User$watchlistArgs<ExtArgs>
   predictions?: boolean | Prisma.User$predictionsArgs<ExtArgs>
+  marketVotes?: boolean | Prisma.User$marketVotesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1886,6 +2066,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     positions: Prisma.$PortfolioPositionPayload<ExtArgs>[]
     watchlist: Prisma.$WatchlistPayload<ExtArgs>[]
     predictions: Prisma.$PredictionPayload<ExtArgs>[]
+    marketVotes: Prisma.$MarketVotePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2302,6 +2483,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   positions<T extends Prisma.User$positionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$positionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PortfolioPositionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   watchlist<T extends Prisma.User$watchlistArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$watchlistArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WatchlistPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   predictions<T extends Prisma.User$predictionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$predictionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PredictionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  marketVotes<T extends Prisma.User$marketVotesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$marketVotesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MarketVotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2966,6 +3148,30 @@ export type User$predictionsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.PredictionScalarFieldEnum | Prisma.PredictionScalarFieldEnum[]
+}
+
+/**
+ * User.marketVotes
+ */
+export type User$marketVotesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MarketVote
+   */
+  select?: Prisma.MarketVoteSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MarketVote
+   */
+  omit?: Prisma.MarketVoteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketVoteInclude<ExtArgs> | null
+  where?: Prisma.MarketVoteWhereInput
+  orderBy?: Prisma.MarketVoteOrderByWithRelationInput | Prisma.MarketVoteOrderByWithRelationInput[]
+  cursor?: Prisma.MarketVoteWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MarketVoteScalarFieldEnum | Prisma.MarketVoteScalarFieldEnum[]
 }
 
 /**

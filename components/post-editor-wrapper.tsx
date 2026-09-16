@@ -1,5 +1,7 @@
-import { PostEditor } from "./post-editor";
+// "use client";
 
-export async function PostEditorWrapper() {
-  return <PostEditor />;
-}
+// import { PostEditor } from "./post-editor";
+
+// export async function PostEditorWrapper() {
+//   return <PostEditor />;
+// }

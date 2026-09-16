@@ -328,6 +328,7 @@ export type MarketAssetWhereInput = {
   positions?: Prisma.PortfolioPositionListRelationFilter
   watchlistItems?: Prisma.WatchlistListRelationFilter
   posts?: Prisma.PostListRelationFilter
+  votes?: Prisma.MarketVoteListRelationFilter
 }
 
 export type MarketAssetOrderByWithRelationInput = {
@@ -351,6 +352,7 @@ export type MarketAssetOrderByWithRelationInput = {
   positions?: Prisma.PortfolioPositionOrderByRelationAggregateInput
   watchlistItems?: Prisma.WatchlistOrderByRelationAggregateInput
   posts?: Prisma.PostOrderByRelationAggregateInput
+  votes?: Prisma.MarketVoteOrderByRelationAggregateInput
 }
 
 export type MarketAssetWhereUniqueInput = Prisma.AtLeast<{
@@ -377,6 +379,7 @@ export type MarketAssetWhereUniqueInput = Prisma.AtLeast<{
   positions?: Prisma.PortfolioPositionListRelationFilter
   watchlistItems?: Prisma.WatchlistListRelationFilter
   posts?: Prisma.PostListRelationFilter
+  votes?: Prisma.MarketVoteListRelationFilter
 }, "id" | "symbol">
 
 export type MarketAssetOrderByWithAggregationInput = {
@@ -446,6 +449,7 @@ export type MarketAssetCreateInput = {
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutAssetInput
   watchlistItems?: Prisma.WatchlistCreateNestedManyWithoutAssetInput
   posts?: Prisma.PostCreateNestedManyWithoutAssetInput
+  votes?: Prisma.MarketVoteCreateNestedManyWithoutAssetInput
 }
 
 export type MarketAssetUncheckedCreateInput = {
@@ -469,6 +473,7 @@ export type MarketAssetUncheckedCreateInput = {
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutAssetInput
   watchlistItems?: Prisma.WatchlistUncheckedCreateNestedManyWithoutAssetInput
   posts?: Prisma.PostUncheckedCreateNestedManyWithoutAssetInput
+  votes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutAssetInput
 }
 
 export type MarketAssetUpdateInput = {
@@ -492,6 +497,7 @@ export type MarketAssetUpdateInput = {
   positions?: Prisma.PortfolioPositionUpdateManyWithoutAssetNestedInput
   watchlistItems?: Prisma.WatchlistUpdateManyWithoutAssetNestedInput
   posts?: Prisma.PostUpdateManyWithoutAssetNestedInput
+  votes?: Prisma.MarketVoteUpdateManyWithoutAssetNestedInput
 }
 
 export type MarketAssetUncheckedUpdateInput = {
@@ -515,6 +521,7 @@ export type MarketAssetUncheckedUpdateInput = {
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutAssetNestedInput
   watchlistItems?: Prisma.WatchlistUncheckedUpdateManyWithoutAssetNestedInput
   posts?: Prisma.PostUncheckedUpdateManyWithoutAssetNestedInput
+  votes?: Prisma.MarketVoteUncheckedUpdateManyWithoutAssetNestedInput
 }
 
 export type MarketAssetCreateManyInput = {
@@ -725,6 +732,20 @@ export type MarketAssetUpdateOneRequiredWithoutWatchlistItemsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.MarketAssetUpdateToOneWithWhereWithoutWatchlistItemsInput, Prisma.MarketAssetUpdateWithoutWatchlistItemsInput>, Prisma.MarketAssetUncheckedUpdateWithoutWatchlistItemsInput>
 }
 
+export type MarketAssetCreateNestedOneWithoutVotesInput = {
+  create?: Prisma.XOR<Prisma.MarketAssetCreateWithoutVotesInput, Prisma.MarketAssetUncheckedCreateWithoutVotesInput>
+  connectOrCreate?: Prisma.MarketAssetCreateOrConnectWithoutVotesInput
+  connect?: Prisma.MarketAssetWhereUniqueInput
+}
+
+export type MarketAssetUpdateOneRequiredWithoutVotesNestedInput = {
+  create?: Prisma.XOR<Prisma.MarketAssetCreateWithoutVotesInput, Prisma.MarketAssetUncheckedCreateWithoutVotesInput>
+  connectOrCreate?: Prisma.MarketAssetCreateOrConnectWithoutVotesInput
+  upsert?: Prisma.MarketAssetUpsertWithoutVotesInput
+  connect?: Prisma.MarketAssetWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MarketAssetUpdateToOneWithWhereWithoutVotesInput, Prisma.MarketAssetUpdateWithoutVotesInput>, Prisma.MarketAssetUncheckedUpdateWithoutVotesInput>
+}
+
 export type MarketAssetCreateWithoutPostsInput = {
   id?: string
   symbol: string
@@ -745,6 +766,7 @@ export type MarketAssetCreateWithoutPostsInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutAssetInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutAssetInput
   watchlistItems?: Prisma.WatchlistCreateNestedManyWithoutAssetInput
+  votes?: Prisma.MarketVoteCreateNestedManyWithoutAssetInput
 }
 
 export type MarketAssetUncheckedCreateWithoutPostsInput = {
@@ -767,6 +789,7 @@ export type MarketAssetUncheckedCreateWithoutPostsInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutAssetInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutAssetInput
   watchlistItems?: Prisma.WatchlistUncheckedCreateNestedManyWithoutAssetInput
+  votes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutAssetInput
 }
 
 export type MarketAssetCreateOrConnectWithoutPostsInput = {
@@ -805,6 +828,7 @@ export type MarketAssetUpdateWithoutPostsInput = {
   trades?: Prisma.TradeUpdateManyWithoutAssetNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutAssetNestedInput
   watchlistItems?: Prisma.WatchlistUpdateManyWithoutAssetNestedInput
+  votes?: Prisma.MarketVoteUpdateManyWithoutAssetNestedInput
 }
 
 export type MarketAssetUncheckedUpdateWithoutPostsInput = {
@@ -827,6 +851,7 @@ export type MarketAssetUncheckedUpdateWithoutPostsInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutAssetNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutAssetNestedInput
   watchlistItems?: Prisma.WatchlistUncheckedUpdateManyWithoutAssetNestedInput
+  votes?: Prisma.MarketVoteUncheckedUpdateManyWithoutAssetNestedInput
 }
 
 export type MarketAssetCreateWithoutPositionsInput = {
@@ -849,6 +874,7 @@ export type MarketAssetCreateWithoutPositionsInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutAssetInput
   watchlistItems?: Prisma.WatchlistCreateNestedManyWithoutAssetInput
   posts?: Prisma.PostCreateNestedManyWithoutAssetInput
+  votes?: Prisma.MarketVoteCreateNestedManyWithoutAssetInput
 }
 
 export type MarketAssetUncheckedCreateWithoutPositionsInput = {
@@ -871,6 +897,7 @@ export type MarketAssetUncheckedCreateWithoutPositionsInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutAssetInput
   watchlistItems?: Prisma.WatchlistUncheckedCreateNestedManyWithoutAssetInput
   posts?: Prisma.PostUncheckedCreateNestedManyWithoutAssetInput
+  votes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutAssetInput
 }
 
 export type MarketAssetCreateOrConnectWithoutPositionsInput = {
@@ -909,6 +936,7 @@ export type MarketAssetUpdateWithoutPositionsInput = {
   trades?: Prisma.TradeUpdateManyWithoutAssetNestedInput
   watchlistItems?: Prisma.WatchlistUpdateManyWithoutAssetNestedInput
   posts?: Prisma.PostUpdateManyWithoutAssetNestedInput
+  votes?: Prisma.MarketVoteUpdateManyWithoutAssetNestedInput
 }
 
 export type MarketAssetUncheckedUpdateWithoutPositionsInput = {
@@ -931,6 +959,7 @@ export type MarketAssetUncheckedUpdateWithoutPositionsInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutAssetNestedInput
   watchlistItems?: Prisma.WatchlistUncheckedUpdateManyWithoutAssetNestedInput
   posts?: Prisma.PostUncheckedUpdateManyWithoutAssetNestedInput
+  votes?: Prisma.MarketVoteUncheckedUpdateManyWithoutAssetNestedInput
 }
 
 export type MarketAssetCreateWithoutTradesInput = {
@@ -953,6 +982,7 @@ export type MarketAssetCreateWithoutTradesInput = {
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutAssetInput
   watchlistItems?: Prisma.WatchlistCreateNestedManyWithoutAssetInput
   posts?: Prisma.PostCreateNestedManyWithoutAssetInput
+  votes?: Prisma.MarketVoteCreateNestedManyWithoutAssetInput
 }
 
 export type MarketAssetUncheckedCreateWithoutTradesInput = {
@@ -975,6 +1005,7 @@ export type MarketAssetUncheckedCreateWithoutTradesInput = {
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutAssetInput
   watchlistItems?: Prisma.WatchlistUncheckedCreateNestedManyWithoutAssetInput
   posts?: Prisma.PostUncheckedCreateNestedManyWithoutAssetInput
+  votes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutAssetInput
 }
 
 export type MarketAssetCreateOrConnectWithoutTradesInput = {
@@ -1013,6 +1044,7 @@ export type MarketAssetUpdateWithoutTradesInput = {
   positions?: Prisma.PortfolioPositionUpdateManyWithoutAssetNestedInput
   watchlistItems?: Prisma.WatchlistUpdateManyWithoutAssetNestedInput
   posts?: Prisma.PostUpdateManyWithoutAssetNestedInput
+  votes?: Prisma.MarketVoteUpdateManyWithoutAssetNestedInput
 }
 
 export type MarketAssetUncheckedUpdateWithoutTradesInput = {
@@ -1035,6 +1067,7 @@ export type MarketAssetUncheckedUpdateWithoutTradesInput = {
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutAssetNestedInput
   watchlistItems?: Prisma.WatchlistUncheckedUpdateManyWithoutAssetNestedInput
   posts?: Prisma.PostUncheckedUpdateManyWithoutAssetNestedInput
+  votes?: Prisma.MarketVoteUncheckedUpdateManyWithoutAssetNestedInput
 }
 
 export type MarketAssetCreateWithoutWatchlistItemsInput = {
@@ -1057,6 +1090,7 @@ export type MarketAssetCreateWithoutWatchlistItemsInput = {
   trades?: Prisma.TradeCreateNestedManyWithoutAssetInput
   positions?: Prisma.PortfolioPositionCreateNestedManyWithoutAssetInput
   posts?: Prisma.PostCreateNestedManyWithoutAssetInput
+  votes?: Prisma.MarketVoteCreateNestedManyWithoutAssetInput
 }
 
 export type MarketAssetUncheckedCreateWithoutWatchlistItemsInput = {
@@ -1079,6 +1113,7 @@ export type MarketAssetUncheckedCreateWithoutWatchlistItemsInput = {
   trades?: Prisma.TradeUncheckedCreateNestedManyWithoutAssetInput
   positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutAssetInput
   posts?: Prisma.PostUncheckedCreateNestedManyWithoutAssetInput
+  votes?: Prisma.MarketVoteUncheckedCreateNestedManyWithoutAssetInput
 }
 
 export type MarketAssetCreateOrConnectWithoutWatchlistItemsInput = {
@@ -1117,6 +1152,7 @@ export type MarketAssetUpdateWithoutWatchlistItemsInput = {
   trades?: Prisma.TradeUpdateManyWithoutAssetNestedInput
   positions?: Prisma.PortfolioPositionUpdateManyWithoutAssetNestedInput
   posts?: Prisma.PostUpdateManyWithoutAssetNestedInput
+  votes?: Prisma.MarketVoteUpdateManyWithoutAssetNestedInput
 }
 
 export type MarketAssetUncheckedUpdateWithoutWatchlistItemsInput = {
@@ -1139,6 +1175,115 @@ export type MarketAssetUncheckedUpdateWithoutWatchlistItemsInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutAssetNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutAssetNestedInput
   posts?: Prisma.PostUncheckedUpdateManyWithoutAssetNestedInput
+  votes?: Prisma.MarketVoteUncheckedUpdateManyWithoutAssetNestedInput
+}
+
+export type MarketAssetCreateWithoutVotesInput = {
+  id?: string
+  symbol: string
+  displaySymbol?: string | null
+  name: string
+  category: string
+  assetType?: string
+  timezone?: string
+  logoUrl?: string | null
+  lastPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  change?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  changePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  high?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  low?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  trades?: Prisma.TradeCreateNestedManyWithoutAssetInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutAssetInput
+  watchlistItems?: Prisma.WatchlistCreateNestedManyWithoutAssetInput
+  posts?: Prisma.PostCreateNestedManyWithoutAssetInput
+}
+
+export type MarketAssetUncheckedCreateWithoutVotesInput = {
+  id?: string
+  symbol: string
+  displaySymbol?: string | null
+  name: string
+  category: string
+  assetType?: string
+  timezone?: string
+  logoUrl?: string | null
+  lastPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  change?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  changePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  high?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  low?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  trades?: Prisma.TradeUncheckedCreateNestedManyWithoutAssetInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutAssetInput
+  watchlistItems?: Prisma.WatchlistUncheckedCreateNestedManyWithoutAssetInput
+  posts?: Prisma.PostUncheckedCreateNestedManyWithoutAssetInput
+}
+
+export type MarketAssetCreateOrConnectWithoutVotesInput = {
+  where: Prisma.MarketAssetWhereUniqueInput
+  create: Prisma.XOR<Prisma.MarketAssetCreateWithoutVotesInput, Prisma.MarketAssetUncheckedCreateWithoutVotesInput>
+}
+
+export type MarketAssetUpsertWithoutVotesInput = {
+  update: Prisma.XOR<Prisma.MarketAssetUpdateWithoutVotesInput, Prisma.MarketAssetUncheckedUpdateWithoutVotesInput>
+  create: Prisma.XOR<Prisma.MarketAssetCreateWithoutVotesInput, Prisma.MarketAssetUncheckedCreateWithoutVotesInput>
+  where?: Prisma.MarketAssetWhereInput
+}
+
+export type MarketAssetUpdateToOneWithWhereWithoutVotesInput = {
+  where?: Prisma.MarketAssetWhereInput
+  data: Prisma.XOR<Prisma.MarketAssetUpdateWithoutVotesInput, Prisma.MarketAssetUncheckedUpdateWithoutVotesInput>
+}
+
+export type MarketAssetUpdateWithoutVotesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  displaySymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  assetType?: Prisma.StringFieldUpdateOperationsInput | string
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  change?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  changePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  trades?: Prisma.TradeUpdateManyWithoutAssetNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutAssetNestedInput
+  watchlistItems?: Prisma.WatchlistUpdateManyWithoutAssetNestedInput
+  posts?: Prisma.PostUpdateManyWithoutAssetNestedInput
+}
+
+export type MarketAssetUncheckedUpdateWithoutVotesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  displaySymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  assetType?: Prisma.StringFieldUpdateOperationsInput | string
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  change?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  changePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  trades?: Prisma.TradeUncheckedUpdateManyWithoutAssetNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutAssetNestedInput
+  watchlistItems?: Prisma.WatchlistUncheckedUpdateManyWithoutAssetNestedInput
+  posts?: Prisma.PostUncheckedUpdateManyWithoutAssetNestedInput
 }
 
 
@@ -1151,6 +1296,7 @@ export type MarketAssetCountOutputType = {
   positions: number
   watchlistItems: number
   posts: number
+  votes: number
 }
 
 export type MarketAssetCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1158,6 +1304,7 @@ export type MarketAssetCountOutputTypeSelect<ExtArgs extends runtime.Types.Exten
   positions?: boolean | MarketAssetCountOutputTypeCountPositionsArgs
   watchlistItems?: boolean | MarketAssetCountOutputTypeCountWatchlistItemsArgs
   posts?: boolean | MarketAssetCountOutputTypeCountPostsArgs
+  votes?: boolean | MarketAssetCountOutputTypeCountVotesArgs
 }
 
 /**
@@ -1198,6 +1345,13 @@ export type MarketAssetCountOutputTypeCountPostsArgs<ExtArgs extends runtime.Typ
   where?: Prisma.PostWhereInput
 }
 
+/**
+ * MarketAssetCountOutputType without action
+ */
+export type MarketAssetCountOutputTypeCountVotesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MarketVoteWhereInput
+}
+
 
 export type MarketAssetSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1220,6 +1374,7 @@ export type MarketAssetSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   positions?: boolean | Prisma.MarketAsset$positionsArgs<ExtArgs>
   watchlistItems?: boolean | Prisma.MarketAsset$watchlistItemsArgs<ExtArgs>
   posts?: boolean | Prisma.MarketAsset$postsArgs<ExtArgs>
+  votes?: boolean | Prisma.MarketAsset$votesArgs<ExtArgs>
   _count?: boolean | Prisma.MarketAssetCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["marketAsset"]>
 
@@ -1286,6 +1441,7 @@ export type MarketAssetInclude<ExtArgs extends runtime.Types.Extensions.Internal
   positions?: boolean | Prisma.MarketAsset$positionsArgs<ExtArgs>
   watchlistItems?: boolean | Prisma.MarketAsset$watchlistItemsArgs<ExtArgs>
   posts?: boolean | Prisma.MarketAsset$postsArgs<ExtArgs>
+  votes?: boolean | Prisma.MarketAsset$votesArgs<ExtArgs>
   _count?: boolean | Prisma.MarketAssetCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type MarketAssetIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1298,6 +1454,7 @@ export type $MarketAssetPayload<ExtArgs extends runtime.Types.Extensions.Interna
     positions: Prisma.$PortfolioPositionPayload<ExtArgs>[]
     watchlistItems: Prisma.$WatchlistPayload<ExtArgs>[]
     posts: Prisma.$PostPayload<ExtArgs>[]
+    votes: Prisma.$MarketVotePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1714,6 +1871,7 @@ export interface Prisma__MarketAssetClient<T, Null = never, ExtArgs extends runt
   positions<T extends Prisma.MarketAsset$positionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketAsset$positionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PortfolioPositionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   watchlistItems<T extends Prisma.MarketAsset$watchlistItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketAsset$watchlistItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WatchlistPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   posts<T extends Prisma.MarketAsset$postsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketAsset$postsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PostPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  votes<T extends Prisma.MarketAsset$votesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketAsset$votesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MarketVotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2245,6 +2403,30 @@ export type MarketAsset$postsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.PostScalarFieldEnum | Prisma.PostScalarFieldEnum[]
+}
+
+/**
+ * MarketAsset.votes
+ */
+export type MarketAsset$votesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MarketVote
+   */
+  select?: Prisma.MarketVoteSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MarketVote
+   */
+  omit?: Prisma.MarketVoteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketVoteInclude<ExtArgs> | null
+  where?: Prisma.MarketVoteWhereInput
+  orderBy?: Prisma.MarketVoteOrderByWithRelationInput | Prisma.MarketVoteOrderByWithRelationInput[]
+  cursor?: Prisma.MarketVoteWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MarketVoteScalarFieldEnum | Prisma.MarketVoteScalarFieldEnum[]
 }
 
 /**

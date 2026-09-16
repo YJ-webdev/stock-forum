@@ -8,7 +8,7 @@ import { detectPostMarket } from "@/lib/utils/detect-post-market";
 import { createSlug } from "@/lib/utils/slugify";
 
 export interface CreatePostInput {
-  title: string;
+  title: string | null;
   content: JSONContent;
   thumbnail?: string | null;
 }
@@ -24,8 +24,7 @@ export async function createPost({
     throw new Error("You must be logged in to post.");
   }
 
-  const cleanTitle = title.trim();
-
+  const cleanTitle = title?.trim() ?? "";
   if (!cleanTitle) {
     throw new Error("Title is required.");
   }

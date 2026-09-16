@@ -9,7 +9,14 @@ import {
   useMarketQuote,
 } from "@/app/hooks/useMarketQuote";
 import { DetailChart } from "@/app/components/detail-chart";
-import { ALL_MARKET_SYMBOLS, AssetType } from "@/lib/data/market-symbols";
+import {
+  ALL_MARKET_SYMBOLS,
+  AssetType,
+  CRYPTO_SYMBOLS,
+  CURRENCY_SYMBOLS,
+  FUTURES_SYMBOLS,
+  MARKET_SYMBOLS,
+} from "@/lib/data/market-symbols";
 import { MarketDetailHeader } from "@/app/components/market-detail-header";
 import { RelativeStocks } from "@/app/components/relative-stocks";
 import { MarketSymbolItem } from "@/lib/data/market-symbols";
@@ -115,6 +122,18 @@ export default function MarketDetailPage() {
     setActiveRange(range);
   };
 
+  const MARKET_CATEGORIES: Record<string, MarketSymbolItem[]> = {
+    ...MARKET_SYMBOLS,
+    Crypto: CRYPTO_SYMBOLS,
+    Currency: CURRENCY_SYMBOLS,
+    Futures: FUTURES_SYMBOLS,
+  };
+
+  const categories = Object.keys(MARKET_CATEGORIES);
+
+  const [activeTab, setActiveTab] = useState("America");
+  const currentMarketSymbols = MARKET_CATEGORIES[activeTab] || [];
+
   return (
     <div className="max-w-4xl mx-auto mt-6">
       <div>
@@ -150,7 +169,6 @@ export default function MarketDetailPage() {
         ) : data ? (
           <>
             <div className="w-full relative px-3 mt-4 space-y-2">
-              {" "}
               <MarketDetailHeader
                 rawPrice={data.rawPrice}
                 change={data.change}
@@ -162,10 +180,9 @@ export default function MarketDetailPage() {
                 exchangeTimezone={
                   data.exchangeTimezone || symbolMeta?.timezone || "UTC"
                 }
-              />{" "}
-            </div>{" "}
+              />
+            </div>
             <div ref={chartRef} className="scroll-mt-70 md:mx-4 mt-2">
-              {" "}
               <DetailChart
                 history={data.history}
                 isPositive={data.isPositive}
@@ -220,15 +237,31 @@ export default function MarketDetailPage() {
             );
           })}
         </div>
+        <div className="mx-4 my-10 rounded border">discussion</div>
 
         <div className="flex flex-col gap-3 md:mx-4 mb-20 mt-10">
-          <div className="flex justify-between items-baseline mx-3 md:mx-0">
-            <p className="text-[15px] text-zinc-600 dark:text-zinc-300 ">
-              Related assets
-            </p>
+          {/* Tab Navigation */}
+          <div className="flex gap-1 md:gap-2 space-x-2.5 md:space-x-0 flex-wrap justify-start">
+            {categories.map((category) => {
+              const isActive = activeTab === category;
+
+              return (
+                <button
+                  key={category}
+                  onClick={() => setActiveTab(category)}
+                  className={`px-2 md:px-4 py-1.5 rounded-full uppercase text-sm font-medium dark:font-normal transition-all cursor-pointer border ${
+                    isActive
+                      ? "bg-zinc-100 text-zinc-900 border-zinc-300 dark:bg-zinc-800 dark:text-white dark:border-zinc-700"
+                      : "bg-transparent text-zinc-500 dark:text-zinc-300 border-transparent hover:text-zinc-500 hover:border-zinc-200 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 hover:bg-zinc-100 dark:hover:text-zinc-300"
+                  }`}
+                >
+                  {category}
+                </button>
+              );
+            })}
           </div>
           <RelativeStocks
-            items={relativeStocks}
+            items={currentMarketSymbols}
             setActiveRange={setActiveRange}
           />
         </div>

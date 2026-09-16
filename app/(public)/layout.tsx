@@ -54,6 +54,7 @@ export default async function MainLayout({
   const session = await auth();
   const user = session?.user
     ? {
+        id: session.user.id,
         name: session.user.name,
         email: session.user.email,
         image: session.user.image,

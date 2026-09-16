@@ -207,8 +207,8 @@ export type PostGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 
 export type PostGroupByOutputType = {
   id: string
-  slug: string
-  title: string
+  slug: string | null
+  title: string | null
   content: runtime.JsonValue
   thumbnail: string | null
   viewCount: number
@@ -243,8 +243,8 @@ export type PostWhereInput = {
   OR?: Prisma.PostWhereInput[]
   NOT?: Prisma.PostWhereInput | Prisma.PostWhereInput[]
   id?: Prisma.StringFilter<"Post"> | string
-  slug?: Prisma.StringFilter<"Post"> | string
-  title?: Prisma.StringFilter<"Post"> | string
+  slug?: Prisma.StringNullableFilter<"Post"> | string | null
+  title?: Prisma.StringNullableFilter<"Post"> | string | null
   content?: Prisma.JsonFilter<"Post">
   thumbnail?: Prisma.StringNullableFilter<"Post"> | string | null
   viewCount?: Prisma.IntFilter<"Post"> | number
@@ -260,8 +260,8 @@ export type PostWhereInput = {
 
 export type PostOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  slug?: Prisma.SortOrder
-  title?: Prisma.SortOrder
+  slug?: Prisma.SortOrderInput | Prisma.SortOrder
+  title?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
   thumbnail?: Prisma.SortOrderInput | Prisma.SortOrder
   viewCount?: Prisma.SortOrder
@@ -281,7 +281,7 @@ export type PostWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.PostWhereInput | Prisma.PostWhereInput[]
   OR?: Prisma.PostWhereInput[]
   NOT?: Prisma.PostWhereInput | Prisma.PostWhereInput[]
-  title?: Prisma.StringFilter<"Post"> | string
+  title?: Prisma.StringNullableFilter<"Post"> | string | null
   content?: Prisma.JsonFilter<"Post">
   thumbnail?: Prisma.StringNullableFilter<"Post"> | string | null
   viewCount?: Prisma.IntFilter<"Post"> | number
@@ -297,8 +297,8 @@ export type PostWhereUniqueInput = Prisma.AtLeast<{
 
 export type PostOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  slug?: Prisma.SortOrder
-  title?: Prisma.SortOrder
+  slug?: Prisma.SortOrderInput | Prisma.SortOrder
+  title?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
   thumbnail?: Prisma.SortOrderInput | Prisma.SortOrder
   viewCount?: Prisma.SortOrder
@@ -318,8 +318,8 @@ export type PostScalarWhereWithAggregatesInput = {
   OR?: Prisma.PostScalarWhereWithAggregatesInput[]
   NOT?: Prisma.PostScalarWhereWithAggregatesInput | Prisma.PostScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Post"> | string
-  slug?: Prisma.StringWithAggregatesFilter<"Post"> | string
-  title?: Prisma.StringWithAggregatesFilter<"Post"> | string
+  slug?: Prisma.StringNullableWithAggregatesFilter<"Post"> | string | null
+  title?: Prisma.StringNullableWithAggregatesFilter<"Post"> | string | null
   content?: Prisma.JsonWithAggregatesFilter<"Post">
   thumbnail?: Prisma.StringNullableWithAggregatesFilter<"Post"> | string | null
   viewCount?: Prisma.IntWithAggregatesFilter<"Post"> | number
@@ -331,8 +331,8 @@ export type PostScalarWhereWithAggregatesInput = {
 
 export type PostCreateInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -346,8 +346,8 @@ export type PostCreateInput = {
 
 export type PostUncheckedCreateInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -361,8 +361,8 @@ export type PostUncheckedCreateInput = {
 
 export type PostUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -376,8 +376,8 @@ export type PostUpdateInput = {
 
 export type PostUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -391,8 +391,8 @@ export type PostUncheckedUpdateInput = {
 
 export type PostCreateManyInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -404,8 +404,8 @@ export type PostCreateManyInput = {
 
 export type PostUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -415,8 +415,8 @@ export type PostUpdateManyMutationInput = {
 
 export type PostUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -608,8 +608,8 @@ export type PostUncheckedUpdateManyWithoutAssetNestedInput = {
 
 export type PostCreateWithoutAuthorInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -622,8 +622,8 @@ export type PostCreateWithoutAuthorInput = {
 
 export type PostUncheckedCreateWithoutAuthorInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -665,8 +665,8 @@ export type PostScalarWhereInput = {
   OR?: Prisma.PostScalarWhereInput[]
   NOT?: Prisma.PostScalarWhereInput | Prisma.PostScalarWhereInput[]
   id?: Prisma.StringFilter<"Post"> | string
-  slug?: Prisma.StringFilter<"Post"> | string
-  title?: Prisma.StringFilter<"Post"> | string
+  slug?: Prisma.StringNullableFilter<"Post"> | string | null
+  title?: Prisma.StringNullableFilter<"Post"> | string | null
   content?: Prisma.JsonFilter<"Post">
   thumbnail?: Prisma.StringNullableFilter<"Post"> | string | null
   viewCount?: Prisma.IntFilter<"Post"> | number
@@ -678,8 +678,8 @@ export type PostScalarWhereInput = {
 
 export type PostCreateWithoutCommentsInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -692,8 +692,8 @@ export type PostCreateWithoutCommentsInput = {
 
 export type PostUncheckedCreateWithoutCommentsInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -722,8 +722,8 @@ export type PostUpdateToOneWithWhereWithoutCommentsInput = {
 
 export type PostUpdateWithoutCommentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -736,8 +736,8 @@ export type PostUpdateWithoutCommentsInput = {
 
 export type PostUncheckedUpdateWithoutCommentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -750,8 +750,8 @@ export type PostUncheckedUpdateWithoutCommentsInput = {
 
 export type PostCreateWithoutLikesInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -764,8 +764,8 @@ export type PostCreateWithoutLikesInput = {
 
 export type PostUncheckedCreateWithoutLikesInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -794,8 +794,8 @@ export type PostUpdateToOneWithWhereWithoutLikesInput = {
 
 export type PostUpdateWithoutLikesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -808,8 +808,8 @@ export type PostUpdateWithoutLikesInput = {
 
 export type PostUncheckedUpdateWithoutLikesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -822,8 +822,8 @@ export type PostUncheckedUpdateWithoutLikesInput = {
 
 export type PostCreateWithoutAssetInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -836,8 +836,8 @@ export type PostCreateWithoutAssetInput = {
 
 export type PostUncheckedCreateWithoutAssetInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -876,8 +876,8 @@ export type PostUpdateManyWithWhereWithoutAssetInput = {
 
 export type PostCreateManyAuthorInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -888,8 +888,8 @@ export type PostCreateManyAuthorInput = {
 
 export type PostUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -902,8 +902,8 @@ export type PostUpdateWithoutAuthorInput = {
 
 export type PostUncheckedUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -916,8 +916,8 @@ export type PostUncheckedUpdateWithoutAuthorInput = {
 
 export type PostUncheckedUpdateManyWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -928,8 +928,8 @@ export type PostUncheckedUpdateManyWithoutAuthorInput = {
 
 export type PostCreateManyAssetInput = {
   id?: string
-  slug: string
-  title: string
+  slug?: string | null
+  title?: string | null
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: string | null
   viewCount?: number
@@ -940,8 +940,8 @@ export type PostCreateManyAssetInput = {
 
 export type PostUpdateWithoutAssetInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -954,8 +954,8 @@ export type PostUpdateWithoutAssetInput = {
 
 export type PostUncheckedUpdateWithoutAssetInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -968,8 +968,8 @@ export type PostUncheckedUpdateWithoutAssetInput = {
 
 export type PostUncheckedUpdateManyWithoutAssetInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   thumbnail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1106,8 +1106,8 @@ export type $PostPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    slug: string
-    title: string
+    slug: string | null
+    title: string | null
     content: runtime.JsonValue
     thumbnail: string | null
     viewCount: number

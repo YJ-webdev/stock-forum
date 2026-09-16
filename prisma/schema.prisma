@@ -43,6 +43,8 @@ model User {
   positions     PortfolioPosition[]
   watchlist     Watchlist[]
   predictions   Prediction[]
+    marketVotes MarketVote[]
+
 
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
@@ -85,8 +87,8 @@ model VerificationToken {
 
 model Post {
   id        String   @id @default(cuid())
-  slug      String   @unique
-  title     String
+  slug      String?   @unique
+  title     String?
   content   Json
   thumbnail String?
 
@@ -163,6 +165,8 @@ model MarketAsset {
   watchlistItems Watchlist[]
 
 posts Post[]
+  votes         MarketVote[]
+
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -284,4 +288,27 @@ model Prediction {
   @@index([userId, createdAt])
   @@index([country, symbol, sessionDate])
   @@index([status])
+}
+
+enum VoteDirection {
+  BULL
+  BEAR
+}
+
+model MarketVote {
+  id            String        @id @default(cuid())
+  userId        String
+  assetId       String
+  nationality   String
+  direction     VoteDirection
+  predictionFor DateTime
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset MarketAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, assetId, predictionFor])
+  @@index([assetId, predictionFor])
+  @@index([assetId, nationality, predictionFor])
 }

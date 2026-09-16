@@ -379,6 +379,23 @@ export type EnumPredictionStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumPredictionStatusFilter<$PrismaModel>
 }
 
+export type EnumVoteDirectionFilter<$PrismaModel = never> = {
+  equals?: $Enums.VoteDirection | Prisma.EnumVoteDirectionFieldRefInput<$PrismaModel>
+  in?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
+  notIn?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumVoteDirectionFilter<$PrismaModel> | $Enums.VoteDirection
+}
+
+export type EnumVoteDirectionWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.VoteDirection | Prisma.EnumVoteDirectionFieldRefInput<$PrismaModel>
+  in?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
+  notIn?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumVoteDirectionWithAggregatesFilter<$PrismaModel> | $Enums.VoteDirection
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumVoteDirectionFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumVoteDirectionFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -728,6 +745,23 @@ export type NestedEnumPredictionStatusWithAggregatesFilter<$PrismaModel = never>
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumPredictionStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumPredictionStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumVoteDirectionFilter<$PrismaModel = never> = {
+  equals?: $Enums.VoteDirection | Prisma.EnumVoteDirectionFieldRefInput<$PrismaModel>
+  in?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
+  notIn?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumVoteDirectionFilter<$PrismaModel> | $Enums.VoteDirection
+}
+
+export type NestedEnumVoteDirectionWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.VoteDirection | Prisma.EnumVoteDirectionFieldRefInput<$PrismaModel>
+  in?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
+  notIn?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumVoteDirectionWithAggregatesFilter<$PrismaModel> | $Enums.VoteDirection
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumVoteDirectionFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumVoteDirectionFilter<$PrismaModel>
 }
 
 

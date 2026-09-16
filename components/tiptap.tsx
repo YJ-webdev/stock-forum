@@ -1,6 +1,7 @@
 "use client";
 
 import { EditorContent, useEditor } from "@tiptap/react";
+import { useEffect, useRef } from "react";
 
 import { SlashCommand } from "./extensions/slash-command";
 import StarterKit from "@tiptap/starter-kit";
@@ -13,78 +14,78 @@ import { EditorBubbleMenu } from "./editor-bubble-menu";
 interface TiptapProps {
   content?: JSONContent;
   onChange?: (content: JSONContent) => void;
+  name?: string;
 }
 
-const Tiptap = ({ content, onChange }: TiptapProps) => {
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [2, 3],
-        },
-      }),
-      // Link.configure({
-      //   openOnClick: false,
-      //   autolink: true,
-      //   defaultProtocol: "https",
-      // }),
+const Tiptap = ({ content, onChange, name }: TiptapProps) => {
+  const nameRef = useRef(name);
 
-      Placeholder.configure({
-        placeholder: "Write something, or press '/' for commands...",
-      }),
+  useEffect(() => {
+    nameRef.current = name;
+  }, [name]);
 
-      Image.configure({
-        resize: {
-          enabled: true,
-          alwaysPreserveAspectRatio: true,
-          directions: ["left", "right", "top", "bottom"],
-          minWidth: 50,
-        },
-      }),
-      SlashCommand,
-    ],
+  const editor = useEditor(
+    {
+      extensions: [
+        StarterKit.configure({
+          heading: {
+            levels: [2, 3],
+          },
+        }),
 
-    content: content ?? {
-      type: "doc",
-      content: [
-        {
-          type: "paragraph",
-        },
+        Placeholder.configure({
+          placeholder: `Let's talk about ${name || "anything"}`,
+        }),
+
+        Image.configure({
+          resize: {
+            enabled: true,
+            alwaysPreserveAspectRatio: true,
+            directions: ["left", "right", "top", "bottom"],
+            minWidth: 50,
+          },
+        }),
+
+        SlashCommand,
       ],
-    },
 
-    immediatelyRender: false,
+      content: content ?? {
+        type: "doc",
+        content: [{ type: "paragraph" }],
+      },
 
-    editorProps: {
-      attributes: {
-        class:
-          "tiptap min-h-[300px] w-full max-w-full min-w-0 outline-none text-[20px] leading-8 text-zinc-800 dark:text-zinc-200",
+      autofocus: true,
+      immediatelyRender: false,
+
+      editorProps: {
+        attributes: {
+          class:
+            "tiptap min-h-[300px] w-full max-w-full min-w-0 outline-none text-[20px] leading-8 text-zinc-800 dark:text-zinc-200",
+        },
+      },
+
+      onUpdate: ({ editor }) => {
+        onChange?.(editor.getJSON());
       },
     },
 
-    onUpdate: ({ editor }) => {
-      onChange?.(editor.getJSON());
-    },
-  });
+    // 👇 Recreate editor when market name changes
+    [name],
+  );
+  useEffect(() => {
+    if (!editor) return;
 
-  // const addImage = useCallback(() => {
-  //   if (!editor) return;
-
-  //   const url = window.prompt("Image URL");
-
-  //   if (url) {
-  //     editor.chain().focus().setImage({ src: url }).run();
-  //   }
-  // }, [editor]);
+    // Makes Placeholder read the new nameRef.current
+    editor.view.dispatch(editor.state.tr);
+  }, [editor, name]);
 
   if (!editor) {
     return null;
   }
 
   return (
-    <div className="w-full h-full">
+    <div className="h-full w-full">
       <EditorBubbleMenu editor={editor} />
-
       <EditorContent editor={editor} />
     </div>
   );
