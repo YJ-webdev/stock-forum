@@ -16,6 +16,7 @@ import { usePathname } from "next/navigation";
 import { SectionBContext } from "../context/section-b-context";
 import { AccountPanel } from "./account-panel";
 import { NotificationPanel } from "./notification-panel";
+import { BreadCrumbs } from "./breadcrumbs";
 
 export interface User {
   id: string;
@@ -201,7 +202,10 @@ export default function LayoutShell({
           <ResizablePanelGroup orientation="horizontal" className="">
             <ResizablePanel>
               <section className="w-full flex flex-col min-w-0 bg-white dark:bg-zinc-900">
-                <div className="flex-1">{children}</div>
+                <div className="flex-1">
+                  <BreadCrumbs />
+                  {children}
+                </div>
               </section>
             </ResizablePanel>
             <ResizableHandle className="border-gray-50 w-0" />

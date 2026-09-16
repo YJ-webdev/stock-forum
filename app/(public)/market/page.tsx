@@ -138,7 +138,7 @@ export default function MarketDetailPage() {
     <div className="max-w-4xl mx-auto mt-6">
       <div>
         <div className="w-full relative px-3 space-y-2">
-          <div className="flex items-center justify-between mb-10  bg-white dark:bg-zinc-900">
+          {/* <div className="flex items-center justify-between mb-10  bg-white dark:bg-zinc-900">
             <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-300 font-medium">
               <button
                 onClick={() => router.push("/")}
@@ -152,7 +152,7 @@ export default function MarketDetailPage() {
                 <span>{selectedDisplaySymbol}</span>
               </button>
             </div>
-          </div>
+          </div> */}
           <div className="flex items-center justify-between gap-4 mt-2">
             <h1 className="text-[44px] font-bold text-gray-500/50 dark:text-zinc-700 tracking-tight leading-none">
               {selectedName}

@@ -24,7 +24,7 @@ export async function registerUser(email: string, name: string) {
     data: {
       name,
       email,
-      country: countryCode,
+      nationality: countryCode,
     },
   });
 }
