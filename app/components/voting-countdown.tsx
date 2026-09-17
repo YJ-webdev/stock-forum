@@ -32,17 +32,17 @@ export function VotingCountdown({
           "Voting closed"
         ) : selectedVote ? (
           <>
-            You just voted{" "}
+            {/* You just voted{" "}
             <span
               className={
                 selectedVote === "BULL" ? "text-emerald-600" : "text-rose-700"
               }
             >
               {selectedVote === "BULL" ? "Bullish" : "Bearish"}
-            </span>
+            </span> */}
           </>
         ) : (
-          "Vote your prediction"
+          ""
         )}
       </div>
     );
@@ -56,15 +56,15 @@ export function VotingCountdown({
         {type === "VOTING_CLOSES" && !selectedVote && "Voting closes in"}
         {type === "VOTING_CLOSES" && selectedVote && (
           <>
-            You just voted{" "}
+            {/* You just voted{" "}
             <span
               className={
                 selectedVote === "BULL" ? "text-emerald-600" : "text-rose-700"
               }
             >
               {selectedVote === "BULL" ? "Bullish" : "Bearish"}
-            </span>
-            , you can change within
+            </span> */}
+            Voting closing in
           </>
         )}
       </span>

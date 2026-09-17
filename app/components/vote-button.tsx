@@ -23,10 +23,11 @@ export function VoteButton({
       disabled={isPending || isMarketOpen}
       className={`
         text-[15px] text-white
-        ${voteDirection === "BULL" ? "bg-emerald-600 hover:bg-emerald-600/80" : "bg-rose-700 hover:bg-rose-700/80"}
+        ${voteDirection === "BULL" ? "bg-emerald-600 hover:bg-emerald-600" : "bg-rose-700 hover:bg-rose-700"}
         ${isPending || isMarketOpen ? "opacity-50 cursor-default" : ""}
-        ${selectedVote === voteDirection ? "opacity-50" : "opacity-100"}
-        ${!isPending && !isMarketOpen ? "cursor-pointer" : ""}
+       
+        ${selectedVote === null || selectedVote === voteDirection ? "opacity-100" : "opacity-50"}
+        ${!isPending && !isMarketOpen && selectedVote !== voteDirection ? "cursor-pointer hover:opacity-100!" : ""}
    
       `}
     >

@@ -31,7 +31,9 @@ import {
 import { useCurrentUser } from "@/app/context/user-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendSparkline } from "@/app/components/trend-sparkline";
-import { ChartNoAxesCombined, Scaling } from "lucide-react";
+import { MarketComments } from "@/app/components/comment";
+import { Badge } from "@/components/ui/badge";
+import { BullBearGauge } from "@/app/components/bull-bear-gauge";
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
@@ -256,7 +258,7 @@ export default function MarketDetailPage() {
       ) : data ? (
         <>
           {/* Header + voting */}
-          <div className="relative flex items-start justify-between mt-4 w-full">
+          <div className="relative flex items-start justify-between mt-4 w-full mb-4">
             <MarketDetailHeader
               rawPrice={data.rawPrice}
               change={data.change}
@@ -286,13 +288,7 @@ export default function MarketDetailPage() {
                 </div>
               </div>
             ) : (
-              <>
-                {/* <Scaling
-                  onClick={() => setShowDetailChart((prev) => !prev)}
-                  className="h-5 w-5 self-baseline-last mr-4 text-zinc-800 dark:text-zinc-600"
-                  strokeWidth={1.5}
-                /> */}
-              </>
+              <></>
             )}
           </div>
 
@@ -347,8 +343,8 @@ export default function MarketDetailPage() {
                     transformOrigin: "top right",
                   }}
                 >
-                  <div ref={chartRef} className="mt-2 scroll-mt-70 md:mx-3">
-                    {/* DetailChart + range selector */}
+                  {/* DetailChart + range selector */}
+                  <div className="mx-4">
                     <DetailChart
                       history={data.history}
                       isPositive={data.isPositive}
@@ -366,7 +362,7 @@ export default function MarketDetailPage() {
                     />
 
                     {/* Range selector */}
-                    <div className="my-4 flex flex-wrap gap-2 mx-4 md:mx-0">
+                    <div className="mt-4 mb-10 flex flex-wrap gap-2">
                       {RANGES.map((range) => {
                         const isUnavailable =
                           unavailableRanges[selectedSymbol]?.has(
@@ -407,7 +403,7 @@ export default function MarketDetailPage() {
       ) : (
         <>
           {/* Header skeleton */}
-          <div className="relative mt-4 w-full space-y-2 px-4">
+          <div className="relative mt-4 w-full space-y-2 px-4 pb-2">
             <div className="mb-2 flex w-full flex-col gap-2">
               <Skeleton className="h-8 w-44 rounded-xl" />
               <Skeleton className="h-5 w-36 rounded-full" />
@@ -417,7 +413,7 @@ export default function MarketDetailPage() {
       )}
 
       {/* Prediction Vote Buttons */}
-      <div className="mx-4 mt-4">
+      <div className="mx-4">
         <div className="flex items-center gap-2">
           <VoteButton
             voteDirection="BULL"
@@ -437,7 +433,7 @@ export default function MarketDetailPage() {
         </div>
 
         {votingWindow && (
-          <div className="ml-0.5 mt-2">
+          <div className="ml-0.5 mt-1">
             <VotingCountdown
               targetMs={votingWindow.targetMs}
               type={votingWindow.countdownType}
@@ -450,12 +446,12 @@ export default function MarketDetailPage() {
         )}
       </div>
 
-      {/* Discussion */}
-      <div
-        ref={discussionRef}
-        className="mb-24 px-4 mt-10 w-full bg-white dark:bg-zinc-900 rounded-lg h-100"
-      >
-        Discussion
+      {/* BullBearGauge */}
+      <BullBearGauge bullish={824} bearish={460} />
+
+      {/* Comment */}
+      <div className="mx-4 mt-10 mb-20">
+        <MarketComments />
       </div>
     </div>
   );
