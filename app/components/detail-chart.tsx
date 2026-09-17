@@ -9,6 +9,7 @@ import {
   X,
   CircleMinus,
   Minus,
+  CircleX,
 } from "lucide-react";
 
 export type ChartType = "line" | "area" | "candle" | "bar";
@@ -514,7 +515,7 @@ export function DetailChart({
   // --------------------------------------------------
 
   return (
-    <div className="w-full relative bg-zinc-50 dark:bg-zinc-800 md:rounded-2xl md:border border-zinc-200 dark:border-zinc-800 md:shadow-sm select-none">
+    <div className="w-full relative bg-zinc-50 dark:bg-zinc-800 md:rounded-2xl md:border border-zinc-200 dark:border-zinc-800 p-4 md:shadow-sm select-none">
       {/* TOP CONTROL BAR */}
 
       <div className="relative z-5 flex items-center justify-between gap-6 dark:text-zinc-300">
@@ -540,9 +541,9 @@ export function DetailChart({
             );
           })}
         </div>
-        <Minus
-          strokeWidth={2}
-          className="w-5 h-5 mr-2 rounded-full bg-rose-700/50 hover:bg-rose-700 text-white cursor-pointer"
+        <CircleX
+          strokeWidth={1.5}
+          className="w-5 h-5 mr-2 rounded-full text-zinc-600 bg-zinc-white dark:text-zinc-300 dark:bg-zinc-800 cursor-pointer"
           onClick={onClick}
           aria-label="Close"
         />
