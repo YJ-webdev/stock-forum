@@ -119,7 +119,7 @@ export const BreadCrumbs = () => {
   return (
     <div
       className={`fixed top-14 z-10 mb-10 flex w-full items-center justify-between
-        border-zinc-100 bg-white pl-3 pt-6 pb-2
+        border-zinc-100 bg-white pl-4 pt-6 pb-2
         dark:border-zinc-800 dark:bg-zinc-900
         ${isScrolled ? "border-b" : ""}
       `}

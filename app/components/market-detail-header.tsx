@@ -109,7 +109,7 @@ export function MarketDetailHeader({
   });
 
   return (
-    <div className="px-3 flex items-center gap-3 min-w-0">
+    <div className="px-4 flex items-center gap-3 min-w-0">
       <div className="flex flex-col min-w-0">
         <div className="flex flex-wrap sm:flex-nowrap items-baseline gap-x-3 gap-y-1 tracking-tight md:tracking-normal">
           <Numeric className="font-extrabold text-3xl text-zinc-900 dark:text-zinc-300">

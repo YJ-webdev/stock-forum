@@ -238,7 +238,7 @@ export default function MarketDetailPage() {
   return (
     <div className="mx-auto mt-20 max-w-4xl">
       {/* Title */}
-      <div className="relative w-full space-y-2 px-2.5">
+      <div className="relative w-full space-y-2 px-4">
         <div className="mt-2 flex items-baseline justify-between gap-4">
           <h1 className="text-[44px] font-bold leading-none tracking-tight text-gray-500/50 dark:text-zinc-700">
             {selectedName}
@@ -407,7 +407,7 @@ export default function MarketDetailPage() {
       ) : (
         <>
           {/* Header skeleton */}
-          <div className="relative mt-4 w-full space-y-2 px-3">
+          <div className="relative mt-4 w-full space-y-2 px-4">
             <div className="mb-2 flex w-full flex-col gap-2">
               <Skeleton className="h-9 w-44 rounded-xl" />
               <Skeleton className="h-5 w-36 rounded-full" />
@@ -417,7 +417,7 @@ export default function MarketDetailPage() {
       )}
 
       {/* Prediction Vote Buttons */}
-      <div className="mx-3 mt-4">
+      <div className="mx-4 mt-4">
         <div className="flex items-center gap-2">
           <VoteButton
             voteDirection="BULL"
@@ -437,7 +437,7 @@ export default function MarketDetailPage() {
         </div>
 
         {votingWindow && (
-          <div className="ml-auto md:mt-1.5">
+          <div className="ml-0.5 md:mt-1.5">
             <VotingCountdown
               targetMs={votingWindow.targetMs}
               type={votingWindow.countdownType}
@@ -453,7 +453,7 @@ export default function MarketDetailPage() {
       {/* Discussion */}
       <div
         ref={discussionRef}
-        className="mb-24 px-3 mt-10 w-full bg-white dark:bg-zinc-900 h-20 rounded-lg"
+        className="mb-24 px-4 mt-10 w-full bg-white dark:bg-zinc-900 h-20 rounded-lg"
       >
         Discussion
       </div>
