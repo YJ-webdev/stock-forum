@@ -6,10 +6,8 @@ import {
   CandlestickChart,
   BarChart3,
   ChartLine,
-  X,
-  CircleMinus,
-  Minus,
   CircleX,
+  Minimize2,
 } from "lucide-react";
 
 export type ChartType = "line" | "area" | "candle" | "bar";
@@ -541,7 +539,7 @@ export function DetailChart({
             );
           })}
         </div>
-        <CircleX
+        <Minimize2
           strokeWidth={1.5}
           className="w-5 h-5 mr-2 rounded-full text-zinc-600 bg-zinc-white dark:text-zinc-300 dark:bg-zinc-800 cursor-pointer"
           onClick={onClick}
@@ -692,7 +690,11 @@ export function DetailChart({
                     textAnchor="end"
                     className="fill-zinc-800 jakarta dark:fill-zinc-300 dark:font-light text-[12px] font-normal"
                   >
-                    Prev. close {previousClose.toFixed(2)}
+                    Prev. close{" "}
+                    {previousClose.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </text>
                 )}
 
