@@ -6,6 +6,9 @@ import {
   CandlestickChart,
   BarChart3,
   ChartLine,
+  X,
+  CircleMinus,
+  Minus,
 } from "lucide-react";
 
 export type ChartType = "line" | "area" | "candle" | "bar";
@@ -26,6 +29,7 @@ export interface DetailChartProps {
   lunchStartMs?: number | null;
   lunchEndMs?: number | null;
   exchangeTimezone?: string;
+  onClick?: () => void;
 }
 
 export function DetailChart({
@@ -36,6 +40,7 @@ export function DetailChart({
   lunchStartMs,
   lunchEndMs,
   exchangeTimezone,
+  onClick,
 }: DetailChartProps) {
   const [chartType, setChartType] = useState<ChartType>("area");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -512,8 +517,8 @@ export function DetailChart({
     <div className="w-full relative bg-zinc-50 dark:bg-zinc-800 md:rounded-2xl md:border border-zinc-200 dark:border-zinc-800 p-4 md:shadow-sm select-none">
       {/* TOP CONTROL BAR */}
 
-      <div className="relative z-5 flex items-center gap-6 dark:text-zinc-300">
-        <div className="relative flex">
+      <div className="relative z-5 flex items-center justify-between gap-6 dark:text-zinc-300">
+        <div className="relative flex justify-between">
           {chartTypeOptions.map((opt) => {
             const Icon = opt.icon;
 
@@ -535,6 +540,12 @@ export function DetailChart({
             );
           })}
         </div>
+        <Minus
+          strokeWidth={2}
+          className="w-5 h-5 mr-2 rounded-full bg-rose-700/50 hover:bg-rose-700 text-white cursor-pointer"
+          onClick={onClick}
+          aria-label="Close"
+        />
       </div>
 
       {/* HOVER PRICE BADGE */}

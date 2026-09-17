@@ -1,6 +1,7 @@
 // app/[asset]/page.tsx
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -22,12 +23,15 @@ import { ALL_MARKET_SYMBOLS, AssetType } from "@/lib/data/market-symbols";
 
 import {
   getMarketVote,
+  removeMarketVote,
   submitMarketVote,
   type VoteDirection,
 } from "@/app/actions/market-vote";
 
 import { useCurrentUser } from "@/app/context/user-context";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TrendSparkline } from "@/app/components/trend-sparkline";
+import { ChartNoAxesCombined, Scaling } from "lucide-react";
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
@@ -36,23 +40,19 @@ export default function MarketDetailPage() {
   const searchParams = useSearchParams();
   const user = useCurrentUser();
 
-  const name = searchParams.get("name");
-  const symbol = searchParams.get("symbol");
-
+  const [showDetailChart, setShowDetailChart] = useState(false);
   const [voteLoading, setVoteLoading] = useState(true);
 
   const chartRef = useRef<HTMLDivElement>(null);
+  const discussionRef = useRef<HTMLDivElement>(null);
 
   const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
-
   const [selectedVote, setSelectedVote] = useState<VoteDirection | null>(null);
-
   const [now, setNow] = useState(() => Date.now());
 
   const [unavailableRanges, setUnavailableRanges] = useState<
     Record<string, Set<ChartRange>>
   >({});
-
   const [isPending, startTransition] = useTransition();
 
   // ------------------------------------------------------------
@@ -62,18 +62,13 @@ export default function MarketDetailPage() {
   const rawSymbol = searchParams.get("symbol") ?? "^GSPC";
   const selectedSymbol = decodeURIComponent(rawSymbol);
 
-  const selectedName = searchParams.get("name") ?? "S&P 500";
-
-  const selectedAssetType = searchParams.get("assetType") ?? "index";
-
   const symbolMeta = ALL_MARKET_SYMBOLS.find(
     (item) => item.symbol === selectedSymbol,
   );
 
-  const selectedDisplaySymbol =
-    searchParams.get("displaySymbol") ??
-    symbolMeta?.displaySymbol ??
-    selectedSymbol;
+  const selectedName = symbolMeta?.name ?? selectedSymbol;
+  const selectedDisplaySymbol = symbolMeta?.displaySymbol ?? selectedSymbol;
+  const selectedAssetType = symbolMeta?.assetType ?? "index";
 
   // ------------------------------------------------------------
   // Quote
@@ -102,14 +97,14 @@ export default function MarketDetailPage() {
 
   // Load existing vote
   useEffect(() => {
-    if (!symbol) return;
+    if (!selectedSymbol) return;
 
     let cancelled = false;
 
     async function loadVote() {
       try {
         const vote = await getMarketVote({
-          symbol: symbol!,
+          symbol: selectedSymbol,
         });
 
         if (!cancelled) {
@@ -129,7 +124,7 @@ export default function MarketDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [symbol]);
+  }, [selectedSymbol]);
 
   const handleCountdownExpire = useCallback(() => {
     setNow(Date.now());
@@ -138,11 +133,6 @@ export default function MarketDetailPage() {
   const handleVote = (direction: VoteDirection) => {
     if (!isLoggedIn) {
       toast.error("Please log in to vote.");
-      return;
-    }
-
-    if (!symbol) {
-      toast.error("Market asset not found.");
       return;
     }
 
@@ -156,34 +146,52 @@ export default function MarketDetailPage() {
       return;
     }
 
+    if (isPending) return;
+
+    // Save previous state in case the server request fails
+    const previousVote = selectedVote;
+
+    // Same button clicked again → untick
+    const nextVote: VoteDirection | null =
+      selectedVote === direction ? null : direction;
+
+    // ⚡ Update UI immediately
+    setSelectedVote(nextVote);
+
     startTransition(async () => {
       try {
-        const vote = await submitMarketVote({
-          symbol,
+        if (nextVote === null) {
+          await removeMarketVote({
+            symbol: selectedSymbol,
+          });
+
+          toast.success("Vote cancelled.");
+          return;
+        }
+
+        await submitMarketVote({
+          symbol: selectedSymbol,
           nationality,
-          direction,
+          direction: nextVote,
         });
 
-        setSelectedVote(vote.direction);
-
         toast.success(
-          direction === "BULL"
-            ? "Prediction submitted."
-            : "Prediction submitted.",
+          nextVote === "BULL"
+            ? "Bullish vote submitted."
+            : "Bearish vote submitted.",
         );
       } catch (error) {
+        // Server failed → restore previous UI
+        setSelectedVote(previousVote);
+
         toast.error(
           error instanceof Error
             ? error.message
-            : "Failed to submit prediction.",
+            : "Failed to update prediction.",
         );
       }
     });
   };
-
-  // ------------------------------------------------------------
-  // Range
-  // ------------------------------------------------------------
 
   const handleRangeChange = async (range: SelectedRange) => {
     if (range === activeRange) return;
@@ -219,15 +227,19 @@ export default function MarketDetailPage() {
     setActiveRange(range);
   };
 
-  // ------------------------------------------------------------
-  // Render
-  // ------------------------------------------------------------
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "instant",
+    });
+  }, [selectedSymbol]);
 
   return (
     <div className="mx-auto mt-20 max-w-4xl">
       {/* Title */}
       <div className="relative w-full space-y-2 px-2.5">
-        <div className="mt-2 flex items-center justify-between gap-4">
+        <div className="mt-2 flex items-baseline justify-between gap-4">
           <h1 className="text-[44px] font-bold leading-none tracking-tight text-gray-500/50 dark:text-zinc-700">
             {selectedName}
           </h1>
@@ -244,7 +256,7 @@ export default function MarketDetailPage() {
       ) : data ? (
         <>
           {/* Header + voting */}
-          <div className="relative flex items-baseline-last justify-between mt-4 w-full">
+          <div className="relative flex items-start justify-between mt-4 w-full">
             <MarketDetailHeader
               rawPrice={data.rawPrice}
               change={data.change}
@@ -257,63 +269,139 @@ export default function MarketDetailPage() {
                 data.exchangeTimezone ?? symbolMeta?.timezone ?? "UTC"
               }
             />
-            <div
-              className="
-    fixed bottom-0 left-0 z-50
-    flex w-full flex-row-reverse items-end justify-start gap-2
-    bg-white px-3 py-2 dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-700/50
-
-    md:static md:z-auto
-    md:mr-3 md:w-auto md:flex-col md:items-stretch md:gap-0
-    md:bg-transparent md:p-0 md:border-none
-  "
-            >
-              <div className="flex items-center gap-2">
-                <VoteButton
-                  voteDirection="BULL"
-                  onClick={() => handleVote("BULL")}
-                  selectedVote={selectedVote}
-                  isPending={isPending || voteLoading}
-                  isMarketOpen={isMarketOpen}
-                />
-
-                <VoteButton
-                  voteDirection="BEAR"
-                  onClick={() => handleVote("BEAR")}
-                  selectedVote={selectedVote}
-                  isPending={isPending || voteLoading}
-                  isMarketOpen={isMarketOpen}
-                />
-              </div>
-
-              {votingWindow && (
-                <div className="ml-auto md:mt-1">
-                  <VotingCountdown
-                    targetMs={votingWindow.targetMs}
-                    type={votingWindow.countdownType}
-                    showCountdown={votingWindow.showCountdown}
-                    isMarketOpen={votingWindow.isMarketOpen}
-                    onExpire={handleCountdownExpire}
+            {!showDetailChart ? (
+              <div className="static z-auto mr-3 flex w-auto flex-col items-stretch gap-0 border-none bg-transparent p-0">
+                <div
+                  onClick={() => setShowDetailChart((prev) => !prev)}
+                  className="flex cursor-pointer justify-start mt-5 mx-3"
+                >
+                  <TrendSparkline
+                    data={data.history}
+                    isPositive={data.isPositive}
+                    lunchStartMs={
+                      activeRange === "1D" ? data.lunchStartMs : null
+                    }
+                    lunchEndMs={activeRange === "1D" ? data.lunchEndMs : null}
                   />
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <>
+                {/* <Scaling
+                  onClick={() => setShowDetailChart((prev) => !prev)}
+                  className="h-5 w-5 self-baseline-last mr-4 text-zinc-800 dark:text-zinc-600"
+                  strokeWidth={1.5}
+                /> */}
+              </>
+            )}
           </div>
 
           {/* Chart */}
-          <div ref={chartRef} className="mt-2 scroll-mt-70 md:mx-3">
-            <DetailChart
-              history={data.history}
-              isPositive={data.isPositive}
-              isClosed={data.isClosed}
-              previousClose={data.previousClose}
-              lunchStartMs={activeRange === "1D" ? data.lunchStartMs : null}
-              lunchEndMs={activeRange === "1D" ? data.lunchEndMs : null}
-              exchangeTimezone={
-                data.exchangeTimezone ?? symbolMeta?.timezone ?? "UTC"
-              }
-              range={activeRange}
-            />
+          <div className="overflow-hidden">
+            <AnimatePresence initial={false}>
+              {showDetailChart && (
+                <motion.div
+                  initial={{
+                    height: 0,
+                    opacity: 0,
+                    scale: 0.92,
+                    x: 20,
+                    y: -10,
+                  }}
+                  animate={{
+                    height: "auto",
+                    opacity: 1,
+                    scale: 1,
+                    x: 0,
+                    y: 0,
+                  }}
+                  exit={{
+                    height: 0,
+                    opacity: 0,
+                    scale: 0.6,
+                    x: 20,
+                    y: -10,
+                  }}
+                  transition={{
+                    height: {
+                      duration: 0.4,
+                      ease: [0.4, 0, 0.2, 1],
+                    },
+                    scale: {
+                      duration: 0.35,
+                      ease: [0.4, 0, 0.2, 1],
+                    },
+                    x: {
+                      duration: 0.35,
+                      ease: [0.4, 0, 0.2, 1],
+                    },
+                    y: {
+                      duration: 0.35,
+                      ease: [0.4, 0, 0.2, 1],
+                    },
+                    opacity: {
+                      duration: 0.3,
+                    },
+                  }}
+                  style={{
+                    transformOrigin: "top right",
+                  }}
+                >
+                  <div ref={chartRef} className="mt-2 scroll-mt-70 md:mx-3">
+                    {/* DetailChart + range selector */}
+                    <DetailChart
+                      history={data.history}
+                      isPositive={data.isPositive}
+                      isClosed={data.isClosed}
+                      previousClose={data.previousClose}
+                      lunchStartMs={
+                        activeRange === "1D" ? data.lunchStartMs : null
+                      }
+                      lunchEndMs={activeRange === "1D" ? data.lunchEndMs : null}
+                      exchangeTimezone={
+                        data.exchangeTimezone ?? symbolMeta?.timezone ?? "UTC"
+                      }
+                      range={activeRange}
+                      onClick={() => setShowDetailChart(false)}
+                    />
+
+                    {/* Range selector */}
+                    <div className="my-4 flex flex-wrap gap-2 mx-2">
+                      {RANGES.map((range) => {
+                        const isUnavailable =
+                          unavailableRanges[selectedSymbol]?.has(
+                            range as ChartRange,
+                          ) ||
+                          (range === activeRange && !!error);
+
+                        const isActive = activeRange === range;
+
+                        return (
+                          <button
+                            key={range}
+                            type="button"
+                            title={
+                              isUnavailable ? "Data unavailable" : undefined
+                            }
+                            disabled={isUnavailable}
+                            onClick={() => handleRangeChange(range)}
+                            className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
+                              isUnavailable
+                                ? "cursor-default bg-zinc-100 font-thin text-zinc-400 dark:bg-zinc-700/50 dark:text-zinc-600"
+                                : isActive
+                                  ? "cursor-pointer bg-zinc-300/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
+                                  : "cursor-pointer bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-600/50"
+                            }`}
+                          >
+                            {range}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </>
       ) : (
@@ -325,45 +413,48 @@ export default function MarketDetailPage() {
               <Skeleton className="h-5 w-36 rounded-full" />
             </div>
           </div>
-
-          {/* Chart skeleton */}
-          <div className="mt-1 mx-3">
-            <Skeleton className="aspect-800/372 w-full rounded-lg" />
-          </div>
         </>
       )}
 
-      {/* Range selector */}
-      <div className="my-4 flex flex-wrap gap-2 mx-2">
-        {RANGES.map((range) => {
-          const isUnavailable =
-            unavailableRanges[selectedSymbol]?.has(range as ChartRange) ||
-            (range === activeRange && !!error);
+      {/* Prediction Vote Buttons */}
+      <div className="mx-3 mt-4">
+        <div className="flex items-center gap-2">
+          <VoteButton
+            voteDirection="BULL"
+            onClick={() => handleVote("BULL")}
+            selectedVote={selectedVote}
+            isPending={voteLoading}
+            isMarketOpen={isMarketOpen}
+          />
 
-          const isActive = activeRange === range;
+          <VoteButton
+            voteDirection="BEAR"
+            onClick={() => handleVote("BEAR")}
+            selectedVote={selectedVote}
+            isPending={voteLoading}
+            isMarketOpen={isMarketOpen}
+          />
+        </div>
 
-          return (
-            <button
-              key={range}
-              type="button"
-              title={isUnavailable ? "Data unavailable" : undefined}
-              disabled={isUnavailable}
-              onClick={() => handleRangeChange(range)}
-              className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
-                isUnavailable
-                  ? "cursor-default bg-zinc-100 font-thin text-zinc-400 dark:bg-zinc-700/50 dark:text-zinc-600"
-                  : isActive
-                    ? "cursor-pointer bg-zinc-300/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
-                    : "cursor-pointer bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-600/50"
-              }`}
-            >
-              {range}
-            </button>
-          );
-        })}
+        {votingWindow && (
+          <div className="ml-auto md:mt-1.5">
+            <VotingCountdown
+              targetMs={votingWindow.targetMs}
+              type={votingWindow.countdownType}
+              showCountdown={votingWindow.showCountdown}
+              isMarketOpen={votingWindow.isMarketOpen}
+              onExpire={handleCountdownExpire}
+              selectedVote={selectedVote}
+            />
+          </div>
+        )}
       </div>
 
-      <div className="mb-24 px-3 mt-10 w-full bg-white dark:bg-zinc-900 h-20 rounded-lg">
+      {/* Discussion */}
+      <div
+        ref={discussionRef}
+        className="mb-24 px-3 mt-10 w-full bg-white dark:bg-zinc-900 h-20 rounded-lg"
+      >
         Discussion
       </div>
     </div>

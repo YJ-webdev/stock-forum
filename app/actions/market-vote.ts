@@ -170,3 +170,33 @@ export async function submitMarketVote({
 
   return vote;
 }
+
+export async function removeMarketVote({ symbol }: { symbol: string }) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in to vote.");
+  }
+
+  const asset = await prisma.marketAsset.findUnique({
+    where: {
+      symbol,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!asset) {
+    throw new Error("Market asset not found.");
+  }
+
+  await prisma.marketVote.deleteMany({
+    where: {
+      userId: session.user.id,
+      assetId: asset.id,
+    },
+  });
+
+  return { success: true };
+}

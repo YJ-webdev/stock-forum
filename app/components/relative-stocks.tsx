@@ -1,28 +1,14 @@
 "use client";
 
-import {
-  // MarketItem,
-  SelectedRange,
-  useMarketQuote,
-} from "@/app/hooks/useMarketQuote";
+import { SelectedRange, useMarketQuote } from "@/app/hooks/useMarketQuote";
 
 import { MarketSymbolItem } from "@/lib/data/market-symbols";
 
 import { TrendSparkline } from "./trend-sparkline";
 import { Numeric } from "./numeric";
 
-// import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// import {
-//   Popover,
-//   PopoverContent,
-//   PopoverTrigger,
-// } from "@/components/ui/popover";
-
-// import { ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react";
-
-// import { useCountdown } from "../hooks/useCountdown";
 import { useSectionB } from "../context/section-b-context";
 
 interface RelativeStocksProps {
@@ -34,16 +20,6 @@ interface RelativeStockRowProps {
   item: MarketSymbolItem;
   setActiveRange: React.Dispatch<React.SetStateAction<SelectedRange>>;
 }
-
-// interface VoteButtonProps {
-//   displaySymbol: string;
-//   name: string;
-//   marketOpenMs: number;
-// }
-
-// interface VoteClosedProps {
-//   marketOpenMs: number | null;
-// }
 
 export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
   return (
@@ -116,7 +92,7 @@ function RelativeStockRow({ item, setActiveRange }: RelativeStockRowProps) {
 
   const handleRowClick = () => {
     showWrite();
-    router.push(href);
+    router.push(href, { scroll: true });
   };
 
   return (

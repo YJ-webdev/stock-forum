@@ -44,9 +44,9 @@ export default async function PostPage({ params }: PostPageProps) {
   }
 
   return (
-    <article className="mx-auto w-full max-w-3xl px-4 py-8">
+    <article className="mx-auto w-full max-w-3xl px-4 py-8 h-[calc(100vh-64px)] md:px-0">
       {/* Asset / category */}
-      <div className="mb-3 flex items-center gap-2 text-[13px] text-zinc-500 dark:text-zinc-400">
+      <div className="mb-3 flex items-center gap-2 text-[13px] text-zinc-500 dark:text-zinc-400 ">
         <span>Published in {post.asset?.name ?? "General"}</span>
 
         {post.asset?.displaySymbol && (

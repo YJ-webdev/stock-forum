@@ -19,7 +19,7 @@ import {
   MarketSymbolItem,
 } from "@/lib/data/market-symbols";
 
-import { Sparkline } from "./sparkline";
+// import { Sparkline } from "./sparkline";
 import Link from "next/link";
 import { Numeric } from "./numeric";
 import { RelativeStocks } from "./relative-stocks";
@@ -129,13 +129,13 @@ function MarketCard({
 
             {/* Curved Dynamic Sparkline */}
             <div className="-translate-y-4">
-              <Sparkline
+              {/* <Sparkline
                 points={data.history.map((p) => p.price)}
                 isPositive={data.isPositive}
                 isClosed={data.isClosed}
                 lunchStartMs={data.lunchStartMs || undefined}
                 lunchEndMs={data.lunchEndMs || undefined}
-              />
+              /> */}
             </div>
           </div>
         </div>

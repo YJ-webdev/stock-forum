@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { Button } from "./ui/button";
 import { createPost } from "@/app/actions/post";
+import Link from "next/link";
 
 interface PostEditorProps {
   isLoggedIn: boolean;
@@ -32,7 +33,7 @@ export function PostEditor({
     content: [{ type: "paragraph" }],
   });
 
-  const [editorKey] = useState(0);
+  const [editorKey, setEditorKey] = useState(0);
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = () => {
@@ -45,7 +46,48 @@ export function PostEditor({
           content: plainContent,
         });
 
-        toast.success("Post created.");
+        setTitle("");
+
+        setContent({
+          type: "doc",
+          content: [{ type: "paragraph" }],
+        });
+
+        setEditorKey((prev) => prev + 1);
+
+        const post = await createPost({
+          title,
+          content: plainContent,
+        });
+
+        const href = `/${encodeURIComponent(
+          post.asset?.symbol ?? "general",
+        )}/post/${post.slug}`;
+
+        toast.success("Post created.", {
+          description: (
+            <Link
+              href={href}
+              className="mt-1 flex items-center gap-3 rounded-md"
+            >
+              {post.thumbnail && (
+                <img
+                  src={post.thumbnail}
+                  alt=""
+                  className="h-12 w-16 shrink-0 rounded-md object-cover"
+                />
+              )}
+
+              <div className="min-w-0">
+                <p className="line-clamp-2 font-medium text-zinc-900 dark:text-zinc-100">
+                  {post.title}
+                </p>
+
+                <p className="mt-0.5 text-xs text-zinc-500">View post</p>
+              </div>
+            </Link>
+          ),
+        });
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to create post.",

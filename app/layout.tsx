@@ -74,7 +74,17 @@ export default function RootLayout({
           >
             <TooltipProvider>{children}</TooltipProvider>
 
-            <Toaster position="bottom-right" theme="system" />
+            <Toaster
+              position="bottom-right"
+              theme="system"
+              toastOptions={{
+                classNames: {
+                  toast: "px-5! py-4! text-[15px]!",
+                  title: "text-[15px]! font-medium!",
+                  description: "text-sm!",
+                },
+              }}
+            />
           </ThemeProvider>
         </SessionProvider>
       </body>
