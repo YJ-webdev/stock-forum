@@ -63,7 +63,7 @@ export function NewsCarousel({ news }: { news: NewsItem[] }) {
 
   return (
     <div className="flex flex-col w-full  px-4 py-4 mt-3">
-      <div className="flex items-center gap-1 py-1">
+      <div className="flex items-center flex-col gap-1 py-1">
         <div className="flex-1 overflow-hidden">
           <NewsRow item={news[currentIndex]} />
         </div>
@@ -71,7 +71,7 @@ export function NewsCarousel({ news }: { news: NewsItem[] }) {
 
       {/* Navigation Dots */}
 
-      <div className="flex items-center justify-center gap-0">
+      {/* <div className="flex items-center justify-center gap-0">
         {news.slice(0, 3).map((item, index) => (
           <button
             key={item.id}
@@ -88,7 +88,7 @@ export function NewsCarousel({ news }: { news: NewsItem[] }) {
             />
           </button>
         ))}
-      </div>
+      </div> */}
     </div>
   );
 }

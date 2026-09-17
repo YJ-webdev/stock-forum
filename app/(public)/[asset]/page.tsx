@@ -366,7 +366,7 @@ export default function MarketDetailPage() {
                     />
 
                     {/* Range selector */}
-                    <div className="my-4 flex flex-wrap gap-2 mx-2">
+                    <div className="my-4 flex flex-wrap gap-2 mx-4 md:mx-0">
                       {RANGES.map((range) => {
                         const isUnavailable =
                           unavailableRanges[selectedSymbol]?.has(
@@ -409,7 +409,7 @@ export default function MarketDetailPage() {
           {/* Header skeleton */}
           <div className="relative mt-4 w-full space-y-2 px-4">
             <div className="mb-2 flex w-full flex-col gap-2">
-              <Skeleton className="h-9 w-44 rounded-xl" />
+              <Skeleton className="h-8 w-44 rounded-xl" />
               <Skeleton className="h-5 w-36 rounded-full" />
             </div>
           </div>
@@ -437,7 +437,7 @@ export default function MarketDetailPage() {
         </div>
 
         {votingWindow && (
-          <div className="ml-0.5 md:mt-1.5">
+          <div className="ml-0.5 mt-2">
             <VotingCountdown
               targetMs={votingWindow.targetMs}
               type={votingWindow.countdownType}
@@ -453,7 +453,7 @@ export default function MarketDetailPage() {
       {/* Discussion */}
       <div
         ref={discussionRef}
-        className="mb-24 px-4 mt-10 w-full bg-white dark:bg-zinc-900 h-20 rounded-lg"
+        className="mb-24 px-4 mt-10 w-full bg-white dark:bg-zinc-900 rounded-lg h-100"
       >
         Discussion
       </div>

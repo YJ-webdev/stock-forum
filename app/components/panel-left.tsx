@@ -7,6 +7,7 @@ import { ModeToggle } from "./mode-toggle";
 import Link from "next/link";
 import { MostViewedPost } from "./layout-shell";
 import { Button } from "@/components/ui/button";
+import { MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 
 interface PanelLeftProps {
   isOpen: boolean;
@@ -27,58 +28,36 @@ export default function PanelLeft({ isOpen, news, posts }: PanelLeftProps) {
         <ScrollArea className="h-full w-full mt-10">
           <div className="flex min-h-full flex-col">
             {/* News Section */}
-            <div className="mt-6">
+            <div className="mt-8">
               <NewsCarousel news={news} />
             </div>
 
             {/* Topics */}
-            <div className=" p-4">
-              <p className="text-muted-foreground text-xs text-light mb-2 tracking-wider">
+            <div className=" p-4 mt-1">
+              <p className="text-muted-foreground/50 text-xs text-light mb-2 tracking-wider">
                 Trending Markets
               </p>
               <div className="flex flex-wrap gap-2 overflow-x-auto">
-                <Button className="cursor-pointer w-fit px-4 text-[14px] bg-zinc-100 dark:bg-zinc-800 hover:dark:bg-zinc-700/50 hover:bg-zinc-200/80 text-zinc-800 dark:text-zinc-300">
-                  SPX
-                </Button>
-                <Button className="cursor-pointer w-fit px-4 text-[14px] bg-zinc-100 dark:bg-zinc-800 hover:dark:bg-zinc-700/50 hover:bg-zinc-200/80 text-zinc-800 dark:text-zinc-300">
-                  NDX
-                </Button>
-                <Button className="cursor-pointer w-fit px-4 text-[14px] bg-zinc-100 dark:bg-zinc-800 hover:dark:bg-zinc-700/50 hover:bg-zinc-200/80 text-zinc-800 dark:text-zinc-300">
-                  DIJ
-                </Button>
-                <Button className="cursor-pointer w-fit px-4 text-[14px] bg-zinc-100 dark:bg-zinc-800 hover:dark:bg-zinc-700/50 hover:bg-zinc-200/80 text-zinc-800 dark:text-zinc-300">
-                  N225
-                </Button>
-                <Button className="cursor-pointer w-fit px-4 text-[14px] bg-zinc-100 dark:bg-zinc-800 hover:dark:bg-zinc-700/50 hover:bg-zinc-200/80 text-zinc-800 dark:text-zinc-300">
-                  NIFTY
-                </Button>
-                <Button className="cursor-pointer w-fit px-4 text-[14px] bg-zinc-100 dark:bg-zinc-800 hover:dark:bg-zinc-700/50 hover:bg-zinc-200/80 text-zinc-800 dark:text-zinc-300">
-                  TOPIX
-                </Button>
-                <Button className="cursor-pointer w-fit px-4 text-[14px] bg-zinc-100 dark:bg-zinc-800 hover:dark:bg-zinc-700/50 hover:bg-zinc-200/80 text-zinc-800 dark:text-zinc-300">
-                  JCI
-                </Button>
-                <Button className="cursor-pointer w-fit px-4 text-[14px] bg-zinc-100 dark:bg-zinc-800 hover:dark:bg-zinc-700/50 hover:bg-zinc-200/80 text-zinc-800 dark:text-zinc-300">
-                  SZSE
-                </Button>
-                <Button className="cursor-pointer w-fit px-4 text-[14px] bg-zinc-100 dark:bg-zinc-800 hover:dark:bg-zinc-700/50 hover:bg-zinc-200/80 text-zinc-800 dark:text-zinc-300">
-                  DAX
-                </Button>
-                <Button className="cursor-pointer w-fit px-4 text-[14px] bg-zinc-100 dark:bg-zinc-800 hover:dark:bg-zinc-700/50 hover:bg-zinc-200/80 text-zinc-800 dark:text-zinc-300">
-                  FTSE MIB
-                </Button>
-                <Button className="cursor-pointer w-fit px-4 text-[14px] bg-zinc-100 dark:bg-zinc-800 hover:dark:bg-zinc-700/50 hover:bg-zinc-200/80 text-zinc-800 dark:text-zinc-300">
-                  TASI
-                </Button>
-                <Button className="cursor-pointer w-fit px-4 text-[14px] bg-zinc-100 dark:bg-zinc-800 hover:dark:bg-zinc-700/50 hover:bg-zinc-200/80 text-zinc-800 dark:text-zinc-300">
-                  UK100
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  {Object.values(MARKET_SYMBOLS)
+                    .flat()
+                    .slice(0, 10)
+                    .map((item) => (
+                      <Link
+                        key={item.symbol}
+                        href={`/market?symbol=${encodeURIComponent(item.symbol)}`}
+                        className="w-fit cursor-pointer font-medium rounded-full bg-zinc-100 px-5 py-1.5 text-[14px] text-zinc-800 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700/50"
+                      >
+                        {item.displaySymbol}
+                      </Link>
+                    ))}
+                </div>
               </div>
             </div>
 
             {/* Topics */}
             <div className=" p-4">
-              <p className="text-muted-foreground text-xs text-light mb-2 tracking-wider">
+              <p className="text-muted-foreground/50 text-xs text-light mb-2 tracking-wider">
                 Most discussed
               </p>
               <div className="flex flex-col gap-2">

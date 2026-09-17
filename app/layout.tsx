@@ -79,9 +79,11 @@ export default function RootLayout({
               theme="system"
               toastOptions={{
                 classNames: {
-                  toast: "px-5! py-4! text-[15px]!",
-                  title: "text-[15px]! font-medium!",
-                  description: "text-sm!",
+                  toast:
+                    "bg-white! border-none! dark:bg-zinc-800! text-zinc-800! dark:text-zinc-300! px-5! py-4! text-[15px]!",
+                  title:
+                    "text-[15px]! font-medium! text-zinc-800! dark:text-zinc-300!",
+                  description: "text-sm! text-zinc-600! dark:text-zinc-400!",
                 },
               }}
             />

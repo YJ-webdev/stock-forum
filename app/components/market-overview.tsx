@@ -272,7 +272,7 @@ export default function MarketOverview() {
         </div>
       </div> */}
       <div className="flex flex-col gap-3 md:mx-4 mb-24">
-        <div className="flex gap-1 md:gap-2 space-x-2.5 md:space-x-0 flex-wrap justify-start px-2">
+        <div className="flex gap-1 md:gap-2 space-x-2.5 md:space-x-0 flex-wrap justify-start px-2 md:px-0">
           {categories.map((category) => {
             const isActive = activeTab === category;
 
