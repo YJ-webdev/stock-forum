@@ -1,11 +1,8 @@
 "use client";
 
-import {
-  ComposableMap,
-  Geographies,
-  Geography,
-  Marker,
-} from "react-simple-maps/core";
+import { ComposableMap, Geographies, Geography } from "react-simple-maps/core";
+
+import { ZoomableGroup } from "react-simple-maps/zoom";
 
 import worldData from "world-atlas/countries-110m.json";
 import { feature } from "topojson-client";
@@ -28,16 +25,6 @@ export function WorldMarketMap() {
     <section className="w-full px-3 py-5 md:px-5">
       <div className="mx-auto w-full max-w-350">
         <div className="mb-3 flex items-center justify-between">
-          <div>
-            <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100">
-              Global Markets
-            </h2>
-
-            <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
-              Major indices around the world
-            </p>
-          </div>
-
           <div className="flex rounded-md bg-zinc-100 p-0.5 dark:bg-zinc-800">
             <button
               type="button"
@@ -66,36 +53,45 @@ export function WorldMarketMap() {
         </div>
 
         <ComposableMap
-          projection="geoEqualEarth"
           width={1000}
           height={480}
+          projection="geoEqualEarth"
+          projectionConfig={{
+            scale: 180,
+          }}
           className="h-auto w-full"
         >
-          <Geographies geography={world}>
-            {({ geographies }) =>
-              geographies.map((geo) => (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  fill="#d4d4d8"
-                  stroke="#ffffff"
-                  strokeWidth={0.5}
-                />
-              ))
-            }
-          </Geographies>
-          {WORLD_MARKET_MARKERS.map((market) => (
-            <MarketMapMarker
-              key={market.symbol}
-              symbol={market.symbol}
-              name={market.name}
-              displaySymbol={market.displaySymbol}
-              coordinates={market.coordinates}
-              labelX={market.labelX}
-              labelY={market.labelY}
-              view={view}
-            />
-          ))}
+          <ZoomableGroup center={[0, 0]} zoom={1} minZoom={1} maxZoom={5}>
+            <Geographies geography={world}>
+              {({ geographies }) =>
+                geographies.map((geo) => (
+                  <Geography
+                    key={geo.rsmKey}
+                    geography={geo}
+                    className="
+    fill-zinc-200/50
+    dark:fill-zinc-800
+    outline-none
+  "
+                    stroke="none"
+                    tabIndex={-1}
+                  />
+                ))
+              }
+            </Geographies>
+            {WORLD_MARKET_MARKERS.map((market) => (
+              <MarketMapMarker
+                key={market.symbol}
+                symbol={market.symbol}
+                name={market.name}
+                displaySymbol={market.displaySymbol}
+                coordinates={market.coordinates}
+                labelX={market.labelX}
+                labelY={market.labelY}
+                view={view}
+              />
+            ))}{" "}
+          </ZoomableGroup>
         </ComposableMap>
       </div>
     </section>

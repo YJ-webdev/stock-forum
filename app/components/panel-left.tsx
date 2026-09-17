@@ -35,7 +35,7 @@ export default function PanelLeft({ isOpen, news, posts }: PanelLeftProps) {
             {/* Topics */}
             <div className=" p-4 mt-1">
               <p className="text-muted-foreground/50 text-xs text-light mb-2 tracking-wider">
-                Trending Markets
+                Major indices
               </p>
               <div className="flex flex-wrap gap-2 overflow-x-auto">
                 <div className="flex flex-wrap gap-2">

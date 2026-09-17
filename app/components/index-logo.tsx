@@ -36,13 +36,13 @@ export function IndexLogo({ symbol, size = 32 }: IndexLogoProps) {
           bgColor: "bg-blue-500/10 text-blue-500 border-blue-500/20",
           brandColor: "#2563EB",
         };
-      case "KOSPI":
-      case "^KS11":
-        return {
-          label: "KS",
-          bgColor: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
-          brandColor: "#6366F1",
-        };
+      // case "KOSPI":
+      // case "^KS11":
+      //   return {
+      //     label: "KS",
+      //     bgColor: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
+      //     brandColor: "#6366F1",
+      //   };
       default:
         return {
           label: normalizedSymbol.slice(0, 3),

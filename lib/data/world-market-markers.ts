@@ -73,14 +73,14 @@ export const WORLD_MARKET_MARKERS: WorldMarketMarker[] = [
   },
 
   // East Asia
-  {
-    symbol: "^KS11",
-    name: "KOSPI",
-    displaySymbol: "KOSPI",
-    coordinates: [127.5, 36],
-    labelX: -22,
-    labelY: -17,
-  },
+  // {
+  //   symbol: "^KS11",
+  //   name: "KOSPI",
+  //   displaySymbol: "KOSPI",
+  //   coordinates: [127.5, 36],
+  //   labelX: -22,
+  //   labelY: -17,
+  // },
   {
     symbol: "^N225",
     name: "Nikkei 225",
