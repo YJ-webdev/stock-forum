@@ -3,9 +3,9 @@ export interface WorldMarketMarker {
   name: string;
   displaySymbol: string;
   coordinates: [number, number];
-
   labelX?: number;
   labelY?: number;
+  minZoom?: number;
 }
 
 export const WORLD_MARKET_MARKERS: WorldMarketMarker[] = [
