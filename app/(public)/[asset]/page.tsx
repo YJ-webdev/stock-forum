@@ -36,12 +36,13 @@ import { Badge } from "@/components/ui/badge";
 import { BullBearGauge } from "@/app/components/bull-bear-gauge";
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
-
+const BET_AMOUNTS = [50, 100, 200, 300, 400, 500];
 export default function MarketDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const user = useCurrentUser();
 
+  const [betAmount, setBetAmount] = useState(100);
   const [showDetailChart, setShowDetailChart] = useState(false);
   const [voteLoading, setVoteLoading] = useState(true);
 
@@ -247,7 +248,6 @@ export default function MarketDetailPage() {
           </h1>
         </div>
       </div>
-
       {/* Market data */}
       {error ? (
         <div className="mt-5 md:mx-4">
@@ -411,7 +411,6 @@ export default function MarketDetailPage() {
           </div>
         </>
       )}
-
       {/* Prediction Vote Buttons */}
       {/* <div className="mx-4">
         <div className="flex items-center gap-2">
@@ -445,14 +444,85 @@ export default function MarketDetailPage() {
           </div>
         )}
       </div> */}
-
       {/* BullBearGauge */}
       {/* <BullBearGauge bullish={824} bearish={460} /> */}
+      {/* Prediction */}
 
       {/* Prediction */}
       <div className="mx-4 mt-5 w-full max-w-[560px]">
+        {/* Balance + Bet amount */}
+        <div className="mb-3 flex items-end justify-between">
+          <div>
+            <p className="text-[13px] text-zinc-500">Your points</p>
+
+            <p className="mt-0.5 text-[18px] font-semibold text-zinc-900 dark:text-zinc-200">
+              2,840
+              <span className="ml-1 text-[12px] font-normal text-zinc-500">
+                pts
+              </span>
+            </p>
+          </div>
+
+          <div className="text-right">
+            <p className="text-[13px] text-zinc-500">Bet amount</p>
+          </div>
+        </div>
+
+        {/* Bet input */}
+        <div
+          className="
+      flex h-12 w-full items-center
+      rounded-xl border border-zinc-200
+      bg-zinc-50 px-3
+      dark:border-zinc-800 dark:bg-zinc-900
+    "
+        >
+          <input
+            type="number"
+            min={0}
+            max={2840}
+            step={50}
+            value={betAmount}
+            onChange={(e) => setBetAmount(Number(e.target.value))}
+            className="
+        min-w-0 flex-1 bg-transparent
+        text-[16px] font-semibold
+        text-zinc-900 outline-none
+        dark:text-zinc-200
+      "
+          />
+
+          <span className="text-[12px] text-zinc-500">pts</span>
+        </div>
+
+        {/* Quick amounts */}
+        <div className="mt-2 grid grid-cols-6 gap-1.5">
+          {BET_AMOUNTS.map((amount) => {
+            const selected = betAmount === amount;
+
+            return (
+              <button
+                key={amount}
+                type="button"
+                onClick={() => setBetAmount(amount)}
+                className={`
+            h-8 rounded-lg text-[12px] font-medium
+            transition-colors
+            ${
+              selected
+                ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900"
+                : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            }
+          `}
+              >
+                {amount}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Vote Buttons */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-2 gap-3">
           <VoteButton
             voteDirection="BULL"
             onClick={() => handleVote("BULL")}
@@ -487,11 +557,10 @@ export default function MarketDetailPage() {
         )}
 
         {/* Gauge */}
-        <div className="mt-6 w-full">
+        <div className="mt-6">
           <BullBearGauge bullish={824} bearish={460} />
         </div>
       </div>
-
       {/* Comment */}
       <div className="mx-4 mt-10 mb-20">
         <MarketComments />
