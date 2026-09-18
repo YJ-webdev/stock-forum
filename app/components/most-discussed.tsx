@@ -1,5 +1,6 @@
-import { Heart, MessageCircle } from "lucide-react";
+import { Ellipsis, Heart, MessageCircle, ThumbsUp } from "lucide-react";
 import Link from "next/link";
+import { SlLike } from "react-icons/sl";
 
 const MOST_DISCUSSION = [
   {
@@ -59,9 +60,9 @@ export function MostDiscussed() {
             <span
               className="
     inline-flex rounded-full
-    bg-zinc-200/80 px-2.5 py-1
+    px-2.5 py-1 border border-zinc-400 dark:border-zinc-600
     text-[12px] font-medium text-zinc-600
-    dark:bg-zinc-700/60 dark:text-zinc-300
+     dark:text-zinc-300
   "
             >
               {item.displaySymbol}
@@ -72,7 +73,7 @@ export function MostDiscussed() {
           <p
             className="
                 line-clamp-2
-                text-[15px] font-medium leading-[21px]
+                text-[15px] font-normal leading-normal
                 text-zinc-900 dark:text-zinc-200
               "
           >
@@ -87,18 +88,25 @@ export function MostDiscussed() {
                 dark:text-zinc-500
               "
           >
-            <span className="flex items-center gap-1">
-              <Heart className="h-3.5 w-3.5" />
+            <span className="flex items-center gap-1 ml-auto jakarta">
+              <ThumbsUp
+                className="h-4 w-4 fill-zinc-800 text-white dark:text-zinc-800 dark:fill-zinc-300 "
+                strokeWidth={1.5}
+              />
               {item.likes}
             </span>
 
-            <span className="flex items-center gap-1">
-              <MessageCircle className="h-3.5 w-3.5" />
+            <span className="flex items-center gap-1 jakarta">
+              <MessageCircle
+                className="h-4 w-4 fill-zinc-800 text-muted dark:fill-zinc-300 "
+                strokeWidth={1.5}
+              />
               {item.replies}
             </span>
           </div>
         </Link>
       ))}
+      <Ellipsis className="mx-auto h-4 w-4 text-zinc-400 dark:text-zinc-600" />
     </div>
   );
 }

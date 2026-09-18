@@ -209,6 +209,7 @@ export default function LayoutShell({
               <ResizablePanel
                 panelRef={panelBRef}
                 defaultSize="30%"
+                minSize="1P%"
                 className="z-20 
     bg-white dark:bg-zinc-900
     border-l border-gray-100 dark:border-zinc-800

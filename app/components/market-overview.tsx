@@ -15,7 +15,7 @@ import {
   MARKET_SYMBOLS,
   CRYPTO_SYMBOLS,
   CURRENCY_SYMBOLS,
-  FUTURES_SYMBOLS,
+  COMMODITIES_SYMBOLS,
   MarketSymbolItem,
 } from "@/lib/data/market-symbols";
 
@@ -149,7 +149,7 @@ export default function MarketOverview() {
     ...MARKET_SYMBOLS,
     Crypto: CRYPTO_SYMBOLS,
     Currency: CURRENCY_SYMBOLS,
-    Futures: FUTURES_SYMBOLS,
+    Commodities: COMMODITIES_SYMBOLS,
   };
 
   const categories = Object.keys(MARKET_CATEGORIES);

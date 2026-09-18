@@ -9,7 +9,7 @@ import { MostViewedPost } from "./layout-shell";
 import { Button } from "@/components/ui/button";
 import { MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { MostDiscussed } from "./most-discussed";
-import { MajorIndices } from "./major-indices";
+import { PopularBoards } from "./major-indices";
 
 interface PanelLeftProps {
   isOpen: boolean;
@@ -28,24 +28,24 @@ export default function PanelLeft({ isOpen, news, posts }: PanelLeftProps) {
         }`}
       >
         <ScrollArea className="h-full w-full mt-10">
-          <div className="flex min-h-full flex-col">
+          <div className="flex min-h-full flex-col pb-20">
             {/* News Section */}
-            <div className="mt-8">
+            {/* <div className="mt-8">
               <NewsCarousel news={news} />
-            </div>
+            </div> */}
 
             {/* Topics */}
-            <div className=" p-4 mt-1">
-              <p className="text-muted-foreground/50 text-xs text-light mb-2 tracking-wider">
-                Major indices
+            <div className=" mt-12">
+              <p className="px-4 text-muted-foreground/50 text-xs text-light mb-3.5 tracking-wider">
+                Popular boards
               </p>
-              <MajorIndices />
+              <PopularBoards />
             </div>
 
             {/* Topics */}
-            <div className=" p-4">
-              <p className="text-muted-foreground/50 text-xs text-light mb-2 tracking-wider">
-                Most discussed
+            <div className=" p-4 mt-2">
+              <p className="text-muted-foreground/50  text-xs text-light mb-2 tracking-wider">
+                Popular comments
               </p>
               <MostDiscussed />
             </div>

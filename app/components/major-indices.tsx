@@ -1,51 +1,61 @@
+"use client";
+
+import { useState } from "react";
+import { Globe } from "lucide-react";
 import Link from "next/link";
 
-const MAJOR_INDICES = [
-  { symbol: "^GSPC", displaySymbol: "SPX", percent: 0.61 },
-  { symbol: "^NDX", displaySymbol: "NDX", percent: 1.18 },
-  { symbol: "^DJI", displaySymbol: "DJI", percent: 0.42 },
-  { symbol: "^RUT", displaySymbol: "RUT", percent: -0.21 },
-  { symbol: "^GSPTSE", displaySymbol: "TSX", percent: 0.35 },
-  { symbol: "^BVSP", displaySymbol: "IBOV", percent: 0.73 },
-  { symbol: "^MXX", displaySymbol: "MEXBOL", percent: -0.06 },
-  { symbol: "^N225", displaySymbol: "N225", percent: 1.71 },
-  { symbol: "1306.T", displaySymbol: "TOPIX", percent: 1.12 },
+const POPULAR_BOARDS = [
+  { symbol: "^GSPC", name: "S&P 500", newPosts: 12 },
+  { symbol: "^NDX", name: "Nasdaq 100", newPosts: 8 },
+  { symbol: "^DJI", name: "Dow Jones", newPosts: 5 },
+  { symbol: "^N225", name: "Nikkei 225", newPosts: 4 },
+  { symbol: "BTC-USD", name: "Bitcoin", newPosts: 3 },
+  { symbol: "GC=F", name: "Gold", newPosts: 2 },
+  { symbol: "^KS11", name: "KOSPI", newPosts: 2 },
+  { symbol: "^HSI", name: "Hang Seng", newPosts: 1 },
 ];
 
-export function MajorIndices() {
+export function PopularBoards() {
   return (
-    <div className="grid grid-cols-3 gap-x-1 gap-y-0.5">
-      {MAJOR_INDICES.map((item) => {
-        const positive = item.percent >= 0;
-
-        return (
-          <Link
-            key={item.symbol}
-            href={`/market?symbol=${encodeURIComponent(item.symbol)}`}
+    <div className="flex flex-col gap-0.5">
+      {POPULAR_BOARDS.map((item) => (
+        <Link
+          key={item.symbol}
+          href={`/market?symbol=${encodeURIComponent(item.symbol)}`}
+          className="
+                    group flex min-w-0 items-center
+                    rounded-none
+                    px-4 py-1.5
+                    text-zinc-700
+                    transition-colors
+                     hover:text-zinc-900
+                    dark:text-zinc-300
+                    
+                    dark:hover:text-zinc-200
+                  "
+        >
+          <Globe
             className="
-                group rounded-lg px-2 py-2
-                transition-colors
-                hover:bg-zinc-100
-                dark:hover:bg-zinc-800/60
-              "
-          >
-            <div className="text-[14px] font-medium text-zinc-800 dark:text-zinc-200">
-              {item.displaySymbol}
-            </div>
+                      mr-2 h-4.75 w-4.75 shrink-0
+                      text-zinc-400
+                      group-hover:text-zinc-500
+                      dark:text-zinc-600
+                      dark:group-hover:text-zinc-400
+                    "
+            strokeWidth={1}
+          />
 
-            <div
-              className={`mt-0.5 text-[12px] font-medium ${
-                positive
-                  ? "text-emerald-600 dark:text-emerald-500"
-                  : "text-rose-600 dark:text-rose-500"
-              }`}
-            >
-              {positive ? "+" : ""}
-              {item.percent.toFixed(2)}%
-            </div>
-          </Link>
-        );
-      })}
+          <span className="min-w-0 flex-1 truncate text-[16px] font-medium dark:font-normal">
+            {item.name}
+          </span>
+
+          {item.newPosts > 0 && (
+            <p className="jakarta ml-auto text-[12px] font-light text-zinc-600 dark:text-zinc-500">
+              {item.newPosts} New
+            </p>
+          )}
+        </Link>
+      ))}
     </div>
   );
 }

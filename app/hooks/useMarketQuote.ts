@@ -11,7 +11,12 @@ import {
 // TYPES
 // -----------------------------------------------------------------------------
 
-export type AssetType = "index" | "stock" | "crypto" | "currency" | "futures";
+export type AssetType =
+  | "index"
+  | "stock"
+  | "crypto"
+  | "currency"
+  | "commodities";
 
 export type ChartRange =
   | "1D"

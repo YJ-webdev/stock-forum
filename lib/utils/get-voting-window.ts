@@ -133,7 +133,7 @@ export function getVotingWindow(
   const item = ALL_MARKET_SYMBOLS.find((market) => market.symbol === symbol);
 
   /**
-   * Crypto / currency / futures currently don't use the
+   * Crypto / currency / commodities currently don't use the
    * equity marketSchedule system.
    */
   if (!item?.marketSchedule) {

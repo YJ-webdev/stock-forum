@@ -1,6 +1,11 @@
 export type MarketRegion = "America" | "APEC" | "EMEA" | "Global";
 
-export type AssetType = "index" | "stock" | "crypto" | "currency" | "futures";
+export type AssetType =
+  | "index"
+  | "stock"
+  | "crypto"
+  | "currency"
+  | "commodities";
 
 // -----------------------------------------------------------------------------
 // MARKET SCHEDULE
@@ -753,20 +758,19 @@ export const CURRENCY_SYMBOLS: MarketSymbolItem[] = [
 ];
 
 // -----------------------------------------------------------------------------
-// FUTURES
-//
-// Futures also have their own sessions and maintenance breaks.
+
+// Commodities also have their own sessions and maintenance breaks.
 // We'll handle those separately.
 // -----------------------------------------------------------------------------
 
-export const FUTURES_SYMBOLS: MarketSymbolItem[] = [
+export const COMMODITIES_SYMBOLS: MarketSymbolItem[] = [
   {
     name: "Crude Oil Futures",
     symbol: "CL=F",
     displaySymbol: "OIL",
     country: "GLOBAL",
     region: "Global",
-    assetType: "futures",
+    assetType: "commodities",
     timezone: "America/New_York",
   },
 
@@ -776,7 +780,7 @@ export const FUTURES_SYMBOLS: MarketSymbolItem[] = [
     displaySymbol: "GOLD",
     country: "GLOBAL",
     region: "Global",
-    assetType: "futures",
+    assetType: "commodities",
     timezone: "America/New_York",
   },
 
@@ -786,7 +790,7 @@ export const FUTURES_SYMBOLS: MarketSymbolItem[] = [
     displaySymbol: "SILVER",
     country: "GLOBAL",
     region: "Global",
-    assetType: "futures",
+    assetType: "commodities",
     timezone: "America/New_York",
   },
 
@@ -796,7 +800,7 @@ export const FUTURES_SYMBOLS: MarketSymbolItem[] = [
     displaySymbol: "GAS",
     country: "GLOBAL",
     region: "Global",
-    assetType: "futures",
+    assetType: "commodities",
     timezone: "America/New_York",
   },
 ];
@@ -809,5 +813,5 @@ export const ALL_MARKET_SYMBOLS: MarketSymbolItem[] = [
   ...Object.values(MARKET_SYMBOLS).flat(),
   ...CRYPTO_SYMBOLS,
   ...CURRENCY_SYMBOLS,
-  ...FUTURES_SYMBOLS,
+  ...COMMODITIES_SYMBOLS,
 ];
