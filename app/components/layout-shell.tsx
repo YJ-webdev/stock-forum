@@ -250,7 +250,7 @@ export default function LayoutShell({
                       />
                     )}
                     {!onWrite && !onAccount && !onNotification && (
-                      <TopTraders />
+                      <>{/* <TopTraders /> */}</>
                     )}
                   </div>
                 </div>
