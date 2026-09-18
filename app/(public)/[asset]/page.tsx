@@ -413,7 +413,7 @@ export default function MarketDetailPage() {
       )}
 
       {/* Prediction Vote Buttons */}
-      <div className="mx-4">
+      {/* <div className="mx-4">
         <div className="flex items-center gap-2">
           <VoteButton
             voteDirection="BULL"
@@ -444,10 +444,53 @@ export default function MarketDetailPage() {
             />
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* BullBearGauge */}
-      <BullBearGauge bullish={824} bearish={460} />
+      {/* <BullBearGauge bullish={824} bearish={460} /> */}
+
+      {/* Prediction */}
+      <div className="mx-4 mt-5 w-full max-w-[560px]">
+        {/* Vote Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <VoteButton
+            voteDirection="BULL"
+            onClick={() => handleVote("BULL")}
+            selectedVote={selectedVote}
+            isPending={voteLoading}
+            isMarketOpen={isMarketOpen}
+            className="h-14 w-full rounded-xl text-[16px] font-semibold"
+          />
+
+          <VoteButton
+            voteDirection="BEAR"
+            onClick={() => handleVote("BEAR")}
+            selectedVote={selectedVote}
+            isPending={voteLoading}
+            isMarketOpen={isMarketOpen}
+            className="h-14 w-full rounded-xl text-[16px] font-semibold"
+          />
+        </div>
+
+        {/* Countdown */}
+        {votingWindow && (
+          <div className="mt-2">
+            <VotingCountdown
+              targetMs={votingWindow.targetMs}
+              type={votingWindow.countdownType}
+              showCountdown={votingWindow.showCountdown}
+              isMarketOpen={votingWindow.isMarketOpen}
+              onExpire={handleCountdownExpire}
+              selectedVote={selectedVote}
+            />
+          </div>
+        )}
+
+        {/* Gauge */}
+        <div className="mt-6 w-full">
+          <BullBearGauge bullish={824} bearish={460} />
+        </div>
+      </div>
 
       {/* Comment */}
       <div className="mx-4 mt-10 mb-20">

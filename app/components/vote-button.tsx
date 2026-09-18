@@ -7,6 +7,7 @@ interface VoteButtonProps {
   isPending: boolean;
   isMarketOpen: boolean;
   onClick?: () => void;
+  className?: string;
 }
 
 export function VoteButton({
@@ -15,6 +16,7 @@ export function VoteButton({
   isPending,
   isMarketOpen,
   onClick,
+  className,
 }: VoteButtonProps) {
   return (
     <Button
@@ -28,7 +30,7 @@ export function VoteButton({
        
         ${selectedVote === null || selectedVote === voteDirection ? "opacity-100" : "opacity-50"}
         ${!isPending && !isMarketOpen && selectedVote !== voteDirection ? "cursor-pointer hover:opacity-100!" : ""}
-   
+   ${className}
       `}
     >
       {voteDirection === "BULL" ? "Bullish" : "Bearish"}

@@ -12,7 +12,7 @@ export function BullBearGauge({
   const bearishPercent = 100 - bullishPercent;
 
   return (
-    <div className="mx-4 mt-6 w-full max-w-md">
+    <div className="mt-6 w-full">
       <div className="mb-1.5 flex items-center justify-between text-[13px]">
         <span className="font-medium text-emerald-600">
           Bullish {bullishPercent}%
@@ -23,7 +23,7 @@ export function BullBearGauge({
         </span>
       </div>
 
-      <div className="flex h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+      <div className="flex h-6 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
         <div
           className="bg-emerald-600 transition-[width] duration-300"
           style={{ width: `${bullishPercent}%` }}
