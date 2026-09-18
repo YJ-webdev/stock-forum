@@ -8,6 +8,8 @@ import Link from "next/link";
 import { MostViewedPost } from "./layout-shell";
 import { Button } from "@/components/ui/button";
 import { MARKET_SYMBOLS } from "@/lib/data/market-symbols";
+import { MostDiscussed } from "./most-discussed";
+import { MajorIndices } from "./major-indices";
 
 interface PanelLeftProps {
   isOpen: boolean;
@@ -37,22 +39,7 @@ export default function PanelLeft({ isOpen, news, posts }: PanelLeftProps) {
               <p className="text-muted-foreground/50 text-xs text-light mb-2 tracking-wider">
                 Major indices
               </p>
-              <div className="flex flex-wrap gap-2 overflow-x-auto">
-                <div className="flex flex-wrap gap-2">
-                  {Object.values(MARKET_SYMBOLS)
-                    .flat()
-                    .slice(0, 10)
-                    .map((item) => (
-                      <Link
-                        key={item.symbol}
-                        href={`/market?symbol=${encodeURIComponent(item.symbol)}`}
-                        className="w-fit cursor-pointer font-medium rounded-full bg-zinc-100 px-5 py-1.5 text-[14px] text-zinc-800 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700/50"
-                      >
-                        {item.displaySymbol}
-                      </Link>
-                    ))}
-                </div>
-              </div>
+              <MajorIndices />
             </div>
 
             {/* Topics */}
@@ -60,24 +47,7 @@ export default function PanelLeft({ isOpen, news, posts }: PanelLeftProps) {
               <p className="text-muted-foreground/50 text-xs text-light mb-2 tracking-wider">
                 Most discussed
               </p>
-              <div className="flex flex-col gap-2">
-                {posts?.map((post) => (
-                  <Link
-                    key={post.id}
-                    href={`/${post.assetSymbol ?? "general"}/post/${post.slug}`}
-                  >
-                    <p className="text-lg">{post.title}</p>
-
-                    {/* {post.thumbnail && (
-                      <img
-                        src={post.thumbnail}
-                        alt={post.title ?? ""}
-                        className="aspect-7/3 w-full object-cover"
-                      />
-                    )} */}
-                  </Link>
-                ))}
-              </div>
+              <MostDiscussed />
             </div>
 
             <div className="md:hidden mt-auto p-3 -translate-y-10 self-end">

@@ -12,13 +12,14 @@ import {
 import { ComposableMap, Geographies, Geography } from "react-simple-maps/core";
 
 import { geoEqualEarth } from "d3-geo";
-import { feature } from "topojson-client";
 import worldData from "world-atlas/countries-110m.json";
+import { feature } from "topojson-client";
 
 import type { GeometryCollection, Topology } from "topojson-specification";
 
 import { WORLD_MARKET_MARKERS } from "@/lib/data/world-market-markers";
 import { MarketMapMarker } from "./market-map-marker";
+// import { BLOB_WORLD } from "@/lib/data/blob-world";
 
 type MapView = "market" | "sentiment";
 
@@ -480,10 +481,10 @@ export function WorldMarketMap() {
                       stroke="none"
                       tabIndex={-1}
                       className="
-                          fill-zinc-200/50
-                          outline-none
-                          dark:fill-zinc-800
-                        "
+    fill-zinc-200/60
+    outline-none
+    dark:fill-zinc-800
+  "
                     />
                   ))
                 }

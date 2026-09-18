@@ -19,6 +19,7 @@ import { AccountPanel } from "./account-panel";
 import { NotificationPanel } from "./notification-panel";
 import { BreadCrumbs } from "./breadcrumbs";
 import { User } from "@/types/user";
+import { TopTraders } from "./top-trader";
 
 export interface MostViewedPost {
   id: string;
@@ -248,11 +249,7 @@ export default function LayoutShell({
                       />
                     )}
                     {!onWrite && !onAccount && !onNotification && (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <div className="text-center text-sm text-muted-foreground">
-                          Write a post or manage your account.
-                        </div>
-                      </div>
+                      <TopTraders />
                     )}
                   </div>
                 </div>
