@@ -43,7 +43,7 @@ export default function PanelLeft({ isOpen, news, posts }: PanelLeftProps) {
             </div>
 
             {/* Topics */}
-            <div className=" p-4 mt-2">
+            <div className=" p-4 mt-3">
               <p className="text-muted-foreground/50  text-xs text-light mb-2 tracking-wider">
                 Popular comments
               </p>

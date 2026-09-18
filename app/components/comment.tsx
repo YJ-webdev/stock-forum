@@ -76,9 +76,11 @@ export function MarketComments() {
   return (
     <section className="w-full">
       <div className="mb-6 flex items-center gap-2">
-        <h2 className="text-lg font-medium">Comment</h2>
+        <h2 className="text-[13px] font-normal">Comment</h2>
 
-        <span className="text-sm text-zinc-500">{DUMMY_COMMENTS.length}</span>
+        <span className="text-sm jakarta text-zinc-500">
+          {DUMMY_COMMENTS.length}
+        </span>
       </div>
 
       {/* Comment input */}

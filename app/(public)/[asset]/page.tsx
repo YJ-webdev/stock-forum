@@ -449,116 +449,120 @@ export default function MarketDetailPage() {
       {/* Prediction */}
 
       {/* Prediction */}
-      <div className="mx-4 mt-5 w-full max-w-[560px]">
-        {/* Balance + Bet amount */}
-        <div className="mb-3 flex items-end justify-between">
-          <div>
-            <p className="text-[13px] text-zinc-500">Your points</p>
+      {/* Prediction */}
+      <div className="mt-5 w-full px-4">
+        <div className="flex w-full items-center gap-8">
+          {/* Voting */}
+          <div className="min-w-0 flex-1">
+            {/* Balance + Bet amount */}
+            <div className="mb-3 flex items-end justify-between">
+              <div>
+                <p className="text-[13px] text-zinc-500">Your points</p>
 
-            <p className="mt-0.5 text-[18px] font-semibold text-zinc-900 dark:text-zinc-200">
-              2,840
-              <span className="ml-1 text-[12px] font-normal text-zinc-500">
-                pts
-              </span>
-            </p>
+                <p className="mt-0.5 text-[18px] font-semibold text-zinc-900 dark:text-zinc-200">
+                  2,840
+                  <span className="ml-1 text-[12px] font-normal text-zinc-500">
+                    pts
+                  </span>
+                </p>
+              </div>
+
+              <p className="text-[13px] text-zinc-500">Bet amount</p>
+            </div>
+
+            {/* Bet input */}
+            <div
+              className="
+          flex h-12 w-full items-center
+          rounded-xl border border-zinc-200
+          bg-zinc-50 px-3
+          dark:border-zinc-800 dark:bg-zinc-900
+        "
+            >
+              <input
+                type="number"
+                min={0}
+                max={2840}
+                step={50}
+                value={betAmount}
+                onChange={(e) => setBetAmount(Number(e.target.value))}
+                className="
+            min-w-0 flex-1 bg-transparent
+            text-[16px] font-semibold
+            text-zinc-900 outline-none
+            dark:text-zinc-200
+          "
+              />
+
+              <span className="text-[12px] text-zinc-500">pts</span>
+            </div>
+
+            {/* Quick amounts */}
+            <div className="mt-2 grid grid-cols-6 gap-1.5">
+              {BET_AMOUNTS.map((amount) => {
+                const selected = betAmount === amount;
+
+                return (
+                  <button
+                    key={amount}
+                    type="button"
+                    onClick={() => setBetAmount(amount)}
+                    className={`
+                h-8 rounded-lg text-[12px] font-medium
+                transition-colors
+                ${
+                  selected
+                    ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900"
+                    : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                }
+              `}
+                  >
+                    {amount}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Vote Buttons */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <VoteButton
+                voteDirection="BULL"
+                onClick={() => handleVote("BULL")}
+                selectedVote={selectedVote}
+                isPending={voteLoading}
+                isMarketOpen={isMarketOpen}
+                className="h-14 w-full rounded-xl text-[16px] font-semibold"
+              />
+
+              <VoteButton
+                voteDirection="BEAR"
+                onClick={() => handleVote("BEAR")}
+                selectedVote={selectedVote}
+                isPending={voteLoading}
+                isMarketOpen={isMarketOpen}
+                className="h-14 w-full rounded-xl text-[16px] font-semibold"
+              />
+            </div>
+
+            {/* Countdown */}
+            {votingWindow && (
+              <div className="mt-2">
+                <VotingCountdown
+                  targetMs={votingWindow.targetMs}
+                  type={votingWindow.countdownType}
+                  showCountdown={votingWindow.showCountdown}
+                  isMarketOpen={votingWindow.isMarketOpen}
+                  onExpire={handleCountdownExpire}
+                  selectedVote={selectedVote}
+                />
+              </div>
+            )}
           </div>
 
-          <div className="text-right">
-            <p className="text-[13px] text-zinc-500">Bet amount</p>
+          {/* Gauge */}
+          <div className="flex shrink-0 items-center justify-center px-6">
+            <BullBearGauge bullish={824} bearish={460} />
           </div>
-        </div>
-
-        {/* Bet input */}
-        <div
-          className="
-      flex h-12 w-full items-center
-      rounded-xl border border-zinc-200
-      bg-zinc-50 px-3
-      dark:border-zinc-800 dark:bg-zinc-900
-    "
-        >
-          <input
-            type="number"
-            min={0}
-            max={2840}
-            step={50}
-            value={betAmount}
-            onChange={(e) => setBetAmount(Number(e.target.value))}
-            className="
-        min-w-0 flex-1 bg-transparent
-        text-[16px] font-semibold
-        text-zinc-900 outline-none
-        dark:text-zinc-200
-      "
-          />
-
-          <span className="text-[12px] text-zinc-500">pts</span>
-        </div>
-
-        {/* Quick amounts */}
-        <div className="mt-2 grid grid-cols-6 gap-1.5">
-          {BET_AMOUNTS.map((amount) => {
-            const selected = betAmount === amount;
-
-            return (
-              <button
-                key={amount}
-                type="button"
-                onClick={() => setBetAmount(amount)}
-                className={`
-            h-8 rounded-lg text-[12px] font-medium
-            transition-colors
-            ${
-              selected
-                ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900"
-                : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400 dark:hover:bg-zinc-800"
-            }
-          `}
-              >
-                {amount}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Vote Buttons */}
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <VoteButton
-            voteDirection="BULL"
-            onClick={() => handleVote("BULL")}
-            selectedVote={selectedVote}
-            isPending={voteLoading}
-            isMarketOpen={isMarketOpen}
-            className="h-14 w-full rounded-xl text-[16px] font-semibold"
-          />
-
-          <VoteButton
-            voteDirection="BEAR"
-            onClick={() => handleVote("BEAR")}
-            selectedVote={selectedVote}
-            isPending={voteLoading}
-            isMarketOpen={isMarketOpen}
-            className="h-14 w-full rounded-xl text-[16px] font-semibold"
-          />
-        </div>
-
-        {/* Countdown */}
-        {votingWindow && (
-          <div className="mt-2">
-            <VotingCountdown
-              targetMs={votingWindow.targetMs}
-              type={votingWindow.countdownType}
-              showCountdown={votingWindow.showCountdown}
-              isMarketOpen={votingWindow.isMarketOpen}
-              onExpire={handleCountdownExpire}
-              selectedVote={selectedVote}
-            />
-          </div>
-        )}
-
-        {/* Gauge */}
-        <div className="mt-6">
-          <BullBearGauge bullish={824} bearish={460} />
         </div>
       </div>
       {/* Comment */}
