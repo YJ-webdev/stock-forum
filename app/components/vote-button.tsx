@@ -33,6 +33,7 @@ export function VoteButton({
    ${className}
       `}
     >
+      {/* {voteDirection === selectedVote && "Voted "} */}
       {voteDirection === "BULL" ? "Bullish" : "Bearish"}
     </Button>
   );

@@ -84,7 +84,7 @@ export default function MarketDetailPage() {
     selectedDisplaySymbol,
     selectedAssetType as AssetType,
     0,
-    activeRange === "1D" ? "1m" : undefined,
+    activeRange === "1D" ? "5m" : undefined,
   );
 
   // ------------------------------------------------------------
@@ -455,9 +455,9 @@ export default function MarketDetailPage() {
             {/* Balance + Bet amount */}
             <div className="mb-3 flex items-end justify-between">
               <div>
-                <p className="text-[13px] text-zinc-500">Your points</p>
+                <p className="text-[13px]  text-zinc-500">Your points</p>
 
-                <p className="mt-0.5 text-[18px] font-semibold text-zinc-900 dark:text-zinc-200">
+                <p className="mt-0.5 text-[18px] jakarta font-medium text-zinc-800 dark:text-zinc-300">
                   2,840
                   <span className="ml-1 text-[12px] font-normal text-zinc-500">
                     pts
@@ -474,7 +474,7 @@ export default function MarketDetailPage() {
           flex h-12 w-full items-center
           rounded-xl border border-zinc-200
           bg-zinc-50 px-3
-          dark:border-zinc-800 dark:bg-zinc-900
+          dark:border-zinc-800 dark:bg-zinc-800
         "
             >
               <input
@@ -485,7 +485,7 @@ export default function MarketDetailPage() {
                 value={betAmount}
                 onChange={(e) => setBetAmount(Number(e.target.value))}
                 className="
-            min-w-0 flex-1 bg-transparent
+            min-w-0 flex-1 jakarta bg-transparent
             text-[16px] font-semibold
             text-zinc-900 outline-none
             dark:text-zinc-200
@@ -506,11 +506,11 @@ export default function MarketDetailPage() {
                     type="button"
                     onClick={() => setBetAmount(amount)}
                     className={`
-                h-8 rounded-lg text-[12px] font-medium
+                h-8 rounded-lg text-[12px] font-medium jakarta
                 transition-colors
                 ${
                   selected
-                    ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900"
+                    ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
                     : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400 dark:hover:bg-zinc-800"
                 }
               `}
@@ -544,7 +544,7 @@ export default function MarketDetailPage() {
 
             {/* Countdown */}
             {votingWindow && (
-              <div className="mt-2">
+              <div className="mt-2 jakarta">
                 <VotingCountdown
                   targetMs={votingWindow.targetMs}
                   type={votingWindow.countdownType}
@@ -559,7 +559,7 @@ export default function MarketDetailPage() {
 
           {/* Gauge */}
           {/* Gauge - 1/3 */}
-          <div className="col-span-1 flex items-center justify-center">
+          <div className="col-span-1 jakarta flex items-center justify-center">
             <BullBearGauge bullish={824} bearish={460} />
           </div>
         </div>

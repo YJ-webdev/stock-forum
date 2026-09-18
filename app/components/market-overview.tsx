@@ -147,7 +147,7 @@ function MarketCard({
 export default function MarketOverview() {
   const MARKET_CATEGORIES: Record<string, MarketSymbolItem[]> = {
     ...MARKET_SYMBOLS,
-    Crypto: CRYPTO_SYMBOLS,
+    // Crypto: CRYPTO_SYMBOLS,
   };
 
   const categories = Object.keys(MARKET_CATEGORIES);

@@ -62,7 +62,7 @@ export function MostDiscussed() {
     inline-flex rounded-full
     px-2.5 py-1 border border-zinc-400 dark:border-zinc-600
     text-[12px] font-medium text-zinc-600
-     dark:text-zinc-300
+     dark:text-zinc-300 bg-transparent
   "
             >
               {item.displaySymbol}
@@ -90,7 +90,7 @@ export function MostDiscussed() {
           >
             <span className="flex items-center gap-1 ml-auto jakarta">
               <ThumbsUp
-                className="h-4 w-4 fill-zinc-800 text-white dark:text-zinc-800 dark:fill-zinc-300 "
+                className="h-4 w-4 fill-none text-zinc-600 dark:text-muted dark:fill-zinc-300 "
                 strokeWidth={1.5}
               />
               {item.likes}
@@ -98,7 +98,7 @@ export function MostDiscussed() {
 
             <span className="flex items-center gap-1 jakarta">
               <MessageCircle
-                className="h-4 w-4 fill-zinc-800 text-muted dark:fill-zinc-300 "
+                className="h-4 w-4 fill-none text-zinc-600 dark:text-muted dark:fill-zinc-300 "
                 strokeWidth={1.5}
               />
               {item.replies}

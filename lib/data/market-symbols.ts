@@ -1,4 +1,4 @@
-export type MarketRegion = "America" | "APEC" | "EMEA" | "Global";
+export type MarketRegion = "America" | "APEC" | "EMEA" | "Global" | "Africa";
 
 export type AssetType =
   | "index"
@@ -34,7 +34,8 @@ export type MarketSchedule =
   | "ES_EQUITY"
   | "NL_EQUITY"
   | "SE_EQUITY"
-  | "SA_EQUITY";
+  | "SA_EQUITY"
+  | "ZA_EQUITY";
 
 export interface TradingHours {
   timezone: string;
@@ -221,6 +222,12 @@ export const TRADING_HOURS: Record<MarketSchedule, TradingHours> = {
     timezone: "Asia/Riyadh",
     open: "10:00",
     close: "15:00",
+  },
+
+  ZA_EQUITY: {
+    timezone: "Africa/Johannesburg",
+    open: "09:00",
+    close: "17:00",
   },
 };
 
@@ -451,16 +458,16 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       marketSchedule: "ID_EQUITY",
     },
 
-    {
-      name: "Shenzhen Component",
-      symbol: "399001.SZ",
-      displaySymbol: "SZSE",
-      country: "CN",
-      region: "APEC",
-      assetType: "index",
-      timezone: "Asia/Shanghai",
-      marketSchedule: "CN_EQUITY",
-    },
+    // {
+    //   name: "Shenzhen Component",
+    //   symbol: "399001.SZ",
+    //   displaySymbol: "SZSE",
+    //   country: "CN",
+    //   region: "APEC",
+    //   assetType: "index",
+    //   timezone: "Asia/Shanghai",
+    //   marketSchedule: "CN_EQUITY",
+    // },
   ],
 
   // ===========================================================================
@@ -478,7 +485,6 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       timezone: "Europe/Berlin",
       marketSchedule: "EU_EQUITY",
     },
-
     {
       name: "DAX",
       symbol: "^GDAXI",
@@ -577,7 +583,29 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       timezone: "Asia/Riyadh",
       marketSchedule: "SA_EQUITY",
     },
+    {
+      name: "South Africa Top 40",
+      symbol: "^JN0U.JO",
+      displaySymbol: "SA40",
+      country: "ZA",
+      region: "EMEA",
+      assetType: "index",
+      timezone: "Africa/Johannesburg",
+      marketSchedule: "ZA_EQUITY",
+    },
   ],
+  // AFRICA: [
+  //   {
+  //     name: "South Africa Top 40",
+  //     symbol: "^JN0U.JO",
+  //     displaySymbol: "SA40",
+  //     country: "ZA",
+  //     region: "Africa",
+  //     assetType: "index",
+  //     timezone: "Africa/Johannesburg",
+  //     marketSchedule: "ZA_EQUITY",
+  //   },
+  // ],
 };
 
 // -----------------------------------------------------------------------------

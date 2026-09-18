@@ -92,6 +92,8 @@ function RelativeStockRow({ item, setActiveRange }: RelativeStockRowProps) {
     "1D",
     item.displaySymbol,
     item.assetType,
+    0,
+    "15m",
   );
 
   const priceColor = quote?.isPositive

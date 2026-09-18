@@ -76,7 +76,9 @@ export function MarketComments() {
   return (
     <section className="w-full">
       <div className="mb-6 flex items-center gap-2">
-        <h2 className="text-[13px] font-normal">Comment</h2>
+        <h2 className="text-[13px] text-zinc-600 dark:text-zinc-500">
+          Comment
+        </h2>
 
         <span className="text-sm jakarta text-zinc-500">
           {DUMMY_COMMENTS.length}
