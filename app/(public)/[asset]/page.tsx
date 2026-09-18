@@ -446,14 +446,12 @@ export default function MarketDetailPage() {
       </div> */}
       {/* BullBearGauge */}
       {/* <BullBearGauge bullish={824} bearish={460} /> */}
-      {/* Prediction */}
 
       {/* Prediction */}
-      {/* Prediction */}
       <div className="mt-5 w-full px-4">
-        <div className="flex w-full items-center gap-8">
-          {/* Voting */}
-          <div className="min-w-0 flex-1">
+        <div className="grid w-full grid-cols-3 items-center gap-6">
+          {/* Voting - 2/3 */}
+          <div className="col-span-2 min-w-0">
             {/* Balance + Bet amount */}
             <div className="mb-3 flex items-end justify-between">
               <div>
@@ -560,7 +558,8 @@ export default function MarketDetailPage() {
           </div>
 
           {/* Gauge */}
-          <div className="flex shrink-0 items-center justify-center px-6">
+          {/* Gauge - 1/3 */}
+          <div className="col-span-1 flex items-center justify-center">
             <BullBearGauge bullish={824} bearish={460} />
           </div>
         </div>

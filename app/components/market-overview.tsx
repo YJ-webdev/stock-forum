@@ -148,11 +148,10 @@ export default function MarketOverview() {
   const MARKET_CATEGORIES: Record<string, MarketSymbolItem[]> = {
     ...MARKET_SYMBOLS,
     Crypto: CRYPTO_SYMBOLS,
-    Currency: CURRENCY_SYMBOLS,
-    Commodities: COMMODITIES_SYMBOLS,
   };
 
   const categories = Object.keys(MARKET_CATEGORIES);
+
   const [activeTab, setActiveTab] = useState("America");
   const currentMarketSymbols = MARKET_CATEGORIES[activeTab] || [];
   const scrollContainerRef = useRef<HTMLDivElement>(null);
