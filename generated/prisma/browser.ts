@@ -38,20 +38,30 @@ export type Session = Prisma.SessionModel
  */
 export type VerificationToken = Prisma.VerificationTokenModel
 /**
- * Model Post
- * 
- */
-export type Post = Prisma.PostModel
-/**
  * Model Comment
  * 
  */
 export type Comment = Prisma.CommentModel
 /**
- * Model Like
+ * Model CommentAsset
  * 
  */
-export type Like = Prisma.LikeModel
+export type CommentAsset = Prisma.CommentAssetModel
+/**
+ * Model Reply
+ * 
+ */
+export type Reply = Prisma.ReplyModel
+/**
+ * Model CommentLike
+ * 
+ */
+export type CommentLike = Prisma.CommentLikeModel
+/**
+ * Model ReplyLike
+ * 
+ */
+export type ReplyLike = Prisma.ReplyLikeModel
 /**
  * Model MarketAsset
  * 

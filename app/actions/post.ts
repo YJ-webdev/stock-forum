@@ -1,123 +1,215 @@
 "use server";
 
+import type { JSONContent } from "@tiptap/react";
+import type { Prisma } from "@/generated/prisma/client";
+
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import type { JSONContent } from "@tiptap/react";
-import { getFirstImage } from "@/lib/utils/post-content";
-import { detectPostMarket } from "@/lib/utils/detect-post-market";
-import { createSlug } from "@/lib/utils/slugify";
 
-export interface CreatePostInput {
-  title: string | null;
+import {
+  ALL_MARKET_SYMBOLS,
+  type MarketSymbolItem,
+} from "@/lib/data/market-symbols";
+
+export interface CreateCommentInput {
   content: JSONContent;
-  thumbnail?: string | null;
+  assetSymbols: string[];
 }
 
-export async function createPost({
-  title,
+export async function createComment({
   content,
-  thumbnail,
-}: CreatePostInput) {
+  assetSymbols,
+}: CreateCommentInput) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in to post.");
+    throw new Error("You must be logged in to comment.");
   }
 
-  const cleanTitle = title?.trim() ?? "";
-  if (!cleanTitle) {
-    throw new Error("Title is required.");
+  // Remove duplicate symbols.
+  const uniqueSymbols = [...new Set(assetSymbols)];
+
+  if (uniqueSymbols.length === 0) {
+    throw new Error("Please select at least one board.");
   }
 
-  const slug = createSlug(cleanTitle);
+  // Only allow assets that exist in our market metadata.
+  const selectedMarkets = uniqueSymbols
+    .map((symbol) =>
+      ALL_MARKET_SYMBOLS.find((market) => market.symbol === symbol),
+    )
+    .filter((market): market is MarketSymbolItem => Boolean(market));
 
-  // Detect one primary asset
-  const detectedMarket = detectPostMarket(cleanTitle, content);
-
-  // Make sure the detected asset exists in MarketAsset
-  if (detectedMarket) {
-    await prisma.marketAsset.upsert({
-      where: {
-        symbol: detectedMarket.symbol,
-      },
-
-      update: {
-        name: detectedMarket.name,
-
-        displaySymbol: detectedMarket.displaySymbol,
-        category: detectedMarket.region,
-        assetType: detectedMarket.assetType,
-        timezone: detectedMarket.timezone ?? "UTC",
-      },
-
-      create: {
-        symbol: detectedMarket.symbol,
-        name: detectedMarket.name,
-        displaySymbol: detectedMarket.displaySymbol,
-        category: detectedMarket.region,
-        assetType: detectedMarket.assetType,
-        timezone: detectedMarket.timezone ?? "UTC",
-      },
-    });
+  if (selectedMarkets.length === 0) {
+    throw new Error("No valid boards selected.");
   }
 
-  return prisma.post.create({
+  // Make sure every selected market exists in MarketAsset.
+  await Promise.all(
+    selectedMarkets.map((market) =>
+      prisma.marketAsset.upsert({
+        where: {
+          symbol: market.symbol,
+        },
+
+        update: {
+          name: market.name,
+          displaySymbol: market.displaySymbol,
+          category: market.region,
+          assetType: market.assetType,
+          timezone: market.timezone ?? "UTC",
+        },
+
+        create: {
+          symbol: market.symbol,
+          name: market.name,
+          displaySymbol: market.displaySymbol,
+          category: market.region,
+          assetType: market.assetType,
+          timezone: market.timezone ?? "UTC",
+        },
+      }),
+    ),
+  );
+
+  // Convert TipTap JSONContent into a plain Prisma-compatible JSON value.
+  const plainContent = JSON.parse(
+    JSON.stringify(content),
+  ) as Prisma.InputJsonValue;
+
+  return prisma.comment.create({
     data: {
-      title: cleanTitle,
-      content,
-      thumbnail: thumbnail ?? getFirstImage(content),
-      slug: slug,
+      content: plainContent,
       authorId: session.user.id,
-      assetSymbol: detectedMarket?.symbol ?? null,
-    },
 
-    select: {
-      id: true,
-      title: true,
-      thumbnail: true,
-      slug: true,
-      asset: {
-        select: {
-          name: true,
-          symbol: true,
-          displaySymbol: true,
-        },
+      assets: {
+        create: selectedMarkets.map((market) => ({
+          asset: {
+            connect: {
+              symbol: market.symbol,
+            },
+          },
+        })),
       },
     },
-  });
-}
-
-export async function getMostViewedPosts(limit = 5) {
-  return prisma.post.findMany({
-    take: limit,
-
-    orderBy: {
-      viewCount: "desc",
-    },
 
     select: {
       id: true,
-      title: true,
-      slug: true,
-      thumbnail: true,
-      viewCount: true,
+      content: true,
       createdAt: true,
-
-      asset: {
-        select: {
-          name: true,
-          symbol: true,
-          displaySymbol: true,
-        },
-      },
+      updatedAt: true,
 
       author: {
         select: {
           id: true,
           name: true,
           image: true,
+          nationality: true,
+        },
+      },
+
+      assets: {
+        select: {
+          asset: {
+            select: {
+              name: true,
+              symbol: true,
+              displaySymbol: true,
+            },
+          },
+        },
+      },
+
+      _count: {
+        select: {
+          likes: true,
+          replies: true,
         },
       },
     },
   });
+}
+
+export interface MostLikedComment {
+  id: string;
+  content: JSONContent;
+  createdAt: Date;
+  updatedAt: Date;
+
+  author: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    nationality: string | null;
+  };
+
+  assets: {
+    asset: {
+      name: string;
+      symbol: string;
+      displaySymbol: string | null;
+    };
+  }[];
+
+  _count: {
+    likes: number;
+    replies: number;
+  };
+}
+
+export async function getMostLikedComments(): Promise<MostLikedComment[]> {
+  const comments = await prisma.comment.findMany({
+    take: 5,
+
+    orderBy: [
+      {
+        likes: {
+          _count: "desc",
+        },
+      },
+      {
+        createdAt: "desc",
+      },
+    ],
+
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
+
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          nationality: true,
+        },
+      },
+
+      assets: {
+        select: {
+          asset: {
+            select: {
+              name: true,
+              symbol: true,
+              displaySymbol: true,
+            },
+          },
+        },
+      },
+
+      _count: {
+        select: {
+          likes: true,
+          replies: true,
+        },
+      },
+    },
+  });
+
+  return comments.map((comment) => ({
+    ...comment,
+    content: comment.content as JSONContent,
+  }));
 }

@@ -100,7 +100,7 @@ export function MarketComments() {
                   setDirection((prev) => (prev === "BULL" ? "BEAR" : "BULL"))
                 }
                 className={`cursor-pointer
-    relative flex h-8 w-[120px] items-center
+    relative flex h-8 w-30 items-center
     rounded-full p-0.5
     text-[14px] font-normal
     transition-colors duration-200
@@ -111,13 +111,13 @@ export function MarketComments() {
                 {/* sliding background */}
                 <span
                   className={`
-      absolute top-0.5 h-7 w-[58px]
+      absolute top-0.5 h-7 w-14.5
       rounded-full
       transition-transform duration-200 ease-out
 
       ${
         direction === "BULL"
-          ? "translate-x-[58px] bg-emerald-600"
+          ? "translate-x-14.5 bg-emerald-600"
           : "translate-x-0 bg-rose-700"
       }
     `}
@@ -153,7 +153,7 @@ export function MarketComments() {
                   text-sm
                  
                   text-zinc-500
-    [field-sizing:content]
+    field-sizing-content
     min-w-[3.5ch]
     bg-transparent
     outline-none

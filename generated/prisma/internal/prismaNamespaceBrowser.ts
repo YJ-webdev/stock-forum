@@ -55,9 +55,11 @@ export const ModelName = {
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
-  Post: 'Post',
   Comment: 'Comment',
-  Like: 'Like',
+  CommentAsset: 'CommentAsset',
+  Reply: 'Reply',
+  CommentLike: 'CommentLike',
+  ReplyLike: 'ReplyLike',
   MarketAsset: 'MarketAsset',
   AccountBalance: 'AccountBalance',
   PortfolioPosition: 'PortfolioPosition',
@@ -136,28 +138,10 @@ export const VerificationTokenScalarFieldEnum = {
 export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFieldEnum)[keyof typeof VerificationTokenScalarFieldEnum]
 
 
-export const PostScalarFieldEnum = {
-  id: 'id',
-  slug: 'slug',
-  title: 'title',
-  content: 'content',
-  thumbnail: 'thumbnail',
-  viewCount: 'viewCount',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  authorId: 'authorId',
-  assetSymbol: 'assetSymbol'
-} as const
-
-export type PostScalarFieldEnum = (typeof PostScalarFieldEnum)[keyof typeof PostScalarFieldEnum]
-
-
 export const CommentScalarFieldEnum = {
   id: 'id',
   content: 'content',
-  postId: 'postId',
   authorId: 'authorId',
-  parentId: 'parentId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -165,14 +149,44 @@ export const CommentScalarFieldEnum = {
 export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
 
 
-export const LikeScalarFieldEnum = {
+export const CommentAssetScalarFieldEnum = {
+  commentId: 'commentId',
+  assetSymbol: 'assetSymbol'
+} as const
+
+export type CommentAssetScalarFieldEnum = (typeof CommentAssetScalarFieldEnum)[keyof typeof CommentAssetScalarFieldEnum]
+
+
+export const ReplyScalarFieldEnum = {
+  id: 'id',
+  content: 'content',
+  commentId: 'commentId',
+  authorId: 'authorId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ReplyScalarFieldEnum = (typeof ReplyScalarFieldEnum)[keyof typeof ReplyScalarFieldEnum]
+
+
+export const CommentLikeScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
-  postId: 'postId',
+  commentId: 'commentId',
   createdAt: 'createdAt'
 } as const
 
-export type LikeScalarFieldEnum = (typeof LikeScalarFieldEnum)[keyof typeof LikeScalarFieldEnum]
+export type CommentLikeScalarFieldEnum = (typeof CommentLikeScalarFieldEnum)[keyof typeof CommentLikeScalarFieldEnum]
+
+
+export const ReplyLikeScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  replyId: 'replyId',
+  createdAt: 'createdAt'
+} as const
+
+export type ReplyLikeScalarFieldEnum = (typeof ReplyLikeScalarFieldEnum)[keyof typeof ReplyLikeScalarFieldEnum]
 
 
 export const MarketAssetScalarFieldEnum = {

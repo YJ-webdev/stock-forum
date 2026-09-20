@@ -1,26 +1,21 @@
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { NewsCarousel } from "./news-card";
 import { NewsItem } from "@/types";
 import { ModeToggle } from "./mode-toggle";
-import Link from "next/link";
-import { MostViewedPost } from "./layout-shell";
-import { Button } from "@/components/ui/button";
-import { MARKET_SYMBOLS } from "@/lib/data/market-symbols";
-import { MostDiscussed } from "./most-discussed";
+import { MostLikedComments } from "./most-liked-comments";
 import { PopularBoards } from "./major-indices";
 import React from "react";
-import { useSearchParams } from "next/navigation";
+import { MostLikedComment } from "../actions/post";
 
 interface PanelLeftProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   news: NewsItem[];
-  posts: MostViewedPost[];
+  comments: MostLikedComment[];
 }
 
-export default function PanelLeft({ isOpen, news, posts }: PanelLeftProps) {
+export default function PanelLeft({ isOpen, news, comments }: PanelLeftProps) {
   return (
     <>
       {/* Sidebar Panel - No overlay, stays open on outside click */}
@@ -49,7 +44,7 @@ export default function PanelLeft({ isOpen, news, posts }: PanelLeftProps) {
               <p className="text-muted-foreground/50  text-xs text-light mb-2 tracking-wider">
                 Popular comments
               </p>
-              <MostDiscussed />
+              <MostLikedComments comments={comments} />
             </div>
 
             <div className="md:hidden mt-auto p-3 -translate-y-10 self-end">

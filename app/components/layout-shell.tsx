@@ -20,38 +20,20 @@ import { NotificationPanel } from "./notification-panel";
 import { BreadCrumbs } from "./breadcrumbs";
 import { User } from "@/types/user";
 import { TopTraders } from "./top-trader";
-
-export interface MostViewedPost {
-  id: string;
-  title: string | null;
-  slug: string | null;
-  thumbnail: string | null;
-  assetSymbol: string | null;
-  createdAt: Date;
-
-  author: {
-    name: string | null;
-  };
-
-  asset: {
-    name: string;
-    symbol: string;
-    displaySymbol: string | null; // ← FIX
-  } | null;
-}
+import { MostLikedComment } from "../actions/post";
 
 interface LayoutShellProps {
   user: User | null;
   news: NewsItem[];
   children: React.ReactNode;
-  posts: MostViewedPost[];
+  comments: MostLikedComment[];
 }
 
 export default function LayoutShell({
   user,
   news,
   children,
-  posts,
+  comments,
 }: LayoutShellProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [onWrite, setOnWrite] = useState(false);
@@ -187,7 +169,7 @@ export default function LayoutShell({
             isOpen={isOpen}
             setIsOpen={setIsOpen}
             news={news}
-            posts={posts}
+            comments={comments}
           />
           <div
             className={`pt-14 flex flex-col md:flex-row transition-all duration-300 ease-in-out ${

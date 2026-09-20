@@ -5,11 +5,10 @@ import { useSearchParams } from "next/navigation";
 import type { JSONContent } from "@tiptap/react";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
-import Link from "next/link";
 
 import Tiptap from "./tiptap";
 import { Button } from "./ui/button";
-import { createPost } from "@/app/actions/post";
+import { createComment } from "@/app/actions/post";
 
 import {
   ALL_MARKET_SYMBOLS,
@@ -25,11 +24,7 @@ interface PostEditorProps {
 const RECENT_ASSETS_KEY = "recent-post-assets";
 const MAX_RECENT_ASSETS = 5;
 
-export function PostEditor({
-  nationality,
-  isLoggedIn,
-  setOnWrite,
-}: PostEditorProps) {
+export function PostEditor({ setOnWrite }: PostEditorProps) {
   const searchParams = useSearchParams();
 
   const name = searchParams.get("name");
@@ -234,78 +229,43 @@ export function PostEditor({
   const handleSubmit = () => {
     startTransition(async () => {
       try {
+        if (selectedAssets.length === 0) {
+          toast.error("Please select at least one board.");
+          return;
+        }
+
         const plainContent = JSON.parse(JSON.stringify(content));
 
-        /*
-         * IMPORTANT:
-         *
-         * selectedAssets is already ready for multi-asset posting.
-         *
-         * Once createPost / Prisma supports multiple assets,
-         * pass something like:
-         *
-         * assetSymbols: selectedAssets.map((asset) => asset.symbol)
-         *
-         * For now createPost remains unchanged.
-         */
-
-        const post = await createPost({
-          title,
+        await createComment({
           content: plainContent,
+          assetSymbols: selectedAssets.map((asset) => asset.symbol),
         });
 
-        // Only successful posts become "Recent".
+        // Only successfully posted assets become Recent.
         saveRecentAssets(selectedAssets);
 
-        setTitle("");
-
+        // Reset editor.
         setContent({
           type: "doc",
           content: [{ type: "paragraph" }],
         });
 
+        // Reset asset selector.
         setSelectedAssets([]);
         setAssetQuery("");
         setAssetSelectorOpen(false);
 
+        // Reset TipTap.
         setEditorKey((prev) => prev + 1);
 
-        const href = `/${encodeURIComponent(
-          post.asset?.symbol ?? "general",
-        )}/post/${post.slug}`;
-
-        toast.success("Post created.", {
-          description: (
-            <Link
-              href={href}
-              className="mt-1 flex items-center gap-3 rounded-md"
-            >
-              {post.thumbnail && (
-                <img
-                  src={post.thumbnail}
-                  alt=""
-                  className="h-12 w-16 shrink-0 rounded-md object-cover"
-                />
-              )}
-
-              <div className="min-w-0">
-                <p className="line-clamp-2 font-medium text-zinc-900 dark:text-zinc-100">
-                  {post.title}
-                </p>
-
-                <p className="mt-0.5 text-xs text-zinc-500">View post</p>
-              </div>
-            </Link>
-          ),
-        });
+        toast.success("Comment posted.");
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to create post.",
+          error instanceof Error ? error.message : "Failed to post comment.",
         );
       }
     });
   };
-
   return (
     <div className="mt-5 flex h-full min-h-0 w-full space-y-2 flex-col px-4">
       {/* ============================================================= */}
@@ -583,7 +543,7 @@ function AssetOption({
     >
       <span
         className="
-          min-w-[76px]
+          min-w-19
           text-[14px] font-semibold
           text-zinc-900
           dark:text-zinc-100

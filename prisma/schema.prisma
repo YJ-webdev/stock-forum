@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  
 }
 
 enum Role {
@@ -24,30 +23,30 @@ enum TradeStatus {
 }
 
 model User {
-  id            String          @id @default(cuid())
+  id            String    @id @default(cuid())
   name          String?
-  email         String?         @unique
+  email         String?   @unique
   emailVerified DateTime?
   image         String?
-  nationality          String?        
-    language String @default("en")  
-  role          Role            @default(USER)
-  
-  accounts      Account[]
-  sessions      Session[]
-  posts         Post[]
-  comments      Comment[]
-  likes         Like[]
-  balance       AccountBalance?
-  trades        Trade[]
-  positions     PortfolioPosition[]
-  watchlist     Watchlist[]
-  predictions   Prediction[]
-    marketVotes MarketVote[]
+  nationality   String?
+  language      String    @default("en")
+  role          Role      @default(USER)
 
+  accounts     Account[]
+  sessions     Session[]
+  replies      Reply[]
+  comments     Comment[]
+  replyLikes   ReplyLike[]
+  commentLikes CommentLike[]
+  balance      AccountBalance?
+  trades       Trade[]
+  positions    PortfolioPosition[]
+  watchlist    Watchlist[]
+  predictions  Prediction[]
+  marketVotes  MarketVote[]
 
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
@@ -85,62 +84,81 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  slug      String?   @unique
-  title     String?
-  content   Json
-  thumbnail String?
-
-  viewCount Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Comment {
+  id      String @id @default(cuid())
+  content Json
 
   authorId String
-  author   User @relation(fields: [authorId], references: [id])
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  assetSymbol String?
-  asset       MarketAsset? @relation(fields: [assetSymbol], references: [symbol])
-
-  comments Comment[]
-  likes    Like[]
-
-  @@index([authorId, createdAt])
-  @@index([assetSymbol, createdAt])
-}
-
-
-model Comment {
-  id        String   @id @default(cuid())
-  content   String
-
-  postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-
-  parentId  String?
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Comment[] @relation("CommentReplies")
+  assets  CommentAsset[]
+  replies Reply[]
+  likes   CommentLike[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([postId, createdAt])
-  @@index([parentId])
+  @@index([authorId, createdAt])
 }
 
-model Like {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+model CommentAsset {
+  commentId   String
+  assetSymbol String
+
+  comment Comment     @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  asset   MarketAsset @relation(fields: [assetSymbol], references: [symbol], onDelete: Cascade)
+
+  @@id([commentId, assetSymbol])
+  @@index([assetSymbol])
+}
+
+model Reply {
+  id      String @id @default(cuid())
+  content String
+
+  commentId String
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  likes ReplyLike[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([commentId, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model CommentLike {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  commentId String
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
 
-  @@unique([userId, postId])
-  @@index([postId])
+  @@unique([userId, commentId])
+  @@index([commentId])
+}
+
+model ReplyLike {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  replyId String
+  reply   Reply  @relation(fields: [replyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, replyId])
+  @@index([replyId])
 }
 
 model MarketAsset {
@@ -160,77 +178,75 @@ model MarketAsset {
   low           Decimal @default(0.0) @db.Decimal(18, 4)
   volume        Decimal @default(0.0) @db.Decimal(18, 2)
 
-  trades        Trade[]
-  positions     PortfolioPosition[]
+  trades         Trade[]
+  positions      PortfolioPosition[]
   watchlistItems Watchlist[]
-
-posts Post[]
-  votes         MarketVote[]
-
+  comments       CommentAsset[]
+  votes          MarketVote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model AccountBalance {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  cash      Decimal  @default(10000.0) @db.Decimal(18, 2)
-  pnl       Decimal  @default(0.0)     @db.Decimal(18, 2)
-  
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  cash Decimal @default(10000.0) @db.Decimal(18, 2)
+  pnl  Decimal @default(0.0) @db.Decimal(18, 2)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model PortfolioPosition {
-  id          String      @id @default(cuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  symbol      String
-  asset       MarketAsset @relation(fields: [symbol], references: [symbol])
-  
-  quantity    Decimal     @default(0.0) @db.Decimal(18, 8)
-  avgCost     Decimal     @default(0.0) @db.Decimal(18, 4)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  updatedAt   DateTime    @updatedAt
+  symbol String
+  asset  MarketAsset @relation(fields: [symbol], references: [symbol])
+
+  quantity Decimal @default(0.0) @db.Decimal(18, 8)
+  avgCost  Decimal @default(0.0) @db.Decimal(18, 4)
+
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, symbol])
 }
 
 model Trade {
-  id         String      @id @default(cuid())
-  userId     String
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  symbol     String
-  asset      MarketAsset @relation(fields: [symbol], references: [symbol])
-  
-  type       TradeType
-  status     TradeStatus @default(OPEN)
-  
-  quantity   Decimal     @db.Decimal(18, 8)
-  entryPrice Decimal     @db.Decimal(18, 4)
-  exitPrice  Decimal?    @db.Decimal(18, 4)
-  pnl        Decimal?    @db.Decimal(18, 2)
-  
-  createdAt  DateTime    @default(now())
-  closedAt   DateTime?
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  symbol String
+  asset  MarketAsset @relation(fields: [symbol], references: [symbol])
+
+  type   TradeType
+  status TradeStatus @default(OPEN)
+
+  quantity   Decimal  @db.Decimal(18, 8)
+  entryPrice Decimal  @db.Decimal(18, 4)
+  exitPrice  Decimal? @db.Decimal(18, 4)
+  pnl        Decimal? @db.Decimal(18, 2)
+
+  createdAt DateTime  @default(now())
+  closedAt  DateTime?
 
   @@index([userId, status])
 }
 
 model Watchlist {
-  id        String      @id @default(cuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  symbol    String
-  asset     MarketAsset @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
-  
-  createdAt DateTime    @default(now())
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  symbol String
+  asset  MarketAsset @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 
   @@unique([userId, symbol])
 }
@@ -248,11 +264,11 @@ enum PredictionStatus {
 }
 
 model Prediction {
-  id        String @id @default(cuid())
+  id String @id @default(cuid())
 
   // User
-  userId    String
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Market
   symbol        String
@@ -278,12 +294,11 @@ model Prediction {
   // Country at the time of prediction
   country String?
 
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   settledAt DateTime?
 
   // One prediction per user / asset / trading session
   @@unique([userId, symbol, sessionDate])
-
   @@index([symbol, sessionDate])
   @@index([userId, createdAt])
   @@index([country, symbol, sessionDate])

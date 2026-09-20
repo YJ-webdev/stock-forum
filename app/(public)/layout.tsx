@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import LayoutShell from "../components/layout-shell";
+import { getMostLikedComments } from "../actions/post";
 
 async function getNews() {
   try {
@@ -12,39 +13,6 @@ async function getNews() {
   } catch {
     return [];
   }
-}
-
-async function getMostViewedPost(limit = 5) {
-  return prisma.post.findMany({
-    take: limit,
-
-    orderBy: {
-      viewCount: "desc",
-    },
-
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      thumbnail: true,
-      createdAt: true,
-      assetSymbol: true,
-
-      asset: {
-        select: {
-          name: true,
-          symbol: true,
-          displaySymbol: true,
-        },
-      },
-
-      author: {
-        select: {
-          name: true,
-        },
-      },
-    },
-  });
 }
 
 export default async function MainLayout({
@@ -69,13 +37,13 @@ export default async function MainLayout({
       })
     : null;
 
-  const [news, mostViewedPosts] = await Promise.all([
+  const [news, mostLikedComments] = await Promise.all([
     getNews(),
-    getMostViewedPost(),
+    getMostLikedComments(),
   ]);
 
   return (
-    <LayoutShell user={user} news={news} posts={mostViewedPosts}>
+    <LayoutShell user={user} news={news} comments={mostLikedComments}>
       {children}
     </LayoutShell>
   );
