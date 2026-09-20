@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { MostDiscussed } from "./most-discussed";
 import { PopularBoards } from "./major-indices";
+import React from "react";
+import { useSearchParams } from "next/navigation";
 
 interface PanelLeftProps {
   isOpen: boolean;
@@ -31,8 +33,8 @@ export default function PanelLeft({ isOpen, news, posts }: PanelLeftProps) {
           <div className="flex min-h-full flex-col pb-20">
             {/* News Section */}
             {/* <div className="mt-8">
-              <NewsCarousel news={news} />
-            </div> */}
+                <NewsCarousel news={news} />
+              </div> */}
 
             {/* Topics */}
             <div className=" mt-12">

@@ -34,6 +34,7 @@ import { TrendSparkline } from "@/app/components/trend-sparkline";
 import { MarketComments } from "@/app/components/comment";
 import { Badge } from "@/components/ui/badge";
 import { BullBearGauge } from "@/app/components/bull-bear-gauge";
+import { Maximize2 } from "lucide-react";
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 const BET_AMOUNTS = [50, 100, 200, 300, 400, 500];
@@ -271,12 +272,12 @@ export default function MarketDetailPage() {
                 data.exchangeTimezone ?? symbolMeta?.timezone ?? "UTC"
               }
             />
-            {!showDetailChart ? (
-              <div className="static z-auto mr-3 flex w-auto flex-col items-stretch gap-0 border-none bg-transparent p-0">
-                <div
-                  onClick={() => setShowDetailChart((prev) => !prev)}
-                  className="flex cursor-pointer justify-start mt-5 mx-3"
-                >
+            {!showDetailChart && (
+              <div
+                onClick={() => setShowDetailChart((prev) => !prev)}
+                className="relative  mr-3 flex w-auto flex-col items-stretch gap-0 border-none p-0"
+              >
+                <div className="relative mx-3 mt-5 flex cursor-pointer justify-start">
                   <TrendSparkline
                     data={data.history}
                     isPositive={data.isPositive}
@@ -285,10 +286,12 @@ export default function MarketDetailPage() {
                     }
                     lunchEndMs={activeRange === "1D" ? data.lunchEndMs : null}
                   />
-                </div>
+                </div>{" "}
+                {/* <Maximize2
+                  strokeWidth={1.5}
+                  className="absolute right-1 top-0 w-5 h-5 mr-2 rounded-full text-zinc-600 bg-zinc-white dark:text-zinc-300 dark:bg-zinc-800 cursor-pointer"
+                /> */}
               </div>
-            ) : (
-              <></>
             )}
           </div>
 
@@ -448,11 +451,9 @@ export default function MarketDetailPage() {
       {/* <BullBearGauge bullish={824} bearish={460} /> */}
 
       {/* Prediction */}
-      <div className="mt-5 w-full px-4">
+      {/* <div className="mt-5 w-full px-4">
         <div className="grid w-full grid-cols-3 items-center gap-6">
-          {/* Voting - 2/3 */}
           <div className="col-span-2 min-w-0">
-            {/* Balance + Bet amount */}
             <div className="mb-3 flex items-end justify-between">
               <div>
                 <p className="text-[13px]  text-zinc-500">Your points</p>
@@ -468,7 +469,6 @@ export default function MarketDetailPage() {
               <p className="text-[13px] text-zinc-500">Bet amount</p>
             </div>
 
-            {/* Bet input */}
             <div
               className="
           flex h-12 w-full items-center
@@ -495,7 +495,6 @@ export default function MarketDetailPage() {
               <span className="text-[12px] text-zinc-500">pts</span>
             </div>
 
-            {/* Quick amounts */}
             <div className="mt-2 grid grid-cols-6 gap-1.5">
               {BET_AMOUNTS.map((amount) => {
                 const selected = betAmount === amount;
@@ -521,7 +520,6 @@ export default function MarketDetailPage() {
               })}
             </div>
 
-            {/* Vote Buttons */}
             <div className="mt-4 grid grid-cols-2 gap-3">
               <VoteButton
                 voteDirection="BULL"
@@ -542,7 +540,6 @@ export default function MarketDetailPage() {
               />
             </div>
 
-            {/* Countdown */}
             {votingWindow && (
               <div className="mt-2 jakarta">
                 <VotingCountdown
@@ -557,14 +554,12 @@ export default function MarketDetailPage() {
             )}
           </div>
 
-          {/* Gauge */}
-          {/* Gauge - 1/3 */}
           <div className="col-span-1 jakarta flex items-center justify-center">
             <BullBearGauge bullish={824} bearish={460} />
           </div>
         </div>
-      </div>
-      {/* Comment */}
+      </div> */}
+
       <div className="mx-4 mt-10 mb-20">
         <MarketComments />
       </div>

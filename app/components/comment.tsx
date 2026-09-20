@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, MoreVertical, ThumbsUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 type VoteDirection = "BULL" | "BEAR";
 
@@ -73,6 +72,9 @@ const DUMMY_COMMENTS: DummyComment[] = [
 ];
 
 export function MarketComments() {
+  const [direction, setDirection] = useState("BULL");
+  const [points, setPoints] = useState("50");
+
   return (
     <section className="w-full">
       <div className="mb-6 flex items-center gap-2">
@@ -91,6 +93,81 @@ export function MarketComments() {
 
         <div className="min-w-0 flex-1">
           <div className="rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
+            <div className="flex items-center gap-3  pt-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setDirection((prev) => (prev === "BULL" ? "BEAR" : "BULL"))
+                }
+                className={`cursor-pointer
+    relative flex h-8 w-[120px] items-center
+    rounded-full p-0.5
+    text-[14px] font-normal
+    transition-colors duration-200
+
+    ${direction === "BULL" ? "bg-emerald-600/15" : "bg-rose-700/15"}
+  `}
+              >
+                {/* sliding background */}
+                <span
+                  className={`
+      absolute top-0.5 h-7 w-[58px]
+      rounded-full
+      transition-transform duration-200 ease-out
+
+      ${
+        direction === "BULL"
+          ? "translate-x-[58px] bg-emerald-600"
+          : "translate-x-0 bg-rose-700"
+      }
+    `}
+                />
+
+                <span
+                  className={`
+      relative z-10 flex-1 text-center transition-colors
+      ${direction === "BEAR" ? "text-white" : "text-zinc-500"}
+    `}
+                >
+                  Bear
+                </span>
+
+                <span
+                  className={`
+      relative z-10 flex-1 text-center transition-colors
+      ${direction === "BULL" ? "text-white" : "text-zinc-500"}
+    `}
+                >
+                  Bull
+                </span>
+              </button>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={points}
+                  onChange={(e) => setPoints(e.target.value)}
+                  min={50}
+                  max={1234}
+                  step={50}
+                  className="
+                  text-sm
+                 
+                  text-zinc-500
+    [field-sizing:content]
+    min-w-[3.5ch]
+    bg-transparent
+    outline-none
+
+    [&::-webkit-inner-spin-button]:opacity-100
+    [&::-webkit-inner-spin-button]:cursor-pointer
+  "
+                />
+
+                <span className="font-light text-zinc-500 jakarta text-sm">
+                  / 1,234pts
+                </span>
+              </div>
+            </div>
             <textarea
               rows={1}
               placeholder="Add a comment..."
@@ -111,7 +188,7 @@ export function MarketComments() {
                 size="sm"
                 className="cursor-pointer bg-zinc-700 hover:bg-zinc-800 dark:bg-zinc-300 dark:hover:bg-zinc-200"
               >
-                Comment
+                Vote
               </Button>
             </div>
           </div>
@@ -305,25 +382,6 @@ function ReplyItem({ reply }: { reply: DummyComment }) {
     </div>
   );
 }
-
-// function VoteBadge({ vote }: { vote: VoteDirection }) {
-//   const isBullish = vote === "BULL";
-
-//   return (
-//     <Badge
-//       className={`
-//         h-5 shrink-0 rounded-full px-2 text-[11px] text-white
-//         ${
-//           isBullish
-//             ? "bg-emerald-600 hover:bg-emerald-600"
-//             : "bg-rose-700 hover:bg-rose-700"
-//         }
-//       `}
-//     >
-//       {isBullish ? "Bullish" : "Bearish"}
-//     </Badge>
-//   );
-// }
 
 function Avatar({ label, small = false }: { label: string; small?: boolean }) {
   return (

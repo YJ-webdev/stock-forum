@@ -97,7 +97,10 @@ export function PostEditor({
   };
 
   return (
-    <div className="mt-5 flex h-full min-h-0 w-full flex-col">
+    <div className="mt-5 px-4 flex h-full min-h-0 w-full flex-col">
+      <div className=" mt-2">
+        <input placeholder="select a board" />
+      </div>
       {/* Title */}
       <div className="shrink-0">
         <input
@@ -130,7 +133,7 @@ export function PostEditor({
       </div>
 
       {/* Actions */}
-      <div className="ml-auto mt-2 flex shrink-0 gap-2">
+      <div className="ml-auto mt-2 mb-4 flex shrink-0 gap-2">
         <Button
           type="button"
           variant="outline"

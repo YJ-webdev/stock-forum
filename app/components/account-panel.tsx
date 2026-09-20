@@ -80,7 +80,7 @@ export function AccountPanel({ user, setOnAccount }: AccountPanelProps) {
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col pt-4">
+    <div className="p-4 flex h-full min-h-0 w-full flex-col pt-8!">
       {/* HEADER */}
       <div className="shrink-0 pb-5">
         <div className="flex items-center justify-between">

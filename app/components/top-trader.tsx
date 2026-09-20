@@ -1,4 +1,4 @@
-import { Crown, TrendingUp } from "lucide-react";
+import { Crown, Ellipsis, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 const TOP_TRADERS = [
@@ -41,101 +41,80 @@ const TOP_TRADERS = [
 
 export function TopTraders() {
   return (
-    <div className="w-full px-5">
-      {/* Header */}
-      <div className="mb-5 flex items-end justify-between">
-        <div>
-          <p className="text-[15px] font-semibold text-zinc-200">Top traders</p>
-          <p className="mt-0.5 text-[12px] text-zinc-500">
-            Best performers this week
-          </p>
-        </div>
-
-        <Link
-          href="/leaderboard"
-          className="text-[12px] text-zinc-500 transition-colors hover:text-zinc-300"
-        >
-          View all
-        </Link>
-      </div>
-
+    <div className="w-full px-2 flex flex-col">
       {/* Traders */}
-      <div>
-        {TOP_TRADERS.map((trader, index) => (
-          <Link
-            key={trader.id}
-            href={`/user/${trader.username}`}
-            className="
-              group flex items-center gap-3
-              rounded-lg px-2 py-3
-              transition-colors
-              hover:bg-zinc-800/50
-            "
-          >
-            {/* Rank */}
-            <div className="flex w-5 shrink-0 justify-center">
-              {index === 0 ? (
-                <Crown className="h-4 w-4 text-amber-400" />
-              ) : (
-                <span className="text-[13px] font-medium text-zinc-500">
-                  {index + 1}
-                </span>
-              )}
-            </div>
 
-            {/* Avatar */}
-            <div
-              className="
+      {TOP_TRADERS.map((trader, index) => (
+        <Link
+          key={trader.id}
+          href={`/user/${trader.username}`}
+          className="
+              group flex items-center gap-3
+              rounded-lg py-2
+              transition-colors
+              hover:bg-zinc-200 hover:dark:bg-zinc-800
+            "
+        >
+          {/* Rank */}
+          <div className="ml-2 flex w-2 jakarta shrink-0 justify-center">
+            <span className="text-[13px] font-medium text-zinc-500">
+              {index + 1}
+            </span>
+          </div>
+
+          {/* Avatar */}
+          <div
+            className="
                 flex h-9 w-9 shrink-0 items-center justify-center
                 rounded-full bg-zinc-800
                 text-[11px] font-semibold text-zinc-300
                 ring-1 ring-inset ring-zinc-700/70
               "
-            >
-              {trader.avatar}
+          >
+            {trader.avatar}
+          </div>
+
+          {/* User */}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[15px] font-medium text-zinc-800 dark:text-zinc-200">
+              {trader.username}
+            </p>
+
+            <div className="mt-0.5 flex items-center gap-1 text-[12px] text-zinc-500">
+              {/* <TrendingUp className="h-3 w-3" /> */}
+
+              <span>{trader.accuracy}% accuracy</span>
             </div>
+          </div>
 
-            {/* User */}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[14px] font-medium text-zinc-200">
-                {trader.username}
-              </p>
+          {/* Points */}
+          <div className="shrink-0 text-right mr-4">
+            <p className="text-[14px] font-normal jakarta text-zinc-800 dark:text-zinc-300">
+              {trader.points.toLocaleString()}
+            </p>
 
-              <div className="mt-0.5 flex items-center gap-1 text-[12px] text-zinc-500">
-                <TrendingUp className="h-3 w-3" />
-
-                <span>{trader.accuracy}% accuracy</span>
-              </div>
-            </div>
-
-            {/* Points */}
-            <div className="shrink-0 text-right">
-              <p className="text-[14px] font-medium text-zinc-300">
-                {trader.points.toLocaleString()}
-              </p>
-
-              <p className="text-[11px] text-zinc-600">pts</p>
-            </div>
-          </Link>
-        ))}
-      </div>
+            <p className="text-[11px] text-zinc-600">pts</p>
+          </div>
+        </Link>
+      ))}
+      <button className="cursor-pointer mx-auto text-zinc-400 dark:text-zinc-600 mt-3 hover:text-zinc-900 dark:hover:text-zinc-200">
+        <Ellipsis className="mx-auto h-4 w-4" />
+      </button>
       {/* My rank */}
-      <div className="mt-3 border-t border-zinc-800 pt-3">
+      <div className=" text-zinc-800 dark:text-zinc-300 pt-3">
         <Link
           href="/account"
           className="
       group flex items-center gap-3
       rounded-lg px-2 py-3
       transition-colors
-      hover:bg-zinc-800/50
+      hover:bg-zinc-200 dark:hover:bg-zinc-800
     "
         >
-          {/* Rank */}
-          <div className="flex w-5 shrink-0 justify-center">
-            <span className="text-[13px] font-semibold text-zinc-300">127</span>
+          <div className="flex w-2 shrink-0 justify-center">
+            <span className="text-[13px] jakarta">127</span>
           </div>
 
-          {/* Avatar */}
           <div
             className="
         flex h-9 w-9 shrink-0 items-center justify-center
@@ -147,25 +126,20 @@ export function TopTraders() {
             YJ
           </div>
 
-          {/* User */}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <p className="truncate text-[14px] font-medium text-zinc-200">
-                YJ-webdev
-              </p>
+              <p className="truncate text-[14px] ">YJ-webdev</p>
 
               <span className="text-[11px] text-zinc-500">You</span>
             </div>
 
             <div className="mt-0.5 flex items-center gap-1 text-[12px] text-zinc-500">
-              <TrendingUp className="h-3 w-3" />
               <span>58.6% accuracy</span>
             </div>
           </div>
 
-          {/* Points */}
           <div className="shrink-0 text-right">
-            <p className="text-[14px] font-medium text-zinc-300">640</p>
+            <p className="text-[14px] ">640</p>
 
             <p className="text-[11px] text-zinc-600">pts</p>
           </div>

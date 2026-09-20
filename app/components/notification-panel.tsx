@@ -12,7 +12,7 @@ export function NotificationPanel({
   setOnNotification,
 }: NotificationPanelProps) {
   return (
-    <div className="flex h-full min-h-0 flex-col pt-4">
+    <div className="flex h-full min-h-0 flex-col pt-8! p-4">
       <div className="shrink-0 pb-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

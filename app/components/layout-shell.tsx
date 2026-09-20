@@ -225,8 +225,8 @@ export default function LayoutShell({
         min-w-0
         overflow-x-hidden
         overflow-y-auto
-        p-4
-        flex flex-col gap-4
+        
+        flex flex-col gap-3
         bg-white dark:bg-zinc-900
       "
                     style={{
@@ -250,7 +250,18 @@ export default function LayoutShell({
                       />
                     )}
                     {!onWrite && !onAccount && !onNotification && (
-                      <>{/* <TopTraders /> */}</>
+                      <>
+                        <div className="mx-4 mt-8">
+                          <p className="text-muted-foreground/50 text-xs text-light tracking-wider">
+                            Top traders
+                          </p>
+                        </div>
+                        <TopTraders />
+                        <div className="text-zinc-300 dark:text-zinc-700 font-light mx-4 border border-zinc-100 dark:border-zinc-800 rounded-lg p-2 h-80">
+                          {" "}
+                          advertisement
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
