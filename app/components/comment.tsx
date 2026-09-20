@@ -4,6 +4,9 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, MoreVertical, ThumbsUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { PredictionCommentInput } from "./prediction-comment-input";
+import { CommentOnlyInput } from "./comment-only-input";
 
 type VoteDirection = "BULL" | "BEAR";
 
@@ -16,6 +19,20 @@ interface DummyComment {
   likes: number;
   vote: VoteDirection;
   replies?: DummyComment[];
+}
+
+interface MarketCommentsProps {
+  selectedVote: VoteDirection | null;
+  voteLoading: boolean;
+  isMarketOpen: boolean;
+  userPoints: number;
+  betAmount: number;
+  setBetAmount: React.Dispatch<React.SetStateAction<number>>;
+  handleVote: (direction: VoteDirection, betAmount: number) => void;
+
+  targetMs: number | null;
+  countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
+  showCountdown: boolean;
 }
 
 const DUMMY_COMMENTS: DummyComment[] = [
@@ -71,130 +88,84 @@ const DUMMY_COMMENTS: DummyComment[] = [
   },
 ];
 
-export function MarketComments() {
-  const [direction, setDirection] = useState("BULL");
-  const [points, setPoints] = useState("50");
+export function MarketComments({
+  selectedVote,
+  voteLoading,
+  isMarketOpen,
+  userPoints,
+  handleVote,
+  betAmount,
+  setBetAmount,
+  targetMs,
+  countdownType,
+  showCountdown,
+}: MarketCommentsProps) {
+  const [direction, setDirection] = useState<VoteDirection | null>(null);
 
+  const hasEnoughPoints = userPoints >= 50;
+  const hasAlreadyVoted = selectedVote !== null;
+
+  const maxBet = Math.min(500, userPoints);
+
+  const buttonDisabled = voteLoading || isMarketOpen;
+
+  const submitVote = () => {
+    if (buttonDisabled) return;
+
+    if (!direction) {
+      toast.error("Please choose Bull or Bear.");
+      return;
+    }
+
+    if (betAmount < 50) {
+      toast.error("Minimum prediction is 50 points.");
+      return;
+    }
+
+    if (betAmount > maxBet) {
+      toast.error(`You can predict up to ${maxBet.toLocaleString()} points.`);
+      return;
+    }
+
+    handleVote(direction, betAmount);
+  };
   return (
     <section className="w-full">
+      {/* Header */}
       <div className="mb-6 flex items-center gap-2">
         <h2 className="text-[13px] text-zinc-600 dark:text-zinc-500">
           Comment
         </h2>
 
-        <span className="text-sm jakarta text-zinc-500">
+        <span className="jakarta text-sm text-zinc-500">
           {DUMMY_COMMENTS.length}
         </span>
       </div>
 
-      {/* Comment input */}
-      <div className="mb-8 flex gap-3">
-        <Avatar label="YJ" />
-
-        <div className="min-w-0 flex-1">
-          <div className="rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
-            <div className="flex items-center gap-3  pt-2">
-              <button
-                type="button"
-                onClick={() =>
-                  setDirection((prev) => (prev === "BULL" ? "BEAR" : "BULL"))
-                }
-                className={`cursor-pointer
-    relative flex h-8 w-30 items-center
-    rounded-full p-0.5
-    text-[14px] font-normal
-    transition-colors duration-200
-
-    ${direction === "BULL" ? "bg-emerald-600/15" : "bg-rose-700/15"}
-  `}
-              >
-                {/* sliding background */}
-                <span
-                  className={`
-      absolute top-0.5 h-7 w-14.5
-      rounded-full
-      transition-transform duration-200 ease-out
-
-      ${
-        direction === "BULL"
-          ? "translate-x-14.5 bg-emerald-600"
-          : "translate-x-0 bg-rose-700"
-      }
-    `}
-                />
-
-                <span
-                  className={`
-      relative z-10 flex-1 text-center transition-colors
-      ${direction === "BEAR" ? "text-white" : "text-zinc-500"}
-    `}
-                >
-                  Bear
-                </span>
-
-                <span
-                  className={`
-      relative z-10 flex-1 text-center transition-colors
-      ${direction === "BULL" ? "text-white" : "text-zinc-500"}
-    `}
-                >
-                  Bull
-                </span>
-              </button>
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  value={points}
-                  onChange={(e) => setPoints(e.target.value)}
-                  min={50}
-                  max={1234}
-                  step={50}
-                  className="
-                  text-sm
-                 
-                  text-zinc-500
-    field-sizing-content
-    min-w-[3.5ch]
-    bg-transparent
-    outline-none
-
-    [&::-webkit-inner-spin-button]:opacity-100
-    [&::-webkit-inner-spin-button]:cursor-pointer
-  "
-                />
-
-                <span className="font-light text-zinc-500 jakarta text-sm">
-                  / 1,234pts
-                </span>
-              </div>
-            </div>
-            <textarea
-              rows={1}
-              placeholder="Write a text to add comments..."
-              className="min-h-11 w-full resize-none bg-transparent py-3 text-[15px] outline-none placeholder:text-zinc-500"
-            />
-
-            <div className="flex items-center justify-between pb-2">
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  className="cursor-pointer rounded-md px-2 py-1 text-sm font-medium text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                >
-                  GIF
-                </button>
-              </div>
-
-              <Button
-                size="sm"
-                className="cursor-pointer bg-zinc-700 hover:bg-zinc-800 dark:bg-zinc-300 dark:hover:bg-zinc-200"
-              >
-                Vote
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      {hasAlreadyVoted ? (
+        <CommentOnlyInput
+          targetMs={targetMs}
+          countdownType={countdownType}
+          showCountdown={showCountdown}
+          isMarketOpen={isMarketOpen}
+        />
+      ) : (
+        <PredictionCommentInput
+          direction={direction}
+          setDirection={setDirection}
+          betAmount={betAmount}
+          setBetAmount={setBetAmount}
+          userPoints={userPoints}
+          maxBet={maxBet}
+          voteLoading={voteLoading}
+          isMarketOpen={isMarketOpen}
+          buttonDisabled={buttonDisabled}
+          submitVote={submitVote}
+          targetMs={targetMs}
+          countdownType={countdownType}
+          showCountdown={showCountdown}
+        />
+      )}
       {/* Comments */}
       <div>
         {DUMMY_COMMENTS.map((comment) => (
@@ -223,15 +194,19 @@ function CommentItem({ comment }: { comment: DummyComment }) {
               {comment.username}
             </span>
 
-            {/* <VoteBadge vote={comment.vote} /> */}
-
             <span className="text-[13px] text-zinc-500">
               {comment.createdAt}
             </span>
 
             <button
               type="button"
-              className="ml-auto rounded-full p-1.5 opacity-0 hover:bg-zinc-100 group-hover:opacity-100 dark:hover:bg-zinc-800"
+              className="
+                ml-auto rounded-full p-1.5
+                opacity-0
+                hover:bg-zinc-100
+                group-hover:opacity-100
+                dark:hover:bg-zinc-800
+              "
             >
               <MoreVertical className="size-4" />
             </button>
@@ -246,7 +221,12 @@ function CommentItem({ comment }: { comment: DummyComment }) {
           <div className="mt-2 flex items-center gap-4">
             <button
               type="button"
-              className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              className="
+                flex items-center gap-1.5
+                text-sm text-zinc-500
+                hover:text-zinc-900
+                dark:hover:text-zinc-200
+              "
             >
               <ThumbsUp className="size-4" />
 
@@ -256,7 +236,11 @@ function CommentItem({ comment }: { comment: DummyComment }) {
             <button
               type="button"
               onClick={() => setReplying((prev) => !prev)}
-              className="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              className="
+                text-sm font-medium text-zinc-500
+                hover:text-zinc-900
+                dark:hover:text-zinc-200
+              "
             >
               Reply
             </button>
@@ -273,13 +257,23 @@ function CommentItem({ comment }: { comment: DummyComment }) {
                     autoFocus
                     rows={1}
                     placeholder={`Reply to ${comment.username}...`}
-                    className="min-h-10 w-full resize-none bg-transparent py-2.5 text-[15px] outline-none placeholder:text-zinc-500"
+                    className="
+                      min-h-10 w-full resize-none
+                      bg-transparent py-2.5
+                      text-[15px] outline-none
+                      placeholder:text-zinc-500
+                    "
                   />
 
                   <div className="flex items-center justify-between pb-2">
                     <button
                       type="button"
-                      className="rounded-md px-2 py-1 text-xs font-medium text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                      className="
+                        rounded-md px-2 py-1
+                        text-xs font-medium text-zinc-500
+                        hover:bg-zinc-200
+                        dark:hover:bg-zinc-700
+                      "
                     >
                       GIF
                     </button>
@@ -309,7 +303,13 @@ function CommentItem({ comment }: { comment: DummyComment }) {
             <button
               type="button"
               onClick={() => setShowReplies((prev) => !prev)}
-              className="mt-3 flex items-center gap-2 text-sm font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+              className="
+                mt-3 flex items-center gap-2
+                text-sm font-semibold text-zinc-600
+                hover:text-zinc-900
+                dark:text-zinc-400
+                dark:hover:text-zinc-200
+              "
             >
               {showReplies ? (
                 <ChevronUp className="size-4" />
@@ -345,13 +345,17 @@ function ReplyItem({ reply }: { reply: DummyComment }) {
         <div className="flex items-center gap-1.5">
           <span className="text-[14px] font-semibold">{reply.username}</span>
 
-          {/* <VoteBadge vote={reply.vote} /> */}
-
           <span className="text-[13px] text-zinc-500">{reply.createdAt}</span>
 
           <button
             type="button"
-            className="ml-auto rounded-full p-1.5 opacity-0 hover:bg-zinc-100 group-hover:opacity-100 dark:hover:bg-zinc-800"
+            className="
+              ml-auto rounded-full p-1.5
+              opacity-0
+              hover:bg-zinc-100
+              group-hover:opacity-100
+              dark:hover:bg-zinc-800
+            "
           >
             <MoreVertical className="size-4" />
           </button>
@@ -364,7 +368,12 @@ function ReplyItem({ reply }: { reply: DummyComment }) {
         <div className="mt-2 flex items-center gap-4">
           <button
             type="button"
-            className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+            className="
+              flex items-center gap-1.5
+              text-sm text-zinc-500
+              hover:text-zinc-900
+              dark:hover:text-zinc-200
+            "
           >
             <ThumbsUp className="size-4" />
 
@@ -373,7 +382,11 @@ function ReplyItem({ reply }: { reply: DummyComment }) {
 
           <button
             type="button"
-            className="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+            className="
+              text-sm font-medium text-zinc-500
+              hover:text-zinc-900
+              dark:hover:text-zinc-200
+            "
           >
             Reply
           </button>
@@ -387,9 +400,11 @@ function Avatar({ label, small = false }: { label: string; small?: boolean }) {
   return (
     <div
       className={`
-        flex shrink-0 items-center justify-center rounded-full
+        flex shrink-0 items-center justify-center
+        rounded-full
         bg-zinc-200 font-medium text-zinc-700
         dark:bg-zinc-700 dark:text-zinc-200
+
         ${small ? "size-8 text-xs" : "size-9 text-sm"}
       `}
     >

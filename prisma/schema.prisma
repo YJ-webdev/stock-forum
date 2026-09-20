@@ -43,7 +43,6 @@ model User {
   positions    PortfolioPosition[]
   watchlist    Watchlist[]
   predictions  Prediction[]
-  marketVotes  MarketVote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -182,7 +181,7 @@ model MarketAsset {
   positions      PortfolioPosition[]
   watchlistItems Watchlist[]
   comments       CommentAsset[]
-  votes          MarketVote[]
+  predictions    Prediction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -271,59 +270,35 @@ model Prediction {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Market
-  symbol        String
-  displaySymbol String?
-  assetName     String?
+  symbol String
+  asset  MarketAsset @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
-  // User's prediction
+  // Prediction
   direction PredictionDirection
+  pointsBet Int
 
-  // Snapshot when prediction was made
+  // Price when prediction was submitted
   predictionPrice Decimal @db.Decimal(18, 4)
 
   // Market session being predicted
   sessionDate DateTime
 
-  // Filled when the prediction is settled
+  // Settlement
   closingPrice Decimal?         @db.Decimal(18, 4)
   status       PredictionStatus @default(PENDING)
 
-  // Points
+  // Actual +/- points after settlement
   pointsChange Int?
 
-  // Country at the time of prediction
+  // Country when prediction was submitted
   country String?
 
   createdAt DateTime  @default(now())
   settledAt DateTime?
 
-  // One prediction per user / asset / trading session
   @@unique([userId, symbol, sessionDate])
   @@index([symbol, sessionDate])
   @@index([userId, createdAt])
   @@index([country, symbol, sessionDate])
   @@index([status])
-}
-
-enum VoteDirection {
-  BULL
-  BEAR
-}
-
-model MarketVote {
-  id            String        @id @default(cuid())
-  userId        String
-  assetId       String
-  nationality   String
-  direction     VoteDirection
-  predictionFor DateTime
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  asset MarketAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, assetId, predictionFor])
-  @@index([assetId, predictionFor])
-  @@index([assetId, nationality, predictionFor])
 }

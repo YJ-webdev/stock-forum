@@ -65,8 +65,7 @@ export const ModelName = {
   PortfolioPosition: 'PortfolioPosition',
   Trade: 'Trade',
   Watchlist: 'Watchlist',
-  Prediction: 'Prediction',
-  MarketVote: 'MarketVote'
+  Prediction: 'Prediction'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -266,9 +265,8 @@ export const PredictionScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   symbol: 'symbol',
-  displaySymbol: 'displaySymbol',
-  assetName: 'assetName',
   direction: 'direction',
+  pointsBet: 'pointsBet',
   predictionPrice: 'predictionPrice',
   sessionDate: 'sessionDate',
   closingPrice: 'closingPrice',
@@ -280,20 +278,6 @@ export const PredictionScalarFieldEnum = {
 } as const
 
 export type PredictionScalarFieldEnum = (typeof PredictionScalarFieldEnum)[keyof typeof PredictionScalarFieldEnum]
-
-
-export const MarketVoteScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  assetId: 'assetId',
-  nationality: 'nationality',
-  direction: 'direction',
-  predictionFor: 'predictionFor',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type MarketVoteScalarFieldEnum = (typeof MarketVoteScalarFieldEnum)[keyof typeof MarketVoteScalarFieldEnum]
 
 
 export const SortOrder = {

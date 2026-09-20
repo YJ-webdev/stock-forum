@@ -325,6 +325,17 @@ export type EnumPredictionDirectionFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumPredictionDirectionFilter<$PrismaModel> | $Enums.PredictionDirection
 }
 
+export type IntFilter<$PrismaModel = never> = {
+  equals?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  in?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
+  notIn?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
+  lt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  lte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedIntFilter<$PrismaModel> | number
+}
+
 export type EnumPredictionStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.PredictionStatus | Prisma.EnumPredictionStatusFieldRefInput<$PrismaModel>
   in?: $Enums.PredictionStatus[] | Prisma.ListEnumPredictionStatusFieldRefInput<$PrismaModel>
@@ -342,6 +353,22 @@ export type EnumPredictionDirectionWithAggregatesFilter<$PrismaModel = never> = 
   _max?: Prisma.NestedEnumPredictionDirectionFilter<$PrismaModel>
 }
 
+export type IntWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  in?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
+  notIn?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
+  lt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  lte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedIntWithAggregatesFilter<$PrismaModel> | number
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _avg?: Prisma.NestedFloatFilter<$PrismaModel>
+  _sum?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedIntFilter<$PrismaModel>
+  _max?: Prisma.NestedIntFilter<$PrismaModel>
+}
+
 export type EnumPredictionStatusWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.PredictionStatus | Prisma.EnumPredictionStatusFieldRefInput<$PrismaModel>
   in?: $Enums.PredictionStatus[] | Prisma.ListEnumPredictionStatusFieldRefInput<$PrismaModel>
@@ -350,23 +377,6 @@ export type EnumPredictionStatusWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumPredictionStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumPredictionStatusFilter<$PrismaModel>
-}
-
-export type EnumVoteDirectionFilter<$PrismaModel = never> = {
-  equals?: $Enums.VoteDirection | Prisma.EnumVoteDirectionFieldRefInput<$PrismaModel>
-  in?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
-  notIn?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumVoteDirectionFilter<$PrismaModel> | $Enums.VoteDirection
-}
-
-export type EnumVoteDirectionWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.VoteDirection | Prisma.EnumVoteDirectionFieldRefInput<$PrismaModel>
-  in?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
-  notIn?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumVoteDirectionWithAggregatesFilter<$PrismaModel> | $Enums.VoteDirection
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumVoteDirectionFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumVoteDirectionFilter<$PrismaModel>
 }
 
 export type NestedStringFilter<$PrismaModel = never> = {
@@ -683,6 +693,33 @@ export type NestedEnumPredictionDirectionWithAggregatesFilter<$PrismaModel = nev
   _max?: Prisma.NestedEnumPredictionDirectionFilter<$PrismaModel>
 }
 
+export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  in?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
+  notIn?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
+  lt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  lte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedIntWithAggregatesFilter<$PrismaModel> | number
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _avg?: Prisma.NestedFloatFilter<$PrismaModel>
+  _sum?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedIntFilter<$PrismaModel>
+  _max?: Prisma.NestedIntFilter<$PrismaModel>
+}
+
+export type NestedFloatFilter<$PrismaModel = never> = {
+  equals?: number | Prisma.FloatFieldRefInput<$PrismaModel>
+  in?: number[] | Prisma.ListFloatFieldRefInput<$PrismaModel>
+  notIn?: number[] | Prisma.ListFloatFieldRefInput<$PrismaModel>
+  lt?: number | Prisma.FloatFieldRefInput<$PrismaModel>
+  lte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
+  gt?: number | Prisma.FloatFieldRefInput<$PrismaModel>
+  gte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedFloatFilter<$PrismaModel> | number
+}
+
 export type NestedEnumPredictionStatusWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.PredictionStatus | Prisma.EnumPredictionStatusFieldRefInput<$PrismaModel>
   in?: $Enums.PredictionStatus[] | Prisma.ListEnumPredictionStatusFieldRefInput<$PrismaModel>
@@ -691,23 +728,6 @@ export type NestedEnumPredictionStatusWithAggregatesFilter<$PrismaModel = never>
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumPredictionStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumPredictionStatusFilter<$PrismaModel>
-}
-
-export type NestedEnumVoteDirectionFilter<$PrismaModel = never> = {
-  equals?: $Enums.VoteDirection | Prisma.EnumVoteDirectionFieldRefInput<$PrismaModel>
-  in?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
-  notIn?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumVoteDirectionFilter<$PrismaModel> | $Enums.VoteDirection
-}
-
-export type NestedEnumVoteDirectionWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.VoteDirection | Prisma.EnumVoteDirectionFieldRefInput<$PrismaModel>
-  in?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
-  notIn?: $Enums.VoteDirection[] | Prisma.ListEnumVoteDirectionFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumVoteDirectionWithAggregatesFilter<$PrismaModel> | $Enums.VoteDirection
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumVoteDirectionFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumVoteDirectionFilter<$PrismaModel>
 }
 
 

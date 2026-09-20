@@ -1,8 +1,8 @@
-// app/[asset]/page.tsx
+// app/(public)/[asset]/page.tsx
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -15,15 +15,12 @@ import { refreshMarketQuote } from "@/app/hooks/market-quote-store";
 
 import { DetailChart } from "@/app/components/detail-chart";
 import { MarketDetailHeader } from "@/app/components/market-detail-header";
-import { VoteButton } from "@/app/components/vote-button";
-import { VotingCountdown } from "@/app/components/voting-countdown";
 
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { ALL_MARKET_SYMBOLS, AssetType } from "@/lib/data/market-symbols";
 
 import {
   getMarketVote,
-  removeMarketVote,
   submitMarketVote,
   type VoteDirection,
 } from "@/app/actions/market-vote";
@@ -32,31 +29,28 @@ import { useCurrentUser } from "@/app/context/user-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendSparkline } from "@/app/components/trend-sparkline";
 import { MarketComments } from "@/app/components/comment";
-import { Badge } from "@/components/ui/badge";
-import { BullBearGauge } from "@/app/components/bull-bear-gauge";
-import { Maximize2 } from "lucide-react";
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
-const BET_AMOUNTS = [50, 100, 200, 300, 400, 500];
+
 export default function MarketDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const user = useCurrentUser();
 
-  const [betAmount, setBetAmount] = useState(100);
+  const [betAmount, setBetAmount] = useState(50);
   const [showDetailChart, setShowDetailChart] = useState(false);
   const [voteLoading, setVoteLoading] = useState(true);
 
-  const chartRef = useRef<HTMLDivElement>(null);
   const discussionRef = useRef<HTMLDivElement>(null);
 
   const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
   const [selectedVote, setSelectedVote] = useState<VoteDirection | null>(null);
-  const [now, setNow] = useState(() => Date.now());
+  const [now] = useState(() => Date.now());
 
   const [unavailableRanges, setUnavailableRanges] = useState<
     Record<string, Set<ChartRange>>
   >({});
+
   const [isPending, startTransition] = useTransition();
 
   // ------------------------------------------------------------
@@ -97,44 +91,61 @@ export default function MarketDetailPage() {
 
   const votingWindow = getVotingWindow(selectedSymbol, now);
 
-  const isMarketOpen = votingWindow?.isMarketOpen ?? false;
+  const isMarketOpen = votingWindow.isMarketOpen;
+  const canVote = votingWindow.canVote;
 
-  // Load existing vote
+  // Use a primitive timestamp instead of Date as an effect dependency.
+  // getVotingWindow() creates a new Date object on every render.
+  const predictionForMs = votingWindow.predictionFor?.getTime() ?? null;
+
+  // ------------------------------------------------------------
+  // Load current round's existing prediction
+  // ------------------------------------------------------------
+
   useEffect(() => {
-    if (!selectedSymbol) return;
+    if (!selectedSymbol || predictionForMs === null) {
+      setSelectedVote(null);
+      setVoteLoading(false);
+      return;
+    }
 
     let cancelled = false;
 
-    async function loadVote() {
+    async function loadVote(sessionMs: number) {
+      setVoteLoading(true);
+
       try {
         const vote = await getMarketVote({
           symbol: selectedSymbol,
+          sessionDate: new Date(sessionMs),
         });
 
         if (!cancelled) {
           setSelectedVote(vote);
-          setVoteLoading(false);
         }
       } catch {
         if (!cancelled) {
           setSelectedVote(null);
+        }
+      } finally {
+        if (!cancelled) {
           setVoteLoading(false);
         }
       }
     }
 
-    loadVote();
+    loadVote(predictionForMs);
 
     return () => {
       cancelled = true;
     };
-  }, [selectedSymbol]);
+  }, [selectedSymbol, predictionForMs]);
 
-  const handleCountdownExpire = useCallback(() => {
-    setNow(Date.now());
-  }, []);
+  // ------------------------------------------------------------
+  // Submit prediction
+  // ------------------------------------------------------------
 
-  const handleVote = (direction: VoteDirection) => {
+  const handleVote = (direction: VoteDirection, betAmount: number) => {
     if (!isLoggedIn) {
       toast.error("Please log in to vote.");
       return;
@@ -145,57 +156,91 @@ export default function MarketDetailPage() {
       return;
     }
 
-    if (isMarketOpen) {
-      toast.error("Vote closed.");
+    if (selectedVote !== null) {
+      toast.error("You have already voted for this round.");
       return;
     }
 
-    if (isPending) return;
+    if (isPending) {
+      return;
+    }
 
-    // Save previous state in case the server request fails
-    const previousVote = selectedVote;
+    const sessionDate = votingWindow.predictionFor;
 
-    // Same button clicked again → untick
-    const nextVote: VoteDirection | null =
-      selectedVote === direction ? null : direction;
+    if (!canVote || !sessionDate) {
+      toast.error(
+        isMarketOpen
+          ? "Voting is closed while the market is open."
+          : "Voting is currently unavailable.",
+      );
+      return;
+    }
 
-    // ⚡ Update UI immediately
-    setSelectedVote(nextVote);
+    const userPoints = 1234; // TODO: replace with real user points
+
+    if (userPoints < 50) {
+      toast.error("Please add balance to continue voting.");
+      return;
+    }
+
+    if (betAmount < 50 || betAmount > 500 || betAmount > userPoints) {
+      toast.error(
+        `Bet amount must be between 50 and ${Math.min(
+          500,
+          userPoints,
+        )} points.`,
+      );
+
+      return;
+    }
+
+    if (!data) {
+      toast.error("Market data is unavailable.");
+      return;
+    }
+
+    const predictionPrice = Number(data.rawPrice);
+
+    if (!Number.isFinite(predictionPrice) || predictionPrice <= 0) {
+      toast.error("Invalid market price.");
+      return;
+    }
+
+    // Optimistic UI
+    setSelectedVote(direction);
 
     startTransition(async () => {
       try {
-        if (nextVote === null) {
-          await removeMarketVote({
-            symbol: selectedSymbol,
-          });
-
-          toast.success("Vote cancelled.");
-          return;
-        }
-
         await submitMarketVote({
           symbol: selectedSymbol,
           nationality,
-          direction: nextVote,
+          direction,
+          pointsBet: betAmount,
+          predictionPrice,
+          sessionDate,
         });
 
         toast.success(
-          nextVote === "BULL"
-            ? "Bullish vote submitted."
-            : "Bearish vote submitted.",
+          direction === "BULL"
+            ? `Bullish vote submitted with ${betAmount} pts.`
+            : `Bearish vote submitted with ${betAmount} pts.`,
         );
       } catch (error) {
-        // Server failed → restore previous UI
-        setSelectedVote(previousVote);
+        // Roll back optimistic UI
+        setSelectedVote(null);
 
         toast.error(
           error instanceof Error
             ? error.message
-            : "Failed to update prediction.",
+            : "Failed to submit prediction.",
         );
       }
     });
   };
+
+  // ------------------------------------------------------------
+  // Chart range
+  // ------------------------------------------------------------
 
   const handleRangeChange = async (range: SelectedRange) => {
     if (range === activeRange) return;
@@ -231,7 +276,13 @@ export default function MarketDetailPage() {
     setActiveRange(range);
   };
 
+  // ------------------------------------------------------------
+  // Scroll to top when market changes
+  // ------------------------------------------------------------
+
   useEffect(() => {
+    setBetAmount(50);
+
     window.scrollTo({
       top: 0,
       left: 0,
@@ -249,6 +300,7 @@ export default function MarketDetailPage() {
           </h1>
         </div>
       </div>
+
       {/* Market data */}
       {error ? (
         <div className="mt-5 md:mx-4">
@@ -259,7 +311,7 @@ export default function MarketDetailPage() {
       ) : data ? (
         <>
           {/* Header + voting */}
-          <div className="relative flex items-start justify-between mt-4 w-full mb-4">
+          <div className="relative mt-4 mb-4 flex w-full items-start justify-between">
             <MarketDetailHeader
               rawPrice={data.rawPrice}
               change={data.change}
@@ -272,10 +324,11 @@ export default function MarketDetailPage() {
                 data.exchangeTimezone ?? symbolMeta?.timezone ?? "UTC"
               }
             />
+
             {!showDetailChart && (
               <div
                 onClick={() => setShowDetailChart((prev) => !prev)}
-                className="relative  mr-3 flex w-auto flex-col items-stretch gap-0 border-none p-0"
+                className="relative mr-3 flex w-auto flex-col items-stretch gap-0 border-none p-0"
               >
                 <div className="relative mx-3 mt-5 flex cursor-pointer justify-start">
                   <TrendSparkline
@@ -286,11 +339,7 @@ export default function MarketDetailPage() {
                     }
                     lunchEndMs={activeRange === "1D" ? data.lunchEndMs : null}
                   />
-                </div>{" "}
-                {/* <Maximize2
-                  strokeWidth={1.5}
-                  className="absolute right-1 top-0 w-5 h-5 mr-2 rounded-full text-zinc-600 bg-zinc-white dark:text-zinc-300 dark:bg-zinc-800 cursor-pointer"
-                /> */}
+                </div>
               </div>
             )}
           </div>
@@ -414,154 +463,21 @@ export default function MarketDetailPage() {
           </div>
         </>
       )}
-      {/* Prediction Vote Buttons */}
-      {/* <div className="mx-4">
-        <div className="flex items-center gap-2">
-          <VoteButton
-            voteDirection="BULL"
-            onClick={() => handleVote("BULL")}
-            selectedVote={selectedVote}
-            isPending={voteLoading}
-            isMarketOpen={isMarketOpen}
-          />
 
-          <VoteButton
-            voteDirection="BEAR"
-            onClick={() => handleVote("BEAR")}
-            selectedVote={selectedVote}
-            isPending={voteLoading}
-            isMarketOpen={isMarketOpen}
-          />
-        </div>
-
-        {votingWindow && (
-          <div className="ml-0.5 mt-1">
-            <VotingCountdown
-              targetMs={votingWindow.targetMs}
-              type={votingWindow.countdownType}
-              showCountdown={votingWindow.showCountdown}
-              isMarketOpen={votingWindow.isMarketOpen}
-              onExpire={handleCountdownExpire}
-              selectedVote={selectedVote}
-            />
-          </div>
-        )}
-      </div> */}
-      {/* BullBearGauge */}
-      {/* <BullBearGauge bullish={824} bearish={460} /> */}
-
-      {/* Prediction */}
-      {/* <div className="mt-5 w-full px-4">
-        <div className="grid w-full grid-cols-3 items-center gap-6">
-          <div className="col-span-2 min-w-0">
-            <div className="mb-3 flex items-end justify-between">
-              <div>
-                <p className="text-[13px]  text-zinc-500">Your points</p>
-
-                <p className="mt-0.5 text-[18px] jakarta font-medium text-zinc-800 dark:text-zinc-300">
-                  2,840
-                  <span className="ml-1 text-[12px] font-normal text-zinc-500">
-                    pts
-                  </span>
-                </p>
-              </div>
-
-              <p className="text-[13px] text-zinc-500">Bet amount</p>
-            </div>
-
-            <div
-              className="
-          flex h-12 w-full items-center
-          rounded-xl border border-zinc-200
-          bg-zinc-50 px-3
-          dark:border-zinc-800 dark:bg-zinc-800
-        "
-            >
-              <input
-                type="number"
-                min={0}
-                max={2840}
-                step={50}
-                value={betAmount}
-                onChange={(e) => setBetAmount(Number(e.target.value))}
-                className="
-            min-w-0 flex-1 jakarta bg-transparent
-            text-[16px] font-semibold
-            text-zinc-900 outline-none
-            dark:text-zinc-200
-          "
-              />
-
-              <span className="text-[12px] text-zinc-500">pts</span>
-            </div>
-
-            <div className="mt-2 grid grid-cols-6 gap-1.5">
-              {BET_AMOUNTS.map((amount) => {
-                const selected = betAmount === amount;
-
-                return (
-                  <button
-                    key={amount}
-                    type="button"
-                    onClick={() => setBetAmount(amount)}
-                    className={`
-                h-8 rounded-lg text-[12px] font-medium jakarta
-                transition-colors
-                ${
-                  selected
-                    ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
-                    : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                }
-              `}
-                  >
-                    {amount}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <VoteButton
-                voteDirection="BULL"
-                onClick={() => handleVote("BULL")}
-                selectedVote={selectedVote}
-                isPending={voteLoading}
-                isMarketOpen={isMarketOpen}
-                className="h-14 w-full rounded-xl text-[16px] font-semibold"
-              />
-
-              <VoteButton
-                voteDirection="BEAR"
-                onClick={() => handleVote("BEAR")}
-                selectedVote={selectedVote}
-                isPending={voteLoading}
-                isMarketOpen={isMarketOpen}
-                className="h-14 w-full rounded-xl text-[16px] font-semibold"
-              />
-            </div>
-
-            {votingWindow && (
-              <div className="mt-2 jakarta">
-                <VotingCountdown
-                  targetMs={votingWindow.targetMs}
-                  type={votingWindow.countdownType}
-                  showCountdown={votingWindow.showCountdown}
-                  isMarketOpen={votingWindow.isMarketOpen}
-                  onExpire={handleCountdownExpire}
-                  selectedVote={selectedVote}
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="col-span-1 jakarta flex items-center justify-center">
-            <BullBearGauge bullish={824} bearish={460} />
-          </div>
-        </div>
-      </div> */}
-
-      <div className="mx-4 mt-10 mb-20">
-        <MarketComments />
+      <div ref={discussionRef} className="mx-4 mt-10 mb-20">
+        <MarketComments
+          key={selectedSymbol}
+          selectedVote={selectedVote}
+          voteLoading={voteLoading || isPending}
+          isMarketOpen={isMarketOpen}
+          userPoints={1234}
+          betAmount={betAmount}
+          setBetAmount={setBetAmount}
+          handleVote={handleVote}
+          targetMs={votingWindow.targetMs}
+          countdownType={votingWindow.countdownType}
+          showCountdown={votingWindow.showCountdown}
+        />
       </div>
     </div>
   );

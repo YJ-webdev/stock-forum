@@ -2,26 +2,29 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { getVotingWindow } from "@/lib/utils/get-voting-window";
+import { PredictionDirection } from "@/generated/prisma/client";
 
-export type VoteDirection = "BULL" | "BEAR";
+export type VoteDirection = PredictionDirection;
+
+interface GetMarketVoteInput {
+  symbol: string;
+  sessionDate: Date;
+}
 
 interface SubmitMarketVoteInput {
   symbol: string;
   nationality: string;
   direction: VoteDirection;
+  pointsBet: number;
+  predictionPrice: number;
+  sessionDate: Date;
 }
+// GET CURRENT USER'S VOTE
+// -----------------------------------------------------------------------------
 
-interface GetMarketVoteInput {
-  symbol: string;
-}
-
-/**
- * Get the logged-in user's vote for the CURRENT
- * prediction session of this asset.
- */
 export async function getMarketVote({
   symbol,
+  sessionDate,
 }: GetMarketVoteInput): Promise<VoteDirection | null> {
   const session = await auth();
 
@@ -29,37 +32,12 @@ export async function getMarketVote({
     return null;
   }
 
-  if (!symbol) {
-    return null;
-  }
-
-  const votingWindow = getVotingWindow(symbol);
-
-  const predictionFor = votingWindow.predictionFor;
-
-  if (!predictionFor) {
-    return null;
-  }
-
-  const asset = await prisma.marketAsset.findUnique({
+  const prediction = await prisma.prediction.findUnique({
     where: {
-      symbol,
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  if (!asset) {
-    return null;
-  }
-
-  const vote = await prisma.marketVote.findUnique({
-    where: {
-      userId_assetId_predictionFor: {
+      userId_symbol_sessionDate: {
         userId: session.user.id,
-        assetId: asset.id,
-        predictionFor,
+        symbol,
+        sessionDate,
       },
     },
     select: {
@@ -67,21 +45,16 @@ export async function getMarketVote({
     },
   });
 
-  return vote?.direction ?? null;
+  return prediction?.direction ?? null;
 }
 
-/**
- * Create a new vote or change the existing vote.
- *
- * Voting is allowed only while the market is closed.
- *
- * The server calculates the voting session itself.
- * The client cannot choose predictionFor.
- */
 export async function submitMarketVote({
   symbol,
   nationality,
   direction,
+  pointsBet,
+  predictionPrice,
+  sessionDate,
 }: SubmitMarketVoteInput) {
   const session = await auth();
 
@@ -89,44 +62,29 @@ export async function submitMarketVote({
     throw new Error("You must be logged in to vote.");
   }
 
-  if (!symbol) {
-    throw new Error("Market symbol is required.");
-  }
-
   if (!nationality) {
-    throw new Error("Nationality is required.");
+    throw new Error("Please set your nationality before voting.");
   }
 
-  if (direction !== "BULL" && direction !== "BEAR") {
-    throw new Error("Invalid vote direction.");
+  if (!Number.isInteger(pointsBet)) {
+    throw new Error("Points must be a whole number.");
   }
 
-  // --------------------------------------------------
-  // Calculate the CURRENT voting window on the server.
-  // --------------------------------------------------
-
-  const votingWindow = getVotingWindow(symbol);
-
-  if (!votingWindow.predictionFor) {
-    throw new Error("Prediction session is not available.");
+  if (pointsBet < 50 || pointsBet > 500) {
+    throw new Error("Bet amount must be between 50 and 500 points.");
   }
 
-  if (!votingWindow.canVote) {
-    throw new Error("Voting for this market is currently closed.");
+  if (!Number.isFinite(predictionPrice) || predictionPrice <= 0) {
+    throw new Error("Invalid prediction price.");
   }
 
-  const predictionFor = votingWindow.predictionFor;
-
-  // --------------------------------------------------
-  // Find asset
-  // --------------------------------------------------
-
+  // Make sure this market actually exists.
   const asset = await prisma.marketAsset.findUnique({
     where: {
       symbol,
     },
     select: {
-      id: true,
+      symbol: true,
     },
   });
 
@@ -134,69 +92,55 @@ export async function submitMarketVote({
     throw new Error("Market asset not found.");
   }
 
-  // --------------------------------------------------
-  // Create / update vote
-  // --------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // IMPORTANT:
+  // Do NOT use upsert here.
+  //
+  // One user gets ONE prediction for:
+  // userId + symbol + sessionDate
+  //
+  // Your Prisma @@unique constraint also enforces this at DB level.
+  // ---------------------------------------------------------------------------
 
-  const vote = await prisma.marketVote.upsert({
+  const existingPrediction = await prisma.prediction.findUnique({
     where: {
-      userId_assetId_predictionFor: {
+      userId_symbol_sessionDate: {
         userId: session.user.id,
-        assetId: asset.id,
-        predictionFor,
+        symbol,
+        sessionDate,
       },
     },
-
-    update: {
-      direction,
-      nationality,
-    },
-
-    create: {
-      userId: session.user.id,
-      assetId: asset.id,
-      nationality,
-      direction,
-      predictionFor,
-    },
-
     select: {
       id: true,
-      direction: true,
-      predictionFor: true,
-      updatedAt: true,
     },
   });
 
-  return vote;
-}
-
-export async function removeMarketVote({ symbol }: { symbol: string }) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    throw new Error("You must be logged in to vote.");
+  if (existingPrediction) {
+    throw new Error("You have already voted for this market session.");
   }
 
-  const asset = await prisma.marketAsset.findUnique({
-    where: {
+  const prediction = await prisma.prediction.create({
+    data: {
+      userId: session.user.id,
       symbol,
+      direction,
+      pointsBet,
+      predictionPrice,
+      sessionDate,
+      country: nationality,
     },
     select: {
       id: true,
+      symbol: true,
+      direction: true,
+      pointsBet: true,
+      predictionPrice: true,
+      sessionDate: true,
+      status: true,
+      country: true,
+      createdAt: true,
     },
   });
 
-  if (!asset) {
-    throw new Error("Market asset not found.");
-  }
-
-  await prisma.marketVote.deleteMany({
-    where: {
-      userId: session.user.id,
-      assetId: asset.id,
-    },
-  });
-
-  return { success: true };
+  return prediction;
 }

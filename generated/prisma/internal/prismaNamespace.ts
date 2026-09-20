@@ -411,8 +411,7 @@ export const ModelName = {
   PortfolioPosition: 'PortfolioPosition',
   Trade: 'Trade',
   Watchlist: 'Watchlist',
-  Prediction: 'Prediction',
-  MarketVote: 'MarketVote'
+  Prediction: 'Prediction'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -428,7 +427,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "accountBalance" | "portfolioPosition" | "trade" | "watchlist" | "prediction" | "marketVote"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "accountBalance" | "portfolioPosition" | "trade" | "watchlist" | "prediction"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1542,80 +1541,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    MarketVote: {
-      payload: Prisma.$MarketVotePayload<ExtArgs>
-      fields: Prisma.MarketVoteFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.MarketVoteFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketVotePayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.MarketVoteFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketVotePayload>
-        }
-        findFirst: {
-          args: Prisma.MarketVoteFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketVotePayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.MarketVoteFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketVotePayload>
-        }
-        findMany: {
-          args: Prisma.MarketVoteFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketVotePayload>[]
-        }
-        create: {
-          args: Prisma.MarketVoteCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketVotePayload>
-        }
-        createMany: {
-          args: Prisma.MarketVoteCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.MarketVoteCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketVotePayload>[]
-        }
-        delete: {
-          args: Prisma.MarketVoteDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketVotePayload>
-        }
-        update: {
-          args: Prisma.MarketVoteUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketVotePayload>
-        }
-        deleteMany: {
-          args: Prisma.MarketVoteDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.MarketVoteUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.MarketVoteUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketVotePayload>[]
-        }
-        upsert: {
-          args: Prisma.MarketVoteUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketVotePayload>
-        }
-        aggregate: {
-          args: Prisma.MarketVoteAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateMarketVote>
-        }
-        groupBy: {
-          args: Prisma.MarketVoteGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.MarketVoteGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.MarketVoteCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.MarketVoteCountAggregateOutputType> | number
-        }
-      }
-    }
   }
 } & {
   other: {
@@ -1836,9 +1761,8 @@ export const PredictionScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   symbol: 'symbol',
-  displaySymbol: 'displaySymbol',
-  assetName: 'assetName',
   direction: 'direction',
+  pointsBet: 'pointsBet',
   predictionPrice: 'predictionPrice',
   sessionDate: 'sessionDate',
   closingPrice: 'closingPrice',
@@ -1850,20 +1774,6 @@ export const PredictionScalarFieldEnum = {
 } as const
 
 export type PredictionScalarFieldEnum = (typeof PredictionScalarFieldEnum)[keyof typeof PredictionScalarFieldEnum]
-
-
-export const MarketVoteScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  assetId: 'assetId',
-  nationality: 'nationality',
-  direction: 'direction',
-  predictionFor: 'predictionFor',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type MarketVoteScalarFieldEnum = (typeof MarketVoteScalarFieldEnum)[keyof typeof MarketVoteScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -2053,20 +1963,6 @@ export type ListEnumPredictionStatusFieldRefInput<$PrismaModel> = FieldRefInputT
 
 
 /**
- * Reference to a field of type 'VoteDirection'
- */
-export type EnumVoteDirectionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'VoteDirection'>
-    
-
-
-/**
- * Reference to a field of type 'VoteDirection[]'
- */
-export type ListEnumVoteDirectionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'VoteDirection[]'>
-    
-
-
-/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -2245,7 +2141,6 @@ export type GlobalOmitConfig = {
   trade?: Prisma.TradeOmit
   watchlist?: Prisma.WatchlistOmit
   prediction?: Prisma.PredictionOmit
-  marketVote?: Prisma.MarketVoteOmit
 }
 
 /* Types for Logging */

@@ -116,8 +116,3 @@ export type Watchlist = Prisma.WatchlistModel
  * 
  */
 export type Prediction = Prisma.PredictionModel
-/**
- * Model MarketVote
- * 
- */
-export type MarketVote = Prisma.MarketVoteModel

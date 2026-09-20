@@ -64,7 +64,7 @@ export function VotingCountdown({
             >
               {selectedVote === "BULL" ? "Bullish" : "Bearish"}
             </span> */}
-            Voting closing in
+            Voting closes in
           </>
         )}
       </span>
