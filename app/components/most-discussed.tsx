@@ -73,8 +73,8 @@ export function MostDiscussed() {
           <p
             className="
                 line-clamp-2
-                text-[15px] font-normal leading-normal
-                text-zinc-900 dark:text-zinc-200
+                text-[15px] font-normal dark:font-light leading-normal
+                text-zinc-900 dark:text-zinc-300
               "
           >
             {item.comment}

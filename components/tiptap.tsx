@@ -34,7 +34,7 @@ const Tiptap = ({ content, onChange, name }: TiptapProps) => {
         }),
 
         Placeholder.configure({
-          placeholder: `Let's talk about ${name || "anything"}`,
+          placeholder: `Start writing, or press "/" for commands...`,
         }),
 
         Image.configure({
@@ -99,7 +99,11 @@ const Tiptap = ({ content, onChange, name }: TiptapProps) => {
     >
       <EditorBubbleMenu editor={editor} />
 
-      <EditorContent editor={editor} className="tiptap-editor-content flex-1" />
+      <EditorContent
+        editor={editor}
+        spellCheck={false}
+        className="tiptap-editor-content flex-1"
+      />
     </div>
   );
 };

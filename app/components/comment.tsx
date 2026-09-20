@@ -170,7 +170,7 @@ export function MarketComments() {
             </div>
             <textarea
               rows={1}
-              placeholder="Add a comment..."
+              placeholder="Write a text to add comments..."
               className="min-h-11 w-full resize-none bg-transparent py-3 text-[15px] outline-none placeholder:text-zinc-500"
             />
 

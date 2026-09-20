@@ -39,6 +39,7 @@ export function PopularBoards() {
               hover:text-zinc-900
 
               dark:text-zinc-300
+             
               dark:hover:bg-zinc-800/70
               dark:hover:outline-zinc-800/70
               dark:hover:text-zinc-200
@@ -81,7 +82,7 @@ export function PopularBoards() {
               strokeWidth={1}
             />
 
-            <span className="min-w-0 flex-1 truncate text-[16px] font-normal text-zinc-800 dark:font-normal dark:text-zinc-300">
+            <span className="min-w-0 flex-1 truncate text-[16px] font-normal text-zinc-800 dark:text-zinc-300 dark:font-light">
               {item.name}
             </span>
 

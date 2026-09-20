@@ -252,7 +252,7 @@ export default function LayoutShell({
                     {!onWrite && !onAccount && !onNotification && (
                       <>
                         <div className="mx-4 mt-8">
-                          <p className="text-muted-foreground/50 text-xs text-light tracking-wider">
+                          <p className="text-muted-foreground/50 text-xs text-light tracking-wider truncate">
                             Top traders
                           </p>
                         </div>

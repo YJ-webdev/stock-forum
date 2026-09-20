@@ -52,7 +52,7 @@ export function TopTraders() {
               group flex items-center gap-3
               rounded-lg py-2
               transition-colors
-              hover:bg-zinc-200 hover:dark:bg-zinc-800
+              hover:bg-zinc-100 hover:dark:bg-zinc-800
             "
         >
           {/* Rank */}
@@ -76,14 +76,14 @@ export function TopTraders() {
 
           {/* User */}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[15px] font-medium text-zinc-800 dark:text-zinc-200">
+            <p className="truncate text-[15px] font-normal dark:font-light text-zinc-800 dark:text-zinc-200">
               {trader.username}
             </p>
 
             <div className="mt-0.5 flex items-center gap-1 text-[12px] text-zinc-500">
               {/* <TrendingUp className="h-3 w-3" /> */}
 
-              <span>{trader.accuracy}% accuracy</span>
+              <span className="truncate">{trader.accuracy}% accuracy</span>
             </div>
           </div>
 
@@ -93,7 +93,7 @@ export function TopTraders() {
               {trader.points.toLocaleString()}
             </p>
 
-            <p className="text-[11px] text-zinc-600">pts</p>
+            <p className="text-[11px] dark:text-zinc-600">pts</p>
           </div>
         </Link>
       ))}
@@ -108,11 +108,11 @@ export function TopTraders() {
       group flex items-center gap-3
       rounded-lg px-2 py-3
       transition-colors
-      hover:bg-zinc-200 dark:hover:bg-zinc-800
+      hover:bg-zinc-100 dark:hover:bg-zinc-800
     "
         >
           <div className="flex w-2 shrink-0 justify-center">
-            <span className="text-[13px] jakarta">127</span>
+            <span className="text-[13px] jakarta text-zinc-500">127</span>
           </div>
 
           <div
@@ -134,12 +134,12 @@ export function TopTraders() {
             </div>
 
             <div className="mt-0.5 flex items-center gap-1 text-[12px] text-zinc-500">
-              <span>58.6% accuracy</span>
+              <span className="truncate">58.6% accuracy</span>
             </div>
           </div>
 
-          <div className="shrink-0 text-right">
-            <p className="text-[14px] ">640</p>
+          <div className="shrink-0 text-right mr-2">
+            <p className="text-[14px]">640</p>
 
             <p className="text-[11px] text-zinc-600">pts</p>
           </div>

@@ -6,7 +6,7 @@ import { ModeToggle } from "./mode-toggle";
 import { LoginDialog } from "./log-in-dialog";
 import { handleSignOut } from "../actions/auth";
 import SearchInput from "./search-input";
-import { TextAlignJustify as MenuButton } from "lucide-react";
+import { Bell, TextAlignJustify as MenuButton, Whistle } from "lucide-react";
 
 import {
   BadgeCheckIcon,
@@ -180,9 +180,20 @@ export default function UserMenu({
             </div>
 
             {/* Medium & Larger Screens: Text Greeting */}
-            <span className="hidden sm:inline px-2 py-2.75 hover:bg-white dark:hover:bg-zinc-900 dark:text-zinc-100 rounded-full transition-all">
-              {`Hi, ${user.name || user.email || "User"}`}
-            </span>
+            <p className="relative hidden sm:inline px-2 py-2.75 hover:bg-white dark:hover:bg-zinc-900 dark:text-zinc-100 rounded-full transition-all">
+              {`Hi, ${user.name || user.email || "User"}`}{" "}
+              <Bell
+                strokeWidth={1}
+                className="
+    absolute top-0 left-0 -translate-x-3
+    h-5 w-5
+    origin-top
+    text-amber-400
+    fill-amber-100 dark:fill-amber-200
+    hover:animate-bell-ring
+  "
+              />
+            </p>
           </div>
         </DropdownMenuTrigger>
 
