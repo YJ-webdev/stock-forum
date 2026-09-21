@@ -181,7 +181,7 @@ export function PostEditor({
     return selectedAssets.some((selected) => selected.symbol === asset.symbol);
   };
 
-  const MAX_SELECTED_ASSETS = 2;
+  const MAX_SELECTED_ASSETS = 1;
 
   const toggleAsset = (asset: MarketSymbolItem) => {
     setSelectedAssets((prev) => {
@@ -196,7 +196,7 @@ export function PostEditor({
 
       // Maximum 2 assets
       if (prev.length >= MAX_SELECTED_ASSETS) {
-        toast.error("You can select up to 2 boards.");
+        toast.error("You can select one index board.");
         return prev;
       }
 

@@ -509,6 +509,7 @@ export async function editComment({
     data: {
       content: content as Prisma.InputJsonValue,
       editedAt: new Date(),
+      deletedAt: null,
     },
   });
 
