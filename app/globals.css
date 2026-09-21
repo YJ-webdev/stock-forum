@@ -365,12 +365,11 @@
 }
 
 /* Images */
-/* Image */
 .tiptap img {
   display: block;
   max-width: 100% !important;
   height: auto !important;
-  margin: 1rem 0;
+  margin: 0;
   border-radius: 0.5rem;
 }
 
@@ -449,13 +448,13 @@
 
 /* Top → inside image */
 .tiptap [data-resize-handle="top"] {
-  top: 24px !important;
+  top: 10px !important;
   bottom: auto !important;
 }
 
 /* Bottom → inside image */
 .tiptap [data-resize-handle="bottom"] {
-  bottom: 24px !important;
+  bottom: 10px !important;
   top: auto !important;
 }
 

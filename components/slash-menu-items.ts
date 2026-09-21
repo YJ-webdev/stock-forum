@@ -10,6 +10,7 @@ import {
   Code2,
   Minus,
   Image as ImageIcon,
+  Images,
 } from "lucide-react";
 
 export interface SlashMenuItem {
@@ -103,6 +104,21 @@ export const slashMenuItems: SlashMenuItem[] = [
       if (!url) return;
 
       editor.chain().focus().deleteRange(range).setImage({ src: url }).run();
+    },
+  },
+  {
+    title: "GIF",
+    description: "Search and insert a GIF",
+    icon: Images,
+    command: ({ editor, range }) => {
+      // Remove "/gif" from the editor first
+      editor.chain().focus().deleteRange(range).run();
+
+      window.dispatchEvent(
+        new CustomEvent("tiptap:open-gif-picker", {
+          detail: { editor },
+        }),
+      );
     },
   },
 ];

@@ -14,11 +14,14 @@ export const SlashCommand = Extension.create({
       suggestion: {
         char: "/",
         startOfLine: false,
+        allowSpaces: false,
 
         items: ({ query }: { query: string }) => {
+          const normalizedQuery = query.trim().toLowerCase();
+
           return slashMenuItems
             .filter((item) =>
-              item.title.toLowerCase().includes(query.toLowerCase()),
+              item.title.toLowerCase().includes(normalizedQuery),
             )
             .slice(0, 10);
         },

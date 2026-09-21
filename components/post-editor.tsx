@@ -26,10 +26,7 @@ const MAX_RECENT_ASSETS = 5;
 
 export function PostEditor({ setOnWrite }: PostEditorProps) {
   const searchParams = useSearchParams();
-
-  const name = searchParams.get("name");
   const symbol = searchParams.get("symbol");
-
   const topicRef = useRef<HTMLDivElement>(null);
 
   const [title, setTitle] = useState("");
@@ -471,12 +468,7 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
       {/* ============================================================= */}
 
       <div className="hide-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto">
-        <Tiptap
-          key={editorKey}
-          content={content}
-          onChange={setContent}
-          name={name || "..."}
-        />
+        <Tiptap key={editorKey} content={content} onChange={setContent} />
       </div>
 
       {/* ============================================================= */}

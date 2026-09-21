@@ -19,17 +19,12 @@ export function VotingCountdown({
   onExpire,
   selectedVote,
 }: VotingCountdownProps) {
-  // VOTING_OPENS → always countdown
-  // VOTING_CLOSES → only when showCountdown === true (within 6 hours)
+  const { hours, minutes, seconds } = useCountdown(targetMs, onExpire);
+
   const shouldShowCountdown =
     !!targetMs &&
     !!type &&
     (type === "VOTING_OPENS" || (type === "VOTING_CLOSES" && showCountdown));
-
-  const { hours, minutes, seconds } = useCountdown(
-    shouldShowCountdown ? targetMs : null,
-    onExpire,
-  );
 
   if (!shouldShowCountdown) {
     return (

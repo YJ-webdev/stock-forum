@@ -71,20 +71,18 @@ export function CommentOnlyInput({
                 size="sm"
                 className="
                   cursor-pointer
-                  border-none
-                  bg-transparent
-                  text-black
-                  shadow-none
-                  transition-colors
+               
+             
+                
+                
 
-                  hover:bg-transparent
+                 
 
-                  dark:bg-transparent
-                  dark:text-zinc-100
-                  dark:hover:bg-transparent
+               
+             
                 "
               >
-                <MessageCircle size={18} />
+                {/* <MessageCircle size={18} /> */}
                 Comment
               </Button>
             </div>
