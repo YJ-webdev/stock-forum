@@ -11,6 +11,7 @@ import {
   type MarketSymbolItem,
 } from "@/lib/data/market-symbols";
 import { revalidatePath } from "next/cache";
+import { hasEditorContent } from "@/lib/utils/tiptap-utils";
 
 type PredictionInput = {
   direction: "BULL" | "BEAR";
@@ -56,6 +57,10 @@ export async function createComment({
   // Nationality is required only for predictions.
   if (prediction && !user.nationality) {
     throw new Error("Please set your nationality before voting.");
+  }
+
+  if (!hasEditorContent(content)) {
+    throw new Error("Comment cannot be empty.");
   }
 
   // ---------------------------------------------------------------------------
@@ -447,6 +452,7 @@ export async function deleteComment(commentId: string) {
 
   throw new Error("Unable to delete comment.");
 }
+
 export async function editComment({
   commentId,
   content,

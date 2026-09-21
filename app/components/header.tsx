@@ -188,7 +188,7 @@ export default function UserMenu({
     absolute top-0 left-0 -translate-x-3
     h-5 w-5
     origin-top
-    text-amber-400
+    text-zinc-800 dark:text-zinc-300
     fill-amber-100 dark:fill-amber-200
     hover:animate-bell-ring
   "

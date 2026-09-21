@@ -237,11 +237,31 @@ export function PostEditor({
   // SUBMIT
   // ---------------------------------------------------------------------------
 
+  const hasEditorContent = (node: JSONContent): boolean => {
+    // Actual text
+    if (node.text?.trim()) {
+      return true;
+    }
+
+    // Non-text content that should count as content
+    if (node.type === "image") {
+      return true;
+    }
+
+    // Check child nodes
+    return node.content?.some(hasEditorContent) ?? false;
+  };
+
   const handleSubmit = () => {
     startTransition(async () => {
       try {
         if (selectedAssets.length === 0) {
           toast.error("Please select at least one board.");
+          return;
+        }
+
+        if (!hasEditorContent(content)) {
+          toast.error("Please write something.");
           return;
         }
 
@@ -253,21 +273,18 @@ export function PostEditor({
         });
 
         notifyCommentChanged();
-        // Only successfully posted assets become Recent.
+
         saveRecentAssets(selectedAssets);
 
-        // Reset editor.
         setContent({
           type: "doc",
           content: [{ type: "paragraph" }],
         });
 
-        // Reset asset selector.
         setSelectedAssets([]);
         setAssetQuery("");
         setAssetSelectorOpen(false);
 
-        // Reset TipTap.
         setEditorKey((prev) => prev + 1);
 
         toast.success("Comment posted.");
@@ -278,6 +295,7 @@ export function PostEditor({
       }
     });
   };
+
   return (
     <div className="mt-5 flex h-full min-h-0 w-full space-y-2 flex-col px-4">
       {/* ============================================================= */}
@@ -480,7 +498,7 @@ export function PostEditor({
         <Button
           type="button"
           className="w-18 text-[15px]"
-          disabled={isPending}
+          disabled={isPending || !hasEditorContent(content)}
           onClick={handleSubmit}
         >
           {isPending ? "Posting..." : "Post"}
