@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronUp,
   MoreVertical,
+  Pencil,
   ThumbsUp,
   Trash2,
 } from "lucide-react";
@@ -26,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { CommentEditInput } from "./comment-edit-input";
 
 type VoteDirection = "BULL" | "BEAR";
 
@@ -52,6 +54,12 @@ interface MarketComment {
   id: string;
   content: JSONContent;
   createdAt: Date;
+  updatedAt: Date;
+
+  editedAt: Date | null;
+  deletedAt: Date | null;
+  withdrawnAt: Date | null;
+  moderatedAt: Date | null;
 
   author: {
     id: string;
@@ -250,6 +258,7 @@ export function MarketComments({
               comment={comment}
               currentUser={user}
               onDeleted={loadComments}
+              onCommentUpdated={loadComments}
             />
           ))
         )}
@@ -262,10 +271,16 @@ export function MarketComments({
 // COMMENT ITEM
 // -----------------------------------------------------------------------------
 
+interface CommentItemProps {
+  comment: MarketComment;
+  onCommentUpdated: () => Promise<void>;
+}
+
 function CommentItem({
   comment,
   currentUser,
   onDeleted,
+  onCommentUpdated,
 }: {
   comment: MarketComment;
   currentUser: {
@@ -273,17 +288,33 @@ function CommentItem({
     role?: string | null;
   } | null;
   onDeleted: () => Promise<void>;
+  onCommentUpdated: () => Promise<void>;
 }) {
   const [showReplies, setShowReplies] = useState(false);
   const [replying, setReplying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const replyCount = comment._count.replies;
 
   const username = comment.author.name ?? "User";
 
   const canDelete =
-    currentUser?.id === comment.author.id || currentUser?.role === "ADMIN";
+    currentUser?.id === comment.author.id &&
+    !comment.deletedAt &&
+    !comment.withdrawnAt &&
+    !comment.moderatedAt;
+
+  const canEdit =
+    currentUser?.id === comment.author.id &&
+    comment._count.replies === 0 &&
+    !comment.deletedAt &&
+    !comment.withdrawnAt &&
+    !comment.moderatedAt;
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
 
   const handleDelete = async () => {
     if (isDeleting) return;
@@ -333,6 +364,13 @@ function CommentItem({
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end">
+                {canEdit && (
+                  <DropdownMenuItem onClick={handleEdit}>
+                    <Pencil className="mr-2 size-4" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
+
                 {canDelete && (
                   <DropdownMenuItem
                     disabled={isDeleting}
@@ -373,7 +411,19 @@ function CommentItem({
             </div>
           )}
 
-          <CommentContent content={comment.content} />
+          {isEditing ? (
+            <CommentEditInput
+              commentId={comment.id}
+              initialContent={comment.content}
+              onCancel={() => setIsEditing(false)}
+              onSaved={async () => {
+                setIsEditing(false);
+                await onCommentUpdated();
+              }}
+            />
+          ) : (
+            <CommentContent content={comment.content} />
+          )}
 
           {/* Actions */}
           <div className="mt-2 flex items-center gap-4">

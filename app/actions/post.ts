@@ -327,6 +327,12 @@ export async function getMarketComments(assetSymbol: string) {
       id: true,
       content: true,
       createdAt: true,
+      updatedAt: true,
+
+      editedAt: true,
+      deletedAt: true,
+      withdrawnAt: true,
+      moderatedAt: true,
 
       author: {
         select: {
@@ -418,6 +424,70 @@ export async function deleteComment(commentId: string) {
   await prisma.comment.delete({
     where: {
       id: commentId,
+    },
+  });
+
+  return {
+    success: true,
+  };
+}
+
+export async function editComment({
+  commentId,
+  content,
+}: {
+  commentId: string;
+  content: JSONContent;
+}) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  const comment = await prisma.comment.findUnique({
+    where: {
+      id: commentId,
+    },
+    select: {
+      authorId: true,
+      deletedAt: true,
+      withdrawnAt: true,
+      moderatedAt: true,
+
+      _count: {
+        select: {
+          replies: true,
+        },
+      },
+    },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found.");
+  }
+
+  if (comment.authorId !== session.user.id) {
+    throw new Error("You cannot edit this comment.");
+  }
+
+  if (comment.deletedAt || comment.withdrawnAt || comment.moderatedAt) {
+    throw new Error("This comment can no longer be edited.");
+  }
+
+  if (comment._count.replies > 0) {
+    throw new Error(
+      "This comment can no longer be edited because it has replies.",
+    );
+  }
+
+  await prisma.comment.update({
+    where: {
+      id: commentId,
+    },
+    data: {
+      content: content as Prisma.InputJsonValue,
+      editedAt: new Date(),
     },
   });
 
