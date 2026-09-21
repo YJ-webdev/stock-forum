@@ -1,7 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
+import { createPortal } from "react-dom";
 import { LoaderCircle, Search, X } from "lucide-react";
+import {
+  autoUpdate,
+  computePosition,
+  flip,
+  offset,
+  shift,
+  size,
+} from "@floating-ui/dom";
 
 export interface GifResult {
   id: string;
@@ -16,6 +31,11 @@ interface GifPickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (gif: GifResult) => void;
+
+  // Optional:
+  // Comment/reply inputs can anchor the picker to their GIF button.
+  // Tiptap can omit this and use the centered fallback.
+  triggerRef?: RefObject<HTMLElement | null>;
 }
 
 interface GifApiResponse {
@@ -23,19 +43,34 @@ interface GifApiResponse {
   next: string | null;
 }
 
-export function GifPicker({ open, onOpenChange, onSelect }: GifPickerProps) {
+export function GifPicker({
+  open,
+  onOpenChange,
+  onSelect,
+  triggerRef,
+}: GifPickerProps) {
   const pickerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [query, setQuery] = useState("");
   const [gifs, setGifs] = useState<GifResult[]>([]);
-
   const [next, setNext] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const [mounted, setMounted] = useState(false);
+  const [positionReady, setPositionReady] = useState(false);
+
   const requestIdRef = useRef(0);
+
+  // ---------------------------------------------------------------------------
+  // MOUNT
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // ---------------------------------------------------------------------------
   // FETCH GIFS
@@ -78,14 +113,25 @@ export function GifPicker({ open, onOpenChange, onSelect }: GifPickerProps) {
 
         const data = (await response.json()) as GifApiResponse;
 
-        // Ignore an older request that finished after a newer one.
         if (requestId !== requestIdRef.current) {
           return;
         }
 
-        setGifs((current) =>
-          append ? [...current, ...(data.results ?? [])] : (data.results ?? []),
-        );
+        setGifs((current) => {
+          const incoming = data.results ?? [];
+
+          if (!append) {
+            return Array.from(
+              new Map(incoming.map((gif) => [gif.id, gif])).values(),
+            );
+          }
+
+          return Array.from(
+            new Map(
+              [...current, ...incoming].map((gif) => [gif.id, gif]),
+            ).values(),
+          );
+        });
 
         setNext(data.next ?? null);
       } catch (error) {
@@ -106,7 +152,7 @@ export function GifPicker({ open, onOpenChange, onSelect }: GifPickerProps) {
   );
 
   // ---------------------------------------------------------------------------
-  // INITIAL / SEARCH
+  // LOAD FEATURED / SEARCH
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
@@ -127,7 +173,105 @@ export function GifPicker({ open, onOpenChange, onSelect }: GifPickerProps) {
   }, [open, query, fetchGifs]);
 
   // ---------------------------------------------------------------------------
-  // FOCUS SEARCH WHEN OPENED
+  // POSITION PICKER
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!open || !mounted) return;
+
+    const picker = pickerRef.current;
+
+    if (!picker) return;
+
+    setPositionReady(false);
+
+    const trigger = triggerRef?.current;
+
+    // -------------------------------------------------------------------------
+    // No trigger:
+    // Tiptap /gif fallback → center picker in viewport
+    // -------------------------------------------------------------------------
+
+    if (!trigger) {
+      Object.assign(picker.style, {
+        position: "fixed",
+        left: "50%",
+        top: "50%",
+        transform: "translate(-50%, -50%)",
+        maxHeight: "calc(100vh - 24px)",
+      });
+
+      setPositionReady(true);
+
+      return;
+    }
+
+    // -------------------------------------------------------------------------
+    // Trigger exists:
+    // Try top first → bottom → sides → shift inside viewport
+    // -------------------------------------------------------------------------
+
+    const updatePosition = async () => {
+      const result = await computePosition(trigger, picker, {
+        strategy: "fixed",
+        placement: "top-start",
+
+        middleware: [
+          offset(8),
+
+          flip({
+            fallbackPlacements: [
+              "bottom-start",
+              "top-end",
+              "bottom-end",
+              "right-start",
+              "left-start",
+              "right",
+              "left",
+            ],
+            padding: 12,
+          }),
+
+          shift({
+            padding: 12,
+            crossAxis: true,
+          }),
+
+          size({
+            padding: 12,
+
+            apply({ availableHeight, elements }) {
+              elements.floating.style.maxHeight = `${Math.max(
+                240,
+                availableHeight,
+              )}px`;
+            },
+          }),
+        ],
+      });
+
+      Object.assign(picker.style, {
+        position: "fixed",
+        left: `${result.x}px`,
+        top: `${result.y}px`,
+        transform: "none",
+      });
+
+      setPositionReady(true);
+    };
+
+    const cleanup = autoUpdate(trigger, picker, updatePosition, {
+      ancestorScroll: true,
+      ancestorResize: true,
+      elementResize: true,
+      layoutShift: true,
+    });
+
+    return cleanup;
+  }, [open, mounted, triggerRef]);
+
+  // ---------------------------------------------------------------------------
+  // AUTO FOCUS SEARCH
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
@@ -170,12 +314,20 @@ export function GifPicker({ open, onOpenChange, onSelect }: GifPickerProps) {
     if (!open) return;
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (
-        pickerRef.current &&
-        !pickerRef.current.contains(event.target as Node)
-      ) {
-        onOpenChange(false);
+      const target = event.target as Node;
+
+      // Click inside picker
+      if (pickerRef.current?.contains(target)) {
+        return;
       }
+
+      // Click on trigger button.
+      // Let the trigger's onClick handle toggling.
+      if (triggerRef?.current?.contains(target)) {
+        return;
+      }
+
+      onOpenChange(false);
     };
 
     document.addEventListener("pointerdown", handlePointerDown);
@@ -183,7 +335,7 @@ export function GifPicker({ open, onOpenChange, onSelect }: GifPickerProps) {
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, [open, onOpenChange]);
+  }, [open, onOpenChange, triggerRef]);
 
   // ---------------------------------------------------------------------------
   // SELECT
@@ -208,22 +360,23 @@ export function GifPicker({ open, onOpenChange, onSelect }: GifPickerProps) {
     });
   };
 
-  if (!open) {
+  if (!open || !mounted) {
     return null;
   }
 
-  return (
+  // ---------------------------------------------------------------------------
+  // PICKER
+  // ---------------------------------------------------------------------------
+
+  return createPortal(
     <div
       ref={pickerRef}
       className="
-        absolute
-top-full left-0
-mt-2
-        z-100
+        fixed
+        z-9999
         flex
         h-120 w-95
-        max-h-[min(480px,70vh)]
-        max-w-[calc(100vw-32px)]
+        max-w-[calc(100vw-24px)]
         flex-col
         overflow-hidden
         rounded-xl
@@ -233,11 +386,11 @@ mt-2
         dark:border-zinc-700
         dark:bg-zinc-900
       "
+      style={{
+        visibility: positionReady ? "visible" : "hidden",
+      }}
     >
-      {/* =============================================================== */}
-      {/* HEADER                                                          */}
-      {/* =============================================================== */}
-
+      {/* Search */}
       <div
         className="
           flex shrink-0
@@ -319,40 +472,20 @@ mt-2
         </button>
       </div>
 
-      {/* =============================================================== */}
-      {/* CONTENT                                                         */}
-      {/* =============================================================== */}
-
+      {/* GIF results */}
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
         {loading ? (
-          <div
-            className="
-              flex h-full
-              items-center justify-center
-              text-zinc-400
-            "
-          >
+          <div className="flex h-full items-center justify-center text-zinc-400">
             <LoaderCircle size={22} className="animate-spin" />
           </div>
         ) : gifs.length === 0 ? (
-          <div
-            className="
-              flex h-full
-              items-center justify-center
-              px-6
-              text-center
-              text-[13px]
-              text-zinc-400
-            "
-          >
+          <div className="flex h-full items-center justify-center px-6 text-center text-[13px] text-zinc-400">
             {query.trim()
               ? `No GIFs found for "${query.trim()}"`
               : "No GIFs available"}
           </div>
         ) : (
           <>
-            {/* Masonry-style columns */}
-
             <div className="columns-2 gap-1.5">
               {gifs.map((gif) => (
                 <button
@@ -421,10 +554,7 @@ mt-2
         )}
       </div>
 
-      {/* =============================================================== */}
-      {/* FOOTER                                                          */}
-      {/* =============================================================== */}
-
+      {/* Footer */}
       <div
         className="
           shrink-0
@@ -438,6 +568,7 @@ mt-2
       >
         Powered by KLIPY
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -56,6 +56,7 @@ export const ModelName = {
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   Comment: 'Comment',
+  Prediction: 'Prediction',
   CommentAsset: 'CommentAsset',
   Reply: 'Reply',
   CommentLike: 'CommentLike',
@@ -64,8 +65,7 @@ export const ModelName = {
   AccountBalance: 'AccountBalance',
   PortfolioPosition: 'PortfolioPosition',
   Trade: 'Trade',
-  Watchlist: 'Watchlist',
-  Prediction: 'Prediction'
+  Watchlist: 'Watchlist'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -140,12 +140,32 @@ export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFi
 export const CommentScalarFieldEnum = {
   id: 'id',
   content: 'content',
-  authorId: 'authorId',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  authorId: 'authorId',
+  predictionId: 'predictionId'
 } as const
 
 export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
+
+
+export const PredictionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  symbol: 'symbol',
+  direction: 'direction',
+  pointsBet: 'pointsBet',
+  predictionPrice: 'predictionPrice',
+  sessionDate: 'sessionDate',
+  closingPrice: 'closingPrice',
+  status: 'status',
+  pointsChange: 'pointsChange',
+  nationality: 'nationality',
+  createdAt: 'createdAt',
+  settledAt: 'settledAt'
+} as const
+
+export type PredictionScalarFieldEnum = (typeof PredictionScalarFieldEnum)[keyof typeof PredictionScalarFieldEnum]
 
 
 export const CommentAssetScalarFieldEnum = {
@@ -259,25 +279,6 @@ export const WatchlistScalarFieldEnum = {
 } as const
 
 export type WatchlistScalarFieldEnum = (typeof WatchlistScalarFieldEnum)[keyof typeof WatchlistScalarFieldEnum]
-
-
-export const PredictionScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  symbol: 'symbol',
-  direction: 'direction',
-  pointsBet: 'pointsBet',
-  predictionPrice: 'predictionPrice',
-  sessionDate: 'sessionDate',
-  closingPrice: 'closingPrice',
-  status: 'status',
-  pointsChange: 'pointsChange',
-  country: 'country',
-  createdAt: 'createdAt',
-  settledAt: 'settledAt'
-} as const
-
-export type PredictionScalarFieldEnum = (typeof PredictionScalarFieldEnum)[keyof typeof PredictionScalarFieldEnum]
 
 
 export const SortOrder = {

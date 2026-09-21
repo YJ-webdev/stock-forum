@@ -1,10 +1,12 @@
 "use client";
 
-import { Flag } from "lucide-react";
+import { Flag, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { VotingCountdown } from "./voting-countdown";
 import { toast } from "sonner";
+import { useRef, useState } from "react";
+import { GifPicker, GifResult } from "./gif-picker";
 
 type VoteDirection = "BULL" | "BEAR";
 
@@ -22,7 +24,7 @@ interface PredictionCommentInputProps {
   isMarketOpen: boolean;
   buttonDisabled: boolean;
 
-  submitVote: () => void;
+  submitVote: (comment: string, gif: GifResult | null) => void;
 
   // countdown
   targetMs: number | null;
@@ -45,6 +47,13 @@ export function PredictionCommentInput({
   countdownType,
   showCountdown,
 }: PredictionCommentInputProps) {
+  const gifButtonRef = useRef<HTMLButtonElement>(null);
+
+  const [gifPickerOpen, setGifPickerOpen] = useState(false);
+  const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
+
+  const [comment, setComment] = useState("");
+
   const handleDirectionClick = (direction: VoteDirection) => {
     if (buttonDisabled) return;
 
@@ -175,33 +184,77 @@ export function PredictionCommentInput({
 
           {/* Comment */}
           <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
             rows={1}
             placeholder="Write a text to add comments..."
             className="
-              min-h-11 w-full resize-none
-              bg-transparent py-3
-              text-[15px] outline-none
-              placeholder:text-zinc-500
-              placeholder:truncate
-            "
+    min-h-11 w-full resize-none
+    bg-transparent py-3
+    text-[15px] outline-none
+    placeholder:text-zinc-500
+    placeholder:truncate
+  "
           />
+
+          {/* Selected GIF */}
+          {selectedGif && (
+            <div className="relative mb-3 w-fit max-w-full">
+              <img
+                src={selectedGif.preview || selectedGif.src}
+                alt={selectedGif.title}
+                className="
+        block max-h-60 max-w-full
+        rounded-lg object-contain
+      "
+              />
+
+              <button
+                type="button"
+                onClick={() => setSelectedGif(null)}
+                className="
+        absolute right-2 top-2
+        flex size-7 cursor-pointer
+        items-center justify-center
+        rounded-full
+        bg-black/60 text-white
+        transition-colors
+        hover:bg-black/75
+      "
+              >
+                <X size={15} />
+              </button>
+            </div>
+          )}
 
           {/* Bottom actions */}
           <div className="@container flex items-center justify-between gap-2 pb-2">
             {/* Left */}
             <div className="flex shrink-0 items-center gap-1">
               <button
+                ref={gifButtonRef}
                 type="button"
+                onClick={() => setGifPickerOpen((open) => !open)}
                 className="
-        cursor-pointer rounded-md
-        px-2 py-1
-        text-sm font-medium text-zinc-500
-        hover:bg-zinc-200
-        dark:hover:bg-zinc-700
-      "
+      cursor-pointer rounded-md
+      px-2 py-1
+      text-sm font-medium text-zinc-500
+      hover:bg-zinc-200
+      dark:hover:bg-zinc-700
+    "
               >
                 GIF
               </button>
+
+              <GifPicker
+                triggerRef={gifButtonRef}
+                open={gifPickerOpen}
+                onOpenChange={setGifPickerOpen}
+                onSelect={(gif) => {
+                  setSelectedGif(gif);
+                  setGifPickerOpen(false);
+                }}
+              />
             </div>
 
             {/* Right */}
@@ -221,7 +274,7 @@ export function PredictionCommentInput({
                 type="button"
                 size="sm"
                 disabled={buttonDisabled}
-                onClick={submitVote}
+                onClick={() => submitVote(comment, selectedGif)}
                 className="
         shrink-0
         cursor-pointer

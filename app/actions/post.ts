@@ -11,29 +11,62 @@ import {
   type MarketSymbolItem,
 } from "@/lib/data/market-symbols";
 
-export interface CreateCommentInput {
-  content: JSONContent;
+type PredictionInput = {
+  direction: "BULL" | "BEAR";
+  pointsBet: number;
+  predictionPrice: number;
+  sessionDate: Date;
+};
+
+type CreateCommentInput = {
+  content?: JSONContent | null;
   assetSymbols: string[];
-}
+  prediction?: PredictionInput | null;
+};
 
 export async function createComment({
-  content,
+  content = null,
   assetSymbols,
+  prediction = null,
 }: CreateCommentInput) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in to comment.");
+    throw new Error("You must be logged in.");
   }
 
-  // Remove duplicate symbols.
+  // ---------------------------------------------------------------------------
+  // USER
+  // ---------------------------------------------------------------------------
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: session.user.id,
+    },
+    select: {
+      nationality: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("Please log in to comment.");
+  }
+
+  // Nationality is required only for predictions.
+  if (prediction && !user.nationality) {
+    throw new Error("Please set your nationality before voting.");
+  }
+
+  // ---------------------------------------------------------------------------
+  // MARKETS
+  // ---------------------------------------------------------------------------
+
   const uniqueSymbols = [...new Set(assetSymbols)];
 
   if (uniqueSymbols.length === 0) {
     throw new Error("Please select at least one board.");
   }
 
-  // Only allow assets that exist in our market metadata.
   const selectedMarkets = uniqueSymbols
     .map((symbol) =>
       ALL_MARKET_SYMBOLS.find((market) => market.symbol === symbol),
@@ -44,7 +77,50 @@ export async function createComment({
     throw new Error("No valid boards selected.");
   }
 
-  // Make sure every selected market exists in MarketAsset.
+  // A prediction belongs to exactly one market.
+  if (prediction && selectedMarkets.length !== 1) {
+    throw new Error("A prediction must belong to exactly one market.");
+  }
+
+  // ---------------------------------------------------------------------------
+  // VALIDATE PREDICTION
+  // ---------------------------------------------------------------------------
+
+  if (prediction) {
+    if (prediction.pointsBet < 50 || prediction.pointsBet > 500) {
+      throw new Error("Prediction must be between 50 and 500 points.");
+    }
+
+    if (
+      !Number.isFinite(prediction.predictionPrice) ||
+      prediction.predictionPrice <= 0
+    ) {
+      throw new Error("Invalid prediction price.");
+    }
+
+    if (
+      !(prediction.sessionDate instanceof Date) ||
+      Number.isNaN(prediction.sessionDate.getTime())
+    ) {
+      throw new Error("Invalid prediction session.");
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // DETECT COMMENT CONTENT
+  // ---------------------------------------------------------------------------
+
+  const hasContent =
+    content && Array.isArray(content.content) && content.content.length > 0;
+
+  if (!hasContent && !prediction) {
+    throw new Error("Please write a comment or select a GIF.");
+  }
+
+  // ---------------------------------------------------------------------------
+  // UPSERT MARKET ASSETS
+  // ---------------------------------------------------------------------------
+
   await Promise.all(
     selectedMarkets.map((market) =>
       prisma.marketAsset.upsert({
@@ -72,26 +148,125 @@ export async function createComment({
     ),
   );
 
-  // Convert TipTap JSONContent into a plain Prisma-compatible JSON value.
-  const plainContent = JSON.parse(
-    JSON.stringify(content),
-  ) as Prisma.InputJsonValue;
+  const plainContent = hasContent
+    ? (JSON.parse(JSON.stringify(content)) as Prisma.InputJsonValue)
+    : null;
 
-  return prisma.comment.create({
-    data: {
-      content: plainContent,
-      authorId: session.user.id,
+  // ---------------------------------------------------------------------------
+  // CREATE
+  // ---------------------------------------------------------------------------
 
-      assets: {
-        create: selectedMarkets.map((market) => ({
-          asset: {
-            connect: {
-              symbol: market.symbol,
-            },
+  return prisma.$transaction(async (tx) => {
+    let createdPrediction: { id: string } | null = null;
+
+    // -------------------------------------------------------------------------
+    // PREDICTION
+    // -------------------------------------------------------------------------
+
+    if (prediction) {
+      const market = selectedMarkets[0];
+
+      createdPrediction = await tx.prediction.create({
+        data: {
+          userId: session.user.id,
+          symbol: market.symbol,
+
+          direction: prediction.direction,
+          pointsBet: prediction.pointsBet,
+
+          predictionPrice: prediction.predictionPrice,
+          sessionDate: prediction.sessionDate,
+
+          nationality: user.nationality!,
+        },
+
+        select: {
+          id: true,
+        },
+      });
+    }
+
+    // -------------------------------------------------------------------------
+    // COMMENT
+    // -------------------------------------------------------------------------
+
+    if (hasContent || createdPrediction) {
+      const commentContent: Prisma.InputJsonValue = plainContent ?? {
+        type: "doc",
+        content: [],
+      };
+
+      await tx.comment.create({
+        data: {
+          content: commentContent,
+          authorId: session.user.id,
+
+          predictionId: createdPrediction?.id ?? null,
+
+          assets: {
+            create: selectedMarkets.map((market) => ({
+              asset: {
+                connect: {
+                  symbol: market.symbol,
+                },
+              },
+            })),
           },
-        })),
+        },
+      });
+    }
+
+    return {
+      success: true,
+    };
+  });
+}
+
+export interface MostLikedComment {
+  id: string;
+  content: JSONContent;
+  createdAt: Date;
+  updatedAt: Date;
+  author: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    nationality: string | null;
+  };
+  assets: {
+    asset: {
+      name: string;
+      symbol: string;
+      displaySymbol: string | null;
+    };
+  }[];
+  _count: {
+    likes: number;
+    replies: number;
+  };
+}
+
+function hasTextContent(content: JSONContent | null): boolean {
+  if (!content) return false;
+
+  if (content.type === "text" && content.text?.trim()) {
+    return true;
+  }
+
+  return content.content?.some(hasTextContent) ?? false;
+}
+
+export async function getMostLikedComments(
+  limit = 5,
+): Promise<MostLikedComment[]> {
+  const comments = await prisma.comment.findMany({
+    orderBy: {
+      likes: {
+        _count: "desc",
       },
     },
+
+    take: limit * 5,
 
     select: {
       id: true,
@@ -128,55 +303,30 @@ export async function createComment({
       },
     },
   });
+
+  return comments
+    .filter((comment) => hasTextContent(comment.content as JSONContent | null))
+    .slice(0, limit) as MostLikedComment[];
 }
 
-export interface MostLikedComment {
-  id: string;
-  content: JSONContent;
-  createdAt: Date;
-  updatedAt: Date;
-
-  author: {
-    id: string;
-    name: string | null;
-    image: string | null;
-    nationality: string | null;
-  };
-
-  assets: {
-    asset: {
-      name: string;
-      symbol: string;
-      displaySymbol: string | null;
-    };
-  }[];
-
-  _count: {
-    likes: number;
-    replies: number;
-  };
-}
-
-export async function getMostLikedComments(): Promise<MostLikedComment[]> {
+export async function getMarketComments(assetSymbol: string) {
   const comments = await prisma.comment.findMany({
-    take: 5,
-
-    orderBy: [
-      {
-        likes: {
-          _count: "desc",
+    where: {
+      assets: {
+        some: {
+          assetSymbol,
         },
       },
-      {
-        createdAt: "desc",
-      },
-    ],
+    },
+
+    orderBy: {
+      createdAt: "desc",
+    },
 
     select: {
       id: true,
       content: true,
       createdAt: true,
-      updatedAt: true,
 
       author: {
         select: {
@@ -187,13 +337,36 @@ export async function getMostLikedComments(): Promise<MostLikedComment[]> {
         },
       },
 
-      assets: {
+      prediction: {
         select: {
-          asset: {
+          direction: true,
+          pointsBet: true,
+          status: true,
+        },
+      },
+
+      replies: {
+        orderBy: {
+          createdAt: "asc",
+        },
+
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+
+          author: {
             select: {
+              id: true,
               name: true,
-              symbol: true,
-              displaySymbol: true,
+              image: true,
+              nationality: true,
+            },
+          },
+
+          _count: {
+            select: {
+              likes: true,
             },
           },
         },

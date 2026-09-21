@@ -1,27 +1,97 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { VotingCountdown } from "./voting-countdown";
 import { GifPicker, type GifResult } from "@/app/components/gif-picker";
+import { toast } from "sonner";
+import { createComment } from "../actions/post";
 
 interface CommentOnlyInputProps {
+  assetSymbol: string;
+
   targetMs: number | null;
   countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
   showCountdown: boolean;
   isMarketOpen: boolean;
+
+  onCommentCreated: () => Promise<void>;
 }
 
 export function CommentOnlyInput({
+  assetSymbol,
   targetMs,
   countdownType,
   showCountdown,
   isMarketOpen,
+  onCommentCreated,
 }: CommentOnlyInputProps) {
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
+
+  const [comment, setComment] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  const handleComment = () => {
+    if (!comment.trim() && !selectedGif) {
+      toast.error("Please write a comment or select a GIF.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const content = {
+          type: "doc",
+          content: [
+            ...(comment.trim()
+              ? [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        type: "text",
+                        text: comment.trim(),
+                      },
+                    ],
+                  },
+                ]
+              : []),
+
+            ...(selectedGif
+              ? [
+                  {
+                    type: "image",
+                    attrs: {
+                      src: selectedGif.src,
+                      alt: selectedGif.title,
+                    },
+                  },
+                ]
+              : []),
+          ],
+        };
+
+        await createComment({
+          content,
+          assetSymbols: [assetSymbol],
+        });
+
+        setComment("");
+        setSelectedGif(null);
+        setGifPickerOpen(false);
+
+        await onCommentCreated();
+
+        toast.success("Comment added.");
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to add comment.",
+        );
+      }
+    });
+  };
 
   return (
     <div className="mb-8 flex gap-3">
@@ -31,15 +101,17 @@ export function CommentOnlyInput({
         <div className="relative rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
           {/* Comment */}
           <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
             rows={1}
             placeholder="Write a text to add comments..."
             className="
-              min-h-11 w-full resize-none
-              bg-transparent py-3
-              text-[15px] outline-none
-              placeholder:text-zinc-500
-              placeholder:truncate
-            "
+    min-h-11 w-full resize-none
+    bg-transparent py-3
+    text-[15px] outline-none
+    placeholder:text-zinc-500
+    placeholder:truncate
+  "
           />
 
           {/* Selected GIF */}
@@ -115,9 +187,11 @@ export function CommentOnlyInput({
               <Button
                 type="button"
                 size="sm"
+                disabled={isPending || (!comment.trim() && !selectedGif)}
+                onClick={handleComment}
                 className="shrink-0 cursor-pointer"
               >
-                Comment
+                {isPending ? "Posting..." : "Comment"}
               </Button>
             </div>
           </div>

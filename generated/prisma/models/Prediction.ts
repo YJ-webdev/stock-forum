@@ -51,7 +51,7 @@ export type PredictionMinAggregateOutputType = {
   closingPrice: runtime.Decimal | null
   status: $Enums.PredictionStatus | null
   pointsChange: number | null
-  country: string | null
+  nationality: string | null
   createdAt: Date | null
   settledAt: Date | null
 }
@@ -67,7 +67,7 @@ export type PredictionMaxAggregateOutputType = {
   closingPrice: runtime.Decimal | null
   status: $Enums.PredictionStatus | null
   pointsChange: number | null
-  country: string | null
+  nationality: string | null
   createdAt: Date | null
   settledAt: Date | null
 }
@@ -83,7 +83,7 @@ export type PredictionCountAggregateOutputType = {
   closingPrice: number
   status: number
   pointsChange: number
-  country: number
+  nationality: number
   createdAt: number
   settledAt: number
   _all: number
@@ -115,7 +115,7 @@ export type PredictionMinAggregateInputType = {
   closingPrice?: true
   status?: true
   pointsChange?: true
-  country?: true
+  nationality?: true
   createdAt?: true
   settledAt?: true
 }
@@ -131,7 +131,7 @@ export type PredictionMaxAggregateInputType = {
   closingPrice?: true
   status?: true
   pointsChange?: true
-  country?: true
+  nationality?: true
   createdAt?: true
   settledAt?: true
 }
@@ -147,7 +147,7 @@ export type PredictionCountAggregateInputType = {
   closingPrice?: true
   status?: true
   pointsChange?: true
-  country?: true
+  nationality?: true
   createdAt?: true
   settledAt?: true
   _all?: true
@@ -250,7 +250,7 @@ export type PredictionGroupByOutputType = {
   closingPrice: runtime.Decimal | null
   status: $Enums.PredictionStatus
   pointsChange: number | null
-  country: string | null
+  nationality: string | null
   createdAt: Date
   settledAt: Date | null
   _count: PredictionCountAggregateOutputType | null
@@ -289,11 +289,12 @@ export type PredictionWhereInput = {
   closingPrice?: Prisma.DecimalNullableFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFilter<"Prediction"> | $Enums.PredictionStatus
   pointsChange?: Prisma.IntNullableFilter<"Prediction"> | number | null
-  country?: Prisma.StringNullableFilter<"Prediction"> | string | null
+  nationality?: Prisma.StringNullableFilter<"Prediction"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Prediction"> | Date | string
   settledAt?: Prisma.DateTimeNullableFilter<"Prediction"> | Date | string | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   asset?: Prisma.XOR<Prisma.MarketAssetScalarRelationFilter, Prisma.MarketAssetWhereInput>
+  comment?: Prisma.XOR<Prisma.CommentNullableScalarRelationFilter, Prisma.CommentWhereInput> | null
 }
 
 export type PredictionOrderByWithRelationInput = {
@@ -307,11 +308,12 @@ export type PredictionOrderByWithRelationInput = {
   closingPrice?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   pointsChange?: Prisma.SortOrderInput | Prisma.SortOrder
-  country?: Prisma.SortOrderInput | Prisma.SortOrder
+  nationality?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   settledAt?: Prisma.SortOrderInput | Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
   asset?: Prisma.MarketAssetOrderByWithRelationInput
+  comment?: Prisma.CommentOrderByWithRelationInput
 }
 
 export type PredictionWhereUniqueInput = Prisma.AtLeast<{
@@ -329,11 +331,12 @@ export type PredictionWhereUniqueInput = Prisma.AtLeast<{
   closingPrice?: Prisma.DecimalNullableFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFilter<"Prediction"> | $Enums.PredictionStatus
   pointsChange?: Prisma.IntNullableFilter<"Prediction"> | number | null
-  country?: Prisma.StringNullableFilter<"Prediction"> | string | null
+  nationality?: Prisma.StringNullableFilter<"Prediction"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Prediction"> | Date | string
   settledAt?: Prisma.DateTimeNullableFilter<"Prediction"> | Date | string | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   asset?: Prisma.XOR<Prisma.MarketAssetScalarRelationFilter, Prisma.MarketAssetWhereInput>
+  comment?: Prisma.XOR<Prisma.CommentNullableScalarRelationFilter, Prisma.CommentWhereInput> | null
 }, "id" | "userId_symbol_sessionDate">
 
 export type PredictionOrderByWithAggregationInput = {
@@ -347,7 +350,7 @@ export type PredictionOrderByWithAggregationInput = {
   closingPrice?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   pointsChange?: Prisma.SortOrderInput | Prisma.SortOrder
-  country?: Prisma.SortOrderInput | Prisma.SortOrder
+  nationality?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   settledAt?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.PredictionCountOrderByAggregateInput
@@ -371,7 +374,7 @@ export type PredictionScalarWhereWithAggregatesInput = {
   closingPrice?: Prisma.DecimalNullableWithAggregatesFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusWithAggregatesFilter<"Prediction"> | $Enums.PredictionStatus
   pointsChange?: Prisma.IntNullableWithAggregatesFilter<"Prediction"> | number | null
-  country?: Prisma.StringNullableWithAggregatesFilter<"Prediction"> | string | null
+  nationality?: Prisma.StringNullableWithAggregatesFilter<"Prediction"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Prediction"> | Date | string
   settledAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Prediction"> | Date | string | null
 }
@@ -385,11 +388,12 @@ export type PredictionCreateInput = {
   closingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
-  country?: string | null
+  nationality?: string | null
   createdAt?: Date | string
   settledAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutPredictionsInput
   asset: Prisma.MarketAssetCreateNestedOneWithoutPredictionsInput
+  comment?: Prisma.CommentCreateNestedOneWithoutPredictionInput
 }
 
 export type PredictionUncheckedCreateInput = {
@@ -403,9 +407,10 @@ export type PredictionUncheckedCreateInput = {
   closingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
-  country?: string | null
+  nationality?: string | null
   createdAt?: Date | string
   settledAt?: Date | string | null
+  comment?: Prisma.CommentUncheckedCreateNestedOneWithoutPredictionInput
 }
 
 export type PredictionUpdateInput = {
@@ -417,11 +422,12 @@ export type PredictionUpdateInput = {
   closingPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutPredictionsNestedInput
   asset?: Prisma.MarketAssetUpdateOneRequiredWithoutPredictionsNestedInput
+  comment?: Prisma.CommentUpdateOneWithoutPredictionNestedInput
 }
 
 export type PredictionUncheckedUpdateInput = {
@@ -435,9 +441,10 @@ export type PredictionUncheckedUpdateInput = {
   closingPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  comment?: Prisma.CommentUncheckedUpdateOneWithoutPredictionNestedInput
 }
 
 export type PredictionCreateManyInput = {
@@ -451,7 +458,7 @@ export type PredictionCreateManyInput = {
   closingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
-  country?: string | null
+  nationality?: string | null
   createdAt?: Date | string
   settledAt?: Date | string | null
 }
@@ -465,7 +472,7 @@ export type PredictionUpdateManyMutationInput = {
   closingPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -481,7 +488,7 @@ export type PredictionUncheckedUpdateManyInput = {
   closingPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -494,6 +501,11 @@ export type PredictionListRelationFilter = {
 
 export type PredictionOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type PredictionNullableScalarRelationFilter = {
+  is?: Prisma.PredictionWhereInput | null
+  isNot?: Prisma.PredictionWhereInput | null
 }
 
 export type PredictionUserIdSymbolSessionDateCompoundUniqueInput = {
@@ -513,7 +525,7 @@ export type PredictionCountOrderByAggregateInput = {
   closingPrice?: Prisma.SortOrder
   status?: Prisma.SortOrder
   pointsChange?: Prisma.SortOrder
-  country?: Prisma.SortOrder
+  nationality?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   settledAt?: Prisma.SortOrder
 }
@@ -536,7 +548,7 @@ export type PredictionMaxOrderByAggregateInput = {
   closingPrice?: Prisma.SortOrder
   status?: Prisma.SortOrder
   pointsChange?: Prisma.SortOrder
-  country?: Prisma.SortOrder
+  nationality?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   settledAt?: Prisma.SortOrder
 }
@@ -552,7 +564,7 @@ export type PredictionMinOrderByAggregateInput = {
   closingPrice?: Prisma.SortOrder
   status?: Prisma.SortOrder
   pointsChange?: Prisma.SortOrder
-  country?: Prisma.SortOrder
+  nationality?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   settledAt?: Prisma.SortOrder
 }
@@ -606,6 +618,54 @@ export type PredictionUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.PredictionScalarWhereInput | Prisma.PredictionScalarWhereInput[]
 }
 
+export type PredictionCreateNestedOneWithoutCommentInput = {
+  create?: Prisma.XOR<Prisma.PredictionCreateWithoutCommentInput, Prisma.PredictionUncheckedCreateWithoutCommentInput>
+  connectOrCreate?: Prisma.PredictionCreateOrConnectWithoutCommentInput
+  connect?: Prisma.PredictionWhereUniqueInput
+}
+
+export type PredictionUpdateOneWithoutCommentNestedInput = {
+  create?: Prisma.XOR<Prisma.PredictionCreateWithoutCommentInput, Prisma.PredictionUncheckedCreateWithoutCommentInput>
+  connectOrCreate?: Prisma.PredictionCreateOrConnectWithoutCommentInput
+  upsert?: Prisma.PredictionUpsertWithoutCommentInput
+  disconnect?: Prisma.PredictionWhereInput | boolean
+  delete?: Prisma.PredictionWhereInput | boolean
+  connect?: Prisma.PredictionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PredictionUpdateToOneWithWhereWithoutCommentInput, Prisma.PredictionUpdateWithoutCommentInput>, Prisma.PredictionUncheckedUpdateWithoutCommentInput>
+}
+
+export type EnumPredictionDirectionFieldUpdateOperationsInput = {
+  set?: $Enums.PredictionDirection
+}
+
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
+export type DecimalFieldUpdateOperationsInput = {
+  set?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
+}
+
+export type NullableDecimalFieldUpdateOperationsInput = {
+  set?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
+}
+
+export type EnumPredictionStatusFieldUpdateOperationsInput = {
+  set?: $Enums.PredictionStatus
+}
+
 export type PredictionCreateNestedManyWithoutAssetInput = {
   create?: Prisma.XOR<Prisma.PredictionCreateWithoutAssetInput, Prisma.PredictionUncheckedCreateWithoutAssetInput> | Prisma.PredictionCreateWithoutAssetInput[] | Prisma.PredictionUncheckedCreateWithoutAssetInput[]
   connectOrCreate?: Prisma.PredictionCreateOrConnectWithoutAssetInput | Prisma.PredictionCreateOrConnectWithoutAssetInput[]
@@ -648,22 +708,6 @@ export type PredictionUncheckedUpdateManyWithoutAssetNestedInput = {
   deleteMany?: Prisma.PredictionScalarWhereInput | Prisma.PredictionScalarWhereInput[]
 }
 
-export type EnumPredictionDirectionFieldUpdateOperationsInput = {
-  set?: $Enums.PredictionDirection
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
-export type EnumPredictionStatusFieldUpdateOperationsInput = {
-  set?: $Enums.PredictionStatus
-}
-
 export type PredictionCreateWithoutUserInput = {
   id?: string
   direction: $Enums.PredictionDirection
@@ -673,10 +717,11 @@ export type PredictionCreateWithoutUserInput = {
   closingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
-  country?: string | null
+  nationality?: string | null
   createdAt?: Date | string
   settledAt?: Date | string | null
   asset: Prisma.MarketAssetCreateNestedOneWithoutPredictionsInput
+  comment?: Prisma.CommentCreateNestedOneWithoutPredictionInput
 }
 
 export type PredictionUncheckedCreateWithoutUserInput = {
@@ -689,9 +734,10 @@ export type PredictionUncheckedCreateWithoutUserInput = {
   closingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
-  country?: string | null
+  nationality?: string | null
   createdAt?: Date | string
   settledAt?: Date | string | null
+  comment?: Prisma.CommentUncheckedCreateNestedOneWithoutPredictionInput
 }
 
 export type PredictionCreateOrConnectWithoutUserInput = {
@@ -734,9 +780,89 @@ export type PredictionScalarWhereInput = {
   closingPrice?: Prisma.DecimalNullableFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFilter<"Prediction"> | $Enums.PredictionStatus
   pointsChange?: Prisma.IntNullableFilter<"Prediction"> | number | null
-  country?: Prisma.StringNullableFilter<"Prediction"> | string | null
+  nationality?: Prisma.StringNullableFilter<"Prediction"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Prediction"> | Date | string
   settledAt?: Prisma.DateTimeNullableFilter<"Prediction"> | Date | string | null
+}
+
+export type PredictionCreateWithoutCommentInput = {
+  id?: string
+  direction: $Enums.PredictionDirection
+  pointsBet: number
+  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  sessionDate: Date | string
+  closingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  status?: $Enums.PredictionStatus
+  pointsChange?: number | null
+  nationality?: string | null
+  createdAt?: Date | string
+  settledAt?: Date | string | null
+  user: Prisma.UserCreateNestedOneWithoutPredictionsInput
+  asset: Prisma.MarketAssetCreateNestedOneWithoutPredictionsInput
+}
+
+export type PredictionUncheckedCreateWithoutCommentInput = {
+  id?: string
+  userId: string
+  symbol: string
+  direction: $Enums.PredictionDirection
+  pointsBet: number
+  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  sessionDate: Date | string
+  closingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  status?: $Enums.PredictionStatus
+  pointsChange?: number | null
+  nationality?: string | null
+  createdAt?: Date | string
+  settledAt?: Date | string | null
+}
+
+export type PredictionCreateOrConnectWithoutCommentInput = {
+  where: Prisma.PredictionWhereUniqueInput
+  create: Prisma.XOR<Prisma.PredictionCreateWithoutCommentInput, Prisma.PredictionUncheckedCreateWithoutCommentInput>
+}
+
+export type PredictionUpsertWithoutCommentInput = {
+  update: Prisma.XOR<Prisma.PredictionUpdateWithoutCommentInput, Prisma.PredictionUncheckedUpdateWithoutCommentInput>
+  create: Prisma.XOR<Prisma.PredictionCreateWithoutCommentInput, Prisma.PredictionUncheckedCreateWithoutCommentInput>
+  where?: Prisma.PredictionWhereInput
+}
+
+export type PredictionUpdateToOneWithWhereWithoutCommentInput = {
+  where?: Prisma.PredictionWhereInput
+  data: Prisma.XOR<Prisma.PredictionUpdateWithoutCommentInput, Prisma.PredictionUncheckedUpdateWithoutCommentInput>
+}
+
+export type PredictionUpdateWithoutCommentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
+  pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
+  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  closingPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
+  pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  user?: Prisma.UserUpdateOneRequiredWithoutPredictionsNestedInput
+  asset?: Prisma.MarketAssetUpdateOneRequiredWithoutPredictionsNestedInput
+}
+
+export type PredictionUncheckedUpdateWithoutCommentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
+  pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
+  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  closingPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
+  pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type PredictionCreateWithoutAssetInput = {
@@ -748,10 +874,11 @@ export type PredictionCreateWithoutAssetInput = {
   closingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
-  country?: string | null
+  nationality?: string | null
   createdAt?: Date | string
   settledAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutPredictionsInput
+  comment?: Prisma.CommentCreateNestedOneWithoutPredictionInput
 }
 
 export type PredictionUncheckedCreateWithoutAssetInput = {
@@ -764,9 +891,10 @@ export type PredictionUncheckedCreateWithoutAssetInput = {
   closingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
-  country?: string | null
+  nationality?: string | null
   createdAt?: Date | string
   settledAt?: Date | string | null
+  comment?: Prisma.CommentUncheckedCreateNestedOneWithoutPredictionInput
 }
 
 export type PredictionCreateOrConnectWithoutAssetInput = {
@@ -805,7 +933,7 @@ export type PredictionCreateManyUserInput = {
   closingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
-  country?: string | null
+  nationality?: string | null
   createdAt?: Date | string
   settledAt?: Date | string | null
 }
@@ -819,10 +947,11 @@ export type PredictionUpdateWithoutUserInput = {
   closingPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   asset?: Prisma.MarketAssetUpdateOneRequiredWithoutPredictionsNestedInput
+  comment?: Prisma.CommentUpdateOneWithoutPredictionNestedInput
 }
 
 export type PredictionUncheckedUpdateWithoutUserInput = {
@@ -835,9 +964,10 @@ export type PredictionUncheckedUpdateWithoutUserInput = {
   closingPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  comment?: Prisma.CommentUncheckedUpdateOneWithoutPredictionNestedInput
 }
 
 export type PredictionUncheckedUpdateManyWithoutUserInput = {
@@ -850,7 +980,7 @@ export type PredictionUncheckedUpdateManyWithoutUserInput = {
   closingPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -865,7 +995,7 @@ export type PredictionCreateManyAssetInput = {
   closingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
-  country?: string | null
+  nationality?: string | null
   createdAt?: Date | string
   settledAt?: Date | string | null
 }
@@ -879,10 +1009,11 @@ export type PredictionUpdateWithoutAssetInput = {
   closingPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutPredictionsNestedInput
+  comment?: Prisma.CommentUpdateOneWithoutPredictionNestedInput
 }
 
 export type PredictionUncheckedUpdateWithoutAssetInput = {
@@ -895,9 +1026,10 @@ export type PredictionUncheckedUpdateWithoutAssetInput = {
   closingPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  comment?: Prisma.CommentUncheckedUpdateOneWithoutPredictionNestedInput
 }
 
 export type PredictionUncheckedUpdateManyWithoutAssetInput = {
@@ -910,7 +1042,7 @@ export type PredictionUncheckedUpdateManyWithoutAssetInput = {
   closingPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -928,11 +1060,12 @@ export type PredictionSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   closingPrice?: boolean
   status?: boolean
   pointsChange?: boolean
-  country?: boolean
+  nationality?: boolean
   createdAt?: boolean
   settledAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   asset?: boolean | Prisma.MarketAssetDefaultArgs<ExtArgs>
+  comment?: boolean | Prisma.Prediction$commentArgs<ExtArgs>
 }, ExtArgs["result"]["prediction"]>
 
 export type PredictionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -946,7 +1079,7 @@ export type PredictionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   closingPrice?: boolean
   status?: boolean
   pointsChange?: boolean
-  country?: boolean
+  nationality?: boolean
   createdAt?: boolean
   settledAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -964,7 +1097,7 @@ export type PredictionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   closingPrice?: boolean
   status?: boolean
   pointsChange?: boolean
-  country?: boolean
+  nationality?: boolean
   createdAt?: boolean
   settledAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -982,15 +1115,16 @@ export type PredictionSelectScalar = {
   closingPrice?: boolean
   status?: boolean
   pointsChange?: boolean
-  country?: boolean
+  nationality?: boolean
   createdAt?: boolean
   settledAt?: boolean
 }
 
-export type PredictionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "symbol" | "direction" | "pointsBet" | "predictionPrice" | "sessionDate" | "closingPrice" | "status" | "pointsChange" | "country" | "createdAt" | "settledAt", ExtArgs["result"]["prediction"]>
+export type PredictionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "symbol" | "direction" | "pointsBet" | "predictionPrice" | "sessionDate" | "closingPrice" | "status" | "pointsChange" | "nationality" | "createdAt" | "settledAt", ExtArgs["result"]["prediction"]>
 export type PredictionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   asset?: boolean | Prisma.MarketAssetDefaultArgs<ExtArgs>
+  comment?: boolean | Prisma.Prediction$commentArgs<ExtArgs>
 }
 export type PredictionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -1006,6 +1140,7 @@ export type $PredictionPayload<ExtArgs extends runtime.Types.Extensions.Internal
   objects: {
     user: Prisma.$UserPayload<ExtArgs>
     asset: Prisma.$MarketAssetPayload<ExtArgs>
+    comment: Prisma.$CommentPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1018,7 +1153,7 @@ export type $PredictionPayload<ExtArgs extends runtime.Types.Extensions.Internal
     closingPrice: runtime.Decimal | null
     status: $Enums.PredictionStatus
     pointsChange: number | null
-    country: string | null
+    nationality: string | null
     createdAt: Date
     settledAt: Date | null
   }, ExtArgs["result"]["prediction"]>
@@ -1417,6 +1552,7 @@ export interface Prisma__PredictionClient<T, Null = never, ExtArgs extends runti
   readonly [Symbol.toStringTag]: "PrismaPromise"
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   asset<T extends Prisma.MarketAssetDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketAssetDefaultArgs<ExtArgs>>): Prisma.Prisma__MarketAssetClient<runtime.Types.Result.GetResult<Prisma.$MarketAssetPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  comment<T extends Prisma.Prediction$commentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Prediction$commentArgs<ExtArgs>>): Prisma.Prisma__CommentClient<runtime.Types.Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1456,7 +1592,7 @@ export interface PredictionFieldRefs {
   readonly closingPrice: Prisma.FieldRef<"Prediction", 'Decimal'>
   readonly status: Prisma.FieldRef<"Prediction", 'PredictionStatus'>
   readonly pointsChange: Prisma.FieldRef<"Prediction", 'Int'>
-  readonly country: Prisma.FieldRef<"Prediction", 'String'>
+  readonly nationality: Prisma.FieldRef<"Prediction", 'String'>
   readonly createdAt: Prisma.FieldRef<"Prediction", 'DateTime'>
   readonly settledAt: Prisma.FieldRef<"Prediction", 'DateTime'>
 }
@@ -1857,6 +1993,25 @@ export type PredictionDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Limit how many Predictions to delete.
    */
   limit?: number
+}
+
+/**
+ * Prediction.comment
+ */
+export type Prediction$commentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Comment
+   */
+  select?: Prisma.CommentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Comment
+   */
+  omit?: Prisma.CommentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CommentInclude<ExtArgs> | null
+  where?: Prisma.CommentWhereInput
 }
 
 /**

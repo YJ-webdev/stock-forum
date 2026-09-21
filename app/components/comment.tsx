@@ -1,115 +1,156 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { JSONContent } from "@tiptap/react";
 import { ChevronDown, ChevronUp, MoreVertical, ThumbsUp } from "lucide-react";
+
+import { useCurrentUser } from "@/app/context/user-context";
+import { getMarketComments } from "@/app/actions/post";
 
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+
 import { PredictionCommentInput } from "./prediction-comment-input";
 import { CommentOnlyInput } from "./comment-only-input";
+import type { GifResult } from "./gif-picker";
 
 type VoteDirection = "BULL" | "BEAR";
 
-interface DummyComment {
+type PredictionStatus = "PENDING" | "WON" | "LOST" | "VOID";
+
+interface MarketReply {
   id: string;
-  username: string;
-  avatar: string;
   content: string;
-  createdAt: string;
-  likes: number;
-  vote: VoteDirection;
-  replies?: DummyComment[];
+  createdAt: Date;
+
+  author: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    nationality: string | null;
+  };
+
+  _count: {
+    likes: number;
+  };
+}
+
+interface MarketComment {
+  id: string;
+  content: JSONContent;
+  createdAt: Date;
+
+  author: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    nationality: string | null;
+  };
+
+  prediction: {
+    direction: VoteDirection;
+    pointsBet: number;
+    status: PredictionStatus;
+  } | null;
+
+  replies: MarketReply[];
+
+  _count: {
+    likes: number;
+    replies: number;
+  };
 }
 
 interface MarketCommentsProps {
+  assetSymbol: string;
+
   selectedVote: VoteDirection | null;
   voteLoading: boolean;
   isMarketOpen: boolean;
+
   userPoints: number;
+
   betAmount: number;
   setBetAmount: React.Dispatch<React.SetStateAction<number>>;
-  handleVote: (direction: VoteDirection, betAmount: number) => void;
+
+  handleVote: (
+    direction: VoteDirection,
+    betAmount: number,
+    comment: string,
+    gif: GifResult | null,
+    onSuccess?: () => void | Promise<void>,
+  ) => void;
 
   targetMs: number | null;
   countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
   showCountdown: boolean;
 }
 
-const DUMMY_COMMENTS: DummyComment[] = [
-  {
-    id: "1",
-    username: "marketking",
-    avatar: "MK",
-    content:
-      "Nikkei looks pretty strong here. I'm curious what happens around the next session.",
-    createdAt: "3m",
-    likes: 17,
-    vote: "BULL",
-    replies: [
-      {
-        id: "1-1",
-        username: "investor92",
-        avatar: "I",
-        content: "The yen is what I'm watching right now.",
-        createdAt: "1m",
-        likes: 4,
-        vote: "BEAR",
-      },
-      {
-        id: "1-2",
-        username: "YJ",
-        avatar: "YJ",
-        content: "Same. USD/JPY could make tomorrow interesting.",
-        createdAt: "Just now",
-        likes: 2,
-        vote: "BULL",
-      },
-    ],
-  },
-  {
-    id: "2",
-    username: "tokyotrader",
-    avatar: "T",
-    content: "64,000 is going to be an interesting level.",
-    createdAt: "8m",
-    likes: 31,
-    vote: "BEAR",
-    replies: [
-      {
-        id: "2-1",
-        username: "marketking",
-        avatar: "MK",
-        content: "Yeah, I want to see whether it holds.",
-        createdAt: "5m",
-        likes: 6,
-        vote: "BULL",
-      },
-    ],
-  },
-];
+// -----------------------------------------------------------------------------
+// MARKET COMMENTS
+// -----------------------------------------------------------------------------
 
 export function MarketComments({
+  assetSymbol,
+
   selectedVote,
   voteLoading,
   isMarketOpen,
+
   userPoints,
+
   handleVote,
+
   betAmount,
   setBetAmount,
+
   targetMs,
   countdownType,
   showCountdown,
 }: MarketCommentsProps) {
+  const user = useCurrentUser();
+
   const [direction, setDirection] = useState<VoteDirection | null>(null);
 
-  const hasEnoughPoints = userPoints >= 50;
+  const [comments, setComments] = useState<MarketComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+
+  const loadComments = useCallback(async () => {
+    try {
+      const result = await getMarketComments(assetSymbol);
+      setComments(result);
+    } catch (error) {
+      console.error("Failed to load comments:", error);
+    } finally {
+      setCommentsLoading(false);
+    }
+  }, [assetSymbol]);
+
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
+
   const hasAlreadyVoted = selectedVote !== null;
 
   const maxBet = Math.min(500, userPoints);
 
   const buttonDisabled = voteLoading || isMarketOpen;
 
-  const submitVote = () => {
+  // ---------------------------------------------------------------------------
+  // SUBMIT VOTE
+  // ---------------------------------------------------------------------------
+
+  const submitVote = (comment: string, gif: GifResult | null) => {
+    if (!user) {
+      toast.error("Please log in to vote.");
+      return;
+    }
+
+    if (!user.nationality) {
+      toast.error("Please set your nationality before voting.");
+      return;
+    }
+
     if (buttonDisabled) return;
 
     if (!direction) {
@@ -127,8 +168,13 @@ export function MarketComments({
       return;
     }
 
-    handleVote(direction, betAmount);
+    handleVote(direction, betAmount, comment, gif, loadComments);
   };
+
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
+
   return (
     <section className="w-full">
       {/* Header */}
@@ -137,17 +183,18 @@ export function MarketComments({
           Comment
         </h2>
 
-        <span className="jakarta text-sm text-zinc-500">
-          {DUMMY_COMMENTS.length}
-        </span>
+        <span className="jakarta text-sm text-zinc-500">{comments.length}</span>
       </div>
 
+      {/* Input */}
       {hasAlreadyVoted || isMarketOpen ? (
         <CommentOnlyInput
+          assetSymbol={assetSymbol}
           targetMs={targetMs}
           countdownType={countdownType}
           showCountdown={showCountdown}
           isMarketOpen={isMarketOpen}
+          onCommentCreated={loadComments}
         />
       ) : (
         <PredictionCommentInput
@@ -166,36 +213,51 @@ export function MarketComments({
           showCountdown={showCountdown}
         />
       )}
+
       {/* Comments */}
       <div>
-        {DUMMY_COMMENTS.map((comment) => (
-          <CommentItem key={comment.id} comment={comment} />
-        ))}
+        {commentsLoading ? (
+          <div className="py-8 text-center text-sm text-zinc-500">
+            Loading comments...
+          </div>
+        ) : comments.length === 0 ? (
+          <div className="py-8 text-center text-sm text-zinc-500">
+            No comments yet.
+          </div>
+        ) : (
+          comments.map((comment) => (
+            <CommentItem key={comment.id} comment={comment} />
+          ))
+        )}
       </div>
     </section>
   );
 }
 
-function CommentItem({ comment }: { comment: DummyComment }) {
+// -----------------------------------------------------------------------------
+// COMMENT ITEM
+// -----------------------------------------------------------------------------
+
+function CommentItem({ comment }: { comment: MarketComment }) {
   const [showReplies, setShowReplies] = useState(false);
   const [replying, setReplying] = useState(false);
 
-  const replyCount = comment.replies?.length ?? 0;
+  const replyCount = comment._count.replies;
+
+  const username = comment.author.name ?? "User";
 
   return (
     <div className="mb-6">
       <div className="group flex gap-3">
-        <Avatar label={comment.avatar} />
+        <Avatar label={username} image={comment.author.image} />
 
         <div className="min-w-0 flex-1">
           {/* User */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[14px] font-semibold">
-              {comment.username}
-            </span>
+            <span className="text-[14px] font-semibold">{username}</span>
 
             <span className="text-[13px] text-zinc-500">
-              {comment.createdAt}
+              {formatTimeAgo(comment.createdAt)}
             </span>
 
             <button
@@ -212,10 +274,32 @@ function CommentItem({ comment }: { comment: DummyComment }) {
             </button>
           </div>
 
-          {/* Content */}
-          <p className="mt-0.5 text-[15px] leading-6 text-zinc-900 dark:text-zinc-200">
-            {comment.content}
-          </p>
+          {/* Prediction */}
+          {comment.prediction && (
+            <div className="mt-1 flex items-center gap-2">
+              <span
+                className={`
+        rounded-full px-2 py-0.5
+        text-[11px] font-medium
+        ${
+          comment.prediction.direction === "BULL"
+            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+            : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+        }
+      `}
+              >
+                {comment.prediction.direction === "BULL"
+                  ? "Bullish"
+                  : "Bearish"}
+              </span>
+
+              <span className="text-[11px] text-zinc-500">
+                {comment.prediction.pointsBet.toLocaleString()} pts
+              </span>
+            </div>
+          )}
+
+          <CommentContent content={comment.content} />
 
           {/* Actions */}
           <div className="mt-2 flex items-center gap-4">
@@ -230,7 +314,7 @@ function CommentItem({ comment }: { comment: DummyComment }) {
             >
               <ThumbsUp className="size-4" />
 
-              {comment.likes > 0 && <span>{comment.likes}</span>}
+              {comment._count.likes > 0 && <span>{comment._count.likes}</span>}
             </button>
 
             <button
@@ -249,14 +333,14 @@ function CommentItem({ comment }: { comment: DummyComment }) {
           {/* Reply input */}
           {replying && (
             <div className="mt-3 flex gap-2">
-              <Avatar label="YJ" small />
+              <Avatar label="You" small />
 
               <div className="min-w-0 flex-1">
                 <div className="rounded-lg bg-zinc-100 px-3 dark:bg-zinc-800">
                   <textarea
                     autoFocus
                     rows={1}
-                    placeholder={`Reply to ${comment.username}...`}
+                    placeholder={`Reply to ${username}...`}
                     className="
                       min-h-10 w-full resize-none
                       bg-transparent py-2.5
@@ -321,9 +405,9 @@ function CommentItem({ comment }: { comment: DummyComment }) {
           )}
 
           {/* Replies */}
-          {showReplies && comment.replies && (
+          {showReplies && comment.replies.length > 0 && (
             <div className="relative mt-4 space-y-5 pl-4">
-              <div className="absolute bottom-3 left-0 top-0 w-px bg-zinc-200 dark:bg-zinc-800" />
+              <div className="absolute top-0 bottom-3 left-0 w-px bg-zinc-200 dark:bg-zinc-800" />
 
               {comment.replies.map((reply) => (
                 <ReplyItem key={reply.id} reply={reply} />
@@ -336,16 +420,24 @@ function CommentItem({ comment }: { comment: DummyComment }) {
   );
 }
 
-function ReplyItem({ reply }: { reply: DummyComment }) {
+// -----------------------------------------------------------------------------
+// REPLY ITEM
+// -----------------------------------------------------------------------------
+
+function ReplyItem({ reply }: { reply: MarketReply }) {
+  const username = reply.author.name ?? "User";
+
   return (
     <div className="group flex gap-3">
-      <Avatar label={reply.avatar} small />
+      <Avatar label={username} image={reply.author.image} small />
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-[14px] font-semibold">{reply.username}</span>
+          <span className="text-[14px] font-semibold">{username}</span>
 
-          <span className="text-[13px] text-zinc-500">{reply.createdAt}</span>
+          <span className="text-[13px] text-zinc-500">
+            {formatTimeAgo(reply.createdAt)}
+          </span>
 
           <button
             type="button"
@@ -377,7 +469,7 @@ function ReplyItem({ reply }: { reply: DummyComment }) {
           >
             <ThumbsUp className="size-4" />
 
-            {reply.likes > 0 && <span>{reply.likes}</span>}
+            {reply._count.likes > 0 && <span>{reply._count.likes}</span>}
           </button>
 
           <button
@@ -396,7 +488,74 @@ function ReplyItem({ reply }: { reply: DummyComment }) {
   );
 }
 
-function Avatar({ label, small = false }: { label: string; small?: boolean }) {
+// -----------------------------------------------------------------------------
+// COMMENT CONTENT
+// -----------------------------------------------------------------------------
+
+function CommentContent({ content }: { content: JSONContent }) {
+  return (
+    <div className="mt-0.5 space-y-2 text-[15px] leading-6 text-zinc-900 dark:text-zinc-200">
+      {content.content?.map((node, index) => {
+        // Text paragraph
+        if (node.type === "paragraph") {
+          const text =
+            node.content?.map((child) => child.text ?? "").join("") ?? "";
+
+          if (!text) return null;
+
+          return <p key={index}>{text}</p>;
+        }
+
+        // GIF / image
+        if (node.type === "image" && node.attrs?.src) {
+          return (
+            <img
+              key={index}
+              src={String(node.attrs.src)}
+              alt={String(node.attrs.alt ?? "GIF")}
+              className="
+  h-auto
+  w-45
+  max-w-full
+  rounded-lg
+  object-contain
+  sm:w-45
+"
+            />
+          );
+        }
+
+        return null;
+      })}
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// AVATAR
+// -----------------------------------------------------------------------------
+
+function Avatar({
+  label,
+  image,
+  small = false,
+}: {
+  label: string;
+  image?: string | null;
+  small?: boolean;
+}) {
+  const size = small ? "size-8" : "size-9";
+
+  if (image) {
+    return (
+      <img
+        src={image}
+        alt={label}
+        className={`${size} shrink-0 rounded-full object-cover`}
+      />
+    );
+  }
+
   return (
     <div
       className={`
@@ -404,11 +563,43 @@ function Avatar({ label, small = false }: { label: string; small?: boolean }) {
         rounded-full
         bg-zinc-200 font-medium text-zinc-700
         dark:bg-zinc-700 dark:text-zinc-200
-
         ${small ? "size-8 text-xs" : "size-9 text-sm"}
       `}
     >
       {label.slice(0, 2).toUpperCase()}
     </div>
   );
+}
+
+// -----------------------------------------------------------------------------
+// TIME
+// -----------------------------------------------------------------------------
+
+function formatTimeAgo(date: Date | string) {
+  const time = new Date(date).getTime();
+
+  const diff = Math.max(0, Date.now() - time);
+
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (seconds < 60) {
+    return "Just now";
+  }
+
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+
+  if (hours < 24) {
+    return `${hours}h`;
+  }
+
+  if (days < 7) {
+    return `${days}d`;
+  }
+
+  return new Date(date).toLocaleDateString();
 }

@@ -402,6 +402,7 @@ export const ModelName = {
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   Comment: 'Comment',
+  Prediction: 'Prediction',
   CommentAsset: 'CommentAsset',
   Reply: 'Reply',
   CommentLike: 'CommentLike',
@@ -410,8 +411,7 @@ export const ModelName = {
   AccountBalance: 'AccountBalance',
   PortfolioPosition: 'PortfolioPosition',
   Trade: 'Trade',
-  Watchlist: 'Watchlist',
-  Prediction: 'Prediction'
+  Watchlist: 'Watchlist'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -427,7 +427,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "accountBalance" | "portfolioPosition" | "trade" | "watchlist" | "prediction"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "prediction" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "accountBalance" | "portfolioPosition" | "trade" | "watchlist"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -798,6 +798,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CommentCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CommentCountAggregateOutputType> | number
+        }
+      }
+    }
+    Prediction: {
+      payload: Prisma.$PredictionPayload<ExtArgs>
+      fields: Prisma.PredictionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PredictionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PredictionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
+        }
+        findFirst: {
+          args: Prisma.PredictionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PredictionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
+        }
+        findMany: {
+          args: Prisma.PredictionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>[]
+        }
+        create: {
+          args: Prisma.PredictionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
+        }
+        createMany: {
+          args: Prisma.PredictionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PredictionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>[]
+        }
+        delete: {
+          args: Prisma.PredictionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
+        }
+        update: {
+          args: Prisma.PredictionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
+        }
+        deleteMany: {
+          args: Prisma.PredictionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PredictionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PredictionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>[]
+        }
+        upsert: {
+          args: Prisma.PredictionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
+        }
+        aggregate: {
+          args: Prisma.PredictionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePrediction>
+        }
+        groupBy: {
+          args: Prisma.PredictionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PredictionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PredictionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PredictionCountAggregateOutputType> | number
         }
       }
     }
@@ -1467,80 +1541,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    Prediction: {
-      payload: Prisma.$PredictionPayload<ExtArgs>
-      fields: Prisma.PredictionFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.PredictionFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.PredictionFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
-        }
-        findFirst: {
-          args: Prisma.PredictionFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.PredictionFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
-        }
-        findMany: {
-          args: Prisma.PredictionFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>[]
-        }
-        create: {
-          args: Prisma.PredictionCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
-        }
-        createMany: {
-          args: Prisma.PredictionCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.PredictionCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>[]
-        }
-        delete: {
-          args: Prisma.PredictionDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
-        }
-        update: {
-          args: Prisma.PredictionUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
-        }
-        deleteMany: {
-          args: Prisma.PredictionDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.PredictionUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.PredictionUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>[]
-        }
-        upsert: {
-          args: Prisma.PredictionUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PredictionPayload>
-        }
-        aggregate: {
-          args: Prisma.PredictionAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregatePrediction>
-        }
-        groupBy: {
-          args: Prisma.PredictionGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.PredictionGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.PredictionCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.PredictionCountAggregateOutputType> | number
-        }
-      }
-    }
   }
 } & {
   other: {
@@ -1636,12 +1636,32 @@ export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFi
 export const CommentScalarFieldEnum = {
   id: 'id',
   content: 'content',
-  authorId: 'authorId',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  authorId: 'authorId',
+  predictionId: 'predictionId'
 } as const
 
 export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
+
+
+export const PredictionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  symbol: 'symbol',
+  direction: 'direction',
+  pointsBet: 'pointsBet',
+  predictionPrice: 'predictionPrice',
+  sessionDate: 'sessionDate',
+  closingPrice: 'closingPrice',
+  status: 'status',
+  pointsChange: 'pointsChange',
+  nationality: 'nationality',
+  createdAt: 'createdAt',
+  settledAt: 'settledAt'
+} as const
+
+export type PredictionScalarFieldEnum = (typeof PredictionScalarFieldEnum)[keyof typeof PredictionScalarFieldEnum]
 
 
 export const CommentAssetScalarFieldEnum = {
@@ -1755,25 +1775,6 @@ export const WatchlistScalarFieldEnum = {
 } as const
 
 export type WatchlistScalarFieldEnum = (typeof WatchlistScalarFieldEnum)[keyof typeof WatchlistScalarFieldEnum]
-
-
-export const PredictionScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  symbol: 'symbol',
-  direction: 'direction',
-  pointsBet: 'pointsBet',
-  predictionPrice: 'predictionPrice',
-  sessionDate: 'sessionDate',
-  closingPrice: 'closingPrice',
-  status: 'status',
-  pointsChange: 'pointsChange',
-  country: 'country',
-  createdAt: 'createdAt',
-  settledAt: 'settledAt'
-} as const
-
-export type PredictionScalarFieldEnum = (typeof PredictionScalarFieldEnum)[keyof typeof PredictionScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1893,6 +1894,20 @@ export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$Prisma
 
 
 /**
+ * Reference to a field of type 'PredictionDirection'
+ */
+export type EnumPredictionDirectionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionDirection'>
+    
+
+
+/**
+ * Reference to a field of type 'PredictionDirection[]'
+ */
+export type ListEnumPredictionDirectionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionDirection[]'>
+    
+
+
+/**
  * Reference to a field of type 'Decimal'
  */
 export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
@@ -1903,6 +1918,20 @@ export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
  * Reference to a field of type 'Decimal[]'
  */
 export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+/**
+ * Reference to a field of type 'PredictionStatus'
+ */
+export type EnumPredictionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'PredictionStatus[]'
+ */
+export type ListEnumPredictionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionStatus[]'>
     
 
 
@@ -1931,34 +1960,6 @@ export type EnumTradeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
  * Reference to a field of type 'TradeStatus[]'
  */
 export type ListEnumTradeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TradeStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'PredictionDirection'
- */
-export type EnumPredictionDirectionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionDirection'>
-    
-
-
-/**
- * Reference to a field of type 'PredictionDirection[]'
- */
-export type ListEnumPredictionDirectionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionDirection[]'>
-    
-
-
-/**
- * Reference to a field of type 'PredictionStatus'
- */
-export type EnumPredictionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionStatus'>
-    
-
-
-/**
- * Reference to a field of type 'PredictionStatus[]'
- */
-export type ListEnumPredictionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionStatus[]'>
     
 
 
@@ -2131,6 +2132,7 @@ export type GlobalOmitConfig = {
   session?: Prisma.SessionOmit
   verificationToken?: Prisma.VerificationTokenOmit
   comment?: Prisma.CommentOmit
+  prediction?: Prisma.PredictionOmit
   commentAsset?: Prisma.CommentAssetOmit
   reply?: Prisma.ReplyOmit
   commentLike?: Prisma.CommentLikeOmit
@@ -2140,7 +2142,6 @@ export type GlobalOmitConfig = {
   portfolioPosition?: Prisma.PortfolioPositionOmit
   trade?: Prisma.TradeOmit
   watchlist?: Prisma.WatchlistOmit
-  prediction?: Prisma.PredictionOmit
 }
 
 /* Types for Logging */

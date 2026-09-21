@@ -29,8 +29,6 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
   const symbol = searchParams.get("symbol");
   const topicRef = useRef<HTMLDivElement>(null);
 
-  const [title, setTitle] = useState("");
-
   const [content, setContent] = useState<JSONContent>({
     type: "doc",
     content: [{ type: "paragraph" }],
@@ -271,7 +269,7 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
 
       <div
         ref={topicRef}
-        className="relative flex flex-wrap gap-4 items-center mt-4 shrink-0"
+        className="relative flex flex-wrap gap-4 items-center mt-4 shrink-0 mb-5"
       >
         {/* Selected assets */}
 
@@ -440,30 +438,6 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
       </div>
 
       {/* ============================================================= */}
-      {/* TITLE                                                         */}
-      {/* ============================================================= */}
-
-      <div className="shrink-0">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title"
-          maxLength={200}
-          spellCheck={false}
-          className="
-            w-full bg-transparent
-            text-[40px] font-semibold
-            text-zinc-900
-            outline-none
-            dark:text-zinc-200
-            placeholder:text-gray-500/50
-             dark:placeholder:text-zinc-700
-          "
-        />
-      </div>
-
-      {/* ============================================================= */}
       {/* EDITOR                                                        */}
       {/* ============================================================= */}
 
@@ -489,7 +463,7 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
         <Button
           type="button"
           className="w-18 text-[15px]"
-          disabled={isPending || !title.trim()}
+          disabled={isPending}
           onClick={handleSubmit}
         >
           {isPending ? "Posting..." : "Post"}

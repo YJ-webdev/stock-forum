@@ -19,11 +19,11 @@ import { MarketDetailHeader } from "@/app/components/market-detail-header";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { ALL_MARKET_SYMBOLS, AssetType } from "@/lib/data/market-symbols";
 
-import {
-  getMarketVote,
-  submitMarketVote,
-  type VoteDirection,
-} from "@/app/actions/market-vote";
+import { getMarketVote, type VoteDirection } from "@/app/actions/market-vote";
+
+import { createComment } from "@/app/actions/post";
+import type { GifResult } from "@/app/components/gif-picker";
+import type { JSONContent } from "@tiptap/react";
 
 import { useCurrentUser } from "@/app/context/user-context";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -145,7 +145,13 @@ export default function MarketDetailPage() {
   // Submit prediction
   // ------------------------------------------------------------
 
-  const handleVote = (direction: VoteDirection, betAmount: number) => {
+  const handleVote = (
+    direction: VoteDirection,
+    betAmount: number,
+    comment: string,
+    gif: GifResult | null,
+    onSuccess?: () => void | Promise<void>,
+  ) => {
     if (!isLoggedIn) {
       toast.error("Please log in to vote.");
       return;
@@ -206,24 +212,68 @@ export default function MarketDetailPage() {
       return;
     }
 
+    // ------------------------------------------------------------
+    // Optional comment / GIF
+    // ------------------------------------------------------------
+
+    let content: JSONContent | null = null;
+
+    if (comment.trim() || gif) {
+      content = {
+        type: "doc",
+        content: [
+          ...(comment.trim()
+            ? [
+                {
+                  type: "paragraph",
+                  content: [
+                    {
+                      type: "text",
+                      text: comment.trim(),
+                    },
+                  ],
+                },
+              ]
+            : []),
+
+          ...(gif
+            ? [
+                {
+                  type: "image",
+                  attrs: {
+                    src: gif.src,
+                    alt: gif.title,
+                  },
+                },
+              ]
+            : []),
+        ],
+      };
+    }
+
     // Optimistic UI
     setSelectedVote(direction);
 
     startTransition(async () => {
       try {
-        await submitMarketVote({
-          symbol: selectedSymbol,
-          nationality,
-          direction,
-          pointsBet: betAmount,
-          predictionPrice,
-          sessionDate,
+        await createComment({
+          content,
+          assetSymbols: [selectedSymbol],
+
+          prediction: {
+            direction,
+            pointsBet: betAmount,
+            predictionPrice,
+            sessionDate,
+          },
         });
+
+        await onSuccess?.();
 
         toast.success(
           direction === "BULL"
-            ? `Bullish vote submitted with ${betAmount} pts.`
-            : `Bearish vote submitted with ${betAmount} pts.`,
+            ? `Bullish prediction submitted with ${betAmount} pts.`
+            : `Bearish prediction submitted with ${betAmount} pts.`,
         );
       } catch (error) {
         // Roll back optimistic UI
@@ -467,6 +517,7 @@ export default function MarketDetailPage() {
       <div ref={discussionRef} className="mx-4 mt-10 mb-20">
         <MarketComments
           key={selectedSymbol}
+          assetSymbol={selectedSymbol}
           selectedVote={selectedVote}
           voteLoading={voteLoading || isPending}
           isMarketOpen={isMarketOpen}

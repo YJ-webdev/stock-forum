@@ -661,6 +661,20 @@ export type MarketAssetSumOrderByAggregateInput = {
   volume?: Prisma.SortOrder
 }
 
+export type MarketAssetCreateNestedOneWithoutPredictionsInput = {
+  create?: Prisma.XOR<Prisma.MarketAssetCreateWithoutPredictionsInput, Prisma.MarketAssetUncheckedCreateWithoutPredictionsInput>
+  connectOrCreate?: Prisma.MarketAssetCreateOrConnectWithoutPredictionsInput
+  connect?: Prisma.MarketAssetWhereUniqueInput
+}
+
+export type MarketAssetUpdateOneRequiredWithoutPredictionsNestedInput = {
+  create?: Prisma.XOR<Prisma.MarketAssetCreateWithoutPredictionsInput, Prisma.MarketAssetUncheckedCreateWithoutPredictionsInput>
+  connectOrCreate?: Prisma.MarketAssetCreateOrConnectWithoutPredictionsInput
+  upsert?: Prisma.MarketAssetUpsertWithoutPredictionsInput
+  connect?: Prisma.MarketAssetWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MarketAssetUpdateToOneWithWhereWithoutPredictionsInput, Prisma.MarketAssetUpdateWithoutPredictionsInput>, Prisma.MarketAssetUncheckedUpdateWithoutPredictionsInput>
+}
+
 export type MarketAssetCreateNestedOneWithoutCommentsInput = {
   create?: Prisma.XOR<Prisma.MarketAssetCreateWithoutCommentsInput, Prisma.MarketAssetUncheckedCreateWithoutCommentsInput>
   connectOrCreate?: Prisma.MarketAssetCreateOrConnectWithoutCommentsInput
@@ -673,14 +687,6 @@ export type MarketAssetUpdateOneRequiredWithoutCommentsNestedInput = {
   upsert?: Prisma.MarketAssetUpsertWithoutCommentsInput
   connect?: Prisma.MarketAssetWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.MarketAssetUpdateToOneWithWhereWithoutCommentsInput, Prisma.MarketAssetUpdateWithoutCommentsInput>, Prisma.MarketAssetUncheckedUpdateWithoutCommentsInput>
-}
-
-export type DecimalFieldUpdateOperationsInput = {
-  set?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
 export type MarketAssetCreateNestedOneWithoutPositionsInput = {
@@ -725,18 +731,112 @@ export type MarketAssetUpdateOneRequiredWithoutWatchlistItemsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.MarketAssetUpdateToOneWithWhereWithoutWatchlistItemsInput, Prisma.MarketAssetUpdateWithoutWatchlistItemsInput>, Prisma.MarketAssetUncheckedUpdateWithoutWatchlistItemsInput>
 }
 
-export type MarketAssetCreateNestedOneWithoutPredictionsInput = {
-  create?: Prisma.XOR<Prisma.MarketAssetCreateWithoutPredictionsInput, Prisma.MarketAssetUncheckedCreateWithoutPredictionsInput>
-  connectOrCreate?: Prisma.MarketAssetCreateOrConnectWithoutPredictionsInput
-  connect?: Prisma.MarketAssetWhereUniqueInput
+export type MarketAssetCreateWithoutPredictionsInput = {
+  id?: string
+  symbol: string
+  displaySymbol?: string | null
+  name: string
+  category: string
+  assetType?: string
+  timezone?: string
+  logoUrl?: string | null
+  lastPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  change?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  changePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  high?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  low?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  trades?: Prisma.TradeCreateNestedManyWithoutAssetInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutAssetInput
+  watchlistItems?: Prisma.WatchlistCreateNestedManyWithoutAssetInput
+  comments?: Prisma.CommentAssetCreateNestedManyWithoutAssetInput
 }
 
-export type MarketAssetUpdateOneRequiredWithoutPredictionsNestedInput = {
-  create?: Prisma.XOR<Prisma.MarketAssetCreateWithoutPredictionsInput, Prisma.MarketAssetUncheckedCreateWithoutPredictionsInput>
-  connectOrCreate?: Prisma.MarketAssetCreateOrConnectWithoutPredictionsInput
-  upsert?: Prisma.MarketAssetUpsertWithoutPredictionsInput
-  connect?: Prisma.MarketAssetWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.MarketAssetUpdateToOneWithWhereWithoutPredictionsInput, Prisma.MarketAssetUpdateWithoutPredictionsInput>, Prisma.MarketAssetUncheckedUpdateWithoutPredictionsInput>
+export type MarketAssetUncheckedCreateWithoutPredictionsInput = {
+  id?: string
+  symbol: string
+  displaySymbol?: string | null
+  name: string
+  category: string
+  assetType?: string
+  timezone?: string
+  logoUrl?: string | null
+  lastPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  change?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  changePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  high?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  low?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  trades?: Prisma.TradeUncheckedCreateNestedManyWithoutAssetInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutAssetInput
+  watchlistItems?: Prisma.WatchlistUncheckedCreateNestedManyWithoutAssetInput
+  comments?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutAssetInput
+}
+
+export type MarketAssetCreateOrConnectWithoutPredictionsInput = {
+  where: Prisma.MarketAssetWhereUniqueInput
+  create: Prisma.XOR<Prisma.MarketAssetCreateWithoutPredictionsInput, Prisma.MarketAssetUncheckedCreateWithoutPredictionsInput>
+}
+
+export type MarketAssetUpsertWithoutPredictionsInput = {
+  update: Prisma.XOR<Prisma.MarketAssetUpdateWithoutPredictionsInput, Prisma.MarketAssetUncheckedUpdateWithoutPredictionsInput>
+  create: Prisma.XOR<Prisma.MarketAssetCreateWithoutPredictionsInput, Prisma.MarketAssetUncheckedCreateWithoutPredictionsInput>
+  where?: Prisma.MarketAssetWhereInput
+}
+
+export type MarketAssetUpdateToOneWithWhereWithoutPredictionsInput = {
+  where?: Prisma.MarketAssetWhereInput
+  data: Prisma.XOR<Prisma.MarketAssetUpdateWithoutPredictionsInput, Prisma.MarketAssetUncheckedUpdateWithoutPredictionsInput>
+}
+
+export type MarketAssetUpdateWithoutPredictionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  displaySymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  assetType?: Prisma.StringFieldUpdateOperationsInput | string
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  change?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  changePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  trades?: Prisma.TradeUpdateManyWithoutAssetNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutAssetNestedInput
+  watchlistItems?: Prisma.WatchlistUpdateManyWithoutAssetNestedInput
+  comments?: Prisma.CommentAssetUpdateManyWithoutAssetNestedInput
+}
+
+export type MarketAssetUncheckedUpdateWithoutPredictionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  displaySymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  assetType?: Prisma.StringFieldUpdateOperationsInput | string
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  change?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  changePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  trades?: Prisma.TradeUncheckedUpdateManyWithoutAssetNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutAssetNestedInput
+  watchlistItems?: Prisma.WatchlistUncheckedUpdateManyWithoutAssetNestedInput
+  comments?: Prisma.CommentAssetUncheckedUpdateManyWithoutAssetNestedInput
 }
 
 export type MarketAssetCreateWithoutCommentsInput = {
@@ -1169,114 +1269,6 @@ export type MarketAssetUncheckedUpdateWithoutWatchlistItemsInput = {
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutAssetNestedInput
   comments?: Prisma.CommentAssetUncheckedUpdateManyWithoutAssetNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutAssetNestedInput
-}
-
-export type MarketAssetCreateWithoutPredictionsInput = {
-  id?: string
-  symbol: string
-  displaySymbol?: string | null
-  name: string
-  category: string
-  assetType?: string
-  timezone?: string
-  logoUrl?: string | null
-  lastPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  change?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  changePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  high?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  low?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  trades?: Prisma.TradeCreateNestedManyWithoutAssetInput
-  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutAssetInput
-  watchlistItems?: Prisma.WatchlistCreateNestedManyWithoutAssetInput
-  comments?: Prisma.CommentAssetCreateNestedManyWithoutAssetInput
-}
-
-export type MarketAssetUncheckedCreateWithoutPredictionsInput = {
-  id?: string
-  symbol: string
-  displaySymbol?: string | null
-  name: string
-  category: string
-  assetType?: string
-  timezone?: string
-  logoUrl?: string | null
-  lastPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  change?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  changePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  high?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  low?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  trades?: Prisma.TradeUncheckedCreateNestedManyWithoutAssetInput
-  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutAssetInput
-  watchlistItems?: Prisma.WatchlistUncheckedCreateNestedManyWithoutAssetInput
-  comments?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutAssetInput
-}
-
-export type MarketAssetCreateOrConnectWithoutPredictionsInput = {
-  where: Prisma.MarketAssetWhereUniqueInput
-  create: Prisma.XOR<Prisma.MarketAssetCreateWithoutPredictionsInput, Prisma.MarketAssetUncheckedCreateWithoutPredictionsInput>
-}
-
-export type MarketAssetUpsertWithoutPredictionsInput = {
-  update: Prisma.XOR<Prisma.MarketAssetUpdateWithoutPredictionsInput, Prisma.MarketAssetUncheckedUpdateWithoutPredictionsInput>
-  create: Prisma.XOR<Prisma.MarketAssetCreateWithoutPredictionsInput, Prisma.MarketAssetUncheckedCreateWithoutPredictionsInput>
-  where?: Prisma.MarketAssetWhereInput
-}
-
-export type MarketAssetUpdateToOneWithWhereWithoutPredictionsInput = {
-  where?: Prisma.MarketAssetWhereInput
-  data: Prisma.XOR<Prisma.MarketAssetUpdateWithoutPredictionsInput, Prisma.MarketAssetUncheckedUpdateWithoutPredictionsInput>
-}
-
-export type MarketAssetUpdateWithoutPredictionsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  symbol?: Prisma.StringFieldUpdateOperationsInput | string
-  displaySymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.StringFieldUpdateOperationsInput | string
-  assetType?: Prisma.StringFieldUpdateOperationsInput | string
-  timezone?: Prisma.StringFieldUpdateOperationsInput | string
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  change?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  changePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  trades?: Prisma.TradeUpdateManyWithoutAssetNestedInput
-  positions?: Prisma.PortfolioPositionUpdateManyWithoutAssetNestedInput
-  watchlistItems?: Prisma.WatchlistUpdateManyWithoutAssetNestedInput
-  comments?: Prisma.CommentAssetUpdateManyWithoutAssetNestedInput
-}
-
-export type MarketAssetUncheckedUpdateWithoutPredictionsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  symbol?: Prisma.StringFieldUpdateOperationsInput | string
-  displaySymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.StringFieldUpdateOperationsInput | string
-  assetType?: Prisma.StringFieldUpdateOperationsInput | string
-  timezone?: Prisma.StringFieldUpdateOperationsInput | string
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  change?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  changePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  trades?: Prisma.TradeUncheckedUpdateManyWithoutAssetNestedInput
-  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutAssetNestedInput
-  watchlistItems?: Prisma.WatchlistUncheckedUpdateManyWithoutAssetNestedInput
-  comments?: Prisma.CommentAssetUncheckedUpdateManyWithoutAssetNestedInput
 }
 
 

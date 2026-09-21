@@ -67,6 +67,11 @@ export type VerificationToken = Prisma.VerificationTokenModel
  */
 export type Comment = Prisma.CommentModel
 /**
+ * Model Prediction
+ * 
+ */
+export type Prediction = Prisma.PredictionModel
+/**
  * Model CommentAsset
  * 
  */
@@ -111,8 +116,3 @@ export type Trade = Prisma.TradeModel
  * 
  */
 export type Watchlist = Prisma.WatchlistModel
-/**
- * Model Prediction
- * 
- */
-export type Prediction = Prisma.PredictionModel

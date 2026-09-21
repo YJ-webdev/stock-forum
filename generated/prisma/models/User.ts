@@ -559,6 +559,20 @@ export type UserUpdateOneRequiredWithoutCommentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCommentsInput, Prisma.UserUpdateWithoutCommentsInput>, Prisma.UserUncheckedUpdateWithoutCommentsInput>
 }
 
+export type UserCreateNestedOneWithoutPredictionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPredictionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutPredictionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPredictionsInput
+  upsert?: Prisma.UserUpsertWithoutPredictionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPredictionsInput, Prisma.UserUpdateWithoutPredictionsInput>, Prisma.UserUncheckedUpdateWithoutPredictionsInput>
+}
+
 export type UserCreateNestedOneWithoutRepliesInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutRepliesInput, Prisma.UserUncheckedCreateWithoutRepliesInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutRepliesInput
@@ -655,20 +669,6 @@ export type UserUpdateOneRequiredWithoutWatchlistNestedInput = {
   upsert?: Prisma.UserUpsertWithoutWatchlistInput
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWatchlistInput, Prisma.UserUpdateWithoutWatchlistInput>, Prisma.UserUncheckedUpdateWithoutWatchlistInput>
-}
-
-export type UserCreateNestedOneWithoutPredictionsInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPredictionsInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
-export type UserUpdateOneRequiredWithoutPredictionsNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPredictionsInput
-  upsert?: Prisma.UserUpsertWithoutPredictionsInput
-  connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPredictionsInput, Prisma.UserUpdateWithoutPredictionsInput>, Prisma.UserUncheckedUpdateWithoutPredictionsInput>
 }
 
 export type UserCreateWithoutAccountsInput = {
@@ -993,6 +993,114 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutPredictionsInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  nationality?: string | null
+  language?: string
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
+  replyLikes?: Prisma.ReplyLikeCreateNestedManyWithoutUserInput
+  commentLikes?: Prisma.CommentLikeCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
+  trades?: Prisma.TradeCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutPredictionsInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  nationality?: string | null
+  language?: string
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
+  replyLikes?: Prisma.ReplyLikeUncheckedCreateNestedManyWithoutUserInput
+  commentLikes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
+  trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
+  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutPredictionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
+}
+
+export type UserUpsertWithoutPredictionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPredictionsInput, Prisma.UserUncheckedUpdateWithoutPredictionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPredictionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPredictionsInput, Prisma.UserUncheckedUpdateWithoutPredictionsInput>
+}
+
+export type UserUpdateWithoutPredictionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
+  replyLikes?: Prisma.ReplyLikeUpdateManyWithoutUserNestedInput
+  commentLikes?: Prisma.CommentLikeUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
+  trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPredictionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
+  replyLikes?: Prisma.ReplyLikeUncheckedUpdateManyWithoutUserNestedInput
+  commentLikes?: Prisma.CommentLikeUncheckedUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
+  trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
+  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRepliesInput = {
@@ -1749,114 +1857,6 @@ export type UserUncheckedUpdateWithoutWatchlistInput = {
   trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
   positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-}
-
-export type UserCreateWithoutPredictionsInput = {
-  id?: string
-  name?: string | null
-  email?: string | null
-  emailVerified?: Date | string | null
-  image?: string | null
-  nationality?: string | null
-  language?: string
-  role?: $Enums.Role
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  replies?: Prisma.ReplyCreateNestedManyWithoutAuthorInput
-  comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
-  replyLikes?: Prisma.ReplyLikeCreateNestedManyWithoutUserInput
-  commentLikes?: Prisma.CommentLikeCreateNestedManyWithoutUserInput
-  balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
-  trades?: Prisma.TradeCreateNestedManyWithoutUserInput
-  positions?: Prisma.PortfolioPositionCreateNestedManyWithoutUserInput
-  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
-}
-
-export type UserUncheckedCreateWithoutPredictionsInput = {
-  id?: string
-  name?: string | null
-  email?: string | null
-  emailVerified?: Date | string | null
-  image?: string | null
-  nationality?: string | null
-  language?: string
-  role?: $Enums.Role
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutAuthorInput
-  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
-  replyLikes?: Prisma.ReplyLikeUncheckedCreateNestedManyWithoutUserInput
-  commentLikes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutUserInput
-  balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
-  trades?: Prisma.TradeUncheckedCreateNestedManyWithoutUserInput
-  positions?: Prisma.PortfolioPositionUncheckedCreateNestedManyWithoutUserInput
-  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
-}
-
-export type UserCreateOrConnectWithoutPredictionsInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
-}
-
-export type UserUpsertWithoutPredictionsInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutPredictionsInput, Prisma.UserUncheckedUpdateWithoutPredictionsInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutPredictionsInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutPredictionsInput, Prisma.UserUncheckedUpdateWithoutPredictionsInput>
-}
-
-export type UserUpdateWithoutPredictionsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  language?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  replies?: Prisma.ReplyUpdateManyWithoutAuthorNestedInput
-  comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
-  replyLikes?: Prisma.ReplyLikeUpdateManyWithoutUserNestedInput
-  commentLikes?: Prisma.CommentLikeUpdateManyWithoutUserNestedInput
-  balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
-  trades?: Prisma.TradeUpdateManyWithoutUserNestedInput
-  positions?: Prisma.PortfolioPositionUpdateManyWithoutUserNestedInput
-  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
-}
-
-export type UserUncheckedUpdateWithoutPredictionsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  language?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  replies?: Prisma.ReplyUncheckedUpdateManyWithoutAuthorNestedInput
-  comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
-  replyLikes?: Prisma.ReplyLikeUncheckedUpdateManyWithoutUserNestedInput
-  commentLikes?: Prisma.CommentLikeUncheckedUpdateManyWithoutUserNestedInput
-  balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
-  trades?: Prisma.TradeUncheckedUpdateManyWithoutUserNestedInput
-  positions?: Prisma.PortfolioPositionUncheckedUpdateManyWithoutUserNestedInput
-  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
