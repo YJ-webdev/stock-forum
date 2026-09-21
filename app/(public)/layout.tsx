@@ -31,6 +31,8 @@ export default async function MainLayout({
           name: true,
           email: true,
           image: true,
+          role: true,
+          status: true,
           nationality: true,
           language: true,
         },

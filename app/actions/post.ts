@@ -1,7 +1,7 @@
 "use server";
 
 import type { JSONContent } from "@tiptap/react";
-import type { Prisma } from "@/generated/prisma/client";
+import type { Prisma, Role, UserStatus } from "@/generated/prisma/client";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -10,6 +10,7 @@ import {
   ALL_MARKET_SYMBOLS,
   type MarketSymbolItem,
 } from "@/lib/data/market-symbols";
+import { revalidatePath } from "next/cache";
 
 type PredictionInput = {
   direction: "BULL" | "BEAR";
@@ -222,93 +223,6 @@ export async function createComment({
   });
 }
 
-export interface MostLikedComment {
-  id: string;
-  content: JSONContent;
-  createdAt: Date;
-  updatedAt: Date;
-  author: {
-    id: string;
-    name: string | null;
-    image: string | null;
-    nationality: string | null;
-  };
-  assets: {
-    asset: {
-      name: string;
-      symbol: string;
-      displaySymbol: string | null;
-    };
-  }[];
-  _count: {
-    likes: number;
-    replies: number;
-  };
-}
-
-function hasTextContent(content: JSONContent | null): boolean {
-  if (!content) return false;
-
-  if (content.type === "text" && content.text?.trim()) {
-    return true;
-  }
-
-  return content.content?.some(hasTextContent) ?? false;
-}
-
-export async function getMostLikedComments(
-  limit = 5,
-): Promise<MostLikedComment[]> {
-  const comments = await prisma.comment.findMany({
-    orderBy: {
-      likes: {
-        _count: "desc",
-      },
-    },
-
-    take: limit * 5,
-
-    select: {
-      id: true,
-      content: true,
-      createdAt: true,
-      updatedAt: true,
-
-      author: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          nationality: true,
-        },
-      },
-
-      assets: {
-        select: {
-          asset: {
-            select: {
-              name: true,
-              symbol: true,
-              displaySymbol: true,
-            },
-          },
-        },
-      },
-
-      _count: {
-        select: {
-          likes: true,
-          replies: true,
-        },
-      },
-    },
-  });
-
-  return comments
-    .filter((comment) => hasTextContent(comment.content as JSONContent | null))
-    .slice(0, limit) as MostLikedComment[];
-}
-
 export async function getMarketComments(assetSymbol: string) {
   const comments = await prisma.comment.findMany({
     where: {
@@ -407,6 +321,17 @@ export async function deleteComment(commentId: string) {
     select: {
       id: true,
       authorId: true,
+      predictionId: true,
+
+      deletedAt: true,
+      withdrawnAt: true,
+      moderatedAt: true,
+
+      _count: {
+        select: {
+          replies: true,
+        },
+      },
     },
   });
 
@@ -414,22 +339,97 @@ export async function deleteComment(commentId: string) {
     throw new Error("Comment not found.");
   }
 
-  const isAuthor = comment.authorId === session.user.id;
-  const isAdmin = session.user.role === "ADMIN";
-
-  if (!isAuthor && !isAdmin) {
+  if (comment.authorId !== session.user.id) {
     throw new Error("You don't have permission to delete this comment.");
   }
 
-  await prisma.comment.delete({
-    where: {
-      id: commentId,
-    },
-  });
+  if (comment.moderatedAt) {
+    throw new Error("This comment has been hidden by moderation.");
+  }
 
-  return {
-    success: true,
-  };
+  if (comment.deletedAt) {
+    throw new Error("This comment has already been deleted.");
+  }
+
+  // ---------------------------------------------------------------------------
+  // NORMAL COMMENT
+  // No prediction + no replies = completely remove the Comment.
+  //
+  // This also cleans up old soft-deleted test comments.
+  // ---------------------------------------------------------------------------
+
+  if (!comment.predictionId && comment._count.replies === 0) {
+    await prisma.comment.delete({
+      where: {
+        id: commentId,
+      },
+    });
+
+    return {
+      success: true,
+      action: "DELETED" as const,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Already withdrawn
+  // ---------------------------------------------------------------------------
+
+  if (comment.withdrawnAt) {
+    throw new Error("This comment has already been withdrawn.");
+  }
+
+  // ---------------------------------------------------------------------------
+  // HAS REPLIES
+  // Preserve original content because replies depend on it.
+  // ---------------------------------------------------------------------------
+
+  if (comment._count.replies > 0) {
+    await prisma.comment.update({
+      where: {
+        id: commentId,
+      },
+      data: {
+        withdrawnAt: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      action: "WITHDRAWN" as const,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // HAS PREDICTION
+  // Prediction stays, but accompanying comment content is removed.
+  // ---------------------------------------------------------------------------
+
+  if (comment.predictionId) {
+    await prisma.comment.update({
+      where: {
+        id: commentId,
+      },
+      data: {
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "paragraph",
+            },
+          ],
+        },
+        deletedAt: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      action: "DELETED" as const,
+    };
+  }
+
+  throw new Error("Unable to delete comment.");
 }
 
 export async function editComment({
@@ -471,7 +471,7 @@ export async function editComment({
     throw new Error("You cannot edit this comment.");
   }
 
-  if (comment.deletedAt || comment.withdrawnAt || comment.moderatedAt) {
+  if (comment.withdrawnAt || comment.moderatedAt) {
     throw new Error("This comment can no longer be edited.");
   }
 
@@ -490,6 +490,257 @@ export async function editComment({
       editedAt: new Date(),
     },
   });
+
+  return {
+    success: true,
+  };
+}
+
+export interface MostLikedComment {
+  id: string;
+  content: JSONContent;
+  createdAt: Date;
+  updatedAt: Date;
+
+  author: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    nationality: string | null;
+  };
+
+  assets: {
+    asset: {
+      name: string;
+      symbol: string;
+      displaySymbol: string | null;
+    };
+  }[];
+
+  _count: {
+    likes: number;
+    replies: number;
+  };
+}
+
+function hasTextContent(content: JSONContent): boolean {
+  if (content.type === "text") {
+    return Boolean(content.text?.trim());
+  }
+
+  if (!content.content) {
+    return false;
+  }
+
+  return content.content.some(hasTextContent);
+}
+
+export async function getMostLikedComments(): Promise<MostLikedComment[]> {
+  const comments = await prisma.comment.findMany({
+    where: {
+      deletedAt: null,
+      withdrawnAt: null,
+      moderatedAt: null,
+
+      author: {
+        status: "ACTIVE",
+      },
+    },
+
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
+
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          nationality: true,
+        },
+      },
+
+      assets: {
+        select: {
+          asset: {
+            select: {
+              name: true,
+              symbol: true,
+              displaySymbol: true,
+            },
+          },
+        },
+      },
+
+      _count: {
+        select: {
+          likes: true,
+          replies: true,
+        },
+      },
+    },
+
+    orderBy: [
+      {
+        likes: {
+          _count: "desc",
+        },
+      },
+      {
+        createdAt: "desc",
+      },
+    ],
+
+    // Fetch some extra rows because prediction-only / GIF-only
+    // comments may be removed below.
+    take: 30,
+  });
+
+  return comments
+    .filter((comment) => hasTextContent(comment.content as JSONContent))
+    .slice(0, 5)
+    .map((comment) => ({
+      ...comment,
+      content: comment.content as JSONContent,
+    }));
+}
+
+export async function hideComment(commentId: string, reason?: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  if (session.user.role !== "ADMIN") {
+    throw new Error("You don't have permission to moderate comments.");
+  }
+
+  const comment = await prisma.comment.findUnique({
+    where: {
+      id: commentId,
+    },
+    select: {
+      id: true,
+      authorId: true,
+      deletedAt: true,
+      withdrawnAt: true,
+      moderatedAt: true,
+    },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found.");
+  }
+
+  if (comment.deletedAt) {
+    throw new Error("This comment has already been deleted by the author.");
+  }
+
+  if (comment.withdrawnAt) {
+    throw new Error("This comment has already been withdrawn by the author.");
+  }
+
+  if (comment.moderatedAt) {
+    throw new Error("This comment is already hidden.");
+  }
+
+  const now = new Date();
+
+  await prisma.$transaction([
+    prisma.comment.update({
+      where: {
+        id: commentId,
+      },
+      data: {
+        moderatedAt: now,
+      },
+    }),
+
+    prisma.moderationAction.create({
+      data: {
+        type: "HIDE_COMMENT",
+        reason: reason?.trim() || null,
+        moderatorId: session.user.id,
+        targetUserId: comment.authorId,
+        commentId,
+      },
+    }),
+  ]);
+
+  // Invalidate server-rendered layout data such as Popular Comments.
+  revalidatePath("/", "layout");
+
+  return {
+    success: true,
+  };
+}
+
+export async function restoreComment(commentId: string, reason?: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  if (session.user.role !== "ADMIN") {
+    throw new Error("You don't have permission to moderate comments.");
+  }
+
+  const comment = await prisma.comment.findUnique({
+    where: {
+      id: commentId,
+    },
+    select: {
+      id: true,
+      authorId: true,
+      deletedAt: true,
+      withdrawnAt: true,
+      moderatedAt: true,
+    },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found.");
+  }
+
+  if (comment.deletedAt) {
+    throw new Error("A comment deleted by its author cannot be restored.");
+  }
+
+  if (comment.withdrawnAt) {
+    throw new Error("A comment withdrawn by its author cannot be restored.");
+  }
+
+  if (!comment.moderatedAt) {
+    throw new Error("This comment is not hidden.");
+  }
+
+  await prisma.$transaction([
+    prisma.comment.update({
+      where: {
+        id: commentId,
+      },
+      data: {
+        moderatedAt: null,
+      },
+    }),
+
+    prisma.moderationAction.create({
+      data: {
+        type: "RESTORE_COMMENT",
+        reason: reason?.trim() || null,
+        moderatorId: session.user.id,
+        targetUserId: comment.authorId,
+        commentId,
+      },
+    }),
+  ]);
+
+  // Refresh server-rendered Popular Comments data.
+  revalidatePath("/", "layout");
 
   return {
     success: true,

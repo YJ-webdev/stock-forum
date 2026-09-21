@@ -7,12 +7,19 @@ import {
   ChevronUp,
   MoreVertical,
   Pencil,
+  ShieldCheck,
+  ShieldOff,
   ThumbsUp,
   Trash2,
 } from "lucide-react";
 
 import { useCurrentUser } from "@/app/context/user-context";
-import { deleteComment, getMarketComments } from "@/app/actions/post";
+import {
+  deleteComment,
+  getMarketComments,
+  hideComment,
+  restoreComment,
+} from "@/app/actions/post";
 
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -106,10 +113,6 @@ interface MarketCommentsProps {
   countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
   showCountdown: boolean;
 }
-
-// -----------------------------------------------------------------------------
-// MARKET COMMENTS
-// -----------------------------------------------------------------------------
 
 export function MarketComments({
   assetSymbol,
@@ -267,15 +270,6 @@ export function MarketComments({
   );
 }
 
-// -----------------------------------------------------------------------------
-// COMMENT ITEM
-// -----------------------------------------------------------------------------
-
-interface CommentItemProps {
-  comment: MarketComment;
-  onCommentUpdated: () => Promise<void>;
-}
-
 function CommentItem({
   comment,
   currentUser,
@@ -294,21 +288,20 @@ function CommentItem({
   const [replying, setReplying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isModerating, setIsModerating] = useState(false);
+
+  const isAdmin = currentUser?.role === "ADMIN";
+  const isAuthor = currentUser?.id === comment.author.id;
 
   const replyCount = comment._count.replies;
 
   const username = comment.author.name ?? "User";
 
-  const canDelete =
-    currentUser?.id === comment.author.id &&
-    !comment.deletedAt &&
-    !comment.withdrawnAt &&
-    !comment.moderatedAt;
+  const canDelete = isAuthor && !comment.withdrawnAt && !comment.moderatedAt;
 
   const canEdit =
-    currentUser?.id === comment.author.id &&
+    isAuthor &&
     comment._count.replies === 0 &&
-    !comment.deletedAt &&
     !comment.withdrawnAt &&
     !comment.moderatedAt;
 
@@ -322,17 +315,61 @@ function CommentItem({
     try {
       setIsDeleting(true);
 
-      await deleteComment(comment.id);
+      const result = await deleteComment(comment.id);
 
       await onDeleted();
 
-      toast.success("Comment deleted.");
+      toast.success(
+        result.action === "WITHDRAWN"
+          ? "Comment withdrawn."
+          : "Comment deleted.",
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete comment.",
       );
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleHideComment = async () => {
+    if (isModerating) return;
+
+    try {
+      setIsModerating(true);
+
+      await hideComment(comment.id);
+
+      await onCommentUpdated();
+
+      toast.success("Comment hidden.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to hide comment.",
+      );
+    } finally {
+      setIsModerating(false);
+    }
+  };
+
+  const handleRestoreComment = async () => {
+    if (isModerating) return;
+
+    try {
+      setIsModerating(true);
+
+      await restoreComment(comment.id);
+
+      await onCommentUpdated();
+
+      toast.success("Comment restored.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to restore comment.",
+      );
+    } finally {
+      setIsModerating(false);
     }
   };
 
@@ -344,14 +381,39 @@ function CommentItem({
         <div className="min-w-0 flex-1">
           {/* User */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[14px] font-semibold">{username}</span>
-
+            <span className="text-[14px] font-semibold">{username}</span>{" "}
+            {/* Prediction */}
+            {comment.prediction && (
+              <div className="flex items-center gap-2">
+                <span
+                  className={`
+        rounded-full px-2 py-0.5
+        text-[11px] font-medium
+        ${
+          comment.prediction.direction === "BULL"
+            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+            : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+        }
+      `}
+                >
+                  {comment.prediction.direction === "BULL"
+                    ? "Bullish"
+                    : "Bearish"}
+                </span>
+              </div>
+            )}
             <span className="text-[13px] text-zinc-500">
               {formatTimeAgo(comment.createdAt)}
             </span>
-
             <DropdownMenu>
               <DropdownMenuTrigger
+                onClick={() => {
+                  console.log({
+                    currentUser,
+                    role: currentUser?.role,
+                    isAdmin,
+                  });
+                }}
                 className="
           ml-auto rounded-full p-1.5
           opacity-0
@@ -364,6 +426,7 @@ function CommentItem({
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end">
+                {/* Author actions */}
                 {canEdit && (
                   <DropdownMenuItem onClick={handleEdit}>
                     <Pencil className="mr-2 size-4" />
@@ -382,36 +445,38 @@ function CommentItem({
                     {isDeleting ? "Deleting..." : "Delete"}
                   </DropdownMenuItem>
                 )}
+
+                {/* Admin moderation */}
+                {isAdmin && !comment.moderatedAt && (
+                  <DropdownMenuItem
+                    disabled={isModerating}
+                    onClick={handleHideComment}
+                  >
+                    <ShieldOff className="mr-2 size-4" />
+
+                    {isModerating ? "Hiding..." : "Hide comment"}
+                  </DropdownMenuItem>
+                )}
+
+                {isAdmin && comment.moderatedAt && (
+                  <DropdownMenuItem
+                    disabled={isModerating}
+                    onClick={handleRestoreComment}
+                  >
+                    <ShieldCheck className="mr-2 size-4" />
+
+                    {isModerating ? "Restoring..." : "Restore comment"}
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
-          {/* Prediction */}
-          {comment.prediction && (
-            <div className="mt-1 flex items-center gap-2">
-              <span
-                className={`
-        rounded-full px-2 py-0.5
-        text-[11px] font-medium
-        ${
-          comment.prediction.direction === "BULL"
-            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-            : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-        }
-      `}
-              >
-                {comment.prediction.direction === "BULL"
-                  ? "Bullish"
-                  : "Bearish"}
-              </span>
-
-              <span className="text-[11px] text-zinc-500">
-                {comment.prediction.pointsBet.toLocaleString()} pts
-              </span>
-            </div>
-          )}
-
-          {isEditing ? (
+          {comment.moderatedAt ? (
+            <p className="mt-1 text-[15px] italic text-zinc-400">
+              Comment hidden by moderation
+            </p>
+          ) : isEditing ? (
             <CommentEditInput
               commentId={comment.id}
               initialContent={comment.content}
@@ -422,40 +487,58 @@ function CommentItem({
               }}
             />
           ) : (
-            <CommentContent content={comment.content} />
+            <div className="flex items-baseline gap-1 lowercase">
+              {!comment.deletedAt && (
+                <CommentContent content={comment.content} />
+              )}
+
+              {comment.deletedAt ? (
+                <span className="text-[12px] italic text-zinc-400">
+                  (comment deleted {formatTimeAgo(comment.deletedAt)})
+                </span>
+              ) : comment.editedAt ? (
+                <span className="text-[12px] text-zinc-400">
+                  (edited {formatTimeAgo(comment.editedAt)})
+                </span>
+              ) : null}
+            </div>
           )}
 
           {/* Actions */}
-          <div className="mt-2 flex items-center gap-4">
-            <button
-              type="button"
-              className="
+          {!comment.moderatedAt && (
+            <div className="mt-2 flex items-center gap-4">
+              <button
+                type="button"
+                className="
                 flex items-center gap-1.5
                 text-sm text-zinc-500
                 hover:text-zinc-900
                 dark:hover:text-zinc-200
               "
-            >
-              <ThumbsUp className="size-4" />
+              >
+                <ThumbsUp className="size-4" />
 
-              {comment._count.likes > 0 && <span>{comment._count.likes}</span>}
-            </button>
+                {comment._count.likes > 0 && (
+                  <span>{comment._count.likes}</span>
+                )}
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setReplying((prev) => !prev)}
-              className="
+              <button
+                type="button"
+                onClick={() => setReplying((prev) => !prev)}
+                className="
                 text-sm font-medium text-zinc-500
                 hover:text-zinc-900
                 dark:hover:text-zinc-200
               "
-            >
-              Reply
-            </button>
-          </div>
+              >
+                Reply
+              </button>
+            </div>
+          )}
 
           {/* Reply input */}
-          {replying && (
+          {!comment.moderatedAt && replying && replying && (
             <div className="mt-3 flex gap-2">
               <Avatar label="You" small />
 
@@ -559,7 +642,7 @@ function ReplyItem({ reply }: { reply: MarketReply }) {
         <div className="flex items-center gap-1.5">
           <span className="text-[14px] font-semibold">{username}</span>
 
-          <span className="text-[13px] text-zinc-500">
+          <span className="text-[13px] text-zinc-500 jakarta">
             {formatTimeAgo(reply.createdAt)}
           </span>
 

@@ -31,26 +31,47 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
-    async jwt({ token, user }) {
-      // 'user' is only present on initial sign-in
-      if (user) {
-        token.id = user.id;
-        token.role = (user as { role?: string }).role || "USER";
-        token.nationality =
-          (user as { nationality?: string }).nationality || "";
-        token.language = (user as { language?: string }).language || "";
+    async jwt({ token }) {
+      if (!token.sub) {
+        return token;
       }
+
+      const dbUser = await prisma.user.findUnique({
+        where: {
+          id: token.sub,
+        },
+        select: {
+          role: true,
+          status: true,
+          nationality: true,
+          language: true,
+        },
+      });
+
+      if (dbUser) {
+        token.role = dbUser.role;
+        token.status = dbUser.status;
+        token.nationality = dbUser.nationality ?? "";
+        token.language = dbUser.language ?? "";
+      }
+
       return token;
     },
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = (token.id as string) || token.sub!;
-        // Pass role to the client/server session
-        session.user.role = token.role as string;
-        session.user.nationality = token.nationality as string;
-        session.user.language = token.language as string;
+        session.user.id = token.sub ?? "";
+
+        session.user.role = token.role ?? "USER";
+        session.user.status = token.status ?? "ACTIVE";
+
+        session.user.nationality =
+          typeof token.nationality === "string" ? token.nationality : "";
+
+        session.user.language =
+          typeof token.language === "string" ? token.language : "";
       }
+
       return session;
     },
   },
