@@ -35,7 +35,15 @@ export function VotingCountdown({
   }
 
   return (
-    <div className="mr-2 flex items-center gap-1 text-[12px] text-zinc-500 dark:text-zinc-400">
+    <div
+      className="
+      hidden shrink-0 items-center gap-1
+      whitespace-nowrap
+      text-[12px] text-zinc-500
+      dark:text-zinc-400
+      sm:flex
+    "
+    >
       <span>
         {type === "VOTING_OPENS" ? "Voting opens in" : "Voting closes in"}
       </span>

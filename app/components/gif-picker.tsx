@@ -217,7 +217,8 @@ export function GifPicker({ open, onOpenChange, onSelect }: GifPickerProps) {
       ref={pickerRef}
       className="
         absolute
-        bottom-2 left-2
+top-full left-0
+mt-2
         z-100
         flex
         h-120 w-95

@@ -167,7 +167,7 @@ export function PredictionCommentInput({
                 "
               />
 
-              <span className="jakarta text-sm font-light text-zinc-500">
+              <span className="jakarta text-sm font-normal text-zinc-500">
                 / {userPoints.toLocaleString()}pts
               </span>
             </div>
@@ -182,34 +182,39 @@ export function PredictionCommentInput({
               bg-transparent py-3
               text-[15px] outline-none
               placeholder:text-zinc-500
+              placeholder:truncate
             "
           />
 
           {/* Bottom actions */}
-          <div className="flex items-center justify-between pb-2">
-            <div className="flex items-center gap-1">
+          <div className="@container flex items-center justify-between gap-2 pb-2">
+            {/* Left */}
+            <div className="flex shrink-0 items-center gap-1">
               <button
                 type="button"
                 className="
-                  cursor-pointer rounded-md
-                  px-2 py-1
-                  text-sm font-medium text-zinc-500
-                  hover:bg-zinc-200
-                  dark:hover:bg-zinc-700
-                "
+        cursor-pointer rounded-md
+        px-2 py-1
+        text-sm font-medium text-zinc-500
+        hover:bg-zinc-200
+        dark:hover:bg-zinc-700
+      "
               >
                 GIF
               </button>
             </div>
 
-            <div className="flex items-baseline gap-2">
+            {/* Right */}
+            <div className="flex shrink-0 items-baseline gap-2">
               {showCountdown && countdownType === "VOTING_CLOSES" && (
-                <VotingCountdown
-                  targetMs={targetMs}
-                  type={countdownType}
-                  showCountdown={showCountdown}
-                  isMarketOpen={isMarketOpen}
-                />
+                <div className="hidden @[380px]:block">
+                  <VotingCountdown
+                    targetMs={targetMs}
+                    type={countdownType}
+                    showCountdown={showCountdown}
+                    isMarketOpen={isMarketOpen}
+                  />
+                </div>
               )}
 
               <Button
@@ -218,23 +223,24 @@ export function PredictionCommentInput({
                 disabled={buttonDisabled}
                 onClick={submitVote}
                 className="
-      cursor-pointer
-      border-none
-      bg-transparent
-      text-black
-      shadow-none
-      transition-colors
+        shrink-0
+        cursor-pointer
+        border-none
+        bg-transparent
+        text-black
+        shadow-none
+        transition-colors
 
-      hover:bg-transparent
-      dark:bg-transparent
-      dark:text-zinc-100
-      dark:hover:bg-transparent
+        hover:bg-transparent
+        dark:bg-transparent
+        dark:text-zinc-100
+        dark:hover:bg-transparent
 
-      disabled:cursor-not-allowed
-      disabled:bg-transparent
-      disabled:opacity-100
-      dark:disabled:bg-transparent
-    "
+        disabled:cursor-not-allowed
+        disabled:bg-transparent
+        disabled:opacity-100
+        dark:disabled:bg-transparent
+      "
               >
                 <Flag
                   size={18}

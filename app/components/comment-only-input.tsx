@@ -1,9 +1,11 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
+import { useState } from "react";
+import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { VotingCountdown } from "./voting-countdown";
+import { GifPicker, type GifResult } from "@/app/components/gif-picker";
 
 interface CommentOnlyInputProps {
   targetMs: number | null;
@@ -18,12 +20,15 @@ export function CommentOnlyInput({
   showCountdown,
   isMarketOpen,
 }: CommentOnlyInputProps) {
+  const [gifPickerOpen, setGifPickerOpen] = useState(false);
+  const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
+
   return (
     <div className="mb-8 flex gap-3">
       <Avatar label="YJ" />
 
       <div className="min-w-0 flex-1">
-        <div className="rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
+        <div className="relative rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
           {/* Comment */}
           <textarea
             rows={1}
@@ -33,56 +38,85 @@ export function CommentOnlyInput({
               bg-transparent py-3
               text-[15px] outline-none
               placeholder:text-zinc-500
+              placeholder:truncate
             "
           />
 
-          {/* Bottom actions */}
-          <div className="flex items-center justify-between pb-2">
-            {/* Left */}
-            <div className="flex items-center gap-1">
+          {/* Selected GIF */}
+          {selectedGif && (
+            <div className="relative mb-3 w-fit max-w-full">
+              <img
+                src={selectedGif.preview || selectedGif.src}
+                alt={selectedGif.title}
+                className="
+                  block max-h-60 max-w-full
+                  rounded-lg object-contain
+                "
+              />
+
               <button
                 type="button"
+                onClick={() => setSelectedGif(null)}
                 className="
-                  cursor-pointer rounded-md
-                  px-2 py-1
-                  text-sm font-medium text-zinc-500
-                  hover:bg-zinc-200
-                  dark:hover:bg-zinc-700
+                  absolute right-2 top-2
+                  flex size-7 cursor-pointer
+                  items-center justify-center
+                  rounded-full
+                  bg-black/60 text-white
+                  hover:bg-black/75
                 "
+              >
+                <X size={15} />
+              </button>
+            </div>
+          )}
+
+          {/* Bottom actions */}
+          <div className="@container flex items-center justify-between gap-2 pb-2">
+            {/* Left */}
+            <div className="relative flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setGifPickerOpen((open) => !open)}
+                className="
+        cursor-pointer rounded-md
+        px-2 py-1
+        text-sm font-medium text-zinc-500
+        hover:bg-zinc-200
+        dark:hover:bg-zinc-700
+      "
               >
                 GIF
               </button>
+
+              <GifPicker
+                open={gifPickerOpen}
+                onOpenChange={setGifPickerOpen}
+                onSelect={(gif) => {
+                  setSelectedGif(gif);
+                  setGifPickerOpen(false);
+                }}
+              />
             </div>
 
             {/* Right */}
-            <div className="flex items-baseline gap-2">
-              {/* Voting opens countdown */}
+            <div className="flex shrink-0 items-baseline gap-2">
               {showCountdown && countdownType === "VOTING_OPENS" && (
-                <VotingCountdown
-                  targetMs={targetMs}
-                  type={countdownType}
-                  showCountdown={showCountdown}
-                  isMarketOpen={isMarketOpen}
-                />
+                <div className="hidden @[340px]:block">
+                  <VotingCountdown
+                    targetMs={targetMs}
+                    type={countdownType}
+                    showCountdown={showCountdown}
+                    isMarketOpen={isMarketOpen}
+                  />
+                </div>
               )}
 
               <Button
                 type="button"
                 size="sm"
-                className="
-                  cursor-pointer
-               
-             
-                
-                
-
-                 
-
-               
-             
-                "
+                className="shrink-0 cursor-pointer"
               >
-                {/* <MessageCircle size={18} /> */}
                 Comment
               </Button>
             </div>
