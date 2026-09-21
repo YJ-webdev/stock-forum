@@ -181,24 +181,31 @@ export function PostEditor({
     return selectedAssets.some((selected) => selected.symbol === asset.symbol);
   };
 
+  const MAX_SELECTED_ASSETS = 2;
+
   const toggleAsset = (asset: MarketSymbolItem) => {
     setSelectedAssets((prev) => {
       const alreadySelected = prev.some(
         (selected) => selected.symbol === asset.symbol,
       );
 
+      // Allow deselecting anytime
       if (alreadySelected) {
         return prev.filter((selected) => selected.symbol !== asset.symbol);
+      }
+
+      // Maximum 2 assets
+      if (prev.length >= MAX_SELECTED_ASSETS) {
+        toast.error("You can select up to 2 boards.");
+        return prev;
       }
 
       return [...prev, asset];
     });
 
-    // Keep selector open so multiple assets can be selected.
     setAssetQuery("");
     setAssetSelectorOpen(false);
   };
-
   // ---------------------------------------------------------------------------
   // SAVE RECENT ASSETS
   //
