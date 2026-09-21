@@ -55,7 +55,7 @@ export function CommentOnlyInput({
             </div>
 
             {/* Right */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-baseline gap-2">
               {/* Voting opens countdown */}
               {showCountdown && countdownType === "VOTING_OPENS" && (
                 <VotingCountdown

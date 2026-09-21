@@ -142,7 +142,7 @@ export function MarketComments({
         </span>
       </div>
 
-      {hasAlreadyVoted ? (
+      {hasAlreadyVoted || isMarketOpen ? (
         <CommentOnlyInput
           targetMs={targetMs}
           countdownType={countdownType}

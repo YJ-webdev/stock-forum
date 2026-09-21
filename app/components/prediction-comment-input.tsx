@@ -202,7 +202,7 @@ export function PredictionCommentInput({
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-baseline gap-2">
               {showCountdown && countdownType === "VOTING_CLOSES" && (
                 <VotingCountdown
                   targetMs={targetMs}

@@ -104,7 +104,7 @@ export function PopularBoards() {
               {/* Plus - visible when selected or hovered */}
               <Plus
                 className={`
-                  h-[18px] w-[18px]
+                  h-4.5 w-4.5
                   text-zinc-800
                   dark:text-zinc-300
 
