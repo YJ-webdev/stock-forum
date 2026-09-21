@@ -26,6 +26,69 @@ type CreateCommentInput = {
   prediction?: PredictionInput | null;
 };
 
+export async function createReply({
+  commentId,
+  content,
+}: {
+  commentId: string;
+  content: string;
+}) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  const trimmedContent = content.trim();
+
+  if (!trimmedContent) {
+    throw new Error("Reply cannot be empty.");
+  }
+
+  const comment = await prisma.comment.findUnique({
+    where: {
+      id: commentId,
+    },
+    select: {
+      id: true,
+      deletedAt: true,
+      withdrawnAt: true,
+      moderatedAt: true,
+    },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found.");
+  }
+
+  if (comment.withdrawnAt || comment.moderatedAt) {
+    throw new Error("You cannot reply to this comment.");
+  }
+
+  const reply = await prisma.reply.create({
+    data: {
+      content: trimmedContent,
+
+      comment: {
+        connect: {
+          id: commentId,
+        },
+      },
+
+      author: {
+        connect: {
+          id: session.user.id,
+        },
+      },
+    },
+  });
+
+  return {
+    success: true,
+    reply,
+  };
+}
+
 export async function createComment({
   content = null,
   assetSymbols,

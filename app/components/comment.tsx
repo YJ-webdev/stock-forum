@@ -15,6 +15,7 @@ import {
 
 import { useCurrentUser } from "@/app/context/user-context";
 import {
+  createReply,
   deleteComment,
   getMarketComments,
   hideComment,
@@ -280,6 +281,8 @@ function CommentItem({
   currentUser: {
     id: string;
     role?: string | null;
+    image?: string | null;
+    name?: string | null;
   } | null;
   onDeleted: () => Promise<void>;
   onCommentUpdated: () => Promise<void>;
@@ -288,6 +291,9 @@ function CommentItem({
 
   const [showReplies, setShowReplies] = useState(false);
   const [replying, setReplying] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [replyPending, setReplyPending] = useState(false);
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isModerating, setIsModerating] = useState(false);
@@ -389,6 +395,36 @@ function CommentItem({
       );
     } finally {
       setIsModerating(false);
+    }
+  };
+
+  const handleReply = async () => {
+    const content = replyText.trim();
+
+    if (!content || replyPending) return;
+
+    try {
+      setReplyPending(true);
+
+      await createReply({
+        commentId: comment.id,
+        content,
+      });
+
+      setReplyText("");
+      setReplying(false);
+
+      toast.success("Reply posted.");
+
+      // Use your existing comment refresh mechanism here.
+      // For example:
+      // refreshComments();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to post reply.",
+      );
+    } finally {
+      setReplyPending(false);
     }
   };
 
@@ -562,7 +598,15 @@ function CommentItem({
           {/* Reply input */}
           {!comment.moderatedAt && replying && replying && (
             <div className="mt-3 flex gap-2">
-              <Avatar label="You" small />
+              {currentUser?.image ? (
+                <img
+                  src={currentUser.image}
+                  alt={currentUser.name ?? "User"}
+                  className="h-7 w-7 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <Avatar label={currentUser?.name ?? "You"} small />
+              )}
 
               <div className="min-w-0 flex-1">
                 <div className="rounded-lg bg-zinc-100 px-3 dark:bg-zinc-800">
