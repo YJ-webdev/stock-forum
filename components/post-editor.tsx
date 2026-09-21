@@ -69,7 +69,8 @@ export function PostEditor({
     );
   }, [symbol]);
 
-  const { notifyCommentCreated } = useCommentRefresh();
+  const { notifyCommentChanged } = useCommentRefresh();
+
   // ---------------------------------------------------------------------------
   // LOAD RECENT ASSETS
   // ---------------------------------------------------------------------------
@@ -244,7 +245,7 @@ export function PostEditor({
           assetSymbols: selectedAssets.map((asset) => asset.symbol),
         });
 
-        notifyCommentCreated();
+        notifyCommentChanged();
         // Only successfully posted assets become Recent.
         saveRecentAssets(selectedAssets);
 

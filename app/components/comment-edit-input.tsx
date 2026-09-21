@@ -28,26 +28,53 @@ export function CommentEditInput({
   onCancel,
   onSaved,
 }: CommentEditInputProps) {
+  // ---------------------------------------------------------------------------
+  // INITIAL CONTENT
+  // ---------------------------------------------------------------------------
+
   const initial = getInitialComment(initialContent);
 
+  const initialText = initial.text;
+  const initialGifSrc = initial.gif?.src ?? null;
+
+  // ---------------------------------------------------------------------------
+  // STATE
+  // ---------------------------------------------------------------------------
+
   const [comment, setComment] = useState(initial.text);
+
   const [selectedGif, setSelectedGif] = useState<EditableGif | null>(
     initial.gif,
   );
+
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
 
   const [isPending, startTransition] = useTransition();
 
+  // ---------------------------------------------------------------------------
+  // VALIDATION
+  // ---------------------------------------------------------------------------
+
+  const hasChanges =
+    comment.trim() !== initialText.trim() ||
+    (selectedGif?.src ?? null) !== initialGifSrc;
+
+  const hasContent = comment.trim().length > 0 || Boolean(selectedGif);
+
+  const saveDisabled = isPending || !hasChanges || !hasContent;
+
+  // ---------------------------------------------------------------------------
+  // SAVE
+  // ---------------------------------------------------------------------------
+
   const handleSave = () => {
-    if (!comment.trim() && !selectedGif) {
-      toast.error("Please write a comment or select a GIF.");
-      return;
-    }
+    if (saveDisabled) return;
 
     startTransition(async () => {
       try {
         const content: JSONContent = {
           type: "doc",
+
           content: [
             ...(comment.trim()
               ? [
@@ -93,9 +120,14 @@ export function CommentEditInput({
     });
   };
 
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
+
   return (
     <div className="mt-2">
       <div className="relative rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
+        {/* Text */}
         <textarea
           autoFocus
           value={comment}
@@ -110,6 +142,7 @@ export function CommentEditInput({
           "
         />
 
+        {/* Selected GIF */}
         {selectedGif && (
           <div className="relative mb-3 w-fit max-w-full">
             <img
@@ -124,6 +157,7 @@ export function CommentEditInput({
             <button
               type="button"
               onClick={() => setSelectedGif(null)}
+              disabled={isPending}
               className="
                 absolute right-2 top-2
                 flex size-7 cursor-pointer
@@ -131,6 +165,8 @@ export function CommentEditInput({
                 rounded-full
                 bg-black/60 text-white
                 hover:bg-black/75
+                disabled:cursor-not-allowed
+                disabled:opacity-50
               "
             >
               <X size={15} />
@@ -138,16 +174,21 @@ export function CommentEditInput({
           </div>
         )}
 
+        {/* Bottom actions */}
         <div className="flex items-center justify-between gap-2 pb-2">
+          {/* GIF */}
           <div className="relative">
             <button
               type="button"
+              disabled={isPending}
               onClick={() => setGifPickerOpen((open) => !open)}
               className="
                 cursor-pointer rounded-md
                 px-2 py-1
                 text-sm font-medium text-zinc-500
                 hover:bg-zinc-200
+                disabled:cursor-not-allowed
+                disabled:opacity-50
                 dark:hover:bg-zinc-700
               "
             >
@@ -169,6 +210,7 @@ export function CommentEditInput({
             />
           </div>
 
+          {/* Cancel / Save */}
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -183,8 +225,13 @@ export function CommentEditInput({
             <Button
               type="button"
               size="sm"
-              disabled={isPending || (!comment.trim() && !selectedGif)}
+              disabled={saveDisabled}
               onClick={handleSave}
+              className="
+                cursor-pointer
+                disabled:cursor-not-allowed
+                disabled:opacity-40
+              "
             >
               {isPending ? "Saving..." : "Save"}
             </Button>
@@ -195,6 +242,10 @@ export function CommentEditInput({
   );
 }
 
+// -----------------------------------------------------------------------------
+// GET INITIAL COMMENT
+// -----------------------------------------------------------------------------
+
 function getInitialComment(content: JSONContent): {
   text: string;
   gif: EditableGif | null;
@@ -203,6 +254,7 @@ function getInitialComment(content: JSONContent): {
   let gif: EditableGif | null = null;
 
   for (const node of content.content ?? []) {
+    // Text
     if (node.type === "paragraph") {
       const paragraphText =
         node.content?.map((child) => child.text ?? "").join("") ?? "";
@@ -212,6 +264,7 @@ function getInitialComment(content: JSONContent): {
       }
     }
 
+    // GIF
     if (node.type === "image" && node.attrs?.src) {
       gif = {
         src: String(node.attrs.src),

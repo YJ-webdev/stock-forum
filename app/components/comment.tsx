@@ -284,6 +284,8 @@ function CommentItem({
   onDeleted: () => Promise<void>;
   onCommentUpdated: () => Promise<void>;
 }) {
+  const { notifyCommentChanged } = useCommentRefresh();
+
   const [showReplies, setShowReplies] = useState(false);
   const [replying, setReplying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -317,13 +319,21 @@ function CommentItem({
 
       const result = await deleteComment(comment.id);
 
+      if (result.action === "NOTHING_TO_DELETE") {
+        toast.info("No comment content to delete. The vote will remain.");
+        return;
+      }
+
       await onDeleted();
 
-      toast.success(
-        result.action === "WITHDRAWN"
-          ? "Comment withdrawn."
-          : "Comment deleted.",
-      );
+      notifyCommentChanged();
+
+      if (result.action === "WITHDRAWN") {
+        toast.success("Comment withdrawn.");
+        return;
+      }
+
+      toast.success("Comment deleted.");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete comment.",
@@ -339,9 +349,16 @@ function CommentItem({
     try {
       setIsModerating(true);
 
-      await hideComment(comment.id);
+      const result = await hideComment(comment.id);
+
+      if (result.action === "NOTHING_TO_DELETE") {
+        toast.info("No comment content to hide. The vote will remain.");
+        return;
+      }
 
       await onCommentUpdated();
+
+      notifyCommentChanged();
 
       toast.success("Comment hidden.");
     } catch (error) {
@@ -362,6 +379,8 @@ function CommentItem({
       await restoreComment(comment.id);
 
       await onCommentUpdated();
+
+      notifyCommentChanged();
 
       toast.success("Comment restored.");
     } catch (error) {
@@ -483,7 +502,10 @@ function CommentItem({
               onCancel={() => setIsEditing(false)}
               onSaved={async () => {
                 setIsEditing(false);
+
                 await onCommentUpdated();
+
+                notifyCommentChanged();
               }}
             />
           ) : (

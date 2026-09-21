@@ -1,8 +1,15 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { Ellipsis, MessageCircle, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 
-import type { MostLikedComment } from "@/app/actions/post";
+import {
+  getMostLikedComments,
+  type MostLikedComment,
+} from "@/app/actions/post";
+import { useCommentRefresh } from "../context/comment-refresh-context";
 
 interface MostLikedCommentsProps {
   comments: MostLikedComment[];
@@ -20,7 +27,31 @@ function getTextFromContent(content: JSONContent): string {
   return content.content.map(getTextFromContent).join(" ");
 }
 
-export function MostLikedComments({ comments }: MostLikedCommentsProps) {
+export function MostLikedComments({
+  comments: initialComments,
+}: MostLikedCommentsProps) {
+  const [comments, setComments] = useState<MostLikedComment[]>(initialComments);
+
+  const { refreshKey } = useCommentRefresh();
+
+  const refreshComments = useCallback(async () => {
+    try {
+      const result = await getMostLikedComments();
+
+      setComments(result);
+    } catch (error) {
+      console.error("Failed to refresh popular comments:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (refreshKey === 0) {
+      return;
+    }
+
+    refreshComments();
+  }, [refreshKey, refreshComments]);
+
   return (
     <div className="flex flex-col gap-2.5">
       {comments.map((comment) => {
@@ -55,7 +86,8 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
                     border border-zinc-400
                     bg-transparent px-2.5 py-1
                     text-[12px] font-medium text-zinc-600
-                    dark:border-zinc-600 dark:text-zinc-300
+                    dark:border-zinc-600
+                    dark:text-zinc-300
                   "
                 >
                   {asset.displaySymbol ?? asset.symbol}
@@ -67,9 +99,10 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
             <p
               className="
                 line-clamp-2
-                text-[15px] font-normal leading-normal
-                text-zinc-900
-                dark:font-light dark:text-zinc-300
+                text-[15px] font-normal
+                leading-normal text-zinc-900
+                dark:font-light
+                dark:text-zinc-300
               "
             >
               {text}
@@ -88,7 +121,8 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
                   className="
                     h-4 w-4 fill-none
                     text-zinc-600
-                    dark:fill-zinc-300 dark:text-muted
+                    dark:fill-zinc-300
+                    dark:text-muted
                   "
                   strokeWidth={1.5}
                 />
@@ -101,7 +135,8 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
                   className="
                     h-4 w-4 fill-none
                     text-zinc-600
-                    dark:fill-zinc-300 dark:text-muted
+                    dark:fill-zinc-300
+                    dark:text-muted
                   "
                   strokeWidth={1.5}
                 />
@@ -113,7 +148,13 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
         );
       })}
 
-      <Ellipsis className="mx-auto h-4 w-4 text-zinc-400 dark:text-zinc-600" />
+      <Ellipsis
+        className="
+          mx-auto h-4 w-4
+          text-zinc-400
+          dark:text-zinc-600
+        "
+      />
     </div>
   );
 }

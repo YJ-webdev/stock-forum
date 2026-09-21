@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useState } from "react";
 
 interface CommentRefreshContextValue {
   refreshKey: number;
-  notifyCommentCreated: () => void;
+  notifyCommentChanged: () => void;
 }
 
 const CommentRefreshContext = createContext<CommentRefreshContextValue | null>(
@@ -18,7 +18,7 @@ export function CommentRefreshProvider({
 }) {
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const notifyCommentCreated = useCallback(() => {
+  const notifyCommentChanged = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
   }, []);
 
@@ -26,7 +26,7 @@ export function CommentRefreshProvider({
     <CommentRefreshContext.Provider
       value={{
         refreshKey,
-        notifyCommentCreated,
+        notifyCommentChanged,
       }}
     >
       {children}

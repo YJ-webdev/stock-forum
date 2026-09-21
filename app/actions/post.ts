@@ -1,7 +1,7 @@
 "use server";
 
 import type { JSONContent } from "@tiptap/react";
-import type { Prisma, Role, UserStatus } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -322,6 +322,7 @@ export async function deleteComment(commentId: string) {
       id: true,
       authorId: true,
       predictionId: true,
+      content: true,
 
       deletedAt: true,
       withdrawnAt: true,
@@ -348,14 +349,28 @@ export async function deleteComment(commentId: string) {
   }
 
   if (comment.deletedAt) {
-    throw new Error("This comment has already been deleted.");
+    throw new Error(
+      "This comment has already been deleted. The vote will remain.",
+    );
+  }
+
+  const hasContent = hasCommentContent(comment.content as JSONContent);
+
+  // ---------------------------------------------------------------------------
+  // PREDICTION ONLY
+  // Nothing to delete. Prediction remains untouched.
+  // ---------------------------------------------------------------------------
+
+  if (comment.predictionId && !hasContent && comment._count.replies === 0) {
+    return {
+      success: true,
+      action: "NOTHING_TO_DELETE" as const,
+    };
   }
 
   // ---------------------------------------------------------------------------
   // NORMAL COMMENT
-  // No prediction + no replies = completely remove the Comment.
-  //
-  // This also cleans up old soft-deleted test comments.
+  // No prediction + no replies = physical delete.
   // ---------------------------------------------------------------------------
 
   if (!comment.predictionId && comment._count.replies === 0) {
@@ -372,7 +387,7 @@ export async function deleteComment(commentId: string) {
   }
 
   // ---------------------------------------------------------------------------
-  // Already withdrawn
+  // ALREADY WITHDRAWN
   // ---------------------------------------------------------------------------
 
   if (comment.withdrawnAt) {
@@ -381,7 +396,7 @@ export async function deleteComment(commentId: string) {
 
   // ---------------------------------------------------------------------------
   // HAS REPLIES
-  // Preserve original content because replies depend on it.
+  // Keep content because replies depend on it.
   // ---------------------------------------------------------------------------
 
   if (comment._count.replies > 0) {
@@ -401,8 +416,8 @@ export async function deleteComment(commentId: string) {
   }
 
   // ---------------------------------------------------------------------------
-  // HAS PREDICTION
-  // Prediction stays, but accompanying comment content is removed.
+  // PREDICTION + COMMENT
+  // Keep prediction, remove accompanying comment.
   // ---------------------------------------------------------------------------
 
   if (comment.predictionId) {
@@ -419,6 +434,7 @@ export async function deleteComment(commentId: string) {
             },
           ],
         },
+
         deletedAt: new Date(),
       },
     });
@@ -431,7 +447,6 @@ export async function deleteComment(commentId: string) {
 
   throw new Error("Unable to delete comment.");
 }
-
 export async function editComment({
   commentId,
   content,
@@ -625,6 +640,9 @@ export async function hideComment(commentId: string, reason?: string) {
     select: {
       id: true,
       authorId: true,
+      predictionId: true,
+      content: true,
+
       deletedAt: true,
       withdrawnAt: true,
       moderatedAt: true,
@@ -645,6 +663,15 @@ export async function hideComment(commentId: string, reason?: string) {
 
   if (comment.moderatedAt) {
     throw new Error("This comment is already hidden.");
+  }
+
+  const hasContent = hasCommentContent(comment.content as JSONContent);
+
+  if (comment.predictionId && !hasContent) {
+    return {
+      success: true,
+      action: "NOTHING_TO_DELETE" as const,
+    };
   }
 
   const now = new Date();
@@ -670,11 +697,9 @@ export async function hideComment(commentId: string, reason?: string) {
     }),
   ]);
 
-  // Invalidate server-rendered layout data such as Popular Comments.
-  revalidatePath("/", "layout");
-
   return {
     success: true,
+    action: "HIDDEN" as const,
   };
 }
 
@@ -696,6 +721,7 @@ export async function restoreComment(commentId: string, reason?: string) {
     select: {
       id: true,
       authorId: true,
+
       deletedAt: true,
       withdrawnAt: true,
       moderatedAt: true,
@@ -739,10 +765,24 @@ export async function restoreComment(commentId: string, reason?: string) {
     }),
   ]);
 
-  // Refresh server-rendered Popular Comments data.
-  revalidatePath("/", "layout");
-
   return {
     success: true,
+    action: "RESTORED" as const,
   };
+}
+
+function hasCommentContent(content: JSONContent): boolean {
+  if (content.type === "text") {
+    return Boolean(content.text?.trim());
+  }
+
+  if (content.type === "image" && content.attrs?.src) {
+    return true;
+  }
+
+  if (!content.content) {
+    return false;
+  }
+
+  return content.content.some(hasCommentContent);
 }
