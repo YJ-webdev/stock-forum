@@ -127,7 +127,7 @@ export async function submitMarketVote({
       pointsBet,
       predictionPrice,
       sessionDate,
-      country: nationality,
+      nationality: nationality,
     },
     select: {
       id: true,
@@ -137,7 +137,7 @@ export async function submitMarketVote({
       predictionPrice: true,
       sessionDate: true,
       status: true,
-      country: true,
+      nationality: true,
       createdAt: true,
     },
   });
