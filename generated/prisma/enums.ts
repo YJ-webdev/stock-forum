@@ -49,3 +49,24 @@ export const PredictionStatus = {
 } as const
 
 export type PredictionStatus = (typeof PredictionStatus)[keyof typeof PredictionStatus]
+
+
+export const UserStatus = {
+  ACTIVE: 'ACTIVE',
+  MUTED: 'MUTED',
+  BANNED: 'BANNED'
+} as const
+
+export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
+
+
+export const ModerationActionType = {
+  MUTE_USER: 'MUTE_USER',
+  UNMUTE_USER: 'UNMUTE_USER',
+  BAN_USER: 'BAN_USER',
+  UNBAN_USER: 'UNBAN_USER',
+  HIDE_COMMENT: 'HIDE_COMMENT',
+  RESTORE_COMMENT: 'RESTORE_COMMENT'
+} as const
+
+export type ModerationActionType = (typeof ModerationActionType)[keyof typeof ModerationActionType]

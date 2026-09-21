@@ -43,6 +43,11 @@ export type VerificationToken = Prisma.VerificationTokenModel
  */
 export type Comment = Prisma.CommentModel
 /**
+ * Model ModerationAction
+ * 
+ */
+export type ModerationAction = Prisma.ModerationActionModel
+/**
  * Model Prediction
  * 
  */

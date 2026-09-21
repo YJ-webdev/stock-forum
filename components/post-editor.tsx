@@ -14,17 +14,24 @@ import {
   ALL_MARKET_SYMBOLS,
   type MarketSymbolItem,
 } from "@/lib/data/market-symbols";
+import { useCommentRefresh } from "@/app/context/comment-refresh-context";
 
 interface PostEditorProps {
   isLoggedIn: boolean;
   nationality: string | null;
   setOnWrite: React.Dispatch<React.SetStateAction<boolean>>;
+  onCommentCreated: () => Promise<void>;
 }
 
 const RECENT_ASSETS_KEY = "recent-post-assets";
 const MAX_RECENT_ASSETS = 5;
 
-export function PostEditor({ setOnWrite }: PostEditorProps) {
+export function PostEditor({
+  isLoggedIn,
+  nationality,
+  setOnWrite,
+  onCommentCreated,
+}: PostEditorProps) {
   const searchParams = useSearchParams();
   const symbol = searchParams.get("symbol");
   const topicRef = useRef<HTMLDivElement>(null);
@@ -62,6 +69,7 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
     );
   }, [symbol]);
 
+  const { notifyCommentCreated } = useCommentRefresh();
   // ---------------------------------------------------------------------------
   // LOAD RECENT ASSETS
   // ---------------------------------------------------------------------------
@@ -236,6 +244,7 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
           assetSymbols: selectedAssets.map((asset) => asset.symbol),
         });
 
+        notifyCommentCreated();
         // Only successfully posted assets become Recent.
         saveRecentAssets(selectedAssets);
 

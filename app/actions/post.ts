@@ -386,3 +386,42 @@ export async function getMarketComments(assetSymbol: string) {
     content: comment.content as JSONContent,
   }));
 }
+
+export async function deleteComment(commentId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  const comment = await prisma.comment.findUnique({
+    where: {
+      id: commentId,
+    },
+    select: {
+      id: true,
+      authorId: true,
+    },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found.");
+  }
+
+  const isAuthor = comment.authorId === session.user.id;
+  const isAdmin = session.user.role === "ADMIN";
+
+  if (!isAuthor && !isAdmin) {
+    throw new Error("You don't have permission to delete this comment.");
+  }
+
+  await prisma.comment.delete({
+    where: {
+      id: commentId,
+    },
+  });
+
+  return {
+    success: true,
+  };
+}

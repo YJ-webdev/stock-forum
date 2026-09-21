@@ -56,6 +56,7 @@ export const ModelName = {
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   Comment: 'Comment',
+  ModerationAction: 'ModerationAction',
   Prediction: 'Prediction',
   CommentAsset: 'CommentAsset',
   Reply: 'Reply',
@@ -93,6 +94,9 @@ export const UserScalarFieldEnum = {
   nationality: 'nationality',
   language: 'language',
   role: 'role',
+  status: 'status',
+  mutedAt: 'mutedAt',
+  bannedAt: 'bannedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -142,11 +146,28 @@ export const CommentScalarFieldEnum = {
   content: 'content',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  editedAt: 'editedAt',
+  deletedAt: 'deletedAt',
+  withdrawnAt: 'withdrawnAt',
+  moderatedAt: 'moderatedAt',
   authorId: 'authorId',
   predictionId: 'predictionId'
 } as const
 
 export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
+
+
+export const ModerationActionScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  reason: 'reason',
+  moderatorId: 'moderatorId',
+  targetUserId: 'targetUserId',
+  commentId: 'commentId',
+  createdAt: 'createdAt'
+} as const
+
+export type ModerationActionScalarFieldEnum = (typeof ModerationActionScalarFieldEnum)[keyof typeof ModerationActionScalarFieldEnum]
 
 
 export const PredictionScalarFieldEnum = {

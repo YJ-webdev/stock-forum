@@ -2,10 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { JSONContent } from "@tiptap/react";
-import { ChevronDown, ChevronUp, MoreVertical, ThumbsUp } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  MoreVertical,
+  ThumbsUp,
+  Trash2,
+} from "lucide-react";
 
 import { useCurrentUser } from "@/app/context/user-context";
-import { getMarketComments } from "@/app/actions/post";
+import { deleteComment, getMarketComments } from "@/app/actions/post";
 
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -13,6 +19,13 @@ import { toast } from "sonner";
 import { PredictionCommentInput } from "./prediction-comment-input";
 import { CommentOnlyInput } from "./comment-only-input";
 import type { GifResult } from "./gif-picker";
+import { useCommentRefresh } from "../context/comment-refresh-context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type VoteDirection = "BULL" | "BEAR";
 
@@ -115,6 +128,8 @@ export function MarketComments({
   const [comments, setComments] = useState<MarketComment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(true);
 
+  const { refreshKey } = useCommentRefresh();
+
   const loadComments = useCallback(async () => {
     try {
       const result = await getMarketComments(assetSymbol);
@@ -174,7 +189,11 @@ export function MarketComments({
   // ---------------------------------------------------------------------------
   // RENDER
   // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (refreshKey === 0) return;
 
+    loadComments();
+  }, [refreshKey, loadComments]);
   return (
     <section className="w-full">
       {/* Header */}
@@ -226,7 +245,12 @@ export function MarketComments({
           </div>
         ) : (
           comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} />
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              currentUser={user}
+              onDeleted={loadComments}
+            />
           ))
         )}
       </div>
@@ -238,13 +262,48 @@ export function MarketComments({
 // COMMENT ITEM
 // -----------------------------------------------------------------------------
 
-function CommentItem({ comment }: { comment: MarketComment }) {
+function CommentItem({
+  comment,
+  currentUser,
+  onDeleted,
+}: {
+  comment: MarketComment;
+  currentUser: {
+    id: string;
+    role?: string | null;
+  } | null;
+  onDeleted: () => Promise<void>;
+}) {
   const [showReplies, setShowReplies] = useState(false);
   const [replying, setReplying] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const replyCount = comment._count.replies;
 
   const username = comment.author.name ?? "User";
+
+  const canDelete =
+    currentUser?.id === comment.author.id || currentUser?.role === "ADMIN";
+
+  const handleDelete = async () => {
+    if (isDeleting) return;
+
+    try {
+      setIsDeleting(true);
+
+      await deleteComment(comment.id);
+
+      await onDeleted();
+
+      toast.success("Comment deleted.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete comment.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="mb-6">
@@ -260,18 +319,33 @@ function CommentItem({ comment }: { comment: MarketComment }) {
               {formatTimeAgo(comment.createdAt)}
             </span>
 
-            <button
-              type="button"
-              className="
-                ml-auto rounded-full p-1.5
-                opacity-0
-                hover:bg-zinc-100
-                group-hover:opacity-100
-                dark:hover:bg-zinc-800
-              "
-            >
-              <MoreVertical className="size-4" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="
+          ml-auto rounded-full p-1.5
+          opacity-0
+          hover:bg-zinc-100
+          group-hover:opacity-100
+          dark:hover:bg-zinc-800
+        "
+              >
+                <MoreVertical className="size-4" />
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end">
+                {canDelete && (
+                  <DropdownMenuItem
+                    disabled={isDeleting}
+                    onClick={handleDelete}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="mr-2 size-4" />
+
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Prediction */}

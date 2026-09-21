@@ -34,6 +34,21 @@ enum PredictionStatus {
   VOID
 }
 
+enum UserStatus {
+  ACTIVE
+  MUTED
+  BANNED
+}
+
+enum ModerationActionType {
+  MUTE_USER
+  UNMUTE_USER
+  BAN_USER
+  UNBAN_USER
+  HIDE_COMMENT
+  RESTORE_COMMENT
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -43,6 +58,13 @@ model User {
   nationality   String?
   language      String    @default("en")
   role          Role      @default(USER)
+
+  status   UserStatus @default(ACTIVE)
+  mutedAt  DateTime?
+  bannedAt DateTime?
+
+  moderationActionsReceived  ModerationAction[] @relation("ModerationTargetUser")
+  moderationActionsPerformed ModerationAction[] @relation("ModerationModerator")
 
   accounts     Account[]
   sessions     Session[]
@@ -96,10 +118,16 @@ model VerificationToken {
 }
 
 model Comment {
-  id        String   @id @default(cuid())
-  content   Json
+  id      String @id @default(cuid())
+  content Json
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  editedAt    DateTime?
+  deletedAt   DateTime?
+  withdrawnAt DateTime?
+  moderatedAt DateTime?
 
   authorId String
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -110,6 +138,35 @@ model Comment {
   assets  CommentAsset[]
   replies Reply[]
   likes   CommentLike[]
+
+  moderationActions ModerationAction[]
+
+  @@index([authorId, createdAt])
+  @@index([deletedAt])
+  @@index([withdrawnAt])
+  @@index([moderatedAt])
+}
+
+model ModerationAction {
+  id     String               @id @default(cuid())
+  type   ModerationActionType
+  reason String?
+
+  moderatorId String
+  moderator   User   @relation("ModerationModerator", fields: [moderatorId], references: [id], onDelete: Restrict)
+
+  targetUserId String?
+  targetUser   User?   @relation("ModerationTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  commentId String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([targetUserId, createdAt])
+  @@index([commentId, createdAt])
+  @@index([moderatorId, createdAt])
+  @@index([type, createdAt])
 }
 
 model Prediction {

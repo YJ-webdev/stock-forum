@@ -402,6 +402,7 @@ export const ModelName = {
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   Comment: 'Comment',
+  ModerationAction: 'ModerationAction',
   Prediction: 'Prediction',
   CommentAsset: 'CommentAsset',
   Reply: 'Reply',
@@ -427,7 +428,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "prediction" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "accountBalance" | "portfolioPosition" | "trade" | "watchlist"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "moderationAction" | "prediction" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "accountBalance" | "portfolioPosition" | "trade" | "watchlist"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -798,6 +799,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CommentCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CommentCountAggregateOutputType> | number
+        }
+      }
+    }
+    ModerationAction: {
+      payload: Prisma.$ModerationActionPayload<ExtArgs>
+      fields: Prisma.ModerationActionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ModerationActionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModerationActionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ModerationActionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModerationActionPayload>
+        }
+        findFirst: {
+          args: Prisma.ModerationActionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModerationActionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ModerationActionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModerationActionPayload>
+        }
+        findMany: {
+          args: Prisma.ModerationActionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModerationActionPayload>[]
+        }
+        create: {
+          args: Prisma.ModerationActionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModerationActionPayload>
+        }
+        createMany: {
+          args: Prisma.ModerationActionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ModerationActionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModerationActionPayload>[]
+        }
+        delete: {
+          args: Prisma.ModerationActionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModerationActionPayload>
+        }
+        update: {
+          args: Prisma.ModerationActionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModerationActionPayload>
+        }
+        deleteMany: {
+          args: Prisma.ModerationActionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ModerationActionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ModerationActionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModerationActionPayload>[]
+        }
+        upsert: {
+          args: Prisma.ModerationActionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModerationActionPayload>
+        }
+        aggregate: {
+          args: Prisma.ModerationActionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateModerationAction>
+        }
+        groupBy: {
+          args: Prisma.ModerationActionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ModerationActionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ModerationActionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ModerationActionCountAggregateOutputType> | number
         }
       }
     }
@@ -1589,6 +1664,9 @@ export const UserScalarFieldEnum = {
   nationality: 'nationality',
   language: 'language',
   role: 'role',
+  status: 'status',
+  mutedAt: 'mutedAt',
+  bannedAt: 'bannedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1638,11 +1716,28 @@ export const CommentScalarFieldEnum = {
   content: 'content',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  editedAt: 'editedAt',
+  deletedAt: 'deletedAt',
+  withdrawnAt: 'withdrawnAt',
+  moderatedAt: 'moderatedAt',
   authorId: 'authorId',
   predictionId: 'predictionId'
 } as const
 
 export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
+
+
+export const ModerationActionScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  reason: 'reason',
+  moderatorId: 'moderatorId',
+  targetUserId: 'targetUserId',
+  commentId: 'commentId',
+  createdAt: 'createdAt'
+} as const
+
+export type ModerationActionScalarFieldEnum = (typeof ModerationActionScalarFieldEnum)[keyof typeof ModerationActionScalarFieldEnum]
 
 
 export const PredictionScalarFieldEnum = {
@@ -1866,6 +1961,20 @@ export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'UserStatus'
+ */
+export type EnumUserStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'UserStatus[]'
+ */
+export type ListEnumUserStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -1890,6 +1999,20 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'ModerationActionType'
+ */
+export type EnumModerationActionTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ModerationActionType'>
+    
+
+
+/**
+ * Reference to a field of type 'ModerationActionType[]'
+ */
+export type ListEnumModerationActionTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ModerationActionType[]'>
     
 
 
@@ -2132,6 +2255,7 @@ export type GlobalOmitConfig = {
   session?: Prisma.SessionOmit
   verificationToken?: Prisma.VerificationTokenOmit
   comment?: Prisma.CommentOmit
+  moderationAction?: Prisma.ModerationActionOmit
   prediction?: Prisma.PredictionOmit
   commentAsset?: Prisma.CommentAssetOmit
   reply?: Prisma.ReplyOmit

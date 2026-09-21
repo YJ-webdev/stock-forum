@@ -28,6 +28,10 @@ export type CommentMinAggregateOutputType = {
   id: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  editedAt: Date | null
+  deletedAt: Date | null
+  withdrawnAt: Date | null
+  moderatedAt: Date | null
   authorId: string | null
   predictionId: string | null
 }
@@ -36,6 +40,10 @@ export type CommentMaxAggregateOutputType = {
   id: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  editedAt: Date | null
+  deletedAt: Date | null
+  withdrawnAt: Date | null
+  moderatedAt: Date | null
   authorId: string | null
   predictionId: string | null
 }
@@ -45,6 +53,10 @@ export type CommentCountAggregateOutputType = {
   content: number
   createdAt: number
   updatedAt: number
+  editedAt: number
+  deletedAt: number
+  withdrawnAt: number
+  moderatedAt: number
   authorId: number
   predictionId: number
   _all: number
@@ -55,6 +67,10 @@ export type CommentMinAggregateInputType = {
   id?: true
   createdAt?: true
   updatedAt?: true
+  editedAt?: true
+  deletedAt?: true
+  withdrawnAt?: true
+  moderatedAt?: true
   authorId?: true
   predictionId?: true
 }
@@ -63,6 +79,10 @@ export type CommentMaxAggregateInputType = {
   id?: true
   createdAt?: true
   updatedAt?: true
+  editedAt?: true
+  deletedAt?: true
+  withdrawnAt?: true
+  moderatedAt?: true
   authorId?: true
   predictionId?: true
 }
@@ -72,6 +92,10 @@ export type CommentCountAggregateInputType = {
   content?: true
   createdAt?: true
   updatedAt?: true
+  editedAt?: true
+  deletedAt?: true
+  withdrawnAt?: true
+  moderatedAt?: true
   authorId?: true
   predictionId?: true
   _all?: true
@@ -154,6 +178,10 @@ export type CommentGroupByOutputType = {
   content: runtime.JsonValue
   createdAt: Date
   updatedAt: Date
+  editedAt: Date | null
+  deletedAt: Date | null
+  withdrawnAt: Date | null
+  moderatedAt: Date | null
   authorId: string
   predictionId: string | null
   _count: CommentCountAggregateOutputType | null
@@ -184,6 +212,10 @@ export type CommentWhereInput = {
   content?: Prisma.JsonFilter<"Comment">
   createdAt?: Prisma.DateTimeFilter<"Comment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Comment"> | Date | string
+  editedAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
+  deletedAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
+  withdrawnAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
+  moderatedAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
   authorId?: Prisma.StringFilter<"Comment"> | string
   predictionId?: Prisma.StringNullableFilter<"Comment"> | string | null
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -191,6 +223,7 @@ export type CommentWhereInput = {
   assets?: Prisma.CommentAssetListRelationFilter
   replies?: Prisma.ReplyListRelationFilter
   likes?: Prisma.CommentLikeListRelationFilter
+  moderationActions?: Prisma.ModerationActionListRelationFilter
 }
 
 export type CommentOrderByWithRelationInput = {
@@ -198,6 +231,10 @@ export type CommentOrderByWithRelationInput = {
   content?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  editedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  withdrawnAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  moderatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   authorId?: Prisma.SortOrder
   predictionId?: Prisma.SortOrderInput | Prisma.SortOrder
   author?: Prisma.UserOrderByWithRelationInput
@@ -205,6 +242,7 @@ export type CommentOrderByWithRelationInput = {
   assets?: Prisma.CommentAssetOrderByRelationAggregateInput
   replies?: Prisma.ReplyOrderByRelationAggregateInput
   likes?: Prisma.CommentLikeOrderByRelationAggregateInput
+  moderationActions?: Prisma.ModerationActionOrderByRelationAggregateInput
 }
 
 export type CommentWhereUniqueInput = Prisma.AtLeast<{
@@ -216,12 +254,17 @@ export type CommentWhereUniqueInput = Prisma.AtLeast<{
   content?: Prisma.JsonFilter<"Comment">
   createdAt?: Prisma.DateTimeFilter<"Comment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Comment"> | Date | string
+  editedAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
+  deletedAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
+  withdrawnAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
+  moderatedAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
   authorId?: Prisma.StringFilter<"Comment"> | string
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   prediction?: Prisma.XOR<Prisma.PredictionNullableScalarRelationFilter, Prisma.PredictionWhereInput> | null
   assets?: Prisma.CommentAssetListRelationFilter
   replies?: Prisma.ReplyListRelationFilter
   likes?: Prisma.CommentLikeListRelationFilter
+  moderationActions?: Prisma.ModerationActionListRelationFilter
 }, "id" | "predictionId">
 
 export type CommentOrderByWithAggregationInput = {
@@ -229,6 +272,10 @@ export type CommentOrderByWithAggregationInput = {
   content?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  editedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  withdrawnAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  moderatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   authorId?: Prisma.SortOrder
   predictionId?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.CommentCountOrderByAggregateInput
@@ -244,6 +291,10 @@ export type CommentScalarWhereWithAggregatesInput = {
   content?: Prisma.JsonWithAggregatesFilter<"Comment">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Comment"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Comment"> | Date | string
+  editedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Comment"> | Date | string | null
+  deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Comment"> | Date | string | null
+  withdrawnAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Comment"> | Date | string | null
+  moderatedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Comment"> | Date | string | null
   authorId?: Prisma.StringWithAggregatesFilter<"Comment"> | string
   predictionId?: Prisma.StringNullableWithAggregatesFilter<"Comment"> | string | null
 }
@@ -253,11 +304,16 @@ export type CommentCreateInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   author: Prisma.UserCreateNestedOneWithoutCommentsInput
   prediction?: Prisma.PredictionCreateNestedOneWithoutCommentInput
   assets?: Prisma.CommentAssetCreateNestedManyWithoutCommentInput
   replies?: Prisma.ReplyCreateNestedManyWithoutCommentInput
   likes?: Prisma.CommentLikeCreateNestedManyWithoutCommentInput
+  moderationActions?: Prisma.ModerationActionCreateNestedManyWithoutCommentInput
 }
 
 export type CommentUncheckedCreateInput = {
@@ -265,11 +321,16 @@ export type CommentUncheckedCreateInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   authorId: string
   predictionId?: string | null
   assets?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutCommentInput
   replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutCommentInput
   likes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutCommentInput
+  moderationActions?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutCommentInput
 }
 
 export type CommentUpdateInput = {
@@ -277,11 +338,16 @@ export type CommentUpdateInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   author?: Prisma.UserUpdateOneRequiredWithoutCommentsNestedInput
   prediction?: Prisma.PredictionUpdateOneWithoutCommentNestedInput
   assets?: Prisma.CommentAssetUpdateManyWithoutCommentNestedInput
   replies?: Prisma.ReplyUpdateManyWithoutCommentNestedInput
   likes?: Prisma.CommentLikeUpdateManyWithoutCommentNestedInput
+  moderationActions?: Prisma.ModerationActionUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentUncheckedUpdateInput = {
@@ -289,11 +355,16 @@ export type CommentUncheckedUpdateInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   predictionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   assets?: Prisma.CommentAssetUncheckedUpdateManyWithoutCommentNestedInput
   replies?: Prisma.ReplyUncheckedUpdateManyWithoutCommentNestedInput
   likes?: Prisma.CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
+  moderationActions?: Prisma.ModerationActionUncheckedUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentCreateManyInput = {
@@ -301,6 +372,10 @@ export type CommentCreateManyInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   authorId: string
   predictionId?: string | null
 }
@@ -310,6 +385,10 @@ export type CommentUpdateManyMutationInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type CommentUncheckedUpdateManyInput = {
@@ -317,6 +396,10 @@ export type CommentUncheckedUpdateManyInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   predictionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -336,6 +419,10 @@ export type CommentCountOrderByAggregateInput = {
   content?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  editedAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
+  withdrawnAt?: Prisma.SortOrder
+  moderatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
   predictionId?: Prisma.SortOrder
 }
@@ -344,6 +431,10 @@ export type CommentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  editedAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
+  withdrawnAt?: Prisma.SortOrder
+  moderatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
   predictionId?: Prisma.SortOrder
 }
@@ -352,6 +443,10 @@ export type CommentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  editedAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
+  withdrawnAt?: Prisma.SortOrder
+  moderatedAt?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
   predictionId?: Prisma.SortOrder
 }
@@ -406,6 +501,22 @@ export type CommentUncheckedUpdateManyWithoutAuthorNestedInput = {
   update?: Prisma.CommentUpdateWithWhereUniqueWithoutAuthorInput | Prisma.CommentUpdateWithWhereUniqueWithoutAuthorInput[]
   updateMany?: Prisma.CommentUpdateManyWithWhereWithoutAuthorInput | Prisma.CommentUpdateManyWithWhereWithoutAuthorInput[]
   deleteMany?: Prisma.CommentScalarWhereInput | Prisma.CommentScalarWhereInput[]
+}
+
+export type CommentCreateNestedOneWithoutModerationActionsInput = {
+  create?: Prisma.XOR<Prisma.CommentCreateWithoutModerationActionsInput, Prisma.CommentUncheckedCreateWithoutModerationActionsInput>
+  connectOrCreate?: Prisma.CommentCreateOrConnectWithoutModerationActionsInput
+  connect?: Prisma.CommentWhereUniqueInput
+}
+
+export type CommentUpdateOneWithoutModerationActionsNestedInput = {
+  create?: Prisma.XOR<Prisma.CommentCreateWithoutModerationActionsInput, Prisma.CommentUncheckedCreateWithoutModerationActionsInput>
+  connectOrCreate?: Prisma.CommentCreateOrConnectWithoutModerationActionsInput
+  upsert?: Prisma.CommentUpsertWithoutModerationActionsInput
+  disconnect?: Prisma.CommentWhereInput | boolean
+  delete?: Prisma.CommentWhereInput | boolean
+  connect?: Prisma.CommentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CommentUpdateToOneWithWhereWithoutModerationActionsInput, Prisma.CommentUpdateWithoutModerationActionsInput>, Prisma.CommentUncheckedUpdateWithoutModerationActionsInput>
 }
 
 export type CommentCreateNestedOneWithoutPredictionInput = {
@@ -487,10 +598,15 @@ export type CommentCreateWithoutAuthorInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   prediction?: Prisma.PredictionCreateNestedOneWithoutCommentInput
   assets?: Prisma.CommentAssetCreateNestedManyWithoutCommentInput
   replies?: Prisma.ReplyCreateNestedManyWithoutCommentInput
   likes?: Prisma.CommentLikeCreateNestedManyWithoutCommentInput
+  moderationActions?: Prisma.ModerationActionCreateNestedManyWithoutCommentInput
 }
 
 export type CommentUncheckedCreateWithoutAuthorInput = {
@@ -498,10 +614,15 @@ export type CommentUncheckedCreateWithoutAuthorInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   predictionId?: string | null
   assets?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutCommentInput
   replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutCommentInput
   likes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutCommentInput
+  moderationActions?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutCommentInput
 }
 
 export type CommentCreateOrConnectWithoutAuthorInput = {
@@ -538,8 +659,92 @@ export type CommentScalarWhereInput = {
   content?: Prisma.JsonFilter<"Comment">
   createdAt?: Prisma.DateTimeFilter<"Comment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Comment"> | Date | string
+  editedAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
+  deletedAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
+  withdrawnAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
+  moderatedAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
   authorId?: Prisma.StringFilter<"Comment"> | string
   predictionId?: Prisma.StringNullableFilter<"Comment"> | string | null
+}
+
+export type CommentCreateWithoutModerationActionsInput = {
+  id?: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
+  author: Prisma.UserCreateNestedOneWithoutCommentsInput
+  prediction?: Prisma.PredictionCreateNestedOneWithoutCommentInput
+  assets?: Prisma.CommentAssetCreateNestedManyWithoutCommentInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutCommentInput
+  likes?: Prisma.CommentLikeCreateNestedManyWithoutCommentInput
+}
+
+export type CommentUncheckedCreateWithoutModerationActionsInput = {
+  id?: string
+  content: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
+  authorId: string
+  predictionId?: string | null
+  assets?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutCommentInput
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutCommentInput
+  likes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutCommentInput
+}
+
+export type CommentCreateOrConnectWithoutModerationActionsInput = {
+  where: Prisma.CommentWhereUniqueInput
+  create: Prisma.XOR<Prisma.CommentCreateWithoutModerationActionsInput, Prisma.CommentUncheckedCreateWithoutModerationActionsInput>
+}
+
+export type CommentUpsertWithoutModerationActionsInput = {
+  update: Prisma.XOR<Prisma.CommentUpdateWithoutModerationActionsInput, Prisma.CommentUncheckedUpdateWithoutModerationActionsInput>
+  create: Prisma.XOR<Prisma.CommentCreateWithoutModerationActionsInput, Prisma.CommentUncheckedCreateWithoutModerationActionsInput>
+  where?: Prisma.CommentWhereInput
+}
+
+export type CommentUpdateToOneWithWhereWithoutModerationActionsInput = {
+  where?: Prisma.CommentWhereInput
+  data: Prisma.XOR<Prisma.CommentUpdateWithoutModerationActionsInput, Prisma.CommentUncheckedUpdateWithoutModerationActionsInput>
+}
+
+export type CommentUpdateWithoutModerationActionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  author?: Prisma.UserUpdateOneRequiredWithoutCommentsNestedInput
+  prediction?: Prisma.PredictionUpdateOneWithoutCommentNestedInput
+  assets?: Prisma.CommentAssetUpdateManyWithoutCommentNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutCommentNestedInput
+  likes?: Prisma.CommentLikeUpdateManyWithoutCommentNestedInput
+}
+
+export type CommentUncheckedUpdateWithoutModerationActionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  predictionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  assets?: Prisma.CommentAssetUncheckedUpdateManyWithoutCommentNestedInput
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutCommentNestedInput
+  likes?: Prisma.CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentCreateWithoutPredictionInput = {
@@ -547,10 +752,15 @@ export type CommentCreateWithoutPredictionInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   author: Prisma.UserCreateNestedOneWithoutCommentsInput
   assets?: Prisma.CommentAssetCreateNestedManyWithoutCommentInput
   replies?: Prisma.ReplyCreateNestedManyWithoutCommentInput
   likes?: Prisma.CommentLikeCreateNestedManyWithoutCommentInput
+  moderationActions?: Prisma.ModerationActionCreateNestedManyWithoutCommentInput
 }
 
 export type CommentUncheckedCreateWithoutPredictionInput = {
@@ -558,10 +768,15 @@ export type CommentUncheckedCreateWithoutPredictionInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   authorId: string
   assets?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutCommentInput
   replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutCommentInput
   likes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutCommentInput
+  moderationActions?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutCommentInput
 }
 
 export type CommentCreateOrConnectWithoutPredictionInput = {
@@ -585,10 +800,15 @@ export type CommentUpdateWithoutPredictionInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   author?: Prisma.UserUpdateOneRequiredWithoutCommentsNestedInput
   assets?: Prisma.CommentAssetUpdateManyWithoutCommentNestedInput
   replies?: Prisma.ReplyUpdateManyWithoutCommentNestedInput
   likes?: Prisma.CommentLikeUpdateManyWithoutCommentNestedInput
+  moderationActions?: Prisma.ModerationActionUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentUncheckedUpdateWithoutPredictionInput = {
@@ -596,10 +816,15 @@ export type CommentUncheckedUpdateWithoutPredictionInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   assets?: Prisma.CommentAssetUncheckedUpdateManyWithoutCommentNestedInput
   replies?: Prisma.ReplyUncheckedUpdateManyWithoutCommentNestedInput
   likes?: Prisma.CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
+  moderationActions?: Prisma.ModerationActionUncheckedUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentCreateWithoutAssetsInput = {
@@ -607,10 +832,15 @@ export type CommentCreateWithoutAssetsInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   author: Prisma.UserCreateNestedOneWithoutCommentsInput
   prediction?: Prisma.PredictionCreateNestedOneWithoutCommentInput
   replies?: Prisma.ReplyCreateNestedManyWithoutCommentInput
   likes?: Prisma.CommentLikeCreateNestedManyWithoutCommentInput
+  moderationActions?: Prisma.ModerationActionCreateNestedManyWithoutCommentInput
 }
 
 export type CommentUncheckedCreateWithoutAssetsInput = {
@@ -618,10 +848,15 @@ export type CommentUncheckedCreateWithoutAssetsInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   authorId: string
   predictionId?: string | null
   replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutCommentInput
   likes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutCommentInput
+  moderationActions?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutCommentInput
 }
 
 export type CommentCreateOrConnectWithoutAssetsInput = {
@@ -645,10 +880,15 @@ export type CommentUpdateWithoutAssetsInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   author?: Prisma.UserUpdateOneRequiredWithoutCommentsNestedInput
   prediction?: Prisma.PredictionUpdateOneWithoutCommentNestedInput
   replies?: Prisma.ReplyUpdateManyWithoutCommentNestedInput
   likes?: Prisma.CommentLikeUpdateManyWithoutCommentNestedInput
+  moderationActions?: Prisma.ModerationActionUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentUncheckedUpdateWithoutAssetsInput = {
@@ -656,10 +896,15 @@ export type CommentUncheckedUpdateWithoutAssetsInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   predictionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   replies?: Prisma.ReplyUncheckedUpdateManyWithoutCommentNestedInput
   likes?: Prisma.CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
+  moderationActions?: Prisma.ModerationActionUncheckedUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentCreateWithoutRepliesInput = {
@@ -667,10 +912,15 @@ export type CommentCreateWithoutRepliesInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   author: Prisma.UserCreateNestedOneWithoutCommentsInput
   prediction?: Prisma.PredictionCreateNestedOneWithoutCommentInput
   assets?: Prisma.CommentAssetCreateNestedManyWithoutCommentInput
   likes?: Prisma.CommentLikeCreateNestedManyWithoutCommentInput
+  moderationActions?: Prisma.ModerationActionCreateNestedManyWithoutCommentInput
 }
 
 export type CommentUncheckedCreateWithoutRepliesInput = {
@@ -678,10 +928,15 @@ export type CommentUncheckedCreateWithoutRepliesInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   authorId: string
   predictionId?: string | null
   assets?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutCommentInput
   likes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutCommentInput
+  moderationActions?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutCommentInput
 }
 
 export type CommentCreateOrConnectWithoutRepliesInput = {
@@ -705,10 +960,15 @@ export type CommentUpdateWithoutRepliesInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   author?: Prisma.UserUpdateOneRequiredWithoutCommentsNestedInput
   prediction?: Prisma.PredictionUpdateOneWithoutCommentNestedInput
   assets?: Prisma.CommentAssetUpdateManyWithoutCommentNestedInput
   likes?: Prisma.CommentLikeUpdateManyWithoutCommentNestedInput
+  moderationActions?: Prisma.ModerationActionUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentUncheckedUpdateWithoutRepliesInput = {
@@ -716,10 +976,15 @@ export type CommentUncheckedUpdateWithoutRepliesInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   predictionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   assets?: Prisma.CommentAssetUncheckedUpdateManyWithoutCommentNestedInput
   likes?: Prisma.CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
+  moderationActions?: Prisma.ModerationActionUncheckedUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentCreateWithoutLikesInput = {
@@ -727,10 +992,15 @@ export type CommentCreateWithoutLikesInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   author: Prisma.UserCreateNestedOneWithoutCommentsInput
   prediction?: Prisma.PredictionCreateNestedOneWithoutCommentInput
   assets?: Prisma.CommentAssetCreateNestedManyWithoutCommentInput
   replies?: Prisma.ReplyCreateNestedManyWithoutCommentInput
+  moderationActions?: Prisma.ModerationActionCreateNestedManyWithoutCommentInput
 }
 
 export type CommentUncheckedCreateWithoutLikesInput = {
@@ -738,10 +1008,15 @@ export type CommentUncheckedCreateWithoutLikesInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   authorId: string
   predictionId?: string | null
   assets?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutCommentInput
   replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutCommentInput
+  moderationActions?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutCommentInput
 }
 
 export type CommentCreateOrConnectWithoutLikesInput = {
@@ -765,10 +1040,15 @@ export type CommentUpdateWithoutLikesInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   author?: Prisma.UserUpdateOneRequiredWithoutCommentsNestedInput
   prediction?: Prisma.PredictionUpdateOneWithoutCommentNestedInput
   assets?: Prisma.CommentAssetUpdateManyWithoutCommentNestedInput
   replies?: Prisma.ReplyUpdateManyWithoutCommentNestedInput
+  moderationActions?: Prisma.ModerationActionUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentUncheckedUpdateWithoutLikesInput = {
@@ -776,10 +1056,15 @@ export type CommentUncheckedUpdateWithoutLikesInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   predictionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   assets?: Prisma.CommentAssetUncheckedUpdateManyWithoutCommentNestedInput
   replies?: Prisma.ReplyUncheckedUpdateManyWithoutCommentNestedInput
+  moderationActions?: Prisma.ModerationActionUncheckedUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentCreateManyAuthorInput = {
@@ -787,6 +1072,10 @@ export type CommentCreateManyAuthorInput = {
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  editedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  withdrawnAt?: Date | string | null
+  moderatedAt?: Date | string | null
   predictionId?: string | null
 }
 
@@ -795,10 +1084,15 @@ export type CommentUpdateWithoutAuthorInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   prediction?: Prisma.PredictionUpdateOneWithoutCommentNestedInput
   assets?: Prisma.CommentAssetUpdateManyWithoutCommentNestedInput
   replies?: Prisma.ReplyUpdateManyWithoutCommentNestedInput
   likes?: Prisma.CommentLikeUpdateManyWithoutCommentNestedInput
+  moderationActions?: Prisma.ModerationActionUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentUncheckedUpdateWithoutAuthorInput = {
@@ -806,10 +1100,15 @@ export type CommentUncheckedUpdateWithoutAuthorInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   predictionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   assets?: Prisma.CommentAssetUncheckedUpdateManyWithoutCommentNestedInput
   replies?: Prisma.ReplyUncheckedUpdateManyWithoutCommentNestedInput
   likes?: Prisma.CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
+  moderationActions?: Prisma.ModerationActionUncheckedUpdateManyWithoutCommentNestedInput
 }
 
 export type CommentUncheckedUpdateManyWithoutAuthorInput = {
@@ -817,6 +1116,10 @@ export type CommentUncheckedUpdateManyWithoutAuthorInput = {
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   predictionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -829,12 +1132,14 @@ export type CommentCountOutputType = {
   assets: number
   replies: number
   likes: number
+  moderationActions: number
 }
 
 export type CommentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   assets?: boolean | CommentCountOutputTypeCountAssetsArgs
   replies?: boolean | CommentCountOutputTypeCountRepliesArgs
   likes?: boolean | CommentCountOutputTypeCountLikesArgs
+  moderationActions?: boolean | CommentCountOutputTypeCountModerationActionsArgs
 }
 
 /**
@@ -868,12 +1173,23 @@ export type CommentCountOutputTypeCountLikesArgs<ExtArgs extends runtime.Types.E
   where?: Prisma.CommentLikeWhereInput
 }
 
+/**
+ * CommentCountOutputType without action
+ */
+export type CommentCountOutputTypeCountModerationActionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ModerationActionWhereInput
+}
+
 
 export type CommentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   content?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  editedAt?: boolean
+  deletedAt?: boolean
+  withdrawnAt?: boolean
+  moderatedAt?: boolean
   authorId?: boolean
   predictionId?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -881,6 +1197,7 @@ export type CommentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   assets?: boolean | Prisma.Comment$assetsArgs<ExtArgs>
   replies?: boolean | Prisma.Comment$repliesArgs<ExtArgs>
   likes?: boolean | Prisma.Comment$likesArgs<ExtArgs>
+  moderationActions?: boolean | Prisma.Comment$moderationActionsArgs<ExtArgs>
   _count?: boolean | Prisma.CommentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["comment"]>
 
@@ -889,6 +1206,10 @@ export type CommentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   content?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  editedAt?: boolean
+  deletedAt?: boolean
+  withdrawnAt?: boolean
+  moderatedAt?: boolean
   authorId?: boolean
   predictionId?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -900,6 +1221,10 @@ export type CommentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   content?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  editedAt?: boolean
+  deletedAt?: boolean
+  withdrawnAt?: boolean
+  moderatedAt?: boolean
   authorId?: boolean
   predictionId?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -911,17 +1236,22 @@ export type CommentSelectScalar = {
   content?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  editedAt?: boolean
+  deletedAt?: boolean
+  withdrawnAt?: boolean
+  moderatedAt?: boolean
   authorId?: boolean
   predictionId?: boolean
 }
 
-export type CommentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "createdAt" | "updatedAt" | "authorId" | "predictionId", ExtArgs["result"]["comment"]>
+export type CommentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "createdAt" | "updatedAt" | "editedAt" | "deletedAt" | "withdrawnAt" | "moderatedAt" | "authorId" | "predictionId", ExtArgs["result"]["comment"]>
 export type CommentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   prediction?: boolean | Prisma.Comment$predictionArgs<ExtArgs>
   assets?: boolean | Prisma.Comment$assetsArgs<ExtArgs>
   replies?: boolean | Prisma.Comment$repliesArgs<ExtArgs>
   likes?: boolean | Prisma.Comment$likesArgs<ExtArgs>
+  moderationActions?: boolean | Prisma.Comment$moderationActionsArgs<ExtArgs>
   _count?: boolean | Prisma.CommentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CommentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -941,12 +1271,17 @@ export type $CommentPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     assets: Prisma.$CommentAssetPayload<ExtArgs>[]
     replies: Prisma.$ReplyPayload<ExtArgs>[]
     likes: Prisma.$CommentLikePayload<ExtArgs>[]
+    moderationActions: Prisma.$ModerationActionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     content: runtime.JsonValue
     createdAt: Date
     updatedAt: Date
+    editedAt: Date | null
+    deletedAt: Date | null
+    withdrawnAt: Date | null
+    moderatedAt: Date | null
     authorId: string
     predictionId: string | null
   }, ExtArgs["result"]["comment"]>
@@ -1348,6 +1683,7 @@ export interface Prisma__CommentClient<T, Null = never, ExtArgs extends runtime.
   assets<T extends Prisma.Comment$assetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Comment$assetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CommentAssetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   replies<T extends Prisma.Comment$repliesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Comment$repliesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReplyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   likes<T extends Prisma.Comment$likesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Comment$likesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CommentLikePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  moderationActions<T extends Prisma.Comment$moderationActionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Comment$moderationActionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ModerationActionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1381,6 +1717,10 @@ export interface CommentFieldRefs {
   readonly content: Prisma.FieldRef<"Comment", 'Json'>
   readonly createdAt: Prisma.FieldRef<"Comment", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Comment", 'DateTime'>
+  readonly editedAt: Prisma.FieldRef<"Comment", 'DateTime'>
+  readonly deletedAt: Prisma.FieldRef<"Comment", 'DateTime'>
+  readonly withdrawnAt: Prisma.FieldRef<"Comment", 'DateTime'>
+  readonly moderatedAt: Prisma.FieldRef<"Comment", 'DateTime'>
   readonly authorId: Prisma.FieldRef<"Comment", 'String'>
   readonly predictionId: Prisma.FieldRef<"Comment", 'String'>
 }
@@ -1872,6 +2212,30 @@ export type Comment$likesArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   distinct?: Prisma.CommentLikeScalarFieldEnum | Prisma.CommentLikeScalarFieldEnum[]
+}
+
+/**
+ * Comment.moderationActions
+ */
+export type Comment$moderationActionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ModerationAction
+   */
+  select?: Prisma.ModerationActionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ModerationAction
+   */
+  omit?: Prisma.ModerationActionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ModerationActionInclude<ExtArgs> | null
+  where?: Prisma.ModerationActionWhereInput
+  orderBy?: Prisma.ModerationActionOrderByWithRelationInput | Prisma.ModerationActionOrderByWithRelationInput[]
+  cursor?: Prisma.ModerationActionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ModerationActionScalarFieldEnum | Prisma.ModerationActionScalarFieldEnum[]
 }
 
 /**
