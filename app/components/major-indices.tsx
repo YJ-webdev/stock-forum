@@ -4,23 +4,23 @@ import { Globe, Plus } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-const POPULAR_BOARDS = [
-  { symbol: "^GSPC", name: "S&P 500", newPosts: 12 },
-  { symbol: "^NDX", name: "Nasdaq 100", newPosts: 8 },
-  { symbol: "^DJI", name: "Dow Jones", newPosts: 6 },
-  { symbol: "^N225", name: "Nikkei 225", newPosts: 5 },
-  { symbol: "^HSI", name: "Hang Seng", newPosts: 4 },
-  { symbol: "^NSEI", name: "Nifty 50", newPosts: 3 },
-  { symbol: "^STOXX50E", name: "EURO STOXX 50", newPosts: 3 },
-];
+interface PopularBoard {
+  symbol: string;
+  name: string;
+  commentCount: number;
+}
 
-export function PopularBoards() {
+interface PopularBoardsProps {
+  boards: PopularBoard[];
+}
+
+export function PopularBoards({ boards }: PopularBoardsProps) {
   const params = useSearchParams();
   const selectedMarket = params.get("symbol");
 
   return (
     <div className="flex flex-col gap-0.5 px-3">
-      {POPULAR_BOARDS.map((item) => {
+      {boards.map((item) => {
         const isSelected = selectedMarket === item.symbol;
 
         return (
@@ -39,7 +39,7 @@ export function PopularBoards() {
               hover:text-zinc-900
 
               dark:text-zinc-300
-             
+
               dark:hover:bg-zinc-800/70
               dark:hover:outline-zinc-800/70
               dark:hover:text-zinc-200
@@ -88,27 +88,28 @@ export function PopularBoards() {
 
             {/* Right side */}
             <div className="ml-2 flex shrink-0 items-center justify-end">
-              {/* New count - hidden when selected or hovered */}
-              {item.newPosts > 0 && !isSelected && (
+              {/* Comment count */}
+              {item.commentCount > 0 && (
                 <span
-                  className="
+                  className={`
                     jakarta text-[12px] font-light
                     text-zinc-600 dark:text-zinc-500
                     group-hover:hidden
-                  "
+                  `}
                 >
-                  {item.newPosts} New
+                  {item.commentCount} New
                 </span>
               )}
 
-              {/* Plus - visible when selected or hovered */}
+              {/* Plus */}
               <Plus
                 className={`
                   h-4.5 w-4.5
                   text-zinc-800
                   dark:text-zinc-300
-
-                  ${isSelected ? "block" : "hidden group-hover:block"}
+group-hover:block
+                  ${isSelected ? "hidden" : "hidden group-hover:block"}
+                
                 `}
                 strokeWidth={1.5}
               />

@@ -7,15 +7,22 @@ import { MostLikedComments } from "./most-liked-comments";
 import { PopularBoards } from "./major-indices";
 import React from "react";
 import { MostLikedComment } from "../actions/post";
+import { getPopularBoards, PopularBoard } from "../actions/query";
 
 interface PanelLeftProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   news: NewsItem[];
   comments: MostLikedComment[];
+  popularBoards: PopularBoard[];
 }
 
-export default function PanelLeft({ isOpen, news, comments }: PanelLeftProps) {
+export default function PanelLeft({
+  isOpen,
+  news,
+  comments,
+  popularBoards,
+}: PanelLeftProps) {
   return (
     <>
       {/* Sidebar Panel - No overlay, stays open on outside click */}
@@ -36,7 +43,7 @@ export default function PanelLeft({ isOpen, news, comments }: PanelLeftProps) {
               <p className="px-4 text-muted-foreground/50 text-xs text-light mb-3.5 tracking-wider">
                 Popular boards
               </p>
-              <PopularBoards />
+              <PopularBoards boards={popularBoards} />
             </div>
 
             {/* Topics */}

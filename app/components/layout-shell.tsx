@@ -22,12 +22,14 @@ import { User } from "@/types/user";
 import { TopTraders } from "./top-trader";
 import { getMostLikedComments, MostLikedComment } from "../actions/post";
 import { CommentRefreshProvider } from "../context/comment-refresh-context";
+import { PopularBoard } from "../actions/query";
 
 interface LayoutShellProps {
   user: User | null;
   news: NewsItem[];
   children: React.ReactNode;
   comments: MostLikedComment[];
+  popularBoards: PopularBoard[];
 }
 
 export default function LayoutShell({
@@ -35,6 +37,7 @@ export default function LayoutShell({
   news,
   children,
   comments,
+  popularBoards,
 }: LayoutShellProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [onWrite, setOnWrite] = useState(false);
@@ -185,6 +188,7 @@ export default function LayoutShell({
               setIsOpen={setIsOpen}
               news={news}
               comments={mostLikedComments}
+              popularBoards={popularBoards}
             />
             <div
               className={`pt-14 flex flex-col md:flex-row transition-all duration-300 ease-in-out ${

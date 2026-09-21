@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import LayoutShell from "../components/layout-shell";
 import { getMostLikedComments } from "../actions/post";
+import { getPopularBoards } from "../actions/query";
 
 async function getNews() {
   try {
@@ -43,9 +44,15 @@ export default async function MainLayout({
     getNews(),
     getMostLikedComments(),
   ]);
+  const popularBoards = await getPopularBoards(7);
 
   return (
-    <LayoutShell user={user} news={news} comments={mostLikedComments}>
+    <LayoutShell
+      user={user}
+      news={news}
+      comments={mostLikedComments}
+      popularBoards={popularBoards}
+    >
       {children}
     </LayoutShell>
   );
