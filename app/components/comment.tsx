@@ -307,6 +307,7 @@ function CommentItem({
   const { notifyCommentChanged } = useCommentRefresh();
 
   const [showReplies, setShowReplies] = useState(false);
+  const [threadHovered, setThreadHovered] = useState(false);
   const [replying, setReplying] = useState(false);
 
   const [isDeleting, setIsDeleting] = useState(false);
@@ -319,6 +320,12 @@ function CommentItem({
   const replyCount = comment._count.replies;
 
   const username = comment.author.name ?? "User";
+
+  const threadEvents = {
+    onMouseEnter: () => setThreadHovered(true),
+    onMouseLeave: () => setThreadHovered(false),
+    onClick: () => setShowReplies((prev) => !prev),
+  };
 
   const canDelete = isAuthor && !comment.withdrawnAt && !comment.moderatedAt;
 
@@ -425,7 +432,7 @@ function CommentItem({
 
   return (
     <div className="mb-6">
-      <div className="flex gap-3">
+      <div className="flex gap-3 z-10">
         <Avatar label={username} image={comment.author.image} />
 
         <div className="min-w-0 flex-1">
@@ -440,14 +447,14 @@ function CommentItem({
                 <div className="flex items-center gap-2">
                   <span
                     className={`
-                    rounded-full px-2 py-0.5
-                    text-[11px] font-medium
-                    ${
-                      comment.prediction.direction === "BULL"
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-                    }
-                  `}
+                      rounded-full px-2 py-0.5
+                      text-[11px] font-medium
+                      ${
+                        comment.prediction.direction === "BULL"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                      }
+                    `}
                   >
                     {comment.prediction.direction === "BULL"
                       ? "Bullish"
@@ -511,11 +518,11 @@ function CommentItem({
                 <button
                   type="button"
                   className="
-                  flex items-center gap-1.5
-                  text-sm text-zinc-500
-                  hover:text-zinc-900
-                  dark:hover:text-zinc-200
-                "
+                    flex items-center gap-1.5
+                    text-sm text-zinc-500
+                    hover:text-zinc-900
+                    dark:hover:text-zinc-200
+                  "
                 >
                   <ThumbsUp className="size-4" />
 
@@ -528,10 +535,10 @@ function CommentItem({
                   type="button"
                   onClick={() => setReplying((prev) => !prev)}
                   className="
-                  text-sm font-medium text-zinc-500
-                  hover:text-zinc-900
-                  dark:hover:text-zinc-200
-                "
+                    text-sm font-medium text-zinc-500
+                    hover:text-zinc-900
+                    dark:hover:text-zinc-200
+                  "
                 >
                   Reply
                 </button>
@@ -556,75 +563,131 @@ function CommentItem({
               />
             )}
 
+            {/* ---------------------------------------------------------------
+                1. COMMENT VERTICAL RAIL
+            ---------------------------------------------------------------- */}
+
             {replyCount > 0 && (
-              <div
+              <button
+                type="button"
+                aria-label={showReplies ? "Collapse replies" : "Show replies"}
+                {...threadEvents}
                 className="
-        absolute
-        -left-7.5
-        top-0
-        -bottom-2
-        w-px
-        bg-zinc-200
-        dark:bg-zinc-700
-      "
-              />
+                  absolute
+                  -left-9.5
+                  top-9
+                  -bottom-2
+                  z-20
+                  w-5
+                  cursor-pointer
+                "
+              >
+                <span
+                  className={`
+                    pointer-events-none
+                    absolute
+                    left-2
+                    top-0
+                    bottom-0
+                    w-px
+                    transition-colors
+
+                    ${
+                      threadHovered
+                        ? "bg-zinc-400 dark:bg-zinc-500"
+                        : "bg-zinc-200 dark:bg-zinc-700"
+                    }
+                  `}
+                />
+              </button>
             )}
           </div>
 
-          {/* Show replies */}
+          {/* ---------------------------------------------------------------
+              2. COLLAPSED REPLIES BUTTON + CURVE
+          ---------------------------------------------------------------- */}
+
           {replyCount > 0 && !showReplies && (
             <div className="relative mt-5">
               {/* Curve from comment rail into replies button */}
-              <div
+              <button
+                type="button"
+                aria-label="Show replies"
+                {...threadEvents}
                 className="
-        pointer-events-none
-        absolute
-        -left-7.5
-        -top-3
-        h-6
-        w-8
-        rounded-bl-xl
-        border-b border-l
-        border-zinc-200
-        dark:border-zinc-700
-      "
-              />
+                  absolute
+                  -left-9.5
+                  -top-3
+                  z-20
+                  h-6
+                  w-10
+                  cursor-pointer
+                "
+              >
+                <span
+                  className={`
+                    pointer-events-none
+                    absolute
+                    left-2
+                    top-0
+                    h-6
+                    w-8
+                    rounded-bl-xl
+                    border-b border-l
+                    transition-colors
+
+                    ${
+                      threadHovered
+                        ? "border-zinc-400 dark:border-zinc-500"
+                        : "border-zinc-200 dark:border-zinc-700"
+                    }
+                  `}
+                />
+              </button>
 
               <button
                 type="button"
                 onClick={() => setShowReplies((prev) => !prev)}
                 className="
-        flex items-center gap-2
-        text-sm font-semibold text-zinc-600
-        hover:text-zinc-900
-        dark:text-zinc-400
-        dark:hover:text-zinc-200
-        -translate-x-2 px-2 rounded-xl bg-white dark:bg-zinc-900
-      "
+                  -translate-x-2
+                  flex items-center gap-2
+                  rounded-xl
+                  bg-white
+                  px-2
+                  text-sm font-semibold
+                  text-zinc-600
+                  hover:text-zinc-900
+                  dark:bg-zinc-900
+                  dark:text-zinc-400
+                  dark:hover:text-zinc-200
+                "
               >
-                {showReplies ? (
-                  <ChevronUp className="size-4" />
-                ) : (
-                  <ChevronDown className="size-4" />
-                )}
+                <ChevronDown className="size-4" />
                 {replyCount} {replyCount === 1 ? "reply" : "replies"}
               </button>
             </div>
           )}
-          {/* Replies are OUTSIDE group/comment */}
+
+          {/* ---------------------------------------------------------------
+              OPEN REPLIES
+          ---------------------------------------------------------------- */}
+
           {showReplies && comment.replies.length > 0 && (
             <div className="relative mt-4 pb-3">
-              {/* Connect comment down to the first root reply */}
-              <div
+              {/* Connect comment down to first root reply */}
+              <button
+                type="button"
+                aria-label="Collapse replies"
+                {...threadEvents}
                 className="
-    absolute
-    -left-7.5
-    -top-18
-    h-16
-    w-px
-    bg-zinc-200
-    dark:bg-zinc-700
-  "
+                  absolute
+                  -left-9.5
+                  -top-18
+                  z-20
+                  h-16
+                  w-5
+                  cursor-pointer
+                "
               />
 
               <div className="space-y-3 pl-0">
@@ -635,32 +698,82 @@ function CommentItem({
 
                     return (
                       <div key={reply.id} className="relative">
-                        {/* Dynamic vertical rail */}
-                        <div
+                        {/* -------------------------------------------------
+                            3. DYNAMIC VERTICAL RAIL
+                        -------------------------------------------------- */}
+
+                        <button
+                          type="button"
+                          aria-label="Collapse replies"
+                          {...threadEvents}
                           className={`
-                  absolute
-                  -left-7.5
-                  -top-6
-                  w-px
-                  bg-zinc-200
-                  dark:bg-zinc-700
+                            absolute
+                            -left-9.5
+                            -top-6
+                            z-20
+                            w-5
+                            cursor-pointer
 
-                  ${isLastReply ? "h-7" : "-bottom-1"}
-                `}
-                        />
+                            ${isLastReply ? "h-7" : "-bottom-1"}
+                          `}
+                        >
+                          <span
+                            className={`
+                              pointer-events-none
+                              absolute
+                              left-2
+                              top-0
+                              bottom-0
+                              w-px
+                              transition-colors
 
-                        {/* Curve into this root reply */}
-                        <div
+                              ${
+                                threadHovered
+                                  ? "bg-zinc-400 dark:bg-zinc-500"
+                                  : "bg-zinc-200 dark:bg-zinc-700"
+                              }
+                            `}
+                          />
+                        </button>
+
+                        {/* -------------------------------------------------
+                            4. CURVE INTO THIS ROOT REPLY
+                        -------------------------------------------------- */}
+
+                        <button
+                          type="button"
+                          aria-label="Collapse replies"
+                          {...threadEvents}
                           className="
-                  absolute
-                  -left-7.5 top-0
-                  h-4 w-8
-                  rounded-bl-xl
-                  border-b border-l
-                  border-zinc-200
-                  dark:border-zinc-700
-                "
-                        />
+                            absolute
+                            -left-9.5
+                            top-0
+                            z-30
+                            h-4
+                            w-10
+                            cursor-pointer
+                          "
+                        >
+                          <span
+                            className={`
+                              pointer-events-none
+                              absolute
+                              left-2
+                              top-0
+                              h-4
+                              w-8
+                              rounded-bl-xl
+                              border-b border-l
+                              transition-colors
+
+                              ${
+                                threadHovered
+                                  ? "border-zinc-400 dark:border-zinc-500"
+                                  : "border-zinc-200 dark:border-zinc-700"
+                              }
+                            `}
+                          />
+                        </button>
 
                         <ReplyItem
                           reply={reply}
@@ -678,7 +791,6 @@ function CommentItem({
         </div>
       </div>
     </div>
-    // </div>
   );
 }
 
