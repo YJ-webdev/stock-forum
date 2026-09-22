@@ -432,7 +432,7 @@ function CommentItem({
 
   return (
     <div className="mb-6">
-      <div className="flex gap-3 z-10">
+      <div className="flex gap-3 z-1">
         <Avatar label={username} image={comment.author.image} />
 
         <div className="min-w-0 flex-1">
@@ -577,7 +577,7 @@ function CommentItem({
                   -left-9.5
                   top-9
                   -bottom-2
-                  z-20
+                  z-0
                   w-5
                   cursor-pointer
                 "
@@ -618,7 +618,7 @@ function CommentItem({
                   absolute
                   -left-9.5
                   -top-3
-                  z-20
+                  z-0
                   h-6
                   w-10
                   cursor-pointer
@@ -710,7 +710,7 @@ function CommentItem({
                             absolute
                             -left-9.5
                             -top-6
-                            z-20
+                            z-0
                             w-5
                             cursor-pointer
 
@@ -748,7 +748,7 @@ function CommentItem({
                             absolute
                             -left-9.5
                             top-0
-                            z-30
+                            z-0
                             h-4
                             w-10
                             cursor-pointer
