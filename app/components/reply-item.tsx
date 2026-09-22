@@ -50,7 +50,9 @@ export function ReplyItem({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isModerating, setIsModerating] = useState(false);
   const [showReplyInput, setShowReplyInput] = useState(false);
+
   const [childrenCollapsed, setChildrenCollapsed] = useState(false);
+  const [threadHovered, setThreadHovered] = useState(false);
 
   const username = reply.author.name ?? "User";
 
@@ -69,6 +71,23 @@ export function ReplyItem({
   );
 
   const hasChild = childReplies.length > 0;
+
+  // ---------------------------------------------------------------------------
+  // THREAD RAIL
+  // ---------------------------------------------------------------------------
+
+  const collapseThreadEvents = {
+    onMouseEnter: () => setThreadHovered(true),
+    onMouseLeave: () => setThreadHovered(false),
+    onClick: () => setChildrenCollapsed(true),
+  };
+
+  const expandThreadEvents = {
+    onMouseEnter: () => setThreadHovered(true),
+    onMouseLeave: () => setThreadHovered(false),
+    onClick: () => setChildrenCollapsed(false),
+  };
+
   // ---------------------------------------------------------------------------
   // DELETE
   // ---------------------------------------------------------------------------
@@ -148,28 +167,57 @@ export function ReplyItem({
   return (
     <div className="relative">
       {/* ---------------------------------------------------------------
-        CURRENT REPLY
-    ---------------------------------------------------------------- */}
+          CURRENT REPLY
+      ---------------------------------------------------------------- */}
 
       <div className="group/reply relative flex gap-3">
-        <div className="relative z-10 shrink-0">
+        <div className="relative z-1 shrink-0">
           <Avatar label={username} image={reply.author.image} />
         </div>
 
         <div className="relative min-w-0 flex-1">
+          {/* -----------------------------------------------------------
+              CURRENT REPLY VERTICAL RAIL
+          ------------------------------------------------------------ */}
+
           {hasChild && (
-            <div
+            <button
+              type="button"
+              aria-label={
+                childrenCollapsed ? "Expand replies" : "Collapse replies"
+              }
+              {...(childrenCollapsed
+                ? expandThreadEvents
+                : collapseThreadEvents)}
               className="
-        absolute
-        -left-7
-        top-0
-        bottom-0
-        w-px
-        bg-zinc-200
-        dark:bg-zinc-700
-      "
-            />
+                absolute
+                -left-9
+                top-0
+                bottom-0
+                w-5
+                cursor-pointer
+              "
+            >
+              <span
+                className={`
+                  pointer-events-none
+                  absolute
+                  left-2
+                  top-0
+                  -bottom-4
+                  w-px
+                  transition-colors
+
+                  ${
+                    threadHovered
+                      ? "bg-zinc-400 dark:bg-zinc-500"
+                      : "bg-zinc-200 dark:bg-zinc-700"
+                  }
+                `}
+              />
+            </button>
           )}
+
           {/* Header */}
           <div className="flex items-center gap-1.5">
             <span className="text-[14px] font-semibold">{username}</span>
@@ -213,11 +261,11 @@ export function ReplyItem({
               {reply.content && (
                 <p
                   className="
-                  mt-0.5 whitespace-pre-wrap
-                  text-[15px] leading-6
-                  text-zinc-900
-                  dark:text-zinc-200
-                "
+                    mt-0.5 whitespace-pre-wrap
+                    text-[15px] leading-6
+                    text-zinc-900
+                    dark:text-zinc-200
+                  "
                 >
                   {reply.content}
                 </p>
@@ -228,10 +276,10 @@ export function ReplyItem({
                   src={reply.gifUrl}
                   alt="GIF"
                   className="
-                  mt-2 h-auto w-45
-                  max-w-full rounded-lg
-                  object-contain
-                "
+                    mt-2 h-auto w-45
+                    max-w-full rounded-lg
+                    object-contain
+                  "
                 />
               )}
 
@@ -249,11 +297,11 @@ export function ReplyItem({
               <button
                 type="button"
                 className="
-                flex items-center gap-1.5
-                text-sm text-zinc-500
-                hover:text-zinc-900
-                dark:hover:text-zinc-200
-              "
+                  flex items-center gap-1.5
+                  text-sm text-zinc-500
+                  hover:text-zinc-900
+                  dark:hover:text-zinc-200
+                "
               >
                 <ThumbsUp className="size-4" />
 
@@ -264,10 +312,10 @@ export function ReplyItem({
                 type="button"
                 onClick={() => setShowReplyInput((prev) => !prev)}
                 className="
-                text-sm font-medium text-zinc-500
-                hover:text-zinc-900
-                dark:hover:text-zinc-200
-              "
+                  text-sm font-medium text-zinc-500
+                  hover:text-zinc-900
+                  dark:hover:text-zinc-200
+                "
               >
                 Reply
               </button>
@@ -292,108 +340,157 @@ export function ReplyItem({
       </div>
 
       {/* ---------------------------------------------------------------
-        CHILDREN OF THIS REPLY
-    ---------------------------------------------------------------- */}
+          CHILDREN OF THIS REPLY
+      ---------------------------------------------------------------- */}
 
-      {/* Child replies */}
       {hasChild && (
         <>
           {childrenCollapsed ? (
-            /* Collapsed thread indicator */
+            /* ---------------------------------------------------------
+      COLLAPSED THREAD INDICATOR
+  ---------------------------------------------------------- */
+
             <button
               type="button"
               aria-label="Expand replies"
-              onClick={() => setChildrenCollapsed(false)}
+              {...expandThreadEvents}
               className="
-          group/thread
-          relative
-          ml-4 mt-2
-          block h-5 w-5
-          cursor-pointer
-        "
+      relative
+      ml-2 mt-4
+      block
+      h-7
+      cursor-pointer
+    "
             >
               <span
-                className="
-            absolute
-            left-0 top-0
-            h-4 w-px
-            bg-zinc-200
-            transition-colors
-            group-hover/thread:bg-zinc-400
-            dark:bg-zinc-700
-            dark:group-hover/thread:bg-zinc-500
-          "
+                className={`
+        pointer-events-none
+        absolute
+        left-2
+        
+        top-0
+        h-4
+        w-8
+        rounded-bl-xl
+        border-b border-l
+        transition-colors
+
+        ${
+          threadHovered
+            ? "border-zinc-400 dark:border-zinc-500"
+            : "border-zinc-200 dark:border-zinc-700"
+        }
+      `}
               />
 
               <span
                 className="
-            absolute
-            left-0 top-3
-            h-px w-3
-            bg-zinc-200
-            transition-colors
-            group-hover/thread:bg-zinc-400
-            dark:bg-zinc-700
-            dark:group-hover/thread:bg-zinc-500
-          "
-              />
+        ml-11
+        
+        flex h-4
+        items-end
+        whitespace-nowrap
+        text-sm font-medium
+        text-zinc-500
+        dark:text-zinc-400
+      "
+              >
+                {childReplies.length}{" "}
+                {childReplies.length === 1 ? "reply" : "replies"}
+              </span>
             </button>
           ) : (
+            /* ---------------------------------------------------------
+                EXPANDED CHILD THREAD
+            ---------------------------------------------------------- */
+
             <div className="relative mt-3">
-              {/*
-          Invisible interaction area.
-
-          Only hovering THIS area activates peer-hover/thread.
-          Hovering reply content does not.
-        */}
-
               <div className="space-y-3">
                 {childReplies.map((childReply, index) => {
                   const isLastChild = index === childReplies.length - 1;
 
                   return (
                     <div key={childReply.id} className="relative pl-12">
-                      {/* Vertical rail */}
-                      <div
+                      {/* -----------------------------------------------
+                          CHILD VERTICAL RAIL
+                      ------------------------------------------------ */}
+
+                      <button
+                        type="button"
+                        aria-label="Collapse replies"
+                        {...collapseThreadEvents}
                         className={`
-                    pointer-events-none
-                    absolute
-                    left-4
-                    -top-6
-                    w-px
+                          absolute
+                          left-2
+                          -top-6
+                         z-0
+                          w-5
+                          cursor-pointer
 
-                    bg-zinc-200
-                    transition-colors
+                          ${isLastChild ? "h-7" : "-bottom-1"}
+                        `}
+                      >
+                        <span
+                          className={`
+                            pointer-events-none
+                            absolute
+                            left-2
+                            top-0
+                            bottom-0
+                            w-px
+                            transition-colors
 
-                    peer-hover/thread:bg-zinc-400
+                            ${
+                              threadHovered
+                                ? "bg-zinc-400 dark:bg-zinc-500"
+                                : "bg-zinc-200 dark:bg-zinc-700"
+                            }
+                          `}
+                        />
+                      </button>
 
-                    dark:bg-zinc-700
-                    dark:peer-hover/thread:bg-zinc-500
+                      {/* -----------------------------------------------
+                          CURVE INTO THIS DIRECT CHILD
+                      ------------------------------------------------ */}
 
-                    ${isLastChild ? "h-7" : "-bottom-1"}
-                  `}
-                      />
-
-                      {/* Curve into this direct child */}
-                      <div
+                      <button
+                        type="button"
+                        aria-label="Collapse replies"
+                        {...collapseThreadEvents}
                         className="
-                    pointer-events-none
-                    absolute
-                    left-4
-                    top-0
-                    h-4
-                    w-8
-                    rounded-bl-xl
-                    border-b border-l
-                    border-zinc-200
-                    transition-colors
+                          absolute
+                          left-2
+                          top-0
+                          z-0
+                          h-4
+                          w-10
+                          cursor-pointer
+                        "
+                      >
+                        <span
+                          className={`
+                            pointer-events-none
+                            absolute
+                            left-2
+                            top-0
+                            h-4
+                            w-8
+                            rounded-bl-xl
+                            border-b border-l
+                            transition-colors
 
-                    peer-hover/thread:border-zinc-400
+                            ${
+                              threadHovered
+                                ? "border-zinc-400 dark:border-zinc-500"
+                                : "border-zinc-200 dark:border-zinc-700"
+                            }
+                          `}
+                        />
+                      </button>
 
-                    dark:border-zinc-700
-                    dark:peer-hover/thread:border-zinc-500
-                  "
-                      />
+                      {/* -----------------------------------------------
+                          CHILD REPLY
+                      ------------------------------------------------ */}
 
                       <ReplyItem
                         reply={childReply}
@@ -413,7 +510,6 @@ export function ReplyItem({
     </div>
   );
 }
-
 // -----------------------------------------------------------------------------
 // AVATAR
 // -----------------------------------------------------------------------------
