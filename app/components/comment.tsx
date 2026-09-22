@@ -219,6 +219,7 @@ export function MarketComments({
   return (
     <section className="w-full">
       {/* Header */}
+
       <div className="mb-6 flex items-center gap-2">
         <h2 className="text-[13px] text-zinc-600 dark:text-zinc-500">
           Comment
@@ -424,19 +425,21 @@ function CommentItem({
 
   return (
     <div className="mb-6">
-      <div className="group flex gap-3">
+      <div className="flex gap-3">
         <Avatar label={username} image={comment.author.image} />
 
         <div className="min-w-0 flex-1">
-          {/* User */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[14px] font-semibold">{username}</span>
+          {/* Only THIS comment participates in hover */}
+          <div className="group/comment relative min-w-0 flex-1">
+            {/* User */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[14px] font-semibold">{username}</span>
 
-            {/* Prediction */}
-            {comment.prediction && (
-              <div className="flex items-center gap-2">
-                <span
-                  className={`
+              {/* Prediction */}
+              {comment.prediction && (
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`
                     rounded-full px-2 py-0.5
                     text-[11px] font-medium
                     ${
@@ -445,156 +448,237 @@ function CommentItem({
                         : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                     }
                   `}
-                >
-                  {comment.prediction.direction === "BULL"
-                    ? "Bullish"
-                    : "Bearish"}
-                </span>
+                  >
+                    {comment.prediction.direction === "BULL"
+                      ? "Bullish"
+                      : "Bearish"}
+                  </span>
+                </div>
+              )}
+
+              <span className="text-[13px] text-zinc-500">
+                {formatTimeAgo(comment.createdAt)}
+              </span>
+
+              <ContentActionsMenu
+                canEdit={canEdit}
+                canDelete={canDelete}
+                isAdmin={isAdmin}
+                isModerated={Boolean(comment.moderatedAt)}
+                isDeleting={isDeleting}
+                isModerating={isModerating}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onHide={handleHideComment}
+                onRestore={handleRestoreComment}
+                hoverGroup="comment"
+              />
+            </div>
+
+            {/* Content */}
+            {comment.moderatedAt ? (
+              <p className="mt-1 text-[15px] italic text-zinc-400">
+                Comment hidden by moderation
+              </p>
+            ) : isEditing ? (
+              <CommentEditInput
+                commentId={comment.id}
+                initialContent={comment.content}
+                onCancel={() => setIsEditing(false)}
+                onSaved={async () => {
+                  setIsEditing(false);
+
+                  await onCommentUpdated();
+
+                  notifyCommentChanged();
+                }}
+              />
+            ) : (
+              <div className="flex items-baseline gap-1 lowercase">
+                <CommentContent content={comment.content} />
+
+                {comment.editedAt && (
+                  <span className="text-[12px] text-zinc-400">
+                    (edited {formatTimeAgo(comment.editedAt)})
+                  </span>
+                )}
               </div>
             )}
 
-            <span className="text-[13px] text-zinc-500">
-              {formatTimeAgo(comment.createdAt)}
-            </span>
-
-            <ContentActionsMenu
-              canEdit={canEdit}
-              canDelete={canDelete}
-              isAdmin={isAdmin}
-              isModerated={Boolean(comment.moderatedAt)}
-              isDeleting={isDeleting}
-              isModerating={isModerating}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onHide={handleHideComment}
-              onRestore={handleRestoreComment}
-            />
-          </div>
-
-          {/* Content */}
-          {comment.moderatedAt ? (
-            <p className="mt-1 text-[15px] italic text-zinc-400">
-              Comment hidden by moderation
-            </p>
-          ) : isEditing ? (
-            <CommentEditInput
-              commentId={comment.id}
-              initialContent={comment.content}
-              onCancel={() => setIsEditing(false)}
-              onSaved={async () => {
-                setIsEditing(false);
-
-                await onCommentUpdated();
-
-                notifyCommentChanged();
-              }}
-            />
-          ) : (
-            <div className="flex items-baseline gap-1 lowercase">
-              <CommentContent content={comment.content} />
-
-              {comment.editedAt && (
-                <span className="text-[12px] text-zinc-400">
-                  (edited {formatTimeAgo(comment.editedAt)})
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Actions */}
-          {!comment.moderatedAt && (
-            <div className="mt-2 flex items-center gap-4">
-              <button
-                type="button"
-                className="
+            {/* Actions */}
+            {!comment.moderatedAt && (
+              <div className="mt-2 flex items-center gap-4">
+                <button
+                  type="button"
+                  className="
                   flex items-center gap-1.5
                   text-sm text-zinc-500
                   hover:text-zinc-900
                   dark:hover:text-zinc-200
                 "
-              >
-                <ThumbsUp className="size-4" />
+                >
+                  <ThumbsUp className="size-4" />
 
-                {comment._count.likes > 0 && (
-                  <span>{comment._count.likes}</span>
-                )}
-              </button>
+                  {comment._count.likes > 0 && (
+                    <span>{comment._count.likes}</span>
+                  )}
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setReplying((prev) => !prev)}
-                className="
+                <button
+                  type="button"
+                  onClick={() => setReplying((prev) => !prev)}
+                  className="
                   text-sm font-medium text-zinc-500
                   hover:text-zinc-900
                   dark:hover:text-zinc-200
                 "
+                >
+                  Reply
+                </button>
+              </div>
+            )}
+
+            {/* Reply input */}
+            {!comment.moderatedAt && replying && (
+              <ReplyInput
+                commentId={comment.id}
+                username={username}
+                currentUser={currentUser}
+                onCancel={() => setReplying(false)}
+                onReplyCreated={async () => {
+                  setReplying(false);
+                  setShowReplies(true);
+
+                  await onCommentUpdated();
+
+                  notifyCommentChanged();
+                }}
+              />
+            )}
+
+            {replyCount > 0 && (
+              <div
+                className="
+        absolute
+        -left-7.5
+        top-0
+        -bottom-2
+        w-px
+        bg-zinc-200
+        dark:bg-zinc-700
+      "
+              />
+            )}
+          </div>
+
+          {/* Show replies */}
+          {replyCount > 0 && !showReplies && (
+            <div className="relative mt-5">
+              {/* Curve from comment rail into replies button */}
+              <div
+                className="
+        pointer-events-none
+        absolute
+        -left-7.5
+        -top-3
+        h-6
+        w-8
+        rounded-bl-xl
+        border-b border-l
+        border-zinc-200
+        dark:border-zinc-700
+      "
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowReplies((prev) => !prev)}
+                className="
+        flex items-center gap-2
+        text-sm font-semibold text-zinc-600
+        hover:text-zinc-900
+        dark:text-zinc-400
+        dark:hover:text-zinc-200
+        -translate-x-2 px-2 rounded-xl bg-white dark:bg-zinc-900
+      "
               >
-                Reply
+                {showReplies ? (
+                  <ChevronUp className="size-4" />
+                ) : (
+                  <ChevronDown className="size-4" />
+                )}
+                {replyCount} {replyCount === 1 ? "reply" : "replies"}
               </button>
             </div>
           )}
-
-          {/* Reply input */}
-          {!comment.moderatedAt && replying && (
-            <ReplyInput
-              commentId={comment.id}
-              username={username}
-              currentUser={currentUser}
-              onCancel={() => setReplying(false)}
-              onReplyCreated={async () => {
-                setReplying(false);
-                setShowReplies(true);
-
-                await onCommentUpdated();
-
-                notifyCommentChanged();
-              }}
-            />
-          )}
-
-          {/* Show replies */}
-          {replyCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowReplies((prev) => !prev)}
-              className="
-                mt-3 flex items-center gap-2
-                text-sm font-semibold text-zinc-600
-                hover:text-zinc-900
-                dark:text-zinc-400
-                dark:hover:text-zinc-200
-              "
-            >
-              {showReplies ? (
-                <ChevronUp className="size-4" />
-              ) : (
-                <ChevronDown className="size-4" />
-              )}
-              {replyCount} {replyCount === 1 ? "reply" : "replies"}
-            </button>
-          )}
-
-          {/* Replies */}
+          {/* Replies are OUTSIDE group/comment */}
           {showReplies && comment.replies.length > 0 && (
-            <div className="relative mt-4 space-y-5 pl-4">
-              <div className="absolute top-0 bottom-3 left-0 w-px bg-zinc-200 dark:bg-zinc-800" />
+            <div className="relative mt-4 pb-3">
+              {/* Connect comment down to the first root reply */}
+              <div
+                className="
+    absolute
+    -left-7.5
+    -top-18
+    h-16
+    w-px
+    bg-zinc-200
+    dark:bg-zinc-700
+  "
+              />
 
-              {comment.replies
-                .filter((reply) => reply.parentId === null)
-                .map((reply) => (
-                  <ReplyItem
-                    key={reply.id}
-                    reply={reply}
-                    replies={comment.replies}
-                    currentUser={currentUser}
-                    onReplyUpdated={onCommentUpdated}
-                  />
-                ))}
+              <div className="space-y-3 pl-0">
+                {comment.replies
+                  .filter((reply) => reply.parentId === null)
+                  .map((reply, index, rootReplies) => {
+                    const isLastReply = index === rootReplies.length - 1;
+
+                    return (
+                      <div key={reply.id} className="relative">
+                        {/* Dynamic vertical rail */}
+                        <div
+                          className={`
+                  absolute
+                  -left-7.5
+                  -top-6
+                  w-px
+                  bg-zinc-200
+                  dark:bg-zinc-700
+
+                  ${isLastReply ? "h-7" : "-bottom-1"}
+                `}
+                        />
+
+                        {/* Curve into this root reply */}
+                        <div
+                          className="
+                  absolute
+                  -left-7.5 top-0
+                  h-4 w-8
+                  rounded-bl-xl
+                  border-b border-l
+                  border-zinc-200
+                  dark:border-zinc-700
+                "
+                        />
+
+                        <ReplyItem
+                          reply={reply}
+                          replies={comment.replies}
+                          currentUser={currentUser}
+                          onReplyUpdated={onCommentUpdated}
+                          depth={0}
+                        />
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
           )}
         </div>
       </div>
     </div>
+    // </div>
   );
 }
 

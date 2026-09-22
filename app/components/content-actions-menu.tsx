@@ -29,6 +29,7 @@ interface ContentActionsMenuProps {
   onDelete?: () => void | Promise<void>;
   onHide?: () => void | Promise<void>;
   onRestore?: () => void | Promise<void>;
+  hoverGroup?: "comment" | "reply";
 }
 
 export function ContentActionsMenu({
@@ -40,6 +41,7 @@ export function ContentActionsMenu({
 
   isDeleting = false,
   isModerating = false,
+  hoverGroup = "reply",
 
   onEdit,
   onDelete,
@@ -58,13 +60,18 @@ export function ContentActionsMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="
+        className={`
           ml-auto rounded-full p-1.5
           opacity-0
           hover:bg-zinc-100
-          group-hover:opacity-100
           dark:hover:bg-zinc-800
-        "
+
+          ${
+            hoverGroup === "comment"
+              ? "group-hover/comment:opacity-100"
+              : "group-hover/reply:opacity-100"
+          }
+        `}
       >
         <MoreVertical className="size-4" />
       </DropdownMenuTrigger>
