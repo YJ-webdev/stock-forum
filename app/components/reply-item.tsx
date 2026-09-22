@@ -51,7 +51,7 @@ export function ReplyItem({
   const [isModerating, setIsModerating] = useState(false);
   const [showReplyInput, setShowReplyInput] = useState(false);
 
-  const [childrenCollapsed, setChildrenCollapsed] = useState(false);
+  const [childrenCollapsed, setChildrenCollapsed] = useState(true);
   const [threadHovered, setThreadHovered] = useState(false);
 
   const username = reply.author.name ?? "User";
@@ -204,7 +204,7 @@ export function ReplyItem({
                   absolute
                   left-2
                   top-0
-                  -bottom-4
+                  -bottom-6
                   w-px
                   transition-colors
 
@@ -356,7 +356,7 @@ export function ReplyItem({
               {...expandThreadEvents}
               className="
       relative
-      ml-2 mt-4
+      ml-2 mt-6
       block
       h-7
       cursor-pointer
@@ -404,8 +404,8 @@ export function ReplyItem({
                 EXPANDED CHILD THREAD
             ---------------------------------------------------------- */
 
-            <div className="relative mt-3">
-              <div className="space-y-3">
+            <div className="relative mt-6">
+              <div className="space-y-6">
                 {childReplies.map((childReply, index) => {
                   const isLastChild = index === childReplies.length - 1;
 
@@ -435,7 +435,7 @@ export function ReplyItem({
                             pointer-events-none
                             absolute
                             left-2
-                            top-0
+                            -top-2
                             bottom-0
                             w-px
                             transition-colors

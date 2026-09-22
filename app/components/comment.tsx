@@ -329,11 +329,7 @@ function CommentItem({
 
   const canDelete = isAuthor && !comment.withdrawnAt && !comment.moderatedAt;
 
-  const canEdit =
-    isAuthor &&
-    comment._count.replies === 0 &&
-    !comment.withdrawnAt &&
-    !comment.moderatedAt;
+  const canEdit = isAuthor && !comment.withdrawnAt && !comment.moderatedAt;
 
   // ---------------------------------------------------------------------------
   // EDIT
@@ -501,13 +497,11 @@ function CommentItem({
                 }}
               />
             ) : (
-              <div className="flex items-baseline gap-1 lowercase">
+              <div className="flex items-baseline gap-1 lowercase mt-0.5">
                 <CommentContent content={comment.content} />
 
                 {comment.editedAt && (
-                  <span className="text-[12px] text-zinc-400">
-                    (edited {formatTimeAgo(comment.editedAt)})
-                  </span>
+                  <span className="text-[12px] text-zinc-400">(edited)</span>
                 )}
               </div>
             )}
@@ -690,7 +684,7 @@ function CommentItem({
                 "
               />
 
-              <div className="space-y-3 pl-0">
+              <div className="space-y-6 pl-0 py-3">
                 {comment.replies
                   .filter((reply) => reply.parentId === null)
                   .map((reply, index, rootReplies) => {

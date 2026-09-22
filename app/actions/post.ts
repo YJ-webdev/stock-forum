@@ -437,12 +437,6 @@ export async function editComment({
     throw new Error("This comment can no longer be edited.");
   }
 
-  if (comment._count.replies > 0) {
-    throw new Error(
-      "This comment can no longer be edited because it has replies.",
-    );
-  }
-
   await prisma.comment.update({
     where: {
       id: commentId,
