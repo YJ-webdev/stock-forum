@@ -10,8 +10,12 @@ import {
   ALL_MARKET_SYMBOLS,
   type MarketSymbolItem,
 } from "@/lib/data/market-symbols";
-import { revalidatePath } from "next/cache";
+
 import { hasEditorContent } from "@/lib/utils/tiptap-utils";
+
+// -----------------------------------------------------------------------------
+// TYPES
+// -----------------------------------------------------------------------------
 
 type PredictionInput = {
   direction: "BULL" | "BEAR";
@@ -26,69 +30,6 @@ type CreateCommentInput = {
   prediction?: PredictionInput | null;
 };
 
-export async function createReply({
-  commentId,
-  content,
-}: {
-  commentId: string;
-  content: string;
-}) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
-  }
-
-  const trimmedContent = content.trim();
-
-  if (!trimmedContent) {
-    throw new Error("Reply cannot be empty.");
-  }
-
-  const comment = await prisma.comment.findUnique({
-    where: {
-      id: commentId,
-    },
-    select: {
-      id: true,
-      deletedAt: true,
-      withdrawnAt: true,
-      moderatedAt: true,
-    },
-  });
-
-  if (!comment) {
-    throw new Error("Comment not found.");
-  }
-
-  if (comment.withdrawnAt || comment.moderatedAt) {
-    throw new Error("You cannot reply to this comment.");
-  }
-
-  const reply = await prisma.reply.create({
-    data: {
-      content: trimmedContent,
-
-      comment: {
-        connect: {
-          id: commentId,
-        },
-      },
-
-      author: {
-        connect: {
-          id: session.user.id,
-        },
-      },
-    },
-  });
-
-  return {
-    success: true,
-    reply,
-  };
-}
-
 export async function createComment({
   content = null,
   assetSymbols,
@@ -99,10 +40,6 @@ export async function createComment({
   if (!session?.user?.id) {
     throw new Error("You must be logged in.");
   }
-
-  // ---------------------------------------------------------------------------
-  // USER
-  // ---------------------------------------------------------------------------
 
   const user = await prisma.user.findUnique({
     where: {
@@ -117,7 +54,6 @@ export async function createComment({
     throw new Error("Please log in to comment.");
   }
 
-  // Nationality is required only for predictions.
   if (prediction && !user.nationality) {
     throw new Error("Please set your nationality before voting.");
   }
@@ -125,10 +61,6 @@ export async function createComment({
   if (!hasEditorContent(content)) {
     throw new Error("Comment cannot be empty.");
   }
-
-  // ---------------------------------------------------------------------------
-  // MARKETS
-  // ---------------------------------------------------------------------------
 
   const uniqueSymbols = [...new Set(assetSymbols)];
 
@@ -146,14 +78,9 @@ export async function createComment({
     throw new Error("No valid boards selected.");
   }
 
-  // A prediction belongs to exactly one market.
   if (prediction && selectedMarkets.length !== 1) {
     throw new Error("A prediction must belong to exactly one market.");
   }
-
-  // ---------------------------------------------------------------------------
-  // VALIDATE PREDICTION
-  // ---------------------------------------------------------------------------
 
   if (prediction) {
     if (prediction.pointsBet < 50 || prediction.pointsBet > 500) {
@@ -175,20 +102,12 @@ export async function createComment({
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // DETECT COMMENT CONTENT
-  // ---------------------------------------------------------------------------
-
   const hasContent =
     content && Array.isArray(content.content) && content.content.length > 0;
 
   if (!hasContent && !prediction) {
     throw new Error("Please write a comment or select a GIF.");
   }
-
-  // ---------------------------------------------------------------------------
-  // UPSERT MARKET ASSETS
-  // ---------------------------------------------------------------------------
 
   await Promise.all(
     selectedMarkets.map((market) =>
@@ -308,11 +227,11 @@ export async function getMarketComments(assetSymbol: string) {
     select: {
       id: true,
       content: true,
+
       createdAt: true,
       updatedAt: true,
 
       editedAt: true,
-      deletedAt: true,
       withdrawnAt: true,
       moderatedAt: true,
 
@@ -340,8 +259,18 @@ export async function getMarketComments(assetSymbol: string) {
 
         select: {
           id: true,
+
+          commentId: true,
+          parentId: true,
+
           content: true,
+          gifUrl: true,
+
           createdAt: true,
+          updatedAt: true,
+
+          editedAt: true,
+          moderatedAt: true,
 
           author: {
             select: {
@@ -355,6 +284,7 @@ export async function getMarketComments(assetSymbol: string) {
           _count: {
             select: {
               likes: true,
+              replies: true,
             },
           },
         },
@@ -386,21 +316,12 @@ export async function deleteComment(commentId: string) {
     where: {
       id: commentId,
     },
+
     select: {
       id: true,
       authorId: true,
       predictionId: true,
-      content: true,
-
-      deletedAt: true,
-      withdrawnAt: true,
       moderatedAt: true,
-
-      _count: {
-        select: {
-          replies: true,
-        },
-      },
     },
   });
 
@@ -416,76 +337,13 @@ export async function deleteComment(commentId: string) {
     throw new Error("This comment has been hidden by moderation.");
   }
 
-  if (comment.deletedAt) {
-    throw new Error(
-      "This comment has already been deleted. The vote will remain.",
-    );
-  }
-
-  const hasContent = hasCommentContent(comment.content as JSONContent);
-
   // ---------------------------------------------------------------------------
-  // PREDICTION ONLY
-  // Nothing to delete. Prediction remains untouched.
-  // ---------------------------------------------------------------------------
-
-  if (comment.predictionId && !hasContent && comment._count.replies === 0) {
-    return {
-      success: true,
-      action: "NOTHING_TO_DELETE" as const,
-    };
-  }
-
-  // ---------------------------------------------------------------------------
-  // NORMAL COMMENT
-  // No prediction + no replies = physical delete.
-  // ---------------------------------------------------------------------------
-
-  if (!comment.predictionId && comment._count.replies === 0) {
-    await prisma.comment.delete({
-      where: {
-        id: commentId,
-      },
-    });
-
-    return {
-      success: true,
-      action: "DELETED" as const,
-    };
-  }
-
-  // ---------------------------------------------------------------------------
-  // ALREADY WITHDRAWN
-  // ---------------------------------------------------------------------------
-
-  if (comment.withdrawnAt) {
-    throw new Error("This comment has already been withdrawn.");
-  }
-
-  // ---------------------------------------------------------------------------
-  // HAS REPLIES
-  // Keep content because replies depend on it.
-  // ---------------------------------------------------------------------------
-
-  if (comment._count.replies > 0) {
-    await prisma.comment.update({
-      where: {
-        id: commentId,
-      },
-      data: {
-        withdrawnAt: new Date(),
-      },
-    });
-
-    return {
-      success: true,
-      action: "WITHDRAWN" as const,
-    };
-  }
-
-  // ---------------------------------------------------------------------------
-  // PREDICTION + COMMENT
-  // Keep prediction, remove accompanying comment.
+  // PREDICTION COMMENT
+  //
+  // Prediction comments must remain because the Comment row is attached to
+  // the Prediction. Only remove the accompanying comment content.
+  //
+  // Replies remain untouched.
   // ---------------------------------------------------------------------------
 
   if (comment.predictionId) {
@@ -493,27 +351,43 @@ export async function deleteComment(commentId: string) {
       where: {
         id: commentId,
       },
+
       data: {
         content: {
           type: "doc",
-          content: [
-            {
-              type: "paragraph",
-            },
-          ],
+          content: [],
         },
 
-        deletedAt: new Date(),
+        editedAt: null,
       },
     });
 
     return {
       success: true,
-      action: "DELETED" as const,
+      action: "CONTENT_REMOVED" as const,
     };
   }
 
-  throw new Error("Unable to delete comment.");
+  // ---------------------------------------------------------------------------
+  // NORMAL COMMENT
+  //
+  // Hard delete.
+  //
+  // Comment -> Reply uses onDelete: Cascade.
+  // Reply -> child Reply also uses onDelete: Cascade.
+  // Therefore the whole reply tree is removed automatically.
+  // ---------------------------------------------------------------------------
+
+  await prisma.comment.delete({
+    where: {
+      id: commentId,
+    },
+  });
+
+  return {
+    success: true,
+    action: "DELETED" as const,
+  };
 }
 
 export async function editComment({
@@ -529,13 +403,17 @@ export async function editComment({
     throw new Error("You must be logged in.");
   }
 
+  if (!hasEditorContent(content)) {
+    throw new Error("Comment cannot be empty.");
+  }
+
   const comment = await prisma.comment.findUnique({
     where: {
       id: commentId,
     },
+
     select: {
       authorId: true,
-      deletedAt: true,
       withdrawnAt: true,
       moderatedAt: true,
 
@@ -569,10 +447,10 @@ export async function editComment({
     where: {
       id: commentId,
     },
+
     data: {
       content: content as Prisma.InputJsonValue,
       editedAt: new Date(),
-      deletedAt: null,
     },
   });
 
@@ -584,6 +462,7 @@ export async function editComment({
 export interface MostLikedComment {
   id: string;
   content: JSONContent;
+
   createdAt: Date;
   updatedAt: Date;
 
@@ -623,7 +502,6 @@ function hasTextContent(content: JSONContent): boolean {
 export async function getMostLikedComments(): Promise<MostLikedComment[]> {
   const comments = await prisma.comment.findMany({
     where: {
-      deletedAt: null,
       withdrawnAt: null,
       moderatedAt: null,
 
@@ -635,6 +513,7 @@ export async function getMostLikedComments(): Promise<MostLikedComment[]> {
     select: {
       id: true,
       content: true,
+
       createdAt: true,
       updatedAt: true,
 
@@ -678,8 +557,8 @@ export async function getMostLikedComments(): Promise<MostLikedComment[]> {
       },
     ],
 
-    // Fetch some extra rows because prediction-only / GIF-only
-    // comments may be removed below.
+    // Fetch extra because prediction-only / GIF-only comments
+    // may be removed below.
     take: 30,
   });
 
@@ -707,14 +586,10 @@ export async function hideComment(commentId: string, reason?: string) {
     where: {
       id: commentId,
     },
+
     select: {
       id: true,
       authorId: true,
-      predictionId: true,
-      content: true,
-
-      deletedAt: true,
-      withdrawnAt: true,
       moderatedAt: true,
     },
   });
@@ -723,24 +598,10 @@ export async function hideComment(commentId: string, reason?: string) {
     throw new Error("Comment not found.");
   }
 
-  if (comment.deletedAt) {
-    throw new Error("This comment has already been deleted by the author.");
-  }
-
-  if (comment.withdrawnAt) {
-    throw new Error("This comment has already been withdrawn by the author.");
-  }
-
   if (comment.moderatedAt) {
-    throw new Error("This comment is already hidden.");
-  }
-
-  const hasContent = hasCommentContent(comment.content as JSONContent);
-
-  if (comment.predictionId && !hasContent) {
     return {
       success: true,
-      action: "NOTHING_TO_DELETE" as const,
+      action: "ALREADY_HIDDEN" as const,
     };
   }
 
@@ -751,6 +612,7 @@ export async function hideComment(commentId: string, reason?: string) {
       where: {
         id: commentId,
       },
+
       data: {
         moderatedAt: now,
       },
@@ -788,12 +650,10 @@ export async function restoreComment(commentId: string, reason?: string) {
     where: {
       id: commentId,
     },
+
     select: {
       id: true,
       authorId: true,
-
-      deletedAt: true,
-      withdrawnAt: true,
       moderatedAt: true,
     },
   });
@@ -802,16 +662,11 @@ export async function restoreComment(commentId: string, reason?: string) {
     throw new Error("Comment not found.");
   }
 
-  if (comment.deletedAt) {
-    throw new Error("A comment deleted by its author cannot be restored.");
-  }
-
-  if (comment.withdrawnAt) {
-    throw new Error("A comment withdrawn by its author cannot be restored.");
-  }
-
   if (!comment.moderatedAt) {
-    throw new Error("This comment is not hidden.");
+    return {
+      success: true,
+      action: "ALREADY_VISIBLE" as const,
+    };
   }
 
   await prisma.$transaction([
@@ -819,6 +674,7 @@ export async function restoreComment(commentId: string, reason?: string) {
       where: {
         id: commentId,
       },
+
       data: {
         moderatedAt: null,
       },
@@ -841,18 +697,381 @@ export async function restoreComment(commentId: string, reason?: string) {
   };
 }
 
-function hasCommentContent(content: JSONContent): boolean {
-  if (content.type === "text") {
-    return Boolean(content.text?.trim());
+export async function createReply({
+  commentId,
+  parentId = null,
+  content,
+  gifUrl = null,
+}: {
+  commentId: string;
+  parentId?: string | null;
+  content: string;
+  gifUrl?: string | null;
+}) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
   }
 
-  if (content.type === "image" && content.attrs?.src) {
-    return true;
+  const trimmedContent = content.trim();
+
+  if (!trimmedContent && !gifUrl) {
+    throw new Error("Please write a reply or select a GIF.");
   }
 
-  if (!content.content) {
-    return false;
+  // ---------------------------------------------------------------------------
+  // COMMENT
+  // ---------------------------------------------------------------------------
+
+  const comment = await prisma.comment.findUnique({
+    where: {
+      id: commentId,
+    },
+
+    select: {
+      id: true,
+      withdrawnAt: true,
+      moderatedAt: true,
+    },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found.");
   }
 
-  return content.content.some(hasCommentContent);
+  if (comment.withdrawnAt || comment.moderatedAt) {
+    throw new Error("You cannot reply to this comment.");
+  }
+
+  // ---------------------------------------------------------------------------
+  // PARENT REPLY
+  // ---------------------------------------------------------------------------
+
+  if (parentId) {
+    const parentReply = await prisma.reply.findUnique({
+      where: {
+        id: parentId,
+      },
+
+      select: {
+        id: true,
+        commentId: true,
+        moderatedAt: true,
+      },
+    });
+
+    if (!parentReply) {
+      throw new Error("Reply not found.");
+    }
+
+    // Prevent connecting a reply from another comment thread.
+    if (parentReply.commentId !== commentId) {
+      throw new Error("Invalid parent reply.");
+    }
+
+    if (parentReply.moderatedAt) {
+      throw new Error("You cannot reply to a hidden reply.");
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // CREATE
+  // ---------------------------------------------------------------------------
+
+  const reply = await prisma.reply.create({
+    data: {
+      content: trimmedContent,
+      gifUrl,
+
+      commentId,
+      authorId: session.user.id,
+
+      parentId,
+    },
+
+    select: {
+      id: true,
+
+      commentId: true,
+      parentId: true,
+
+      content: true,
+      gifUrl: true,
+
+      createdAt: true,
+      updatedAt: true,
+
+      editedAt: true,
+      moderatedAt: true,
+
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          nationality: true,
+        },
+      },
+
+      _count: {
+        select: {
+          likes: true,
+          replies: true,
+        },
+      },
+    },
+  });
+
+  return {
+    success: true,
+    reply,
+  };
+}
+
+export async function editReply({
+  replyId,
+  content,
+  gifUrl = null,
+}: {
+  replyId: string;
+  content: string;
+  gifUrl?: string | null;
+}) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  const trimmedContent = content.trim();
+
+  if (!trimmedContent && !gifUrl) {
+    throw new Error("Reply cannot be empty.");
+  }
+
+  const reply = await prisma.reply.findUnique({
+    where: {
+      id: replyId,
+    },
+
+    select: {
+      id: true,
+      authorId: true,
+      moderatedAt: true,
+    },
+  });
+
+  if (!reply) {
+    throw new Error("Reply not found.");
+  }
+
+  if (reply.authorId !== session.user.id) {
+    throw new Error("You cannot edit this reply.");
+  }
+
+  if (reply.moderatedAt) {
+    throw new Error("A hidden reply cannot be edited.");
+  }
+
+  const updatedReply = await prisma.reply.update({
+    where: {
+      id: replyId,
+    },
+
+    data: {
+      content: trimmedContent,
+      gifUrl,
+      editedAt: new Date(),
+    },
+
+    select: {
+      id: true,
+
+      commentId: true,
+      parentId: true,
+
+      content: true,
+      gifUrl: true,
+
+      createdAt: true,
+      updatedAt: true,
+
+      editedAt: true,
+      moderatedAt: true,
+
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          nationality: true,
+        },
+      },
+
+      _count: {
+        select: {
+          likes: true,
+          replies: true,
+        },
+      },
+    },
+  });
+
+  return {
+    success: true,
+    reply: updatedReply,
+  };
+}
+
+export async function deleteReply(replyId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  const reply = await prisma.reply.findUnique({
+    where: {
+      id: replyId,
+    },
+
+    select: {
+      id: true,
+      authorId: true,
+      moderatedAt: true,
+    },
+  });
+
+  if (!reply) {
+    throw new Error("Reply not found.");
+  }
+
+  if (reply.authorId !== session.user.id) {
+    throw new Error("You cannot delete this reply.");
+  }
+
+  if (reply.moderatedAt) {
+    throw new Error("A hidden reply cannot be deleted.");
+  }
+
+  // Hard delete.
+  //
+  // Child replies are automatically deleted because:
+  //
+  // parent Reply
+  //   ↓ onDelete: Cascade
+  // child Reply
+  //   ↓ onDelete: Cascade
+  // descendant Reply
+  //
+  // ReplyLike rows are also deleted through their cascade relation.
+
+  await prisma.reply.delete({
+    where: {
+      id: replyId,
+    },
+  });
+
+  return {
+    success: true,
+  };
+}
+
+export async function hideReply(replyId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  if (session.user.role !== "ADMIN") {
+    throw new Error("You don't have permission to moderate replies.");
+  }
+
+  const reply = await prisma.reply.findUnique({
+    where: {
+      id: replyId,
+    },
+
+    select: {
+      id: true,
+      moderatedAt: true,
+    },
+  });
+
+  if (!reply) {
+    throw new Error("Reply not found.");
+  }
+
+  if (reply.moderatedAt) {
+    return {
+      success: true,
+      action: "ALREADY_HIDDEN" as const,
+    };
+  }
+
+  await prisma.reply.update({
+    where: {
+      id: replyId,
+    },
+
+    data: {
+      moderatedAt: new Date(),
+    },
+  });
+
+  return {
+    success: true,
+    action: "HIDDEN" as const,
+  };
+}
+
+export async function restoreReply(replyId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  if (session.user.role !== "ADMIN") {
+    throw new Error("You don't have permission to moderate replies.");
+  }
+
+  const reply = await prisma.reply.findUnique({
+    where: {
+      id: replyId,
+    },
+
+    select: {
+      id: true,
+      moderatedAt: true,
+    },
+  });
+
+  if (!reply) {
+    throw new Error("Reply not found.");
+  }
+
+  if (!reply.moderatedAt) {
+    return {
+      success: true,
+      action: "ALREADY_VISIBLE" as const,
+    };
+  }
+
+  await prisma.reply.update({
+    where: {
+      id: replyId,
+    },
+
+    data: {
+      moderatedAt: null,
+    },
+  });
+
+  return {
+    success: true,
+    action: "RESTORED" as const,
+  };
 }

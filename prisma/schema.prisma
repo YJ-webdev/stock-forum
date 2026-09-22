@@ -125,7 +125,6 @@ model Comment {
   updatedAt DateTime @updatedAt
 
   editedAt    DateTime?
-  deletedAt   DateTime?
   withdrawnAt DateTime?
   moderatedAt DateTime?
 
@@ -142,7 +141,6 @@ model Comment {
   moderationActions ModerationAction[]
 
   @@index([authorId, createdAt])
-  @@index([deletedAt])
   @@index([withdrawnAt])
   @@index([moderatedAt])
 }
@@ -216,22 +214,38 @@ model CommentAsset {
 }
 
 model Reply {
-  id      String @id @default(cuid())
-  content String
+  id String @id @default(cuid())
 
+  content String
+  gifUrl  String?
+
+  // Comment this reply belongs to
   commentId String
   comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
+  // Author
   authorId String
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
+  // Parent reply
+  parentId String?
+  parent   Reply?  @relation("ReplyThread", fields: [parentId], references: [id], onDelete: Cascade)
+
+  // Child replies
+  replies Reply[] @relation("ReplyThread")
+
   likes ReplyLike[]
+
+  editedAt    DateTime?
+  moderatedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([commentId, createdAt])
+  @@index([parentId, createdAt])
   @@index([authorId, createdAt])
+  @@index([moderatedAt])
 }
 
 model CommentLike {

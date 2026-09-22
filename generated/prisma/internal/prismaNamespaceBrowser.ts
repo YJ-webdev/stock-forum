@@ -147,7 +147,6 @@ export const CommentScalarFieldEnum = {
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   editedAt: 'editedAt',
-  deletedAt: 'deletedAt',
   withdrawnAt: 'withdrawnAt',
   moderatedAt: 'moderatedAt',
   authorId: 'authorId',
@@ -200,8 +199,12 @@ export type CommentAssetScalarFieldEnum = (typeof CommentAssetScalarFieldEnum)[k
 export const ReplyScalarFieldEnum = {
   id: 'id',
   content: 'content',
+  gifUrl: 'gifUrl',
   commentId: 'commentId',
   authorId: 'authorId',
+  parentId: 'parentId',
+  editedAt: 'editedAt',
+  moderatedAt: 'moderatedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

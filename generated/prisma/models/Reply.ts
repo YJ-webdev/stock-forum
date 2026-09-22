@@ -27,8 +27,12 @@ export type AggregateReply = {
 export type ReplyMinAggregateOutputType = {
   id: string | null
   content: string | null
+  gifUrl: string | null
   commentId: string | null
   authorId: string | null
+  parentId: string | null
+  editedAt: Date | null
+  moderatedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -36,8 +40,12 @@ export type ReplyMinAggregateOutputType = {
 export type ReplyMaxAggregateOutputType = {
   id: string | null
   content: string | null
+  gifUrl: string | null
   commentId: string | null
   authorId: string | null
+  parentId: string | null
+  editedAt: Date | null
+  moderatedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -45,8 +53,12 @@ export type ReplyMaxAggregateOutputType = {
 export type ReplyCountAggregateOutputType = {
   id: number
   content: number
+  gifUrl: number
   commentId: number
   authorId: number
+  parentId: number
+  editedAt: number
+  moderatedAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -56,8 +68,12 @@ export type ReplyCountAggregateOutputType = {
 export type ReplyMinAggregateInputType = {
   id?: true
   content?: true
+  gifUrl?: true
   commentId?: true
   authorId?: true
+  parentId?: true
+  editedAt?: true
+  moderatedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -65,8 +81,12 @@ export type ReplyMinAggregateInputType = {
 export type ReplyMaxAggregateInputType = {
   id?: true
   content?: true
+  gifUrl?: true
   commentId?: true
   authorId?: true
+  parentId?: true
+  editedAt?: true
+  moderatedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -74,8 +94,12 @@ export type ReplyMaxAggregateInputType = {
 export type ReplyCountAggregateInputType = {
   id?: true
   content?: true
+  gifUrl?: true
   commentId?: true
   authorId?: true
+  parentId?: true
+  editedAt?: true
+  moderatedAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -156,8 +180,12 @@ export type ReplyGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
 export type ReplyGroupByOutputType = {
   id: string
   content: string
+  gifUrl: string | null
   commentId: string
   authorId: string
+  parentId: string | null
+  editedAt: Date | null
+  moderatedAt: Date | null
   createdAt: Date
   updatedAt: Date
   _count: ReplyCountAggregateOutputType | null
@@ -186,24 +214,36 @@ export type ReplyWhereInput = {
   NOT?: Prisma.ReplyWhereInput | Prisma.ReplyWhereInput[]
   id?: Prisma.StringFilter<"Reply"> | string
   content?: Prisma.StringFilter<"Reply"> | string
+  gifUrl?: Prisma.StringNullableFilter<"Reply"> | string | null
   commentId?: Prisma.StringFilter<"Reply"> | string
   authorId?: Prisma.StringFilter<"Reply"> | string
+  parentId?: Prisma.StringNullableFilter<"Reply"> | string | null
+  editedAt?: Prisma.DateTimeNullableFilter<"Reply"> | Date | string | null
+  moderatedAt?: Prisma.DateTimeNullableFilter<"Reply"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Reply"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Reply"> | Date | string
   comment?: Prisma.XOR<Prisma.CommentScalarRelationFilter, Prisma.CommentWhereInput>
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  parent?: Prisma.XOR<Prisma.ReplyNullableScalarRelationFilter, Prisma.ReplyWhereInput> | null
+  replies?: Prisma.ReplyListRelationFilter
   likes?: Prisma.ReplyLikeListRelationFilter
 }
 
 export type ReplyOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  gifUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   commentId?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
+  parentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  editedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  moderatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   comment?: Prisma.CommentOrderByWithRelationInput
   author?: Prisma.UserOrderByWithRelationInput
+  parent?: Prisma.ReplyOrderByWithRelationInput
+  replies?: Prisma.ReplyOrderByRelationAggregateInput
   likes?: Prisma.ReplyLikeOrderByRelationAggregateInput
 }
 
@@ -213,20 +253,30 @@ export type ReplyWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.ReplyWhereInput[]
   NOT?: Prisma.ReplyWhereInput | Prisma.ReplyWhereInput[]
   content?: Prisma.StringFilter<"Reply"> | string
+  gifUrl?: Prisma.StringNullableFilter<"Reply"> | string | null
   commentId?: Prisma.StringFilter<"Reply"> | string
   authorId?: Prisma.StringFilter<"Reply"> | string
+  parentId?: Prisma.StringNullableFilter<"Reply"> | string | null
+  editedAt?: Prisma.DateTimeNullableFilter<"Reply"> | Date | string | null
+  moderatedAt?: Prisma.DateTimeNullableFilter<"Reply"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Reply"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Reply"> | Date | string
   comment?: Prisma.XOR<Prisma.CommentScalarRelationFilter, Prisma.CommentWhereInput>
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  parent?: Prisma.XOR<Prisma.ReplyNullableScalarRelationFilter, Prisma.ReplyWhereInput> | null
+  replies?: Prisma.ReplyListRelationFilter
   likes?: Prisma.ReplyLikeListRelationFilter
 }, "id">
 
 export type ReplyOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  gifUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   commentId?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
+  parentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  editedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  moderatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ReplyCountOrderByAggregateInput
@@ -240,8 +290,12 @@ export type ReplyScalarWhereWithAggregatesInput = {
   NOT?: Prisma.ReplyScalarWhereWithAggregatesInput | Prisma.ReplyScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Reply"> | string
   content?: Prisma.StringWithAggregatesFilter<"Reply"> | string
+  gifUrl?: Prisma.StringNullableWithAggregatesFilter<"Reply"> | string | null
   commentId?: Prisma.StringWithAggregatesFilter<"Reply"> | string
   authorId?: Prisma.StringWithAggregatesFilter<"Reply"> | string
+  parentId?: Prisma.StringNullableWithAggregatesFilter<"Reply"> | string | null
+  editedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Reply"> | Date | string | null
+  moderatedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Reply"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Reply"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Reply"> | Date | string
 }
@@ -249,48 +303,72 @@ export type ReplyScalarWhereWithAggregatesInput = {
 export type ReplyCreateInput = {
   id?: string
   content: string
+  gifUrl?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   comment: Prisma.CommentCreateNestedOneWithoutRepliesInput
   author: Prisma.UserCreateNestedOneWithoutRepliesInput
+  parent?: Prisma.ReplyCreateNestedOneWithoutRepliesInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutParentInput
   likes?: Prisma.ReplyLikeCreateNestedManyWithoutReplyInput
 }
 
 export type ReplyUncheckedCreateInput = {
   id?: string
   content: string
+  gifUrl?: string | null
   commentId: string
   authorId: string
+  parentId?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutParentInput
   likes?: Prisma.ReplyLikeUncheckedCreateNestedManyWithoutReplyInput
 }
 
 export type ReplyUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   comment?: Prisma.CommentUpdateOneRequiredWithoutRepliesNestedInput
   author?: Prisma.UserUpdateOneRequiredWithoutRepliesNestedInput
+  parent?: Prisma.ReplyUpdateOneWithoutRepliesNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutParentNestedInput
   likes?: Prisma.ReplyLikeUpdateManyWithoutReplyNestedInput
 }
 
 export type ReplyUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutParentNestedInput
   likes?: Prisma.ReplyLikeUncheckedUpdateManyWithoutReplyNestedInput
 }
 
 export type ReplyCreateManyInput = {
   id?: string
   content: string
+  gifUrl?: string | null
   commentId: string
   authorId: string
+  parentId?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -298,6 +376,9 @@ export type ReplyCreateManyInput = {
 export type ReplyUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -305,8 +386,12 @@ export type ReplyUpdateManyMutationInput = {
 export type ReplyUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -321,11 +406,20 @@ export type ReplyOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type ReplyNullableScalarRelationFilter = {
+  is?: Prisma.ReplyWhereInput | null
+  isNot?: Prisma.ReplyWhereInput | null
+}
+
 export type ReplyCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  gifUrl?: Prisma.SortOrder
   commentId?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
+  parentId?: Prisma.SortOrder
+  editedAt?: Prisma.SortOrder
+  moderatedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -333,8 +427,12 @@ export type ReplyCountOrderByAggregateInput = {
 export type ReplyMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  gifUrl?: Prisma.SortOrder
   commentId?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
+  parentId?: Prisma.SortOrder
+  editedAt?: Prisma.SortOrder
+  moderatedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -342,8 +440,12 @@ export type ReplyMaxOrderByAggregateInput = {
 export type ReplyMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  gifUrl?: Prisma.SortOrder
   commentId?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
+  parentId?: Prisma.SortOrder
+  editedAt?: Prisma.SortOrder
+  moderatedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -437,6 +539,64 @@ export type ReplyUncheckedUpdateManyWithoutCommentNestedInput = {
   deleteMany?: Prisma.ReplyScalarWhereInput | Prisma.ReplyScalarWhereInput[]
 }
 
+export type ReplyCreateNestedOneWithoutRepliesInput = {
+  create?: Prisma.XOR<Prisma.ReplyCreateWithoutRepliesInput, Prisma.ReplyUncheckedCreateWithoutRepliesInput>
+  connectOrCreate?: Prisma.ReplyCreateOrConnectWithoutRepliesInput
+  connect?: Prisma.ReplyWhereUniqueInput
+}
+
+export type ReplyCreateNestedManyWithoutParentInput = {
+  create?: Prisma.XOR<Prisma.ReplyCreateWithoutParentInput, Prisma.ReplyUncheckedCreateWithoutParentInput> | Prisma.ReplyCreateWithoutParentInput[] | Prisma.ReplyUncheckedCreateWithoutParentInput[]
+  connectOrCreate?: Prisma.ReplyCreateOrConnectWithoutParentInput | Prisma.ReplyCreateOrConnectWithoutParentInput[]
+  createMany?: Prisma.ReplyCreateManyParentInputEnvelope
+  connect?: Prisma.ReplyWhereUniqueInput | Prisma.ReplyWhereUniqueInput[]
+}
+
+export type ReplyUncheckedCreateNestedManyWithoutParentInput = {
+  create?: Prisma.XOR<Prisma.ReplyCreateWithoutParentInput, Prisma.ReplyUncheckedCreateWithoutParentInput> | Prisma.ReplyCreateWithoutParentInput[] | Prisma.ReplyUncheckedCreateWithoutParentInput[]
+  connectOrCreate?: Prisma.ReplyCreateOrConnectWithoutParentInput | Prisma.ReplyCreateOrConnectWithoutParentInput[]
+  createMany?: Prisma.ReplyCreateManyParentInputEnvelope
+  connect?: Prisma.ReplyWhereUniqueInput | Prisma.ReplyWhereUniqueInput[]
+}
+
+export type ReplyUpdateOneWithoutRepliesNestedInput = {
+  create?: Prisma.XOR<Prisma.ReplyCreateWithoutRepliesInput, Prisma.ReplyUncheckedCreateWithoutRepliesInput>
+  connectOrCreate?: Prisma.ReplyCreateOrConnectWithoutRepliesInput
+  upsert?: Prisma.ReplyUpsertWithoutRepliesInput
+  disconnect?: Prisma.ReplyWhereInput | boolean
+  delete?: Prisma.ReplyWhereInput | boolean
+  connect?: Prisma.ReplyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ReplyUpdateToOneWithWhereWithoutRepliesInput, Prisma.ReplyUpdateWithoutRepliesInput>, Prisma.ReplyUncheckedUpdateWithoutRepliesInput>
+}
+
+export type ReplyUpdateManyWithoutParentNestedInput = {
+  create?: Prisma.XOR<Prisma.ReplyCreateWithoutParentInput, Prisma.ReplyUncheckedCreateWithoutParentInput> | Prisma.ReplyCreateWithoutParentInput[] | Prisma.ReplyUncheckedCreateWithoutParentInput[]
+  connectOrCreate?: Prisma.ReplyCreateOrConnectWithoutParentInput | Prisma.ReplyCreateOrConnectWithoutParentInput[]
+  upsert?: Prisma.ReplyUpsertWithWhereUniqueWithoutParentInput | Prisma.ReplyUpsertWithWhereUniqueWithoutParentInput[]
+  createMany?: Prisma.ReplyCreateManyParentInputEnvelope
+  set?: Prisma.ReplyWhereUniqueInput | Prisma.ReplyWhereUniqueInput[]
+  disconnect?: Prisma.ReplyWhereUniqueInput | Prisma.ReplyWhereUniqueInput[]
+  delete?: Prisma.ReplyWhereUniqueInput | Prisma.ReplyWhereUniqueInput[]
+  connect?: Prisma.ReplyWhereUniqueInput | Prisma.ReplyWhereUniqueInput[]
+  update?: Prisma.ReplyUpdateWithWhereUniqueWithoutParentInput | Prisma.ReplyUpdateWithWhereUniqueWithoutParentInput[]
+  updateMany?: Prisma.ReplyUpdateManyWithWhereWithoutParentInput | Prisma.ReplyUpdateManyWithWhereWithoutParentInput[]
+  deleteMany?: Prisma.ReplyScalarWhereInput | Prisma.ReplyScalarWhereInput[]
+}
+
+export type ReplyUncheckedUpdateManyWithoutParentNestedInput = {
+  create?: Prisma.XOR<Prisma.ReplyCreateWithoutParentInput, Prisma.ReplyUncheckedCreateWithoutParentInput> | Prisma.ReplyCreateWithoutParentInput[] | Prisma.ReplyUncheckedCreateWithoutParentInput[]
+  connectOrCreate?: Prisma.ReplyCreateOrConnectWithoutParentInput | Prisma.ReplyCreateOrConnectWithoutParentInput[]
+  upsert?: Prisma.ReplyUpsertWithWhereUniqueWithoutParentInput | Prisma.ReplyUpsertWithWhereUniqueWithoutParentInput[]
+  createMany?: Prisma.ReplyCreateManyParentInputEnvelope
+  set?: Prisma.ReplyWhereUniqueInput | Prisma.ReplyWhereUniqueInput[]
+  disconnect?: Prisma.ReplyWhereUniqueInput | Prisma.ReplyWhereUniqueInput[]
+  delete?: Prisma.ReplyWhereUniqueInput | Prisma.ReplyWhereUniqueInput[]
+  connect?: Prisma.ReplyWhereUniqueInput | Prisma.ReplyWhereUniqueInput[]
+  update?: Prisma.ReplyUpdateWithWhereUniqueWithoutParentInput | Prisma.ReplyUpdateWithWhereUniqueWithoutParentInput[]
+  updateMany?: Prisma.ReplyUpdateManyWithWhereWithoutParentInput | Prisma.ReplyUpdateManyWithWhereWithoutParentInput[]
+  deleteMany?: Prisma.ReplyScalarWhereInput | Prisma.ReplyScalarWhereInput[]
+}
+
 export type ReplyCreateNestedOneWithoutLikesInput = {
   create?: Prisma.XOR<Prisma.ReplyCreateWithoutLikesInput, Prisma.ReplyUncheckedCreateWithoutLikesInput>
   connectOrCreate?: Prisma.ReplyCreateOrConnectWithoutLikesInput
@@ -454,18 +614,28 @@ export type ReplyUpdateOneRequiredWithoutLikesNestedInput = {
 export type ReplyCreateWithoutAuthorInput = {
   id?: string
   content: string
+  gifUrl?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   comment: Prisma.CommentCreateNestedOneWithoutRepliesInput
+  parent?: Prisma.ReplyCreateNestedOneWithoutRepliesInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutParentInput
   likes?: Prisma.ReplyLikeCreateNestedManyWithoutReplyInput
 }
 
 export type ReplyUncheckedCreateWithoutAuthorInput = {
   id?: string
   content: string
+  gifUrl?: string | null
   commentId: string
+  parentId?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutParentInput
   likes?: Prisma.ReplyLikeUncheckedCreateNestedManyWithoutReplyInput
 }
 
@@ -501,8 +671,12 @@ export type ReplyScalarWhereInput = {
   NOT?: Prisma.ReplyScalarWhereInput | Prisma.ReplyScalarWhereInput[]
   id?: Prisma.StringFilter<"Reply"> | string
   content?: Prisma.StringFilter<"Reply"> | string
+  gifUrl?: Prisma.StringNullableFilter<"Reply"> | string | null
   commentId?: Prisma.StringFilter<"Reply"> | string
   authorId?: Prisma.StringFilter<"Reply"> | string
+  parentId?: Prisma.StringNullableFilter<"Reply"> | string | null
+  editedAt?: Prisma.DateTimeNullableFilter<"Reply"> | Date | string | null
+  moderatedAt?: Prisma.DateTimeNullableFilter<"Reply"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Reply"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Reply"> | Date | string
 }
@@ -510,18 +684,28 @@ export type ReplyScalarWhereInput = {
 export type ReplyCreateWithoutCommentInput = {
   id?: string
   content: string
+  gifUrl?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutRepliesInput
+  parent?: Prisma.ReplyCreateNestedOneWithoutRepliesInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutParentInput
   likes?: Prisma.ReplyLikeCreateNestedManyWithoutReplyInput
 }
 
 export type ReplyUncheckedCreateWithoutCommentInput = {
   id?: string
   content: string
+  gifUrl?: string | null
   authorId: string
+  parentId?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutParentInput
   likes?: Prisma.ReplyLikeUncheckedCreateNestedManyWithoutReplyInput
 }
 
@@ -551,22 +735,158 @@ export type ReplyUpdateManyWithWhereWithoutCommentInput = {
   data: Prisma.XOR<Prisma.ReplyUpdateManyMutationInput, Prisma.ReplyUncheckedUpdateManyWithoutCommentInput>
 }
 
-export type ReplyCreateWithoutLikesInput = {
+export type ReplyCreateWithoutRepliesInput = {
   id?: string
   content: string
+  gifUrl?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   comment: Prisma.CommentCreateNestedOneWithoutRepliesInput
   author: Prisma.UserCreateNestedOneWithoutRepliesInput
+  parent?: Prisma.ReplyCreateNestedOneWithoutRepliesInput
+  likes?: Prisma.ReplyLikeCreateNestedManyWithoutReplyInput
+}
+
+export type ReplyUncheckedCreateWithoutRepliesInput = {
+  id?: string
+  content: string
+  gifUrl?: string | null
+  commentId: string
+  authorId: string
+  parentId?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  likes?: Prisma.ReplyLikeUncheckedCreateNestedManyWithoutReplyInput
+}
+
+export type ReplyCreateOrConnectWithoutRepliesInput = {
+  where: Prisma.ReplyWhereUniqueInput
+  create: Prisma.XOR<Prisma.ReplyCreateWithoutRepliesInput, Prisma.ReplyUncheckedCreateWithoutRepliesInput>
+}
+
+export type ReplyCreateWithoutParentInput = {
+  id?: string
+  content: string
+  gifUrl?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  comment: Prisma.CommentCreateNestedOneWithoutRepliesInput
+  author: Prisma.UserCreateNestedOneWithoutRepliesInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutParentInput
+  likes?: Prisma.ReplyLikeCreateNestedManyWithoutReplyInput
+}
+
+export type ReplyUncheckedCreateWithoutParentInput = {
+  id?: string
+  content: string
+  gifUrl?: string | null
+  commentId: string
+  authorId: string
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutParentInput
+  likes?: Prisma.ReplyLikeUncheckedCreateNestedManyWithoutReplyInput
+}
+
+export type ReplyCreateOrConnectWithoutParentInput = {
+  where: Prisma.ReplyWhereUniqueInput
+  create: Prisma.XOR<Prisma.ReplyCreateWithoutParentInput, Prisma.ReplyUncheckedCreateWithoutParentInput>
+}
+
+export type ReplyCreateManyParentInputEnvelope = {
+  data: Prisma.ReplyCreateManyParentInput | Prisma.ReplyCreateManyParentInput[]
+  skipDuplicates?: boolean
+}
+
+export type ReplyUpsertWithoutRepliesInput = {
+  update: Prisma.XOR<Prisma.ReplyUpdateWithoutRepliesInput, Prisma.ReplyUncheckedUpdateWithoutRepliesInput>
+  create: Prisma.XOR<Prisma.ReplyCreateWithoutRepliesInput, Prisma.ReplyUncheckedCreateWithoutRepliesInput>
+  where?: Prisma.ReplyWhereInput
+}
+
+export type ReplyUpdateToOneWithWhereWithoutRepliesInput = {
+  where?: Prisma.ReplyWhereInput
+  data: Prisma.XOR<Prisma.ReplyUpdateWithoutRepliesInput, Prisma.ReplyUncheckedUpdateWithoutRepliesInput>
+}
+
+export type ReplyUpdateWithoutRepliesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  comment?: Prisma.CommentUpdateOneRequiredWithoutRepliesNestedInput
+  author?: Prisma.UserUpdateOneRequiredWithoutRepliesNestedInput
+  parent?: Prisma.ReplyUpdateOneWithoutRepliesNestedInput
+  likes?: Prisma.ReplyLikeUpdateManyWithoutReplyNestedInput
+}
+
+export type ReplyUncheckedUpdateWithoutRepliesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  commentId?: Prisma.StringFieldUpdateOperationsInput | string
+  authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  likes?: Prisma.ReplyLikeUncheckedUpdateManyWithoutReplyNestedInput
+}
+
+export type ReplyUpsertWithWhereUniqueWithoutParentInput = {
+  where: Prisma.ReplyWhereUniqueInput
+  update: Prisma.XOR<Prisma.ReplyUpdateWithoutParentInput, Prisma.ReplyUncheckedUpdateWithoutParentInput>
+  create: Prisma.XOR<Prisma.ReplyCreateWithoutParentInput, Prisma.ReplyUncheckedCreateWithoutParentInput>
+}
+
+export type ReplyUpdateWithWhereUniqueWithoutParentInput = {
+  where: Prisma.ReplyWhereUniqueInput
+  data: Prisma.XOR<Prisma.ReplyUpdateWithoutParentInput, Prisma.ReplyUncheckedUpdateWithoutParentInput>
+}
+
+export type ReplyUpdateManyWithWhereWithoutParentInput = {
+  where: Prisma.ReplyScalarWhereInput
+  data: Prisma.XOR<Prisma.ReplyUpdateManyMutationInput, Prisma.ReplyUncheckedUpdateManyWithoutParentInput>
+}
+
+export type ReplyCreateWithoutLikesInput = {
+  id?: string
+  content: string
+  gifUrl?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  comment: Prisma.CommentCreateNestedOneWithoutRepliesInput
+  author: Prisma.UserCreateNestedOneWithoutRepliesInput
+  parent?: Prisma.ReplyCreateNestedOneWithoutRepliesInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutParentInput
 }
 
 export type ReplyUncheckedCreateWithoutLikesInput = {
   id?: string
   content: string
+  gifUrl?: string | null
   commentId: string
   authorId: string
+  parentId?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutParentInput
 }
 
 export type ReplyCreateOrConnectWithoutLikesInput = {
@@ -588,25 +908,39 @@ export type ReplyUpdateToOneWithWhereWithoutLikesInput = {
 export type ReplyUpdateWithoutLikesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   comment?: Prisma.CommentUpdateOneRequiredWithoutRepliesNestedInput
   author?: Prisma.UserUpdateOneRequiredWithoutRepliesNestedInput
+  parent?: Prisma.ReplyUpdateOneWithoutRepliesNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutParentNestedInput
 }
 
 export type ReplyUncheckedUpdateWithoutLikesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutParentNestedInput
 }
 
 export type ReplyCreateManyAuthorInput = {
   id?: string
   content: string
+  gifUrl?: string | null
   commentId: string
+  parentId?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -614,25 +948,39 @@ export type ReplyCreateManyAuthorInput = {
 export type ReplyUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   comment?: Prisma.CommentUpdateOneRequiredWithoutRepliesNestedInput
+  parent?: Prisma.ReplyUpdateOneWithoutRepliesNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutParentNestedInput
   likes?: Prisma.ReplyLikeUpdateManyWithoutReplyNestedInput
 }
 
 export type ReplyUncheckedUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
+  parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutParentNestedInput
   likes?: Prisma.ReplyLikeUncheckedUpdateManyWithoutReplyNestedInput
 }
 
 export type ReplyUncheckedUpdateManyWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
+  parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -640,7 +988,11 @@ export type ReplyUncheckedUpdateManyWithoutAuthorInput = {
 export type ReplyCreateManyCommentInput = {
   id?: string
   content: string
+  gifUrl?: string | null
   authorId: string
+  parentId?: string | null
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -648,25 +1000,91 @@ export type ReplyCreateManyCommentInput = {
 export type ReplyUpdateWithoutCommentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutRepliesNestedInput
+  parent?: Prisma.ReplyUpdateOneWithoutRepliesNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutParentNestedInput
   likes?: Prisma.ReplyLikeUpdateManyWithoutReplyNestedInput
 }
 
 export type ReplyUncheckedUpdateWithoutCommentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutParentNestedInput
   likes?: Prisma.ReplyLikeUncheckedUpdateManyWithoutReplyNestedInput
 }
 
 export type ReplyUncheckedUpdateManyWithoutCommentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ReplyCreateManyParentInput = {
+  id?: string
+  content: string
+  gifUrl?: string | null
+  commentId: string
+  authorId: string
+  editedAt?: Date | string | null
+  moderatedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type ReplyUpdateWithoutParentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  comment?: Prisma.CommentUpdateOneRequiredWithoutRepliesNestedInput
+  author?: Prisma.UserUpdateOneRequiredWithoutRepliesNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutParentNestedInput
+  likes?: Prisma.ReplyLikeUpdateManyWithoutReplyNestedInput
+}
+
+export type ReplyUncheckedUpdateWithoutParentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  commentId?: Prisma.StringFieldUpdateOperationsInput | string
+  authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutParentNestedInput
+  likes?: Prisma.ReplyLikeUncheckedUpdateManyWithoutReplyNestedInput
+}
+
+export type ReplyUncheckedUpdateManyWithoutParentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  commentId?: Prisma.StringFieldUpdateOperationsInput | string
+  authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -677,10 +1095,12 @@ export type ReplyUncheckedUpdateManyWithoutCommentInput = {
  */
 
 export type ReplyCountOutputType = {
+  replies: number
   likes: number
 }
 
 export type ReplyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  replies?: boolean | ReplyCountOutputTypeCountRepliesArgs
   likes?: boolean | ReplyCountOutputTypeCountLikesArgs
 }
 
@@ -697,6 +1117,13 @@ export type ReplyCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extens
 /**
  * ReplyCountOutputType without action
  */
+export type ReplyCountOutputTypeCountRepliesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ReplyWhereInput
+}
+
+/**
+ * ReplyCountOutputType without action
+ */
 export type ReplyCountOutputTypeCountLikesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ReplyLikeWhereInput
 }
@@ -705,12 +1132,18 @@ export type ReplyCountOutputTypeCountLikesArgs<ExtArgs extends runtime.Types.Ext
 export type ReplySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   content?: boolean
+  gifUrl?: boolean
   commentId?: boolean
   authorId?: boolean
+  parentId?: boolean
+  editedAt?: boolean
+  moderatedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   comment?: boolean | Prisma.CommentDefaultArgs<ExtArgs>
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  parent?: boolean | Prisma.Reply$parentArgs<ExtArgs>
+  replies?: boolean | Prisma.Reply$repliesArgs<ExtArgs>
   likes?: boolean | Prisma.Reply$likesArgs<ExtArgs>
   _count?: boolean | Prisma.ReplyCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["reply"]>
@@ -718,48 +1151,66 @@ export type ReplySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 export type ReplySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   content?: boolean
+  gifUrl?: boolean
   commentId?: boolean
   authorId?: boolean
+  parentId?: boolean
+  editedAt?: boolean
+  moderatedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   comment?: boolean | Prisma.CommentDefaultArgs<ExtArgs>
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  parent?: boolean | Prisma.Reply$parentArgs<ExtArgs>
 }, ExtArgs["result"]["reply"]>
 
 export type ReplySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   content?: boolean
+  gifUrl?: boolean
   commentId?: boolean
   authorId?: boolean
+  parentId?: boolean
+  editedAt?: boolean
+  moderatedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   comment?: boolean | Prisma.CommentDefaultArgs<ExtArgs>
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  parent?: boolean | Prisma.Reply$parentArgs<ExtArgs>
 }, ExtArgs["result"]["reply"]>
 
 export type ReplySelectScalar = {
   id?: boolean
   content?: boolean
+  gifUrl?: boolean
   commentId?: boolean
   authorId?: boolean
+  parentId?: boolean
+  editedAt?: boolean
+  moderatedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ReplyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "commentId" | "authorId" | "createdAt" | "updatedAt", ExtArgs["result"]["reply"]>
+export type ReplyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "gifUrl" | "commentId" | "authorId" | "parentId" | "editedAt" | "moderatedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["reply"]>
 export type ReplyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   comment?: boolean | Prisma.CommentDefaultArgs<ExtArgs>
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  parent?: boolean | Prisma.Reply$parentArgs<ExtArgs>
+  replies?: boolean | Prisma.Reply$repliesArgs<ExtArgs>
   likes?: boolean | Prisma.Reply$likesArgs<ExtArgs>
   _count?: boolean | Prisma.ReplyCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ReplyIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   comment?: boolean | Prisma.CommentDefaultArgs<ExtArgs>
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  parent?: boolean | Prisma.Reply$parentArgs<ExtArgs>
 }
 export type ReplyIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   comment?: boolean | Prisma.CommentDefaultArgs<ExtArgs>
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  parent?: boolean | Prisma.Reply$parentArgs<ExtArgs>
 }
 
 export type $ReplyPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -767,13 +1218,19 @@ export type $ReplyPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   objects: {
     comment: Prisma.$CommentPayload<ExtArgs>
     author: Prisma.$UserPayload<ExtArgs>
+    parent: Prisma.$ReplyPayload<ExtArgs> | null
+    replies: Prisma.$ReplyPayload<ExtArgs>[]
     likes: Prisma.$ReplyLikePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     content: string
+    gifUrl: string | null
     commentId: string
     authorId: string
+    parentId: string | null
+    editedAt: Date | null
+    moderatedAt: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["reply"]>
@@ -1172,6 +1629,8 @@ export interface Prisma__ReplyClient<T, Null = never, ExtArgs extends runtime.Ty
   readonly [Symbol.toStringTag]: "PrismaPromise"
   comment<T extends Prisma.CommentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CommentDefaultArgs<ExtArgs>>): Prisma.Prisma__CommentClient<runtime.Types.Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   author<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  parent<T extends Prisma.Reply$parentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Reply$parentArgs<ExtArgs>>): Prisma.Prisma__ReplyClient<runtime.Types.Result.GetResult<Prisma.$ReplyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  replies<T extends Prisma.Reply$repliesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Reply$repliesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReplyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   likes<T extends Prisma.Reply$likesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Reply$likesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReplyLikePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1204,8 +1663,12 @@ export interface Prisma__ReplyClient<T, Null = never, ExtArgs extends runtime.Ty
 export interface ReplyFieldRefs {
   readonly id: Prisma.FieldRef<"Reply", 'String'>
   readonly content: Prisma.FieldRef<"Reply", 'String'>
+  readonly gifUrl: Prisma.FieldRef<"Reply", 'String'>
   readonly commentId: Prisma.FieldRef<"Reply", 'String'>
   readonly authorId: Prisma.FieldRef<"Reply", 'String'>
+  readonly parentId: Prisma.FieldRef<"Reply", 'String'>
+  readonly editedAt: Prisma.FieldRef<"Reply", 'DateTime'>
+  readonly moderatedAt: Prisma.FieldRef<"Reply", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"Reply", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Reply", 'DateTime'>
 }
@@ -1606,6 +2069,49 @@ export type ReplyDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Limit how many Replies to delete.
    */
   limit?: number
+}
+
+/**
+ * Reply.parent
+ */
+export type Reply$parentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Reply
+   */
+  select?: Prisma.ReplySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Reply
+   */
+  omit?: Prisma.ReplyOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ReplyInclude<ExtArgs> | null
+  where?: Prisma.ReplyWhereInput
+}
+
+/**
+ * Reply.replies
+ */
+export type Reply$repliesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Reply
+   */
+  select?: Prisma.ReplySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Reply
+   */
+  omit?: Prisma.ReplyOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ReplyInclude<ExtArgs> | null
+  where?: Prisma.ReplyWhereInput
+  orderBy?: Prisma.ReplyOrderByWithRelationInput | Prisma.ReplyOrderByWithRelationInput[]
+  cursor?: Prisma.ReplyWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ReplyScalarFieldEnum | Prisma.ReplyScalarFieldEnum[]
 }
 
 /**

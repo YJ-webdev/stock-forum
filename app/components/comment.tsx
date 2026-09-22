@@ -2,49 +2,50 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { JSONContent } from "@tiptap/react";
-import {
-  ChevronDown,
-  ChevronUp,
-  MoreVertical,
-  Pencil,
-  ShieldCheck,
-  ShieldOff,
-  ThumbsUp,
-  Trash2,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, ThumbsUp } from "lucide-react";
 
 import { useCurrentUser } from "@/app/context/user-context";
 import {
-  createReply,
   deleteComment,
   getMarketComments,
   hideComment,
   restoreComment,
 } from "@/app/actions/post";
 
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 import { PredictionCommentInput } from "./prediction-comment-input";
 import { CommentOnlyInput } from "./comment-only-input";
 import type { GifResult } from "./gif-picker";
 import { useCommentRefresh } from "../context/comment-refresh-context";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
+import { ReplyInput } from "./reply-input";
+import { ContentActionsMenu } from "./content-actions-menu";
+import { ReplyItem } from "./reply-item";
 import { CommentEditInput } from "./comment-edit-input";
+
+// -----------------------------------------------------------------------------
+// TYPES
+// -----------------------------------------------------------------------------
 
 type VoteDirection = "BULL" | "BEAR";
 
 type PredictionStatus = "PENDING" | "WON" | "LOST" | "VOID";
 
-interface MarketReply {
+export interface MarketReply {
   id: string;
+
+  commentId: string;
+  parentId: string | null;
+
   content: string;
+  gifUrl: string | null;
+
   createdAt: Date;
+  updatedAt: Date;
+
+  editedAt: Date | null;
+  moderatedAt: Date | null;
 
   author: {
     id: string;
@@ -55,17 +56,19 @@ interface MarketReply {
 
   _count: {
     likes: number;
+    replies: number;
   };
 }
 
 interface MarketComment {
   id: string;
+
   content: JSONContent;
+
   createdAt: Date;
   updatedAt: Date;
 
   editedAt: Date | null;
-  deletedAt: Date | null;
   withdrawnAt: Date | null;
   moderatedAt: Date | null;
 
@@ -115,6 +118,10 @@ interface MarketCommentsProps {
   showCountdown: boolean;
 }
 
+// -----------------------------------------------------------------------------
+// MARKET COMMENTS
+// -----------------------------------------------------------------------------
+
 export function MarketComments({
   assetSymbol,
 
@@ -145,6 +152,7 @@ export function MarketComments({
   const loadComments = useCallback(async () => {
     try {
       const result = await getMarketComments(assetSymbol);
+
       setComments(result);
     } catch (error) {
       console.error("Failed to load comments:", error);
@@ -156,6 +164,12 @@ export function MarketComments({
   useEffect(() => {
     loadComments();
   }, [loadComments]);
+
+  useEffect(() => {
+    if (refreshKey === 0) return;
+
+    loadComments();
+  }, [refreshKey, loadComments]);
 
   const hasAlreadyVoted = selectedVote !== null;
 
@@ -201,11 +215,7 @@ export function MarketComments({
   // ---------------------------------------------------------------------------
   // RENDER
   // ---------------------------------------------------------------------------
-  useEffect(() => {
-    if (refreshKey === 0) return;
 
-    loadComments();
-  }, [refreshKey, loadComments]);
   return (
     <section className="w-full">
       {/* Header */}
@@ -271,6 +281,10 @@ export function MarketComments({
   );
 }
 
+// -----------------------------------------------------------------------------
+// COMMENT ITEM
+// -----------------------------------------------------------------------------
+
 function CommentItem({
   comment,
   currentUser,
@@ -278,12 +292,14 @@ function CommentItem({
   onCommentUpdated,
 }: {
   comment: MarketComment;
+
   currentUser: {
     id: string;
     role?: string | null;
     image?: string | null;
     name?: string | null;
   } | null;
+
   onDeleted: () => Promise<void>;
   onCommentUpdated: () => Promise<void>;
 }) {
@@ -291,8 +307,6 @@ function CommentItem({
 
   const [showReplies, setShowReplies] = useState(false);
   const [replying, setReplying] = useState(false);
-  const [replyText, setReplyText] = useState("");
-  const [replyPending, setReplyPending] = useState(false);
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -313,9 +327,17 @@ function CommentItem({
     !comment.withdrawnAt &&
     !comment.moderatedAt;
 
+  // ---------------------------------------------------------------------------
+  // EDIT
+  // ---------------------------------------------------------------------------
+
   const handleEdit = () => {
     setIsEditing(true);
   };
+
+  // ---------------------------------------------------------------------------
+  // DELETE
+  // ---------------------------------------------------------------------------
 
   const handleDelete = async () => {
     if (isDeleting) return;
@@ -325,17 +347,12 @@ function CommentItem({
 
       const result = await deleteComment(comment.id);
 
-      if (result.action === "NOTHING_TO_DELETE") {
-        toast.info("No comment content to delete. The vote will remain.");
-        return;
-      }
-
       await onDeleted();
 
       notifyCommentChanged();
 
-      if (result.action === "WITHDRAWN") {
-        toast.success("Comment withdrawn.");
+      if (result.action === "CONTENT_REMOVED") {
+        toast.success("Comment content deleted. Your prediction remains.");
         return;
       }
 
@@ -349,18 +366,17 @@ function CommentItem({
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // HIDE COMMENT
+  // ---------------------------------------------------------------------------
+
   const handleHideComment = async () => {
     if (isModerating) return;
 
     try {
       setIsModerating(true);
 
-      const result = await hideComment(comment.id);
-
-      if (result.action === "NOTHING_TO_DELETE") {
-        toast.info("No comment content to hide. The vote will remain.");
-        return;
-      }
+      await hideComment(comment.id);
 
       await onCommentUpdated();
 
@@ -375,6 +391,10 @@ function CommentItem({
       setIsModerating(false);
     }
   };
+
+  // ---------------------------------------------------------------------------
+  // RESTORE COMMENT
+  // ---------------------------------------------------------------------------
 
   const handleRestoreComment = async () => {
     if (isModerating) return;
@@ -398,35 +418,9 @@ function CommentItem({
     }
   };
 
-  const handleReply = async () => {
-    const content = replyText.trim();
-
-    if (!content || replyPending) return;
-
-    try {
-      setReplyPending(true);
-
-      await createReply({
-        commentId: comment.id,
-        content,
-      });
-
-      setReplyText("");
-      setReplying(false);
-
-      toast.success("Reply posted.");
-
-      // Use your existing comment refresh mechanism here.
-      // For example:
-      // refreshComments();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to post reply.",
-      );
-    } finally {
-      setReplyPending(false);
-    }
-  };
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
 
   return (
     <div className="mb-6">
@@ -436,20 +430,21 @@ function CommentItem({
         <div className="min-w-0 flex-1">
           {/* User */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[14px] font-semibold">{username}</span>{" "}
+            <span className="text-[14px] font-semibold">{username}</span>
+
             {/* Prediction */}
             {comment.prediction && (
               <div className="flex items-center gap-2">
                 <span
                   className={`
-        rounded-full px-2 py-0.5
-        text-[11px] font-medium
-        ${
-          comment.prediction.direction === "BULL"
-            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-            : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-        }
-      `}
+                    rounded-full px-2 py-0.5
+                    text-[11px] font-medium
+                    ${
+                      comment.prediction.direction === "BULL"
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                    }
+                  `}
                 >
                   {comment.prediction.direction === "BULL"
                     ? "Bullish"
@@ -457,76 +452,26 @@ function CommentItem({
                 </span>
               </div>
             )}
+
             <span className="text-[13px] text-zinc-500">
               {formatTimeAgo(comment.createdAt)}
             </span>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                onClick={() => {
-                  console.log({
-                    currentUser,
-                    role: currentUser?.role,
-                    isAdmin,
-                  });
-                }}
-                className="
-          ml-auto rounded-full p-1.5
-          opacity-0
-          hover:bg-zinc-100
-          group-hover:opacity-100
-          dark:hover:bg-zinc-800
-        "
-              >
-                <MoreVertical className="size-4" />
-              </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end">
-                {/* Author actions */}
-                {canEdit && (
-                  <DropdownMenuItem onClick={handleEdit}>
-                    <Pencil className="mr-2 size-4" />
-                    Edit
-                  </DropdownMenuItem>
-                )}
-
-                {canDelete && (
-                  <DropdownMenuItem
-                    disabled={isDeleting}
-                    onClick={handleDelete}
-                    className="text-red-600 focus:text-red-600"
-                  >
-                    <Trash2 className="mr-2 size-4" />
-
-                    {isDeleting ? "Deleting..." : "Delete"}
-                  </DropdownMenuItem>
-                )}
-
-                {/* Admin moderation */}
-                {isAdmin && !comment.moderatedAt && (
-                  <DropdownMenuItem
-                    disabled={isModerating}
-                    onClick={handleHideComment}
-                  >
-                    <ShieldOff className="mr-2 size-4" />
-
-                    {isModerating ? "Hiding..." : "Hide comment"}
-                  </DropdownMenuItem>
-                )}
-
-                {isAdmin && comment.moderatedAt && (
-                  <DropdownMenuItem
-                    disabled={isModerating}
-                    onClick={handleRestoreComment}
-                  >
-                    <ShieldCheck className="mr-2 size-4" />
-
-                    {isModerating ? "Restoring..." : "Restore comment"}
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ContentActionsMenu
+              canEdit={canEdit}
+              canDelete={canDelete}
+              isAdmin={isAdmin}
+              isModerated={Boolean(comment.moderatedAt)}
+              isDeleting={isDeleting}
+              isModerating={isModerating}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onHide={handleHideComment}
+              onRestore={handleRestoreComment}
+            />
           </div>
 
+          {/* Content */}
           {comment.moderatedAt ? (
             <p className="mt-1 text-[15px] italic text-zinc-400">
               Comment hidden by moderation
@@ -546,19 +491,13 @@ function CommentItem({
             />
           ) : (
             <div className="flex items-baseline gap-1 lowercase">
-              {!comment.deletedAt && (
-                <CommentContent content={comment.content} />
-              )}
+              <CommentContent content={comment.content} />
 
-              {comment.deletedAt ? (
-                <span className="text-[12px] italic text-zinc-400">
-                  (comment deleted {formatTimeAgo(comment.deletedAt)})
-                </span>
-              ) : comment.editedAt ? (
+              {comment.editedAt && (
                 <span className="text-[12px] text-zinc-400">
                   (edited {formatTimeAgo(comment.editedAt)})
                 </span>
-              ) : null}
+              )}
             </div>
           )}
 
@@ -568,11 +507,11 @@ function CommentItem({
               <button
                 type="button"
                 className="
-                flex items-center gap-1.5
-                text-sm text-zinc-500
-                hover:text-zinc-900
-                dark:hover:text-zinc-200
-              "
+                  flex items-center gap-1.5
+                  text-sm text-zinc-500
+                  hover:text-zinc-900
+                  dark:hover:text-zinc-200
+                "
               >
                 <ThumbsUp className="size-4" />
 
@@ -585,10 +524,10 @@ function CommentItem({
                 type="button"
                 onClick={() => setReplying((prev) => !prev)}
                 className="
-                text-sm font-medium text-zinc-500
-                hover:text-zinc-900
-                dark:hover:text-zinc-200
-              "
+                  text-sm font-medium text-zinc-500
+                  hover:text-zinc-900
+                  dark:hover:text-zinc-200
+                "
               >
                 Reply
               </button>
@@ -596,63 +535,21 @@ function CommentItem({
           )}
 
           {/* Reply input */}
-          {!comment.moderatedAt && replying && replying && (
-            <div className="mt-3 flex gap-2">
-              {currentUser?.image ? (
-                <img
-                  src={currentUser.image}
-                  alt={currentUser.name ?? "User"}
-                  className="h-7 w-7 shrink-0 rounded-full object-cover"
-                />
-              ) : (
-                <Avatar label={currentUser?.name ?? "You"} small />
-              )}
+          {!comment.moderatedAt && replying && (
+            <ReplyInput
+              commentId={comment.id}
+              username={username}
+              currentUser={currentUser}
+              onCancel={() => setReplying(false)}
+              onReplyCreated={async () => {
+                setReplying(false);
+                setShowReplies(true);
 
-              <div className="min-w-0 flex-1">
-                <div className="rounded-lg bg-zinc-100 px-3 dark:bg-zinc-800">
-                  <textarea
-                    autoFocus
-                    rows={1}
-                    placeholder={`Reply to ${username}...`}
-                    className="
-                      min-h-10 w-full resize-none
-                      bg-transparent py-2.5
-                      text-[15px] outline-none
-                      placeholder:text-zinc-500
-                    "
-                  />
+                await onCommentUpdated();
 
-                  <div className="flex items-center justify-between pb-2">
-                    <button
-                      type="button"
-                      className="
-                        rounded-md px-2 py-1
-                        text-xs font-medium text-zinc-500
-                        hover:bg-zinc-200
-                        dark:hover:bg-zinc-700
-                      "
-                    >
-                      GIF
-                    </button>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setReplying(false)}
-                      >
-                        Cancel
-                      </Button>
-
-                      <Button type="button" size="sm">
-                        Reply
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                notifyCommentChanged();
+              }}
+            />
           )}
 
           {/* Show replies */}
@@ -682,79 +579,19 @@ function CommentItem({
             <div className="relative mt-4 space-y-5 pl-4">
               <div className="absolute top-0 bottom-3 left-0 w-px bg-zinc-200 dark:bg-zinc-800" />
 
-              {comment.replies.map((reply) => (
-                <ReplyItem key={reply.id} reply={reply} />
-              ))}
+              {comment.replies
+                .filter((reply) => reply.parentId === null)
+                .map((reply) => (
+                  <ReplyItem
+                    key={reply.id}
+                    reply={reply}
+                    replies={comment.replies}
+                    currentUser={currentUser}
+                    onReplyUpdated={onCommentUpdated}
+                  />
+                ))}
             </div>
           )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// -----------------------------------------------------------------------------
-// REPLY ITEM
-// -----------------------------------------------------------------------------
-
-function ReplyItem({ reply }: { reply: MarketReply }) {
-  const username = reply.author.name ?? "User";
-
-  return (
-    <div className="group flex gap-3">
-      <Avatar label={username} image={reply.author.image} small />
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[14px] font-semibold">{username}</span>
-
-          <span className="text-[13px] text-zinc-500 jakarta">
-            {formatTimeAgo(reply.createdAt)}
-          </span>
-
-          <button
-            type="button"
-            className="
-              ml-auto rounded-full p-1.5
-              opacity-0
-              hover:bg-zinc-100
-              group-hover:opacity-100
-              dark:hover:bg-zinc-800
-            "
-          >
-            <MoreVertical className="size-4" />
-          </button>
-        </div>
-
-        <p className="mt-0.5 text-[15px] leading-6 text-zinc-900 dark:text-zinc-200">
-          {reply.content}
-        </p>
-
-        <div className="mt-2 flex items-center gap-4">
-          <button
-            type="button"
-            className="
-              flex items-center gap-1.5
-              text-sm text-zinc-500
-              hover:text-zinc-900
-              dark:hover:text-zinc-200
-            "
-          >
-            <ThumbsUp className="size-4" />
-
-            {reply._count.likes > 0 && <span>{reply._count.likes}</span>}
-          </button>
-
-          <button
-            type="button"
-            className="
-              text-sm font-medium text-zinc-500
-              hover:text-zinc-900
-              dark:hover:text-zinc-200
-            "
-          >
-            Reply
-          </button>
         </div>
       </div>
     </div>
@@ -787,13 +624,13 @@ function CommentContent({ content }: { content: JSONContent }) {
               src={String(node.attrs.src)}
               alt={String(node.attrs.alt ?? "GIF")}
               className="
-  h-auto
-  w-45
-  max-w-full
-  rounded-lg
-  object-contain
-  sm:w-45
-"
+                h-auto
+                w-45
+                max-w-full
+                rounded-lg
+                object-contain
+                sm:w-45
+              "
             />
           );
         }
