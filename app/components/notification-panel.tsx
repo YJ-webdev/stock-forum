@@ -20,6 +20,7 @@ import {
   markNotificationAsRead,
   type MyNotification,
 } from "@/app/actions/notification";
+import { RiHeartFill } from "react-icons/ri";
 
 // -----------------------------------------------------------------------------
 // TYPES
@@ -379,16 +380,22 @@ function NotificationItem({
 
           {/* Notification message */}
 
-          <p
+          <div
             className="
-              mt-1
-              text-sm leading-5
-              text-zinc-500
-              dark:text-zinc-400
-            "
+    mt-1
+    flex items-center gap-1.5
+    text-sm leading-5
+    text-zinc-500
+    dark:text-zinc-400
+  "
           >
-            {notification.message}
-          </p>
+            <span>{notification.message}</span>
+
+            {(notification.type === "COMMENT_LIKED" ||
+              notification.type === "REPLY_LIKED") && (
+              <RiHeartFill className="size-4 shrink-0" />
+            )}
+          </div>
 
           {/* Comment / reply preview */}
 

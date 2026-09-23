@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { toggleReplyLike } from "@/app/actions/like";
-import { ThumbsUp } from "lucide-react";
+import { RiHeartFill } from "react-icons/ri";
+
 import { toast } from "sonner";
 
 import { deleteReply, hideReply, restoreReply } from "@/app/actions/post";
@@ -356,7 +357,7 @@ export function ReplyItem({
     dark:hover:text-zinc-100
   "
               >
-                <ThumbsUp
+                <RiHeartFill
                   className={`size-4 ${
                     likedByMe
                       ? "fill-current text-zinc-900 dark:text-zinc-100"

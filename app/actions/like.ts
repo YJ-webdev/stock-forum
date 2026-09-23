@@ -108,7 +108,7 @@ export async function toggleCommentLike(commentId: string) {
 
           type: "COMMENT_LIKED",
 
-          title: "New like",
+          title: "👍 New like",
           message: `${session.user.name ?? "Someone"} liked your comment.`,
 
           commentId,
@@ -234,7 +234,7 @@ export async function toggleReplyLike(replyId: string) {
 
           type: "REPLY_LIKED",
 
-          title: "New like",
+          title: "👍 New like",
           message: `${session.user.name ?? "Someone"} liked your reply.`,
 
           replyId,

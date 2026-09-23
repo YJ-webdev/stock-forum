@@ -1,7 +1,9 @@
 "use client";
 
 import type { JSONContent } from "@tiptap/react";
-import { Ellipsis, MessageCircle, ThumbsUp } from "lucide-react";
+import { Ellipsis, MessageCircle } from "lucide-react";
+import { RiHeartFill } from "react-icons/ri";
+
 import Link from "next/link";
 
 import { type MostLikedComment } from "@/app/actions/post";
@@ -88,7 +90,7 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
               "
             >
               <span className="jakarta ml-auto flex items-center gap-1">
-                <ThumbsUp
+                <RiHeartFill
                   className="
                     h-4 w-4 fill-none
                     text-zinc-600

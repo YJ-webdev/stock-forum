@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import type { JSONContent } from "@tiptap/react";
-import { ChevronDown, ThumbsUp } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { RiHeartFill } from "react-icons/ri";
 
 import { useCurrentUser } from "@/app/context/user-context";
 import {
@@ -546,25 +547,32 @@ function CommentItem({
             </div>
 
             {/* Content */}
+            {/* Content */}
             {comment.moderatedAt ? (
               <p className="mt-1 text-[15px] italic text-zinc-400">
                 Comment hidden by moderation
               </p>
+            ) : isEditing ? (
+              <CommentEditInput
+                commentId={comment.id}
+                initialContent={
+                  isDeletedPredictionComment
+                    ? {
+                        type: "doc",
+                        content: [{ type: "paragraph" }],
+                      }
+                    : comment.content
+                }
+                onCancel={() => setIsEditing(false)}
+                onSaved={async () => {
+                  setIsEditing(false);
+                  await onCommentUpdated();
+                }}
+              />
             ) : isDeletedPredictionComment ? (
               <p className="mt-1 text-[15px] italic text-zinc-400">
                 Comment deleted by user
               </p>
-            ) : isEditing ? (
-              <CommentEditInput
-                commentId={comment.id}
-                initialContent={comment.content}
-                onCancel={() => setIsEditing(false)}
-                onSaved={async () => {
-                  setIsEditing(false);
-
-                  await onCommentUpdated();
-                }}
-              />
             ) : (
               <div className="mt-0.5 flex items-baseline gap-1 lowercase">
                 <CommentContent content={comment.content} />
@@ -594,7 +602,7 @@ function CommentItem({
     dark:hover:text-zinc-100
   "
                 >
-                  <ThumbsUp
+                  <RiHeartFill
                     className={`h-4 w-4 ${
                       likedByMe
                         ? "fill-current text-zinc-900 dark:text-zinc-100"
