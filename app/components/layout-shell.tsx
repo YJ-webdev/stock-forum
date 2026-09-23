@@ -56,7 +56,7 @@ export default function LayoutShell({
   const pathname = usePathname();
 
   // ---------------------------------------------------------------------------
-  // DESKTOP / TABLET RIGHT PANEL
+  // SECTION B
   // ---------------------------------------------------------------------------
 
   const sectionBRef = useRef<HTMLDivElement>(null);
@@ -67,11 +67,15 @@ export default function LayoutShell({
     width: 0,
   });
 
-  const resetPanelB = () => {
-    panelBRef.current?.resize("30%");
-  };
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
 
-  const isMobile = () => window.innerWidth < 768;
+  // ---------------------------------------------------------------------------
+  // HELPERS
+  // ---------------------------------------------------------------------------
+
+  const isMobile = () => {
+    return window.innerWidth < 768;
+  };
 
   const closeSectionB = () => {
     setOnWrite(false);
@@ -79,21 +83,36 @@ export default function LayoutShell({
     setOnNotification(false);
   };
 
+  const resetPanelB = () => {
+    if (isMobile()) {
+      return;
+    }
+
+    panelBRef.current?.resize("30%");
+  };
+
+  // ---------------------------------------------------------------------------
+  // LEFT PANEL
+  // ---------------------------------------------------------------------------
+
   const handleToggleLeftPanel = () => {
     setIsOpen((prev) => !prev);
 
-    // Only close Section B on mobile
+    // PanelLeft and Section B are mutually exclusive only on mobile.
     if (isMobile()) {
       closeSectionB();
     }
   };
 
-  const handleWrite = () => {
-    resetPanelB();
+  // ---------------------------------------------------------------------------
+  // WRITE
+  // ---------------------------------------------------------------------------
 
-    // Only close PanelLeft on mobile
+  const handleWrite = () => {
     if (isMobile()) {
       setIsOpen(false);
+    } else {
+      resetPanelB();
     }
 
     setOnWrite(true);
@@ -101,12 +120,15 @@ export default function LayoutShell({
     setOnNotification(false);
   };
 
-  const handleAccount = () => {
-    resetPanelB();
+  // ---------------------------------------------------------------------------
+  // ACCOUNT
+  // ---------------------------------------------------------------------------
 
-    // Only close PanelLeft on mobile
+  const handleAccount = () => {
     if (isMobile()) {
       setIsOpen(false);
+    } else {
+      resetPanelB();
     }
 
     setOnWrite(false);
@@ -114,12 +136,15 @@ export default function LayoutShell({
     setOnNotification(false);
   };
 
-  const handleNotification = () => {
-    resetPanelB();
+  // ---------------------------------------------------------------------------
+  // NOTIFICATIONS
+  // ---------------------------------------------------------------------------
 
-    // Only close PanelLeft on mobile
+  const handleNotification = () => {
     if (isMobile()) {
       setIsOpen(false);
+    } else {
+      resetPanelB();
     }
 
     setOnWrite(false);
@@ -130,10 +155,11 @@ export default function LayoutShell({
   };
 
   // ---------------------------------------------------------------------------
-  // MOBILE SECTION B STATE
+  // MOBILE SECTION B
   // ---------------------------------------------------------------------------
 
-  const mobilePanelOpen = !!user && (onWrite || onAccount || onNotification);
+  const mobilePanelOpen =
+    isMobileLayout && !!user && (onWrite || onAccount || onNotification);
 
   // ---------------------------------------------------------------------------
   // COMMENTS
@@ -150,15 +176,39 @@ export default function LayoutShell({
   }, [comments]);
 
   // ---------------------------------------------------------------------------
-  // LEFT PANEL RESPONSIVE BEHAVIOR
+  // RESPONSIVE BEHAVIOR
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
     const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+
+      setIsMobileLayout(mobile);
+
+      // -----------------------------------------------------------------------
+      // LEFT PANEL
+      // -----------------------------------------------------------------------
+
       if (window.innerWidth >= 1280) {
         setIsOpen(true);
       } else {
         setIsOpen(false);
+      }
+
+      // -----------------------------------------------------------------------
+      // RIGHT PANEL
+      //
+      // Mobile:
+      // collapse desktop Section B so Section A gets 100%.
+      //
+      // Desktop/tablet:
+      // restore Section B to 30%.
+      // -----------------------------------------------------------------------
+
+      if (mobile) {
+        panelBRef.current?.resize("0%");
+      } else {
+        panelBRef.current?.resize("30%");
       }
     };
 
@@ -174,8 +224,8 @@ export default function LayoutShell({
   // ---------------------------------------------------------------------------
   // KEYBOARD SHORTCUTS
   //
-  // Ctrl+B / Cmd+B = toggle left panel
-  // Escape = close left panel / mobile Section B
+  // Ctrl+B / Cmd+B = toggle PanelLeft
+  // Escape = close PanelLeft / Section B
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
@@ -205,7 +255,10 @@ export default function LayoutShell({
 
           setIsOpen((prev) => !prev);
 
-          closeSectionB();
+          // Only close Section B on mobile.
+          if (isMobile()) {
+            closeSectionB();
+          }
         }
       }
     };
@@ -218,13 +271,15 @@ export default function LayoutShell({
   }, [isOpen, onWrite, onAccount, onNotification]);
 
   // ---------------------------------------------------------------------------
-  // TRACK DESKTOP / TABLET RIGHT PANEL POSITION
+  // TRACK DESKTOP / TABLET SECTION B POSITION
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
     const panel = sectionBRef.current;
 
-    if (!panel) return;
+    if (!panel) {
+      return;
+    }
 
     const updatePosition = () => {
       const rect = panel.getBoundingClientRect();
@@ -279,57 +334,31 @@ export default function LayoutShell({
           />
 
           {/* =================================================================
-              MOBILE SECTION A
+              MAIN LAYOUT
 
-              No ResizablePanelGroup on mobile.
-              Section A gets 100% width.
-          ================================================================== */}
-
-          <div className="w-full pt-14 md:hidden">
-            <section
-              className="
-                flex
-                w-full
-                min-w-0
-                flex-col
-                bg-white
-                dark:bg-zinc-900
-              "
-            >
-              <div className="flex-1">
-                {pathname !== "/" && <BreadCrumbs />}
-
-                {children}
-              </div>
-            </section>
-          </div>
-
-          {/* =================================================================
-              TABLET / DESKTOP LAYOUT
+              IMPORTANT:
+              {children} exists ONLY ONCE.
           ================================================================== */}
 
           <div
             className={`
-              hidden
+              w-full
               pt-14
               transition-all
               duration-300
               ease-in-out
-              md:flex
 
-              ${
-                isOpen
-                  ? "w-full xl:ml-80 xl:w-[calc(100%-320px)]"
-                  : "ml-0 w-full"
-              }
+              ${isOpen ? "xl:ml-80 xl:w-[calc(100%-320px)]" : "ml-0 w-full"}
             `}
           >
             <ResizablePanelGroup orientation="horizontal">
               {/* -------------------------------------------------------------
                   SECTION A
+
+                  This is the ONLY place children is rendered.
               -------------------------------------------------------------- */}
 
-              <ResizablePanel>
+              <ResizablePanel minSize="30%">
                 <section
                   className="
                     flex
@@ -350,18 +379,30 @@ export default function LayoutShell({
 
               {/* -------------------------------------------------------------
                   RESIZE HANDLE
+
+                  Hidden visually on mobile.
               -------------------------------------------------------------- */}
 
-              <ResizableHandle className="w-0 border-gray-50" />
+              <ResizableHandle
+                className="
+                  hidden
+                  w-0
+                  border-gray-50
+                  md:flex
+                "
+              />
 
               {/* -------------------------------------------------------------
-                  SECTION B
+                  DESKTOP / TABLET SECTION B
+
+                  On mobile its panel size becomes 0%.
+                  We do NOT use display:none on ResizablePanel itself.
               -------------------------------------------------------------- */}
 
               <ResizablePanel
                 panelRef={panelBRef}
                 defaultSize="30%"
-                minSize="1%"
+                minSize="0%"
                 className="
                   z-20
                   border-l
@@ -371,93 +412,102 @@ export default function LayoutShell({
                   dark:bg-zinc-900
                 "
               >
-                <div ref={sectionBRef} className="w-full min-w-0">
-                  <div
-                    className="
-                      fixed
-                      top-14
-                      bottom-0
+                <div
+                  ref={sectionBRef}
+                  className="
+                    w-full
+                    min-w-0
+                  "
+                >
+                  {!isMobileLayout && (
+                    <div
+                      className="
+                        fixed
+                        top-14
+                        bottom-0
 
-                      flex
-                      min-w-0
-                      flex-col
-                      gap-3
+                        flex
+                        min-w-0
+                        flex-col
+                        gap-3
 
-                      overflow-x-hidden
-                      overflow-y-auto
+                        overflow-x-hidden
+                        overflow-y-auto
 
-                      bg-white
-                      dark:bg-zinc-900
-                    "
-                    style={{
-                      left: sectionBPosition.left,
-                      width: sectionBPosition.width,
-                    }}
-                  >
-                    {/* WRITE */}
+                        bg-white
+                        dark:bg-zinc-900
+                      "
+                      style={{
+                        left: sectionBPosition.left,
+                        width: sectionBPosition.width,
+                      }}
+                    >
+                      {/* WRITE */}
 
-                    {user && onWrite && (
-                      <PostEditor
-                        isLoggedIn={!!user}
-                        nationality={user.nationality ?? null}
-                        setOnWrite={setOnWrite}
-                        onCommentCreated={handleCommentCreated}
-                      />
-                    )}
+                      {user && onWrite && (
+                        <PostEditor
+                          isLoggedIn={!!user}
+                          nationality={user.nationality ?? null}
+                          setOnWrite={setOnWrite}
+                          onCommentCreated={handleCommentCreated}
+                        />
+                      )}
 
-                    {/* ACCOUNT */}
+                      {/* ACCOUNT */}
 
-                    {user && onAccount && !onWrite && (
-                      <AccountPanel user={user} setOnAccount={setOnAccount} />
-                    )}
+                      {user && onAccount && !onWrite && (
+                        <AccountPanel user={user} setOnAccount={setOnAccount} />
+                      )}
 
-                    {/* NOTIFICATIONS */}
+                      {/* NOTIFICATIONS */}
 
-                    {user && onNotification && (
-                      <NotificationPanel
-                        refreshKey={notificationRefreshKey}
-                        setOnNotification={setOnNotification}
-                      />
-                    )}
-                    {/* DEFAULT RIGHT PANEL */}
+                      {user && onNotification && (
+                        <NotificationPanel
+                          refreshKey={notificationRefreshKey}
+                          setOnNotification={setOnNotification}
+                        />
+                      )}
 
-                    {!onWrite && !onAccount && !onNotification && (
-                      <>
-                        <div className="mx-4 mt-8">
-                          <p
+                      {/* DEFAULT */}
+
+                      {!onWrite && !onAccount && !onNotification && (
+                        <>
+                          <div className="mx-4 mt-8">
+                            <p
+                              className="
+                                truncate
+                                text-xs
+                                font-light
+                                tracking-wider
+                                text-muted-foreground/50
+                              "
+                            >
+                              Top traders
+                            </p>
+                          </div>
+
+                          <TopTraders />
+
+                          <div
                             className="
-                              truncate
-                              text-xs
+                              mx-4
+                              h-80
+                              rounded-lg
+                              border
+                              border-zinc-100
+                              p-2
                               font-light
-                              tracking-wider
-                              text-muted-foreground/50
+                              text-zinc-300
+                              dark:border-zinc-800
+                              dark:text-zinc-700
                             "
                           >
-                            Top traders
-                          </p>
-                        </div>
-
-                        <TopTraders />
-
-                        <div
-                          className="
-                            mx-4
-                            h-80
-                            rounded-lg
-                            border
-                            border-zinc-100
-                            p-2
-                            font-light
-                            text-zinc-300
-                            dark:border-zinc-800
-                            dark:text-zinc-700
-                          "
-                        >
-                          advertisement
-                        </div>
-                      </>
-                    )}
-                  </div>
+                            advertisement
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </ResizablePanel>
             </ResizablePanelGroup>
@@ -466,8 +516,10 @@ export default function LayoutShell({
           {/* =================================================================
               MOBILE SECTION B
 
-              Completely independent from the desktop ResizablePanelGroup.
-              Covers Section A below the Header.
+              Separate overlay.
+
+              It does NOT contain {children}, so there is still only one
+              copy of your comments / market page in the DOM.
           ================================================================== */}
 
           {mobilePanelOpen && (
