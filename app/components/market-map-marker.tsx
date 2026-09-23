@@ -73,9 +73,7 @@ export function MarketMapMarker({
         className="cursor-pointer"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        onClick={() =>
-          router.push(`/market?symbol=${encodeURIComponent(symbol)}`)
-        }
+        onClick={() => router.push(`/${encodeURIComponent(symbol)}`)}
       />
 
       {/* ===============================================

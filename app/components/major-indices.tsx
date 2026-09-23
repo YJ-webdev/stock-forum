@@ -2,7 +2,7 @@
 
 import { Globe, Plus } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 
 interface PopularBoard {
   symbol: string;
@@ -15,8 +15,10 @@ interface PopularBoardsProps {
 }
 
 export function PopularBoards({ boards }: PopularBoardsProps) {
-  const params = useSearchParams();
-  const selectedMarket = params.get("symbol");
+  const params = useParams<{ symbol: string }>();
+  const selectedMarket = params.symbol
+    ? decodeURIComponent(params.symbol)
+    : null;
 
   return (
     <div className="flex flex-col gap-0.5 px-3">
@@ -26,7 +28,7 @@ export function PopularBoards({ boards }: PopularBoardsProps) {
         return (
           <Link
             key={item.symbol}
-            href={`/market?symbol=${encodeURIComponent(item.symbol)}`}
+            href={`/${encodeURIComponent(item.symbol)}`}
             className={`
               group flex min-w-0 items-center
               rounded-md

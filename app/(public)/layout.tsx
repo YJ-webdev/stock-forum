@@ -9,7 +9,9 @@ async function getNews() {
     const res = await fetch("http://localhost:3000/api/news", {
       next: { revalidate: 300 },
     });
+
     if (!res.ok) return [];
+
     return res.json();
   } catch {
     return [];
@@ -22,29 +24,32 @@ export default async function MainLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  const user = session?.user?.id
-    ? await prisma.user.findUnique({
-        where: {
-          id: session.user.id,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-          role: true,
-          status: true,
-          nationality: true,
-          language: true,
-        },
-      })
-    : null;
 
-  const [news, mostLikedComments] = await Promise.all([
+  const [user, news, mostLikedComments, popularBoards] = await Promise.all([
+    session?.user?.id
+      ? prisma.user.findUnique({
+          where: {
+            id: session.user.id,
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            role: true,
+            status: true,
+            nationality: true,
+            language: true,
+          },
+        })
+      : null,
+
     getNews(),
+
     getMostLikedComments(),
+
+    getPopularBoards(7),
   ]);
-  const popularBoards = await getPopularBoards(7);
 
   return (
     <LayoutShell

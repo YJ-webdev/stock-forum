@@ -72,13 +72,7 @@ function MarketCard({
   }
 
   return (
-    <Link
-      href={`/market?symbol=${encodeURIComponent(
-        symbol,
-      )}&name=${encodeURIComponent(name)}&category=${encodeURIComponent(
-        category,
-      )}&assetType=${encodeURIComponent(assetType)}`}
-    >
+    <Link href={`/${encodeURIComponent(symbol)}`}>
       <div className="bg-zinc-100/70 dark:bg-zinc-800/50 h-44 overflow-hidden m-0 p-0 rounded-lg cursor-pointer transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800">
         <div className="flex flex-col justify-between h-48 m-0 p-0">
           {/* Header */}

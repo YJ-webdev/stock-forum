@@ -211,6 +211,9 @@ export async function createComment({
 }
 
 export async function getMarketComments(assetSymbol: string) {
+  const session = await auth();
+  const userId = session?.user?.id;
+
   const comments = await prisma.comment.findMany({
     where: {
       assets: {
@@ -252,6 +255,25 @@ export async function getMarketComments(assetSymbol: string) {
         },
       },
 
+      // -----------------------------------------------------------------------
+      // CURRENT USER'S LIKE
+      // -----------------------------------------------------------------------
+
+      likes: userId
+        ? {
+            where: {
+              userId,
+            },
+            select: {
+              id: true,
+            },
+          }
+        : false,
+
+      // -----------------------------------------------------------------------
+      // REPLIES
+      // -----------------------------------------------------------------------
+
       replies: {
         orderBy: {
           createdAt: "asc",
@@ -281,6 +303,18 @@ export async function getMarketComments(assetSymbol: string) {
             },
           },
 
+          // Current user's like on this reply
+          likes: userId
+            ? {
+                where: {
+                  userId,
+                },
+                select: {
+                  id: true,
+                },
+              }
+            : false,
+
           _count: {
             select: {
               likes: true,
@@ -299,10 +333,39 @@ export async function getMarketComments(assetSymbol: string) {
     },
   });
 
-  return comments.map((comment) => ({
-    ...comment,
-    content: comment.content as JSONContent,
-  }));
+  // ---------------------------------------------------------------------------
+  // NORMALIZE
+  // ---------------------------------------------------------------------------
+
+  return comments.map((comment) => {
+    const { _count, likes, replies, ...rest } = comment;
+
+    const normalizedReplies = replies.map((reply) => {
+      const { _count: replyCount, likes: replyLikes, ...replyRest } = reply;
+
+      return {
+        ...replyRest,
+
+        likeCount: replyCount.likes,
+        replyCount: replyCount.replies,
+
+        likedByMe: Array.isArray(replyLikes) && replyLikes.length > 0,
+      };
+    });
+
+    return {
+      ...rest,
+
+      content: comment.content as JSONContent,
+
+      likeCount: _count.likes,
+      replyCount: _count.replies,
+
+      likedByMe: Array.isArray(likes) && likes.length > 0,
+
+      replies: normalizedReplies,
+    };
+  });
 }
 
 export async function deleteComment(commentId: string) {
@@ -1069,3 +1132,5 @@ export async function restoreReply(replyId: string) {
     action: "RESTORED" as const,
   };
 }
+
+export type MarketPageComments = Awaited<ReturnType<typeof getMarketComments>>;

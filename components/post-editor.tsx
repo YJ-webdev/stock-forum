@@ -14,7 +14,7 @@ import {
   ALL_MARKET_SYMBOLS,
   type MarketSymbolItem,
 } from "@/lib/data/market-symbols";
-import { useCommentRefresh } from "@/app/context/comment-refresh-context";
+// import { useCommentRefresh } from "@/app/context/comment-refresh-context";
 
 interface PostEditorProps {
   isLoggedIn: boolean;
@@ -69,7 +69,7 @@ export function PostEditor({
     );
   }, [symbol]);
 
-  const { notifyCommentChanged } = useCommentRefresh();
+  // const { notifyCommentChanged } = useCommentRefresh();
 
   // ---------------------------------------------------------------------------
   // LOAD RECENT ASSETS
@@ -272,7 +272,8 @@ export function PostEditor({
           assetSymbols: selectedAssets.map((asset) => asset.symbol),
         });
 
-        notifyCommentChanged();
+        // DELETE:
+        // notifyCommentChanged();
 
         saveRecentAssets(selectedAssets);
 

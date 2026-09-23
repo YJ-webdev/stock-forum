@@ -1,14 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState, useTransition } from "react";
 import type { JSONContent } from "@tiptap/react";
-import { ChevronDown, ChevronUp, ThumbsUp } from "lucide-react";
+import { ChevronDown, ThumbsUp } from "lucide-react";
 
 import { useCurrentUser } from "@/app/context/user-context";
 import {
   deleteComment,
   getMarketComments,
   hideComment,
+  MarketPageComments,
   restoreComment,
 } from "@/app/actions/post";
 
@@ -17,19 +18,19 @@ import { toast } from "sonner";
 import { PredictionCommentInput } from "./prediction-comment-input";
 import { CommentOnlyInput } from "./comment-only-input";
 import type { GifResult } from "./gif-picker";
-import { useCommentRefresh } from "../context/comment-refresh-context";
 
 import { ReplyInput } from "./reply-input";
 import { ContentActionsMenu } from "./content-actions-menu";
 import { ReplyItem } from "./reply-item";
 import { CommentEditInput } from "./comment-edit-input";
 
+import { toggleCommentLike } from "../actions/like";
+
 // -----------------------------------------------------------------------------
 // TYPES
 // -----------------------------------------------------------------------------
 
 type VoteDirection = "BULL" | "BEAR";
-
 type PredictionStatus = "PENDING" | "WON" | "LOST" | "VOID";
 
 export interface MarketReply {
@@ -54,10 +55,9 @@ export interface MarketReply {
     nationality: string | null;
   };
 
-  _count: {
-    likes: number;
-    replies: number;
-  };
+  likeCount: number;
+  likedByMe: boolean;
+  replyCount: number;
 }
 
 interface MarketComment {
@@ -87,10 +87,9 @@ interface MarketComment {
 
   replies: MarketReply[];
 
-  _count: {
-    likes: number;
-    replies: number;
-  };
+  likeCount: number;
+  likedByMe: boolean;
+  replyCount: number;
 }
 
 interface MarketCommentsProps {
@@ -116,6 +115,7 @@ interface MarketCommentsProps {
   targetMs: number | null;
   countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
   showCountdown: boolean;
+  initialComments: MarketPageComments;
 }
 
 // -----------------------------------------------------------------------------
@@ -124,62 +124,38 @@ interface MarketCommentsProps {
 
 export function MarketComments({
   assetSymbol,
-
   selectedVote,
   voteLoading,
   isMarketOpen,
-
   userPoints,
-
   handleVote,
-
   betAmount,
   setBetAmount,
-
   targetMs,
   countdownType,
   showCountdown,
+  initialComments,
 }: MarketCommentsProps) {
   const user = useCurrentUser();
 
   const [direction, setDirection] = useState<VoteDirection | null>(null);
 
-  const [comments, setComments] = useState<MarketComment[]>([]);
-  const [commentsLoading, setCommentsLoading] = useState(true);
-
-  const { refreshKey } = useCommentRefresh();
+  const [comments, setComments] = useState<MarketPageComments>(initialComments);
 
   const loadComments = useCallback(async () => {
     try {
       const result = await getMarketComments(assetSymbol);
-
       setComments(result);
     } catch (error) {
       console.error("Failed to load comments:", error);
-    } finally {
-      setCommentsLoading(false);
     }
   }, [assetSymbol]);
-
-  useEffect(() => {
-    loadComments();
-  }, [loadComments]);
-
-  useEffect(() => {
-    if (refreshKey === 0) return;
-
-    loadComments();
-  }, [refreshKey, loadComments]);
 
   const hasAlreadyVoted = selectedVote !== null;
 
   const maxBet = Math.min(500, userPoints);
 
   const buttonDisabled = voteLoading || isMarketOpen;
-
-  // ---------------------------------------------------------------------------
-  // SUBMIT VOTE
-  // ---------------------------------------------------------------------------
 
   const submitVote = (comment: string, gif: GifResult | null) => {
     if (!user) {
@@ -211,10 +187,6 @@ export function MarketComments({
 
     handleVote(direction, betAmount, comment, gif, loadComments);
   };
-
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
 
   return (
     <section className="w-full">
@@ -258,11 +230,7 @@ export function MarketComments({
 
       {/* Comments */}
       <div>
-        {commentsLoading ? (
-          <div className="py-8 text-center text-sm text-zinc-500">
-            Loading comments...
-          </div>
-        ) : comments.length === 0 ? (
+        {comments.length === 0 ? (
           <div className="py-8 text-center text-sm text-zinc-500">
             No comments yet.
           </div>
@@ -304,7 +272,9 @@ function CommentItem({
   onDeleted: () => Promise<void>;
   onCommentUpdated: () => Promise<void>;
 }) {
-  const { notifyCommentChanged } = useCommentRefresh();
+  const [likedByMe, setLikedByMe] = useState(comment.likedByMe);
+  const [likeCount, setLikeCount] = useState(comment.likeCount);
+  const [isLikePending, startLikeTransition] = useTransition();
 
   const [showReplies, setShowReplies] = useState(false);
   const [threadHovered, setThreadHovered] = useState(false);
@@ -317,7 +287,7 @@ function CommentItem({
   const isAdmin = currentUser?.role === "ADMIN";
   const isAuthor = currentUser?.id === comment.author.id;
 
-  const replyCount = comment._count.replies;
+  const replyCount = comment.replyCount;
 
   const username = comment.author.name ?? "User";
 
@@ -353,7 +323,7 @@ function CommentItem({
 
       await onDeleted();
 
-      notifyCommentChanged();
+      // notifyCommentChanged();
 
       if (result.action === "CONTENT_REMOVED") {
         toast.success("Comment content deleted. Your prediction remains.");
@@ -384,7 +354,7 @@ function CommentItem({
 
       await onCommentUpdated();
 
-      notifyCommentChanged();
+      // notifyCommentChanged();
 
       toast.success("Comment hidden.");
     } catch (error) {
@@ -410,7 +380,7 @@ function CommentItem({
 
       await onCommentUpdated();
 
-      notifyCommentChanged();
+      // notifyCommentChanged();
 
       toast.success("Comment restored.");
     } catch (error) {
@@ -425,6 +395,47 @@ function CommentItem({
   // ---------------------------------------------------------------------------
   // RENDER
   // ---------------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------------
+  // LIKE
+  // ---------------------------------------------------------------------------
+
+  const handleCommentLike = () => {
+    if (!currentUser) {
+      toast.error("Please log in to like comments.");
+      return;
+    }
+
+    if (isLikePending) return;
+
+    const previousLiked = likedByMe;
+    const previousCount = likeCount;
+
+    // Optimistic update
+    setLikedByMe(!previousLiked);
+
+    setLikeCount((count) =>
+      previousLiked ? Math.max(0, count - 1) : count + 1,
+    );
+
+    startLikeTransition(async () => {
+      try {
+        const result = await toggleCommentLike(comment.id);
+
+        // Synchronize with the actual DB result
+        setLikedByMe(result.liked);
+        setLikeCount(result.likeCount);
+      } catch (error) {
+        // Roll back optimistic update
+        setLikedByMe(previousLiked);
+        setLikeCount(previousCount);
+
+        toast.error(
+          error instanceof Error ? error.message : "Could not update like.",
+        );
+      }
+    });
+  };
 
   return (
     <div className="mb-6">
@@ -493,7 +504,7 @@ function CommentItem({
 
                   await onCommentUpdated();
 
-                  notifyCommentChanged();
+                  // notifyCommentChanged();
                 }}
               />
             ) : (
@@ -511,18 +522,29 @@ function CommentItem({
               <div className="mt-2 flex items-center gap-4">
                 <button
                   type="button"
+                  onClick={handleCommentLike}
+                  disabled={isLikePending}
+                  aria-label={likedByMe ? "Unlike comment" : "Like comment"}
+                  aria-pressed={likedByMe}
                   className="
-                    flex items-center gap-1.5
-                    text-sm text-zinc-500
-                    hover:text-zinc-900
-                    dark:hover:text-zinc-200
-                  "
+    flex cursor-pointer items-center gap-1.5
+    text-sm text-zinc-500
+    transition-colors
+    hover:text-zinc-900
+    disabled:cursor-default
+    dark:text-zinc-400
+    dark:hover:text-zinc-100
+  "
                 >
-                  <ThumbsUp className="size-4" />
+                  <ThumbsUp
+                    className={`h-4 w-4 ${
+                      likedByMe
+                        ? "fill-current text-zinc-900 dark:text-zinc-100"
+                        : ""
+                    }`}
+                  />
 
-                  {comment._count.likes > 0 && (
-                    <span>{comment._count.likes}</span>
-                  )}
+                  {likeCount > 0 && <span>{likeCount}</span>}
                 </button>
 
                 <button
@@ -552,7 +574,7 @@ function CommentItem({
 
                   await onCommentUpdated();
 
-                  notifyCommentChanged();
+                  // notifyCommentChanged();
                 }}
               />
             )}

@@ -3,7 +3,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import {
@@ -21,20 +21,28 @@ import { ALL_MARKET_SYMBOLS, AssetType } from "@/lib/data/market-symbols";
 
 import { getMarketVote, type VoteDirection } from "@/app/actions/market-vote";
 
-import { createComment } from "@/app/actions/post";
+import { createComment, type MarketPageComments } from "@/app/actions/post";
+
 import type { GifResult } from "@/app/components/gif-picker";
 import type { JSONContent } from "@tiptap/react";
 
 import { useCurrentUser } from "@/app/context/user-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendSparkline } from "@/app/components/trend-sparkline";
+
 import { MarketComments } from "@/app/components/comment";
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
-export default function MarketDetailPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+interface MarketPageClientProps {
+  symbol: string;
+  initialComments: MarketPageComments;
+}
+
+export default function MarketPageClient({
+  symbol,
+  initialComments,
+}: MarketPageClientProps) {
   const user = useCurrentUser();
 
   const [betAmount, setBetAmount] = useState(50);
@@ -53,12 +61,7 @@ export default function MarketDetailPage() {
 
   const [isPending, startTransition] = useTransition();
 
-  // ------------------------------------------------------------
-  // Market
-  // ------------------------------------------------------------
-
-  const rawSymbol = searchParams.get("symbol") ?? "^GSPC";
-  const selectedSymbol = decodeURIComponent(rawSymbol);
+  const selectedSymbol = symbol;
 
   const symbolMeta = ALL_MARKET_SYMBOLS.find(
     (item) => item.symbol === selectedSymbol,
@@ -67,10 +70,6 @@ export default function MarketDetailPage() {
   const selectedName = symbolMeta?.name ?? selectedSymbol;
   const selectedDisplaySymbol = symbolMeta?.displaySymbol ?? selectedSymbol;
   const selectedAssetType = symbolMeta?.assetType ?? "index";
-
-  // ------------------------------------------------------------
-  // Quote
-  // ------------------------------------------------------------
 
   const { data, error } = useMarketQuote(
     selectedSymbol,
@@ -81,10 +80,6 @@ export default function MarketDetailPage() {
     0,
     activeRange === "1D" ? "5m" : undefined,
   );
-
-  // ------------------------------------------------------------
-  // Voting
-  // ------------------------------------------------------------
 
   const isLoggedIn = !!user;
   const nationality = user?.nationality ?? null;
@@ -369,7 +364,6 @@ export default function MarketDetailPage() {
               isPositive={data.isPositive}
               updatedAt={data.updatedAt}
               selectedRange={activeRange}
-              onBack={() => router.back()}
               exchangeTimezone={
                 data.exchangeTimezone ?? symbolMeta?.timezone ?? "UTC"
               }
@@ -528,6 +522,7 @@ export default function MarketDetailPage() {
           targetMs={votingWindow.targetMs}
           countdownType={votingWindow.countdownType}
           showCountdown={votingWindow.showCountdown}
+          initialComments={initialComments}
         />
       </div>
     </div>

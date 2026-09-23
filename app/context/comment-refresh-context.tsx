@@ -34,14 +34,14 @@ export function CommentRefreshProvider({
   );
 }
 
-export function useCommentRefresh() {
-  const context = useContext(CommentRefreshContext);
+// export function useCommentRefresh() {
+//   const context = useContext(CommentRefreshContext);
 
-  if (!context) {
-    throw new Error(
-      "useCommentRefresh must be used inside CommentRefreshProvider",
-    );
-  }
+//   if (!context) {
+//     throw new Error(
+//       "useCommentRefresh must be used inside CommentRefreshProvider",
+//     );
+//   }
 
-  return context;
-}
+//   return context;
+// }

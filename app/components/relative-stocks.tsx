@@ -100,11 +100,7 @@ function RelativeStockRow({ item, setActiveRange }: RelativeStockRowProps) {
     ? "text-emerald-700 dark:text-emerald-600"
     : "text-[#cf0000] dark:text-[#cf0000]";
 
-  const href = `/market?symbol=${encodeURIComponent(
-    item.symbol,
-  )}&name=${encodeURIComponent(item.name)}&category=${encodeURIComponent(
-    item.assetType === "index" ? item.region : item.assetType,
-  )}&range=1D`;
+  const href = `/${encodeURIComponent(item.symbol)}`;
 
   const handleRowClick = () => {
     showWrite();

@@ -1,15 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { Ellipsis, MessageCircle, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 
-import {
-  getMostLikedComments,
-  type MostLikedComment,
-} from "@/app/actions/post";
-import { useCommentRefresh } from "../context/comment-refresh-context";
+import { type MostLikedComment } from "@/app/actions/post";
 
 interface MostLikedCommentsProps {
   comments: MostLikedComment[];
@@ -27,31 +22,7 @@ function getTextFromContent(content: JSONContent): string {
   return content.content.map(getTextFromContent).join(" ");
 }
 
-export function MostLikedComments({
-  comments: initialComments,
-}: MostLikedCommentsProps) {
-  const [comments, setComments] = useState<MostLikedComment[]>(initialComments);
-
-  const { refreshKey } = useCommentRefresh();
-
-  const refreshComments = useCallback(async () => {
-    try {
-      const result = await getMostLikedComments();
-
-      setComments(result);
-    } catch (error) {
-      console.error("Failed to refresh popular comments:", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (refreshKey === 0) {
-      return;
-    }
-
-    refreshComments();
-  }, [refreshKey, refreshComments]);
-
+export function MostLikedComments({ comments }: MostLikedCommentsProps) {
   return (
     <div className="flex flex-col gap-2.5">
       {comments.map((comment) => {
@@ -66,7 +37,7 @@ export function MostLikedComments({
         return (
           <Link
             key={comment.id}
-            href={`/market?symbol=${encodeURIComponent(primaryAsset.symbol)}`}
+            href={`/${encodeURIComponent(primaryAsset.symbol)}`}
             className="
               block rounded-xl
               bg-zinc-100/70 px-3.5 py-3.5

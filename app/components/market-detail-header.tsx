@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation";
 import { Numeric } from "./numeric";
 
 export interface MarketDetailHeaderProps {
-  // name: string;
   rawPrice?: number;
   value?: string;
   change: string;
@@ -19,15 +18,11 @@ export interface MarketDetailHeaderProps {
   isPositive: boolean;
   selectedRange: string;
   updatedAt?: number | string;
-  onBack?: () => void;
   onAddToList?: () => void;
-  // categoryTitle?: string;
-  // displaySymbol: string;
   exchangeTimezone: string;
 }
 
 export function MarketDetailHeader({
-  // name,
   rawPrice,
   value,
   change = "+0.00",
@@ -35,7 +30,6 @@ export function MarketDetailHeader({
   isPositive,
   selectedRange = "1D",
   updatedAt,
-  // categoryTitle,
   exchangeTimezone,
 }: MarketDetailHeaderProps) {
   const router = useRouter();
@@ -97,10 +91,6 @@ export function MarketDetailHeader({
   const colorClass = isPositive
     ? "text-emerald-600 dark:text-emerald-400"
     : "text-[#cf0000] dark:text-[#cf0000]";
-
-  const handleHomeClick = () => {
-    router.push("/");
-  };
 
   console.log("HEADER PRICE:", {
     rawPrice,

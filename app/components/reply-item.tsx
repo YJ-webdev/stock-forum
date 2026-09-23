@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { toggleReplyLike } from "@/app/actions/like";
 import { ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 
@@ -10,10 +11,6 @@ import { ContentActionsMenu } from "./content-actions-menu";
 import { ReplyEditInput } from "./reply-edit-input";
 import { ReplyInput } from "./reply-input";
 import type { MarketReply } from "./comment";
-
-// -----------------------------------------------------------------------------
-// TYPES
-// -----------------------------------------------------------------------------
 
 interface ReplyItemProps {
   reply: MarketReply;
@@ -34,10 +31,6 @@ interface ReplyItemProps {
   isLast?: boolean;
 }
 
-// -----------------------------------------------------------------------------
-// COMPONENT
-// -----------------------------------------------------------------------------
-
 export function ReplyItem({
   reply,
   currentUser,
@@ -54,6 +47,10 @@ export function ReplyItem({
   const [childrenCollapsed, setChildrenCollapsed] = useState(true);
   const [threadHovered, setThreadHovered] = useState(false);
 
+  const [likedByMe, setLikedByMe] = useState(reply.likedByMe);
+  const [likeCount, setLikeCount] = useState(reply.likeCount);
+  const [isLikePending, startLikeTransition] = useTransition();
+
   const username = reply.author.name ?? "User";
 
   const isAuthor = currentUser?.id === reply.author.id;
@@ -62,19 +59,11 @@ export function ReplyItem({
   const canEdit = isAuthor && !reply.moderatedAt;
   const canDelete = isAuthor && !reply.moderatedAt;
 
-  // ---------------------------------------------------------------------------
-  // CHILDREN
-  // ---------------------------------------------------------------------------
-
   const childReplies = replies.filter(
     (childReply) => childReply.parentId === reply.id,
   );
 
   const hasChild = childReplies.length > 0;
-
-  // ---------------------------------------------------------------------------
-  // THREAD RAIL
-  // ---------------------------------------------------------------------------
 
   const collapseThreadEvents = {
     onMouseEnter: () => setThreadHovered(true),
@@ -87,10 +76,6 @@ export function ReplyItem({
     onMouseLeave: () => setThreadHovered(false),
     onClick: () => setChildrenCollapsed(false),
   };
-
-  // ---------------------------------------------------------------------------
-  // DELETE
-  // ---------------------------------------------------------------------------
 
   const handleDelete = async () => {
     if (isDeleting) return;
@@ -112,10 +97,6 @@ export function ReplyItem({
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // ADMIN HIDE
-  // ---------------------------------------------------------------------------
-
   const handleHide = async () => {
     if (isModerating) return;
 
@@ -135,10 +116,6 @@ export function ReplyItem({
       setIsModerating(false);
     }
   };
-
-  // ---------------------------------------------------------------------------
-  // ADMIN RESTORE
-  // ---------------------------------------------------------------------------
 
   const handleRestore = async () => {
     if (isModerating) return;
@@ -160,9 +137,42 @@ export function ReplyItem({
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
+  const handleReplyLike = () => {
+    if (!currentUser) {
+      toast.error("Please log in to like replies.");
+      return;
+    }
+
+    if (isLikePending) return;
+
+    const previousLiked = likedByMe;
+    const previousCount = likeCount;
+
+    // Optimistic update
+    setLikedByMe(!previousLiked);
+
+    setLikeCount((count) =>
+      previousLiked ? Math.max(0, count - 1) : count + 1,
+    );
+
+    startLikeTransition(async () => {
+      try {
+        const result = await toggleReplyLike(reply.id);
+
+        // Synchronize with actual DB result
+        setLikedByMe(result.liked);
+        setLikeCount(result.likeCount);
+      } catch (error) {
+        // Roll back optimistic update
+        setLikedByMe(previousLiked);
+        setLikeCount(previousCount);
+
+        toast.error(
+          error instanceof Error ? error.message : "Could not update like.",
+        );
+      }
+    });
+  };
 
   return (
     <div className="relative">
@@ -296,16 +306,29 @@ export function ReplyItem({
             <div className="mt-2 flex items-center gap-4">
               <button
                 type="button"
+                onClick={handleReplyLike}
+                disabled={isLikePending}
+                aria-label={likedByMe ? "Unlike reply" : "Like reply"}
+                aria-pressed={likedByMe}
                 className="
-                  flex items-center gap-1.5
-                  text-sm text-zinc-500
-                  hover:text-zinc-900
-                  dark:hover:text-zinc-200
-                "
+    flex cursor-pointer items-center gap-1.5
+    text-sm text-zinc-500
+    transition-colors
+    hover:text-zinc-900
+    disabled:cursor-default
+    dark:text-zinc-400
+    dark:hover:text-zinc-100
+  "
               >
-                <ThumbsUp className="size-4" />
+                <ThumbsUp
+                  className={`size-4 ${
+                    likedByMe
+                      ? "fill-current text-zinc-900 dark:text-zinc-100"
+                      : ""
+                  }`}
+                />
 
-                {reply._count.likes > 0 && <span>{reply._count.likes}</span>}
+                {likeCount > 0 && <span>{likeCount}</span>}
               </button>
 
               <button
