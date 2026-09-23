@@ -294,9 +294,7 @@ export function ReplyItem({
               )}
 
               {reply.editedAt && (
-                <span className="text-[12px] text-zinc-400">
-                  (edited {formatTimeAgo(reply.editedAt)})
-                </span>
+                <span className="text-[12px] text-zinc-400">(edited)</span>
               )}
             </>
           )}
