@@ -658,7 +658,7 @@ export default function MarketPageClient({
             </div>
           </div>
         ) : (
-          <Skeleton className="h-37 w-full rounded-xl sm:h-21" />
+          <Skeleton className="h-26.25 w-full rounded-xl" />
         )}
       </div>
 

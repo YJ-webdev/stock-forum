@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import type { PanelImperativeHandle } from "react-resizable-panels";
+
 import { Header } from "./header";
 import PanelLeft from "./panel-left";
-import { NewsItem } from "@/types";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -11,17 +13,19 @@ import {
 } from "@/components/ui/resizable";
 import { Footer } from "./footer";
 import { PostEditor } from "@/components/post-editor";
-import type { PanelImperativeHandle } from "react-resizable-panels";
-import { usePathname } from "next/navigation";
-import { UserProvider } from "../context/user-context";
 import { AccountPanel } from "./account-panel";
 import { NotificationPanel } from "./notification-panel";
 import { BreadCrumbs } from "./breadcrumbs";
-import { User } from "@/types/user";
 import { TopTraders } from "./top-trader";
+
+import { UserProvider } from "../context/user-context";
+import { PointBalanceProvider } from "../context/point-balance-context";
+
 import { getMostLikedComments, MostLikedComment } from "../actions/post";
 import { PopularBoard } from "../actions/query";
-import { PointBalanceProvider } from "../context/point-balance-context";
+
+import { NewsItem } from "@/types";
+import { User } from "@/types/user";
 
 interface LayoutShellProps {
   user: User | null;
@@ -39,28 +43,58 @@ export default function LayoutShell({
   popularBoards,
 }: LayoutShellProps) {
   const [isOpen, setIsOpen] = useState(true);
+
   const [onWrite, setOnWrite] = useState(false);
   const [onAccount, setOnAccount] = useState(false);
   const [onNotification, setOnNotification] = useState(false);
+
   const [notificationRefreshKey, setNotificationRefreshKey] = useState(0);
+
+  const [mostLikedComments, setMostLikedComments] =
+    useState<MostLikedComment[]>(comments);
+
+  const pathname = usePathname();
+
+  // ---------------------------------------------------------------------------
+  // DESKTOP / TABLET RIGHT PANEL
+  // ---------------------------------------------------------------------------
+
   const sectionBRef = useRef<HTMLDivElement>(null);
+  const panelBRef = useRef<PanelImperativeHandle>(null);
 
   const [sectionBPosition, setSectionBPosition] = useState({
     left: 0,
     width: 0,
   });
 
-  const [mostLikedComments, setMostLikedComments] =
-    useState<MostLikedComment[]>(comments);
-
-  const panelBRef = useRef<PanelImperativeHandle>(null);
   const resetPanelB = () => {
     panelBRef.current?.resize("30%");
   };
-  const pathname = usePathname();
+
+  const isMobile = () => window.innerWidth < 768;
+
+  const closeSectionB = () => {
+    setOnWrite(false);
+    setOnAccount(false);
+    setOnNotification(false);
+  };
+
+  const handleToggleLeftPanel = () => {
+    setIsOpen((prev) => !prev);
+
+    // Only close Section B on mobile
+    if (isMobile()) {
+      closeSectionB();
+    }
+  };
 
   const handleWrite = () => {
     resetPanelB();
+
+    // Only close PanelLeft on mobile
+    if (isMobile()) {
+      setIsOpen(false);
+    }
 
     setOnWrite(true);
     setOnAccount(false);
@@ -70,6 +104,11 @@ export default function LayoutShell({
   const handleAccount = () => {
     resetPanelB();
 
+    // Only close PanelLeft on mobile
+    if (isMobile()) {
+      setIsOpen(false);
+    }
+
     setOnWrite(false);
     setOnAccount(true);
     setOnNotification(false);
@@ -78,12 +117,27 @@ export default function LayoutShell({
   const handleNotification = () => {
     resetPanelB();
 
+    // Only close PanelLeft on mobile
+    if (isMobile()) {
+      setIsOpen(false);
+    }
+
     setOnWrite(false);
     setOnAccount(false);
     setOnNotification(true);
 
     setNotificationRefreshKey((prev) => prev + 1);
   };
+
+  // ---------------------------------------------------------------------------
+  // MOBILE SECTION B STATE
+  // ---------------------------------------------------------------------------
+
+  const mobilePanelOpen = !!user && (onWrite || onAccount || onNotification);
+
+  // ---------------------------------------------------------------------------
+  // COMMENTS
+  // ---------------------------------------------------------------------------
 
   const handleCommentCreated = async () => {
     const updatedComments = await getMostLikedComments();
@@ -94,6 +148,10 @@ export default function LayoutShell({
   useEffect(() => {
     setMostLikedComments(comments);
   }, [comments]);
+
+  // ---------------------------------------------------------------------------
+  // LEFT PANEL RESPONSIVE BEHAVIOR
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     const handleResize = () => {
@@ -111,19 +169,32 @@ export default function LayoutShell({
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [setIsOpen]);
+  }, []);
 
-  // Keyboard shortcuts: Ctrl+B / Cmd+B to toggle, Esc to close
+  // ---------------------------------------------------------------------------
+  // KEYBOARD SHORTCUTS
+  //
+  // Ctrl+B / Cmd+B = toggle left panel
+  // Escape = close left panel / mobile Section B
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        setIsOpen(false);
-        return;
+      if (e.key === "Escape") {
+        if (isOpen) {
+          setIsOpen(false);
+          return;
+        }
+
+        if (onWrite || onAccount || onNotification) {
+          closeSectionB();
+          return;
+        }
       }
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
         const activeElement = document.activeElement;
+
         const isInputField =
           activeElement?.tagName === "INPUT" ||
           activeElement?.tagName === "TEXTAREA" ||
@@ -131,17 +202,28 @@ export default function LayoutShell({
 
         if (!isInputField) {
           e.preventDefault();
+
           setIsOpen((prev) => !prev);
+
+          closeSectionB();
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, setIsOpen]);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onWrite, onAccount, onNotification]);
+
+  // ---------------------------------------------------------------------------
+  // TRACK DESKTOP / TABLET RIGHT PANEL POSITION
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     const panel = sectionBRef.current;
+
     if (!panel) return;
 
     const updatePosition = () => {
@@ -158,10 +240,12 @@ export default function LayoutShell({
     const observer = new ResizeObserver(updatePosition);
 
     observer.observe(panel);
+
     window.addEventListener("resize", updatePosition);
 
     return () => {
       observer.disconnect();
+
       window.removeEventListener("resize", updatePosition);
     };
   }, []);
@@ -169,14 +253,23 @@ export default function LayoutShell({
   return (
     <UserProvider user={user}>
       <PointBalanceProvider>
-        <div className="relative flex flex-col min-h-screen">
+        <div className="relative flex min-h-screen flex-col">
+          {/* -----------------------------------------------------------------
+              HEADER
+          ------------------------------------------------------------------ */}
+
           <Header
             user={user}
-            onTogglePanel={() => setIsOpen((prev) => !prev)}
+            onTogglePanel={handleToggleLeftPanel}
             onWrite={handleWrite}
             onAccount={handleAccount}
             onNotification={handleNotification}
           />
+
+          {/* -----------------------------------------------------------------
+              LEFT PANEL
+          ------------------------------------------------------------------ */}
+
           <PanelLeft
             isOpen={isOpen}
             setIsOpen={setIsOpen}
@@ -184,75 +277,182 @@ export default function LayoutShell({
             comments={mostLikedComments}
             popularBoards={popularBoards}
           />
+
+          {/* =================================================================
+              MOBILE SECTION A
+
+              No ResizablePanelGroup on mobile.
+              Section A gets 100% width.
+          ================================================================== */}
+
+          <div className="w-full pt-14 md:hidden">
+            <section
+              className="
+                flex
+                w-full
+                min-w-0
+                flex-col
+                bg-white
+                dark:bg-zinc-900
+              "
+            >
+              <div className="flex-1">
+                {pathname !== "/" && <BreadCrumbs />}
+
+                {children}
+              </div>
+            </section>
+          </div>
+
+          {/* =================================================================
+              TABLET / DESKTOP LAYOUT
+          ================================================================== */}
+
           <div
-            className={`pt-14 flex flex-col md:flex-row transition-all duration-300 ease-in-out ${
-              isOpen
-                ? "xl:ml-80 xl:w-[calc(100%-320px)] w-full ml-0"
-                : "ml-0 w-full"
-            }`}
+            className={`
+              hidden
+              pt-14
+              transition-all
+              duration-300
+              ease-in-out
+              md:flex
+
+              ${
+                isOpen
+                  ? "w-full xl:ml-80 xl:w-[calc(100%-320px)]"
+                  : "ml-0 w-full"
+              }
+            `}
           >
-            <ResizablePanelGroup orientation="horizontal" className="">
+            <ResizablePanelGroup orientation="horizontal">
+              {/* -------------------------------------------------------------
+                  SECTION A
+              -------------------------------------------------------------- */}
+
               <ResizablePanel>
-                <section className="w-full flex flex-col min-w-0 bg-white dark:bg-zinc-900">
+                <section
+                  className="
+                    flex
+                    w-full
+                    min-w-0
+                    flex-col
+                    bg-white
+                    dark:bg-zinc-900
+                  "
+                >
                   <div className="flex-1">
                     {pathname !== "/" && <BreadCrumbs />}
+
                     {children}
                   </div>
                 </section>
               </ResizablePanel>
-              <ResizableHandle className="border-gray-50 w-0" />
+
+              {/* -------------------------------------------------------------
+                  RESIZE HANDLE
+              -------------------------------------------------------------- */}
+
+              <ResizableHandle className="w-0 border-gray-50" />
+
+              {/* -------------------------------------------------------------
+                  SECTION B
+              -------------------------------------------------------------- */}
+
               <ResizablePanel
                 panelRef={panelBRef}
                 defaultSize="30%"
-                minSize="1P%"
-                className="z-20 
-    bg-white dark:bg-zinc-900
-    border-l border-gray-100 dark:border-zinc-800
-  "
+                minSize="1%"
+                className="
+                  z-20
+                  border-l
+                  border-gray-100
+                  bg-white
+                  dark:border-zinc-800
+                  dark:bg-zinc-900
+                "
               >
-                {/* This stays inside ResizablePanel and tracks its actual width */}
                 <div ref={sectionBRef} className="w-full min-w-0">
                   <div
                     className="
-        fixed
-        top-14
-        bottom-0
-        min-w-0
-        overflow-x-hidden
-        overflow-y-auto
-        
-        flex flex-col gap-3
-        bg-white dark:bg-zinc-900
-      "
+                      fixed
+                      top-14
+                      bottom-0
+
+                      flex
+                      min-w-0
+                      flex-col
+                      gap-3
+
+                      overflow-x-hidden
+                      overflow-y-auto
+
+                      bg-white
+                      dark:bg-zinc-900
+                    "
                     style={{
                       left: sectionBPosition.left,
                       width: sectionBPosition.width,
                     }}
                   >
+                    {/* WRITE */}
+
                     {user && onWrite && (
                       <PostEditor
                         isLoggedIn={!!user}
-                        nationality={user?.nationality ?? null}
+                        nationality={user.nationality ?? null}
                         setOnWrite={setOnWrite}
                         onCommentCreated={handleCommentCreated}
                       />
                     )}
+
+                    {/* ACCOUNT */}
+
                     {user && onAccount && !onWrite && (
                       <AccountPanel user={user} setOnAccount={setOnAccount} />
                     )}
+
+                    {/* NOTIFICATIONS */}
+
                     {user && onNotification && (
-                      <NotificationPanel refreshKey={notificationRefreshKey} />
+                      <NotificationPanel
+                        refreshKey={notificationRefreshKey}
+                        setOnNotification={setOnNotification}
+                      />
                     )}
+                    {/* DEFAULT RIGHT PANEL */}
+
                     {!onWrite && !onAccount && !onNotification && (
                       <>
                         <div className="mx-4 mt-8">
-                          <p className="text-muted-foreground/50 text-xs text-light tracking-wider truncate">
+                          <p
+                            className="
+                              truncate
+                              text-xs
+                              font-light
+                              tracking-wider
+                              text-muted-foreground/50
+                            "
+                          >
                             Top traders
                           </p>
                         </div>
+
                         <TopTraders />
-                        <div className="text-zinc-300 dark:text-zinc-700 font-light mx-4 border border-zinc-100 dark:border-zinc-800 rounded-lg p-2 h-80">
-                          {" "}
+
+                        <div
+                          className="
+                            mx-4
+                            h-80
+                            rounded-lg
+                            border
+                            border-zinc-100
+                            p-2
+                            font-light
+                            text-zinc-300
+                            dark:border-zinc-800
+                            dark:text-zinc-700
+                          "
+                        >
                           advertisement
                         </div>
                       </>
@@ -260,8 +460,71 @@ export default function LayoutShell({
                   </div>
                 </div>
               </ResizablePanel>
-            </ResizablePanelGroup>{" "}
-          </div>{" "}
+            </ResizablePanelGroup>
+          </div>
+
+          {/* =================================================================
+              MOBILE SECTION B
+
+              Completely independent from the desktop ResizablePanelGroup.
+              Covers Section A below the Header.
+          ================================================================== */}
+
+          {mobilePanelOpen && (
+            <div
+              className="
+                fixed
+                top-14
+                right-0
+                bottom-0
+                left-0
+                z-40
+
+                flex
+                flex-col
+
+                overflow-x-hidden
+                overflow-y-auto
+
+                bg-white
+
+                md:hidden
+
+                dark:bg-zinc-900
+              "
+            >
+              {/* WRITE */}
+
+              {user && onWrite && (
+                <PostEditor
+                  isLoggedIn={!!user}
+                  nationality={user.nationality ?? null}
+                  setOnWrite={setOnWrite}
+                  onCommentCreated={handleCommentCreated}
+                />
+              )}
+
+              {/* ACCOUNT */}
+
+              {user && onAccount && !onWrite && (
+                <AccountPanel user={user} setOnAccount={setOnAccount} />
+              )}
+
+              {/* NOTIFICATIONS */}
+
+              {user && onNotification && (
+                <NotificationPanel
+                  refreshKey={notificationRefreshKey}
+                  setOnNotification={setOnNotification}
+                />
+              )}
+            </div>
+          )}
+
+          {/* -----------------------------------------------------------------
+              FOOTER
+          ------------------------------------------------------------------ */}
+
           <Footer />
         </div>
       </PointBalanceProvider>

@@ -10,6 +10,7 @@ import {
   Trash2,
   TrendingDown,
   TrendingUp,
+  X,
 } from "lucide-react";
 
 import {
@@ -20,6 +21,7 @@ import {
   markNotificationAsRead,
   type MyNotification,
 } from "@/app/actions/notification";
+
 import { RiHeartFill } from "react-icons/ri";
 
 // -----------------------------------------------------------------------------
@@ -28,6 +30,7 @@ import { RiHeartFill } from "react-icons/ri";
 
 interface NotificationPanelProps {
   refreshKey: number;
+  setOnNotification: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const SOCIAL_TYPES = new Set<MyNotification["type"]>([
@@ -41,7 +44,10 @@ const SOCIAL_TYPES = new Set<MyNotification["type"]>([
 // NOTIFICATION PANEL
 // -----------------------------------------------------------------------------
 
-export function NotificationPanel({ refreshKey }: NotificationPanelProps) {
+export function NotificationPanel({
+  refreshKey,
+  setOnNotification,
+}: NotificationPanelProps) {
   const [notifications, setNotifications] = useState<MyNotification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -275,6 +281,26 @@ export function NotificationPanel({ refreshKey }: NotificationPanelProps) {
               Clear
             </button>
           )}
+
+          {/* Close */}
+
+          <button
+            type="button"
+            onClick={() => setOnNotification(false)}
+            aria-label="Close notifications"
+            title="Close notifications"
+            className="
+              flex size-8
+              cursor-pointer
+              items-center justify-center
+              rounded-md
+              transition-colors
+              hover:bg-zinc-100
+              dark:hover:bg-zinc-800
+            "
+          >
+            <X className="size-4" />
+          </button>
         </div>
       </div>
 
@@ -382,12 +408,12 @@ function NotificationItem({
 
           <div
             className="
-    mt-1
-    flex items-center gap-1.5
-    text-sm leading-5
-    text-zinc-500
-    dark:text-zinc-400
-  "
+              mt-1
+              flex items-center gap-1.5
+              text-sm leading-5
+              text-zinc-500
+              dark:text-zinc-400
+            "
           >
             <span>{notification.message}</span>
 
