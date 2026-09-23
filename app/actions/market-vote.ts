@@ -4,6 +4,98 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PredictionDirection } from "@/generated/prisma/client";
 
+export type MarketVoteListStats = {
+  totalVotes: number;
+  bullVotes: number;
+  bearVotes: number;
+  bullPercent: number;
+  bearPercent: number;
+};
+
+export type MarketVoteListStatsMap = Record<string, MarketVoteListStats>;
+
+export async function getMarketVoteListStats({
+  markets,
+}: {
+  markets: {
+    symbol: string;
+    sessionDate: Date;
+  }[];
+}): Promise<MarketVoteListStatsMap> {
+  if (markets.length === 0) {
+    return {};
+  }
+
+  const predictions = await prisma.prediction.groupBy({
+    by: ["symbol", "direction"],
+
+    where: {
+      OR: markets.map((market) => ({
+        symbol: market.symbol,
+        sessionDate: market.sessionDate,
+      })),
+    },
+
+    _count: {
+      _all: true,
+    },
+  });
+
+  const result: MarketVoteListStatsMap = {};
+
+  /*
+   * Initialize every requested market.
+   *
+   * This means markets with zero predictions still get
+   * a result instead of being missing from the object.
+   */
+  for (const market of markets) {
+    result[market.symbol] = {
+      totalVotes: 0,
+      bullVotes: 0,
+      bearVotes: 0,
+      bullPercent: 0,
+      bearPercent: 0,
+    };
+  }
+
+  for (const prediction of predictions) {
+    const stats = result[prediction.symbol];
+
+    if (!stats) {
+      continue;
+    }
+
+    const count = prediction._count._all;
+
+    if (prediction.direction === "BULL") {
+      stats.bullVotes = count;
+    }
+
+    if (prediction.direction === "BEAR") {
+      stats.bearVotes = count;
+    }
+
+    stats.totalVotes += count;
+  }
+
+  /*
+   * Calculate percentages after all groups have
+   * been accumulated.
+   */
+  for (const stats of Object.values(result)) {
+    if (stats.totalVotes === 0) {
+      continue;
+    }
+
+    stats.bullPercent = Math.round((stats.bullVotes / stats.totalVotes) * 100);
+
+    stats.bearPercent = 100 - stats.bullPercent;
+  }
+
+  return result;
+}
+
 export type VoteDirection = PredictionDirection;
 
 interface GetMarketVoteInput {

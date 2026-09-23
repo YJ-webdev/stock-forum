@@ -1,9 +1,9 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { Ellipsis, MessageCircle } from "lucide-react";
 import { RiHeartFill } from "react-icons/ri";
-
 import Link from "next/link";
 
 import { type MostLikedComment } from "@/app/actions/post";
@@ -11,6 +11,8 @@ import { type MostLikedComment } from "@/app/actions/post";
 interface MostLikedCommentsProps {
   comments: MostLikedComment[];
 }
+
+const ITEMS_PER_PAGE = 5;
 
 function getTextFromContent(content: JSONContent): string {
   if (content.type === "text") {
@@ -24,10 +26,57 @@ function getTextFromContent(content: JSONContent): string {
   return content.content.map(getTextFromContent).join(" ");
 }
 
-export function MostLikedComments({ comments }: MostLikedCommentsProps) {
+export function MostLikedComments({
+  comments: initialComments,
+}: MostLikedCommentsProps) {
+  const [comments, setComments] = useState<MostLikedComment[]>(initialComments);
+
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  const visibleComments = comments.slice(0, visibleCount);
+  const hasMore = visibleCount < comments.length;
+
+  // Reset when comments from the server change.
+  useEffect(() => {
+    setComments(initialComments);
+    setVisibleCount(ITEMS_PER_PAGE);
+  }, [initialComments]);
+
+  // Load another 5 when the dots enter the visible area.
+  useEffect(() => {
+    const target = loadMoreRef.current;
+
+    if (!target || !hasMore) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) {
+          return;
+        }
+
+        setVisibleCount((current) =>
+          Math.min(current + ITEMS_PER_PAGE, comments.length),
+        );
+      },
+      {
+        rootMargin: "100px 0px",
+      },
+    );
+
+    observer.observe(target);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [comments.length, hasMore]);
+
   return (
     <div className="flex flex-col gap-2.5">
-      {comments.map((comment) => {
+      {visibleComments.map((comment) => {
         const primaryAsset = comment.assets[0]?.asset;
 
         if (!primaryAsset) {
@@ -39,7 +88,7 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
         return (
           <Link
             key={comment.id}
-            href={`/${encodeURIComponent(primaryAsset.symbol)}`}
+            href={`/${encodeURIComponent(primaryAsset.symbol)}?comment=${encodeURIComponent(comment.id)}`}
             className="
               block rounded-xl
               bg-zinc-100/70 px-3.5 py-3.5
@@ -97,7 +146,6 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
                     dark:fill-zinc-300
                     dark:text-muted
                   "
-                  strokeWidth={1.5}
                 />
 
                 {comment._count.likes}
@@ -121,13 +169,24 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
         );
       })}
 
-      <Ellipsis
-        className="
-          mx-auto h-4 w-4
-          text-zinc-400
-          dark:text-zinc-600
-        "
-      />
+      {/* Load more sentinel */}
+      {hasMore && (
+        <div
+          ref={loadMoreRef}
+          className="
+            flex h-10
+            items-center justify-center
+          "
+        >
+          <Ellipsis
+            className="
+              h-4 w-4
+              text-zinc-400
+              dark:text-zinc-600
+            "
+          />
+        </div>
+      )}
     </div>
   );
 }

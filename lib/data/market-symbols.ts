@@ -573,16 +573,16 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       marketSchedule: "SE_EQUITY",
     },
 
-    {
-      name: "Tadawul All Share Index",
-      symbol: "^TASI.SR",
-      displaySymbol: "TASI",
-      country: "SA",
-      region: "EMEA",
-      assetType: "index",
-      timezone: "Asia/Riyadh",
-      marketSchedule: "SA_EQUITY",
-    },
+    // {
+    //   name: "Tadawul All Share Index",
+    //   symbol: "^TASI.SR",
+    //   displaySymbol: "TASI",
+    //   country: "SA",
+    //   region: "EMEA",
+    //   assetType: "index",
+    //   timezone: "Asia/Riyadh",
+    //   marketSchedule: "SA_EQUITY",
+    // },
     {
       name: "South Africa Top 40",
       symbol: "^JN0U.JO",

@@ -1,4 +1,3 @@
-// app/(public)/[asset]/page.tsx
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
@@ -334,7 +333,7 @@ export default function MarketPageClient({
       return;
     }
 
-    const chartInterval = range === "1D" ? "1m" : undefined;
+    const chartInterval = range === "1D" ? "5m" : undefined;
 
     const result = await refreshMarketQuote(
       selectedSymbol,
@@ -367,7 +366,7 @@ export default function MarketPageClient({
     window.scrollTo({
       top: 0,
       left: 0,
-      behavior: "instant",
+      behavior: "smooth",
     });
   }, [selectedSymbol]);
 
@@ -553,8 +552,8 @@ export default function MarketPageClient({
       )}
 
       {/* Market sentiment */}
-      {data && voteStats && (
-        <div className="ibmPlexMono mx-4 mt-8">
+      <div className="ibmPlexMono mx-4 mt-8">
+        {data && voteStats ? (
           <div
             className="
         flex flex-col gap-5
@@ -658,8 +657,10 @@ export default function MarketPageClient({
               </p>
             </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <Skeleton className="h-37 w-full rounded-xl sm:h-21" />
+        )}
+      </div>
 
       <div ref={discussionRef} className="mx-4 mt-10 mb-20">
         <MarketComments

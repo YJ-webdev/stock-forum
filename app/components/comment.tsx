@@ -547,7 +547,6 @@ function CommentItem({
             </div>
 
             {/* Content */}
-            {/* Content */}
             {comment.moderatedAt ? (
               <p className="mt-1 text-[15px] italic text-zinc-400">
                 Comment hidden by moderation

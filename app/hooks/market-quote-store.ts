@@ -144,21 +144,28 @@ async function fetchQuote(
        * Request succeeded, but Yahoo/API returned no usable
        * chart points.
        */
-      if (!json?.points?.length) {
+      const points: ChartPoint[] = Array.isArray(json?.points)
+        ? json.points
+        : [];
+
+      const hasCurrentPrice =
+        typeof json?.currentPrice === "number" &&
+        Number.isFinite(json.currentPrice) &&
+        json.currentPrice > 0;
+
+      if (points.length === 0 && !hasCurrentPrice) {
         entry.data = null;
         entry.error = "No market data available";
         return;
       }
-
-      const points: ChartPoint[] = json.points;
 
       const currentPrice =
         json.currentPrice ?? points[points.length - 1]?.price ?? 0;
 
       const basePrice =
         range === "1D"
-          ? (json.previousClose ?? points[0]?.price ?? 0)
-          : (points[0]?.price ?? 0);
+          ? (json.previousClose ?? points[0]?.price ?? currentPrice)
+          : (points[0]?.price ?? json.previousClose ?? currentPrice);
 
       const changeVal = currentPrice - basePrice;
 

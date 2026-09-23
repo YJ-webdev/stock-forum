@@ -789,6 +789,8 @@ export async function getMostLikedComments(): Promise<MostLikedComment[]> {
         createdAt: "desc",
       },
     ],
+
+    // Fetch extra because some are removed below.
     take: 30,
   });
 
@@ -798,7 +800,7 @@ export async function getMostLikedComments(): Promise<MostLikedComment[]> {
 
       return hasTextContent(content) && !isDeletedCommentContent(content);
     })
-    .slice(0, 5)
+    .slice(0, 20)
     .map((comment) => ({
       ...comment,
       content: comment.content as JSONContent,

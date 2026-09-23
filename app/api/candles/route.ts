@@ -158,13 +158,29 @@ function getCalendarWeekday(dateString: string): number {
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 }
 
-function getNextWeekday(dateString: string): string {
+function isMarketWeekend(
+  weekday: number,
+  marketSchedule?: MarketSymbolItem["marketSchedule"],
+): boolean {
+  // Saudi Exchange: Friday + Saturday
+  if (marketSchedule === "SA_EQUITY") {
+    return weekday === 5 || weekday === 6;
+  }
+
+  // Default: Saturday + Sunday
+  return weekday === 0 || weekday === 6;
+}
+
+function getNextTradingDay(
+  dateString: string,
+  marketSchedule?: MarketSymbolItem["marketSchedule"],
+): string {
   let nextDate = addCalendarDays(dateString, 1);
 
   while (true) {
     const weekday = getCalendarWeekday(nextDate);
 
-    if (weekday !== 0 && weekday !== 6) {
+    if (!isMarketWeekend(weekday, marketSchedule)) {
       return nextDate;
     }
 
@@ -402,15 +418,8 @@ function getRegularMarketSession(
   const weekday = getExchangeWeekday(now, timezone);
 
   // Weekend
-  if (weekday === 0 || weekday === 6) {
-    let nextDate = today;
-
-    do {
-      nextDate = addCalendarDays(nextDate, 1);
-    } while (
-      getCalendarWeekday(nextDate) === 0 ||
-      getCalendarWeekday(nextDate) === 6
-    );
+  if (isMarketWeekend(weekday, market.marketSchedule)) {
+    const nextDate = getNextTradingDay(today, market.marketSchedule);
 
     return {
       isClosed: true,
@@ -450,7 +459,7 @@ function getRegularMarketSession(
   }
 
   // After close -> next weekday
-  const nextDate = getNextWeekday(today);
+  const nextDate = getNextTradingDay(today, market.marketSchedule);
 
   return {
     isClosed: true,
