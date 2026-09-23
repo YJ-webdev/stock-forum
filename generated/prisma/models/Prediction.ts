@@ -28,15 +28,15 @@ export type AggregatePrediction = {
 
 export type PredictionAvgAggregateOutputType = {
   pointsBet: number | null
-  predictionPrice: runtime.Decimal | null
-  settlementPrice: runtime.Decimal | null
+  referenceClose: runtime.Decimal | null
+  settlementClose: runtime.Decimal | null
   pointsChange: number | null
 }
 
 export type PredictionSumAggregateOutputType = {
   pointsBet: number | null
-  predictionPrice: runtime.Decimal | null
-  settlementPrice: runtime.Decimal | null
+  referenceClose: runtime.Decimal | null
+  settlementClose: runtime.Decimal | null
   pointsChange: number | null
 }
 
@@ -46,9 +46,9 @@ export type PredictionMinAggregateOutputType = {
   symbol: string | null
   direction: $Enums.PredictionDirection | null
   pointsBet: number | null
-  predictionPrice: runtime.Decimal | null
+  referenceClose: runtime.Decimal | null
+  settlementClose: runtime.Decimal | null
   sessionDate: Date | null
-  settlementPrice: runtime.Decimal | null
   status: $Enums.PredictionStatus | null
   pointsChange: number | null
   nationality: string | null
@@ -62,9 +62,9 @@ export type PredictionMaxAggregateOutputType = {
   symbol: string | null
   direction: $Enums.PredictionDirection | null
   pointsBet: number | null
-  predictionPrice: runtime.Decimal | null
+  referenceClose: runtime.Decimal | null
+  settlementClose: runtime.Decimal | null
   sessionDate: Date | null
-  settlementPrice: runtime.Decimal | null
   status: $Enums.PredictionStatus | null
   pointsChange: number | null
   nationality: string | null
@@ -78,9 +78,9 @@ export type PredictionCountAggregateOutputType = {
   symbol: number
   direction: number
   pointsBet: number
-  predictionPrice: number
+  referenceClose: number
+  settlementClose: number
   sessionDate: number
-  settlementPrice: number
   status: number
   pointsChange: number
   nationality: number
@@ -92,15 +92,15 @@ export type PredictionCountAggregateOutputType = {
 
 export type PredictionAvgAggregateInputType = {
   pointsBet?: true
-  predictionPrice?: true
-  settlementPrice?: true
+  referenceClose?: true
+  settlementClose?: true
   pointsChange?: true
 }
 
 export type PredictionSumAggregateInputType = {
   pointsBet?: true
-  predictionPrice?: true
-  settlementPrice?: true
+  referenceClose?: true
+  settlementClose?: true
   pointsChange?: true
 }
 
@@ -110,9 +110,9 @@ export type PredictionMinAggregateInputType = {
   symbol?: true
   direction?: true
   pointsBet?: true
-  predictionPrice?: true
+  referenceClose?: true
+  settlementClose?: true
   sessionDate?: true
-  settlementPrice?: true
   status?: true
   pointsChange?: true
   nationality?: true
@@ -126,9 +126,9 @@ export type PredictionMaxAggregateInputType = {
   symbol?: true
   direction?: true
   pointsBet?: true
-  predictionPrice?: true
+  referenceClose?: true
+  settlementClose?: true
   sessionDate?: true
-  settlementPrice?: true
   status?: true
   pointsChange?: true
   nationality?: true
@@ -142,9 +142,9 @@ export type PredictionCountAggregateInputType = {
   symbol?: true
   direction?: true
   pointsBet?: true
-  predictionPrice?: true
+  referenceClose?: true
+  settlementClose?: true
   sessionDate?: true
-  settlementPrice?: true
   status?: true
   pointsChange?: true
   nationality?: true
@@ -245,9 +245,9 @@ export type PredictionGroupByOutputType = {
   symbol: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal
+  referenceClose: runtime.Decimal
+  settlementClose: runtime.Decimal | null
   sessionDate: Date
-  settlementPrice: runtime.Decimal | null
   status: $Enums.PredictionStatus
   pointsChange: number | null
   nationality: string | null
@@ -284,9 +284,9 @@ export type PredictionWhereInput = {
   symbol?: Prisma.StringFilter<"Prediction"> | string
   direction?: Prisma.EnumPredictionDirectionFilter<"Prediction"> | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFilter<"Prediction"> | number
-  predictionPrice?: Prisma.DecimalFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.DecimalNullableFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFilter<"Prediction"> | Date | string
-  settlementPrice?: Prisma.DecimalNullableFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFilter<"Prediction"> | $Enums.PredictionStatus
   pointsChange?: Prisma.IntNullableFilter<"Prediction"> | number | null
   nationality?: Prisma.StringNullableFilter<"Prediction"> | string | null
@@ -305,9 +305,9 @@ export type PredictionOrderByWithRelationInput = {
   symbol?: Prisma.SortOrder
   direction?: Prisma.SortOrder
   pointsBet?: Prisma.SortOrder
-  predictionPrice?: Prisma.SortOrder
+  referenceClose?: Prisma.SortOrder
+  settlementClose?: Prisma.SortOrderInput | Prisma.SortOrder
   sessionDate?: Prisma.SortOrder
-  settlementPrice?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   pointsChange?: Prisma.SortOrderInput | Prisma.SortOrder
   nationality?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -330,9 +330,9 @@ export type PredictionWhereUniqueInput = Prisma.AtLeast<{
   symbol?: Prisma.StringFilter<"Prediction"> | string
   direction?: Prisma.EnumPredictionDirectionFilter<"Prediction"> | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFilter<"Prediction"> | number
-  predictionPrice?: Prisma.DecimalFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.DecimalNullableFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFilter<"Prediction"> | Date | string
-  settlementPrice?: Prisma.DecimalNullableFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFilter<"Prediction"> | $Enums.PredictionStatus
   pointsChange?: Prisma.IntNullableFilter<"Prediction"> | number | null
   nationality?: Prisma.StringNullableFilter<"Prediction"> | string | null
@@ -351,9 +351,9 @@ export type PredictionOrderByWithAggregationInput = {
   symbol?: Prisma.SortOrder
   direction?: Prisma.SortOrder
   pointsBet?: Prisma.SortOrder
-  predictionPrice?: Prisma.SortOrder
+  referenceClose?: Prisma.SortOrder
+  settlementClose?: Prisma.SortOrderInput | Prisma.SortOrder
   sessionDate?: Prisma.SortOrder
-  settlementPrice?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   pointsChange?: Prisma.SortOrderInput | Prisma.SortOrder
   nationality?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -375,9 +375,9 @@ export type PredictionScalarWhereWithAggregatesInput = {
   symbol?: Prisma.StringWithAggregatesFilter<"Prediction"> | string
   direction?: Prisma.EnumPredictionDirectionWithAggregatesFilter<"Prediction"> | $Enums.PredictionDirection
   pointsBet?: Prisma.IntWithAggregatesFilter<"Prediction"> | number
-  predictionPrice?: Prisma.DecimalWithAggregatesFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalWithAggregatesFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.DecimalNullableWithAggregatesFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeWithAggregatesFilter<"Prediction"> | Date | string
-  settlementPrice?: Prisma.DecimalNullableWithAggregatesFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusWithAggregatesFilter<"Prediction"> | $Enums.PredictionStatus
   pointsChange?: Prisma.IntNullableWithAggregatesFilter<"Prediction"> | number | null
   nationality?: Prisma.StringNullableWithAggregatesFilter<"Prediction"> | string | null
@@ -389,9 +389,9 @@ export type PredictionCreateInput = {
   id?: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -410,9 +410,9 @@ export type PredictionUncheckedCreateInput = {
   symbol: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -427,9 +427,9 @@ export type PredictionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -448,9 +448,9 @@ export type PredictionUncheckedUpdateInput = {
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -467,9 +467,9 @@ export type PredictionCreateManyInput = {
   symbol: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -481,9 +481,9 @@ export type PredictionUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -497,9 +497,9 @@ export type PredictionUncheckedUpdateManyInput = {
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -534,9 +534,9 @@ export type PredictionCountOrderByAggregateInput = {
   symbol?: Prisma.SortOrder
   direction?: Prisma.SortOrder
   pointsBet?: Prisma.SortOrder
-  predictionPrice?: Prisma.SortOrder
+  referenceClose?: Prisma.SortOrder
+  settlementClose?: Prisma.SortOrder
   sessionDate?: Prisma.SortOrder
-  settlementPrice?: Prisma.SortOrder
   status?: Prisma.SortOrder
   pointsChange?: Prisma.SortOrder
   nationality?: Prisma.SortOrder
@@ -546,8 +546,8 @@ export type PredictionCountOrderByAggregateInput = {
 
 export type PredictionAvgOrderByAggregateInput = {
   pointsBet?: Prisma.SortOrder
-  predictionPrice?: Prisma.SortOrder
-  settlementPrice?: Prisma.SortOrder
+  referenceClose?: Prisma.SortOrder
+  settlementClose?: Prisma.SortOrder
   pointsChange?: Prisma.SortOrder
 }
 
@@ -557,9 +557,9 @@ export type PredictionMaxOrderByAggregateInput = {
   symbol?: Prisma.SortOrder
   direction?: Prisma.SortOrder
   pointsBet?: Prisma.SortOrder
-  predictionPrice?: Prisma.SortOrder
+  referenceClose?: Prisma.SortOrder
+  settlementClose?: Prisma.SortOrder
   sessionDate?: Prisma.SortOrder
-  settlementPrice?: Prisma.SortOrder
   status?: Prisma.SortOrder
   pointsChange?: Prisma.SortOrder
   nationality?: Prisma.SortOrder
@@ -573,9 +573,9 @@ export type PredictionMinOrderByAggregateInput = {
   symbol?: Prisma.SortOrder
   direction?: Prisma.SortOrder
   pointsBet?: Prisma.SortOrder
-  predictionPrice?: Prisma.SortOrder
+  referenceClose?: Prisma.SortOrder
+  settlementClose?: Prisma.SortOrder
   sessionDate?: Prisma.SortOrder
-  settlementPrice?: Prisma.SortOrder
   status?: Prisma.SortOrder
   pointsChange?: Prisma.SortOrder
   nationality?: Prisma.SortOrder
@@ -585,8 +585,8 @@ export type PredictionMinOrderByAggregateInput = {
 
 export type PredictionSumOrderByAggregateInput = {
   pointsBet?: Prisma.SortOrder
-  predictionPrice?: Prisma.SortOrder
-  settlementPrice?: Prisma.SortOrder
+  referenceClose?: Prisma.SortOrder
+  settlementClose?: Prisma.SortOrder
   pointsChange?: Prisma.SortOrder
 }
 
@@ -761,9 +761,9 @@ export type PredictionCreateWithoutUserInput = {
   id?: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -780,9 +780,9 @@ export type PredictionUncheckedCreateWithoutUserInput = {
   symbol: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -828,9 +828,9 @@ export type PredictionScalarWhereInput = {
   symbol?: Prisma.StringFilter<"Prediction"> | string
   direction?: Prisma.EnumPredictionDirectionFilter<"Prediction"> | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFilter<"Prediction"> | number
-  predictionPrice?: Prisma.DecimalFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.DecimalNullableFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFilter<"Prediction"> | Date | string
-  settlementPrice?: Prisma.DecimalNullableFilter<"Prediction"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFilter<"Prediction"> | $Enums.PredictionStatus
   pointsChange?: Prisma.IntNullableFilter<"Prediction"> | number | null
   nationality?: Prisma.StringNullableFilter<"Prediction"> | string | null
@@ -842,9 +842,9 @@ export type PredictionCreateWithoutCommentInput = {
   id?: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -862,9 +862,9 @@ export type PredictionUncheckedCreateWithoutCommentInput = {
   symbol: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -894,9 +894,9 @@ export type PredictionUpdateWithoutCommentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -914,9 +914,9 @@ export type PredictionUncheckedUpdateWithoutCommentInput = {
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -930,9 +930,9 @@ export type PredictionCreateWithoutAssetInput = {
   id?: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -949,9 +949,9 @@ export type PredictionUncheckedCreateWithoutAssetInput = {
   userId: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -992,9 +992,9 @@ export type PredictionCreateWithoutNotificationInput = {
   id?: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -1012,9 +1012,9 @@ export type PredictionUncheckedCreateWithoutNotificationInput = {
   symbol: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -1044,9 +1044,9 @@ export type PredictionUpdateWithoutNotificationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1064,9 +1064,9 @@ export type PredictionUncheckedUpdateWithoutNotificationInput = {
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1080,9 +1080,9 @@ export type PredictionCreateWithoutPointTransactionsInput = {
   id?: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -1100,9 +1100,9 @@ export type PredictionUncheckedCreateWithoutPointTransactionsInput = {
   symbol: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -1132,9 +1132,9 @@ export type PredictionUpdateWithoutPointTransactionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1152,9 +1152,9 @@ export type PredictionUncheckedUpdateWithoutPointTransactionsInput = {
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1169,9 +1169,9 @@ export type PredictionCreateManyUserInput = {
   symbol: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -1183,9 +1183,9 @@ export type PredictionUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1202,9 +1202,9 @@ export type PredictionUncheckedUpdateWithoutUserInput = {
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1220,9 +1220,9 @@ export type PredictionUncheckedUpdateManyWithoutUserInput = {
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1235,9 +1235,9 @@ export type PredictionCreateManyAssetInput = {
   userId: string
   direction: $Enums.PredictionDirection
   pointsBet: number
-  predictionPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose: runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate: Date | string
-  settlementPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: $Enums.PredictionStatus
   pointsChange?: number | null
   nationality?: string | null
@@ -1249,9 +1249,9 @@ export type PredictionUpdateWithoutAssetInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1268,9 +1268,9 @@ export type PredictionUncheckedUpdateWithoutAssetInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1286,9 +1286,9 @@ export type PredictionUncheckedUpdateManyWithoutAssetInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumPredictionDirectionFieldUpdateOperationsInput | $Enums.PredictionDirection
   pointsBet?: Prisma.IntFieldUpdateOperationsInput | number
-  predictionPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  referenceClose?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  settlementClose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   sessionDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  settlementPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   status?: Prisma.EnumPredictionStatusFieldUpdateOperationsInput | $Enums.PredictionStatus
   pointsChange?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1333,9 +1333,9 @@ export type PredictionSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   symbol?: boolean
   direction?: boolean
   pointsBet?: boolean
-  predictionPrice?: boolean
+  referenceClose?: boolean
+  settlementClose?: boolean
   sessionDate?: boolean
-  settlementPrice?: boolean
   status?: boolean
   pointsChange?: boolean
   nationality?: boolean
@@ -1355,9 +1355,9 @@ export type PredictionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   symbol?: boolean
   direction?: boolean
   pointsBet?: boolean
-  predictionPrice?: boolean
+  referenceClose?: boolean
+  settlementClose?: boolean
   sessionDate?: boolean
-  settlementPrice?: boolean
   status?: boolean
   pointsChange?: boolean
   nationality?: boolean
@@ -1373,9 +1373,9 @@ export type PredictionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   symbol?: boolean
   direction?: boolean
   pointsBet?: boolean
-  predictionPrice?: boolean
+  referenceClose?: boolean
+  settlementClose?: boolean
   sessionDate?: boolean
-  settlementPrice?: boolean
   status?: boolean
   pointsChange?: boolean
   nationality?: boolean
@@ -1391,9 +1391,9 @@ export type PredictionSelectScalar = {
   symbol?: boolean
   direction?: boolean
   pointsBet?: boolean
-  predictionPrice?: boolean
+  referenceClose?: boolean
+  settlementClose?: boolean
   sessionDate?: boolean
-  settlementPrice?: boolean
   status?: boolean
   pointsChange?: boolean
   nationality?: boolean
@@ -1401,7 +1401,7 @@ export type PredictionSelectScalar = {
   settledAt?: boolean
 }
 
-export type PredictionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "symbol" | "direction" | "pointsBet" | "predictionPrice" | "sessionDate" | "settlementPrice" | "status" | "pointsChange" | "nationality" | "createdAt" | "settledAt", ExtArgs["result"]["prediction"]>
+export type PredictionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "symbol" | "direction" | "pointsBet" | "referenceClose" | "settlementClose" | "sessionDate" | "status" | "pointsChange" | "nationality" | "createdAt" | "settledAt", ExtArgs["result"]["prediction"]>
 export type PredictionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   asset?: boolean | Prisma.MarketAssetDefaultArgs<ExtArgs>
@@ -1434,9 +1434,9 @@ export type $PredictionPayload<ExtArgs extends runtime.Types.Extensions.Internal
     symbol: string
     direction: $Enums.PredictionDirection
     pointsBet: number
-    predictionPrice: runtime.Decimal
+    referenceClose: runtime.Decimal
+    settlementClose: runtime.Decimal | null
     sessionDate: Date
-    settlementPrice: runtime.Decimal | null
     status: $Enums.PredictionStatus
     pointsChange: number | null
     nationality: string | null
@@ -1875,9 +1875,9 @@ export interface PredictionFieldRefs {
   readonly symbol: Prisma.FieldRef<"Prediction", 'String'>
   readonly direction: Prisma.FieldRef<"Prediction", 'PredictionDirection'>
   readonly pointsBet: Prisma.FieldRef<"Prediction", 'Int'>
-  readonly predictionPrice: Prisma.FieldRef<"Prediction", 'Decimal'>
+  readonly referenceClose: Prisma.FieldRef<"Prediction", 'Decimal'>
+  readonly settlementClose: Prisma.FieldRef<"Prediction", 'Decimal'>
   readonly sessionDate: Prisma.FieldRef<"Prediction", 'DateTime'>
-  readonly settlementPrice: Prisma.FieldRef<"Prediction", 'Decimal'>
   readonly status: Prisma.FieldRef<"Prediction", 'PredictionStatus'>
   readonly pointsChange: Prisma.FieldRef<"Prediction", 'Int'>
   readonly nationality: Prisma.FieldRef<"Prediction", 'String'>

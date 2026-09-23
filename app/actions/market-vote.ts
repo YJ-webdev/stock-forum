@@ -16,7 +16,7 @@ interface SubmitMarketVoteInput {
   nationality: string;
   direction: VoteDirection;
   pointsBet: number;
-  predictionPrice: number;
+  referenceClose: number;
   sessionDate: Date;
 }
 // GET CURRENT USER'S VOTE
@@ -53,7 +53,7 @@ export async function submitMarketVote({
   nationality,
   direction,
   pointsBet,
-  predictionPrice,
+  referenceClose,
   sessionDate,
 }: SubmitMarketVoteInput) {
   const session = await auth();
@@ -74,7 +74,7 @@ export async function submitMarketVote({
     throw new Error("Bet amount must be between 50 and 500 points.");
   }
 
-  if (!Number.isFinite(predictionPrice) || predictionPrice <= 0) {
+  if (!Number.isFinite(referenceClose) || referenceClose <= 0) {
     throw new Error("Invalid prediction price.");
   }
 
@@ -125,7 +125,7 @@ export async function submitMarketVote({
       symbol,
       direction,
       pointsBet,
-      predictionPrice,
+      referenceClose,
       sessionDate,
       nationality: nationality,
     },
@@ -134,7 +134,7 @@ export async function submitMarketVote({
       symbol: true,
       direction: true,
       pointsBet: true,
-      predictionPrice: true,
+      referenceClose: true,
       sessionDate: true,
       status: true,
       nationality: true,

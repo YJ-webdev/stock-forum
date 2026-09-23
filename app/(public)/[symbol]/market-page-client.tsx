@@ -204,9 +204,9 @@ export default function MarketPageClient({
       return;
     }
 
-    const predictionPrice = Number(data.rawPrice);
+    const referenceClose = Number(data.rawPrice);
 
-    if (!Number.isFinite(predictionPrice) || predictionPrice <= 0) {
+    if (!Number.isFinite(referenceClose) || referenceClose <= 0) {
       toast.error("Invalid market price.");
       return;
     }
@@ -262,7 +262,7 @@ export default function MarketPageClient({
           prediction: {
             direction,
             pointsBet: betAmount,
-            predictionPrice,
+            referenceClose,
             sessionDate,
           },
         });

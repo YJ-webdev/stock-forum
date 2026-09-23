@@ -20,7 +20,7 @@ import { hasEditorContent } from "@/lib/utils/tiptap-utils";
 type PredictionInput = {
   direction: "BULL" | "BEAR";
   pointsBet: number;
-  predictionPrice: number;
+  referenceClose: number;
   sessionDate: Date;
 };
 
@@ -100,8 +100,8 @@ export async function createComment({
     }
 
     if (
-      !Number.isFinite(prediction.predictionPrice) ||
-      prediction.predictionPrice <= 0
+      !Number.isFinite(prediction.referenceClose) ||
+      prediction.referenceClose <= 0
     ) {
       throw new Error("Invalid prediction price.");
     }
@@ -207,7 +207,7 @@ export async function createComment({
           direction: prediction.direction,
           pointsBet: prediction.pointsBet,
 
-          predictionPrice: prediction.predictionPrice,
+          referenceClose: prediction.referenceClose,
           sessionDate: prediction.sessionDate,
 
           nationality: user.nationality!,

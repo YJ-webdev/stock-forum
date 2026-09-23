@@ -171,17 +171,16 @@ model Prediction {
   direction PredictionDirection
 
   pointsBet       Int
-  predictionPrice Decimal  @db.Decimal(18, 4)
+  referenceClose Decimal @db.Decimal(18, 4)
+  settlementClose Decimal? @db.Decimal(18, 4)
   sessionDate     DateTime
 
-  settlementPrice Decimal?         @db.Decimal(18, 4)
   status          PredictionStatus @default(PENDING)
   pointsChange    Int?
 
   nationality String?
 
   comment Comment?
-
   notification      Notification?
   pointTransactions PointTransaction[]
 

@@ -109,7 +109,7 @@ CREATE TABLE "Prediction" (
     "symbol" TEXT NOT NULL,
     "direction" "PredictionDirection" NOT NULL,
     "pointsBet" INTEGER NOT NULL,
-    "predictionPrice" DECIMAL(18,4) NOT NULL,
+    "referenceClose" DECIMAL(18,4) NOT NULL,
     "sessionDate" TIMESTAMP(3) NOT NULL,
     "closingPrice" DECIMAL(18,4),
     "status" "PredictionStatus" NOT NULL DEFAULT 'PENDING',
