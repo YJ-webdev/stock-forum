@@ -3,6 +3,28 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+export async function getUnreadNotificationCount() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return 0;
+  }
+
+  return prisma.notification.count({
+    where: {
+      userId: session.user.id,
+      readAt: null,
+    },
+  });
+}
+
+const SOCIAL_NOTIFICATION_TYPES = [
+  "COMMENT_LIKED",
+  "REPLY_LIKED",
+  "COMMENT_REPLIED",
+  "REPLY_REPLIED",
+] as const;
+
 export async function getNotifications() {
   const session = await auth();
 
@@ -26,13 +48,8 @@ export async function getNotifications() {
       type: true,
       title: true,
       message: true,
-
       readAt: true,
       createdAt: true,
-
-      // -----------------------------------------------------------------------
-      // ACTOR
-      // -----------------------------------------------------------------------
 
       actorId: true,
 
@@ -54,6 +71,9 @@ export async function getNotifications() {
       comment: {
         select: {
           id: true,
+
+          // Important: needed for notification preview.
+          content: true,
 
           assets: {
             select: {
@@ -79,6 +99,9 @@ export async function getNotifications() {
         select: {
           id: true,
           commentId: true,
+
+          // Important: needed for notification preview.
+          content: true,
 
           comment: {
             select: {
@@ -109,94 +132,14 @@ export async function getNotifications() {
           symbol: true,
           direction: true,
           pointsBet: true,
-
           referenceClose: true,
           settlementClose: true,
-
           status: true,
         },
       },
     },
   });
 }
-
-// -----------------------------------------------------------------------------
-// UNREAD COUNT
-// -----------------------------------------------------------------------------
-
-export async function getUnreadNotificationCount() {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return 0;
-  }
-
-  return prisma.notification.count({
-    where: {
-      userId: session.user.id,
-      readAt: null,
-    },
-  });
-}
-
-// -----------------------------------------------------------------------------
-// MARK ONE AS READ
-// -----------------------------------------------------------------------------
-
-export async function markNotificationAsRead(notificationId: string) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
-  }
-
-  await prisma.notification.updateMany({
-    where: {
-      id: notificationId,
-      userId: session.user.id,
-      readAt: null,
-    },
-
-    data: {
-      readAt: new Date(),
-    },
-  });
-
-  return {
-    success: true,
-  };
-}
-
-// -----------------------------------------------------------------------------
-// MARK ALL AS READ
-// -----------------------------------------------------------------------------
-
-export async function markAllNotificationsAsRead() {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
-  }
-
-  await prisma.notification.updateMany({
-    where: {
-      userId: session.user.id,
-      readAt: null,
-    },
-
-    data: {
-      readAt: new Date(),
-    },
-  });
-
-  return {
-    success: true,
-  };
-}
-
-// -----------------------------------------------------------------------------
-// TYPE
-// -----------------------------------------------------------------------------
 
 export type MyNotification = Awaited<
   ReturnType<typeof getNotifications>
@@ -220,4 +163,81 @@ export async function hasUnreadNotifications() {
   });
 
   return Boolean(notification);
+}
+
+export async function markNotificationAsRead(notificationId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  await prisma.notification.updateMany({
+    where: {
+      id: notificationId,
+      userId: session.user.id,
+      readAt: null,
+    },
+    data: {
+      readAt: new Date(),
+    },
+  });
+}
+
+export async function markAllNotificationsAsRead() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  await prisma.notification.updateMany({
+    where: {
+      userId: session.user.id,
+      readAt: null,
+    },
+    data: {
+      readAt: new Date(),
+    },
+  });
+}
+
+export async function deleteSocialNotification(notificationId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  await prisma.notification.deleteMany({
+    where: {
+      id: notificationId,
+
+      // Security: user can only delete their own notification.
+      userId: session.user.id,
+
+      // Do not allow this action to delete prediction notifications.
+      type: {
+        in: [...SOCIAL_NOTIFICATION_TYPES],
+      },
+    },
+  });
+}
+
+export async function deleteAllSocialNotifications() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  await prisma.notification.deleteMany({
+    where: {
+      userId: session.user.id,
+
+      type: {
+        in: [...SOCIAL_NOTIFICATION_TYPES],
+      },
+    },
+  });
 }

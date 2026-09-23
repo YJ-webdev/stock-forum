@@ -13,7 +13,6 @@ import { Footer } from "./footer";
 import { PostEditor } from "@/components/post-editor";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 import { usePathname } from "next/navigation";
-import { SectionBContext } from "../context/section-b-context";
 import { UserProvider } from "../context/user-context";
 import { AccountPanel } from "./account-panel";
 import { NotificationPanel } from "./notification-panel";
@@ -168,60 +167,53 @@ export default function LayoutShell({
   }, []);
 
   return (
-    <SectionBContext.Provider
-      value={{
-        showWrite: handleWrite,
-        showAccount: handleAccount,
-        showNotification: handleNotification,
-      }}
-    >
-      <UserProvider user={user}>
-        <PointBalanceProvider>
-          <div className="relative flex flex-col min-h-screen">
-            <Header
-              user={user}
-              onTogglePanel={() => setIsOpen((prev) => !prev)}
-              onWrite={handleWrite}
-              onAccount={handleAccount}
-              onNotification={handleNotification}
-            />
-            <PanelLeft
-              isOpen={isOpen}
-              setIsOpen={setIsOpen}
-              news={news}
-              comments={mostLikedComments}
-              popularBoards={popularBoards}
-            />
-            <div
-              className={`pt-14 flex flex-col md:flex-row transition-all duration-300 ease-in-out ${
-                isOpen
-                  ? "xl:ml-80 xl:w-[calc(100%-320px)] w-full ml-0"
-                  : "ml-0 w-full"
-              }`}
-            >
-              <ResizablePanelGroup orientation="horizontal" className="">
-                <ResizablePanel>
-                  <section className="w-full flex flex-col min-w-0 bg-white dark:bg-zinc-900">
-                    <div className="flex-1">
-                      {pathname !== "/" && <BreadCrumbs />}
-                      {children}
-                    </div>
-                  </section>
-                </ResizablePanel>
-                <ResizableHandle className="border-gray-50 w-0" />
-                <ResizablePanel
-                  panelRef={panelBRef}
-                  defaultSize="30%"
-                  minSize="1P%"
-                  className="z-20 
+    <UserProvider user={user}>
+      <PointBalanceProvider>
+        <div className="relative flex flex-col min-h-screen">
+          <Header
+            user={user}
+            onTogglePanel={() => setIsOpen((prev) => !prev)}
+            onWrite={handleWrite}
+            onAccount={handleAccount}
+            onNotification={handleNotification}
+          />
+          <PanelLeft
+            isOpen={isOpen}
+            setIsOpen={setIsOpen}
+            news={news}
+            comments={mostLikedComments}
+            popularBoards={popularBoards}
+          />
+          <div
+            className={`pt-14 flex flex-col md:flex-row transition-all duration-300 ease-in-out ${
+              isOpen
+                ? "xl:ml-80 xl:w-[calc(100%-320px)] w-full ml-0"
+                : "ml-0 w-full"
+            }`}
+          >
+            <ResizablePanelGroup orientation="horizontal" className="">
+              <ResizablePanel>
+                <section className="w-full flex flex-col min-w-0 bg-white dark:bg-zinc-900">
+                  <div className="flex-1">
+                    {pathname !== "/" && <BreadCrumbs />}
+                    {children}
+                  </div>
+                </section>
+              </ResizablePanel>
+              <ResizableHandle className="border-gray-50 w-0" />
+              <ResizablePanel
+                panelRef={panelBRef}
+                defaultSize="30%"
+                minSize="1P%"
+                className="z-20 
     bg-white dark:bg-zinc-900
     border-l border-gray-100 dark:border-zinc-800
   "
-                >
-                  {/* This stays inside ResizablePanel and tracks its actual width */}
-                  <div ref={sectionBRef} className="w-full min-w-0">
-                    <div
-                      className="
+              >
+                {/* This stays inside ResizablePanel and tracks its actual width */}
+                <div ref={sectionBRef} className="w-full min-w-0">
+                  <div
+                    className="
         fixed
         top-14
         bottom-0
@@ -232,50 +224,47 @@ export default function LayoutShell({
         flex flex-col gap-3
         bg-white dark:bg-zinc-900
       "
-                      style={{
-                        left: sectionBPosition.left,
-                        width: sectionBPosition.width,
-                      }}
-                    >
-                      {user && onWrite && (
-                        <PostEditor
-                          isLoggedIn={!!user}
-                          nationality={user?.nationality ?? null}
-                          setOnWrite={setOnWrite}
-                          onCommentCreated={handleCommentCreated}
-                        />
-                      )}
-                      {user && onAccount && !onWrite && (
-                        <AccountPanel user={user} setOnAccount={setOnAccount} />
-                      )}
-                      {user && onNotification && (
-                        <NotificationPanel
-                          refreshKey={notificationRefreshKey}
-                        />
-                      )}
-                      {!onWrite && !onAccount && !onNotification && (
-                        <>
-                          <div className="mx-4 mt-8">
-                            <p className="text-muted-foreground/50 text-xs text-light tracking-wider truncate">
-                              Top traders
-                            </p>
-                          </div>
-                          <TopTraders />
-                          <div className="text-zinc-300 dark:text-zinc-700 font-light mx-4 border border-zinc-100 dark:border-zinc-800 rounded-lg p-2 h-80">
-                            {" "}
-                            advertisement
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    style={{
+                      left: sectionBPosition.left,
+                      width: sectionBPosition.width,
+                    }}
+                  >
+                    {user && onWrite && (
+                      <PostEditor
+                        isLoggedIn={!!user}
+                        nationality={user?.nationality ?? null}
+                        setOnWrite={setOnWrite}
+                        onCommentCreated={handleCommentCreated}
+                      />
+                    )}
+                    {user && onAccount && !onWrite && (
+                      <AccountPanel user={user} setOnAccount={setOnAccount} />
+                    )}
+                    {user && onNotification && (
+                      <NotificationPanel refreshKey={notificationRefreshKey} />
+                    )}
+                    {!onWrite && !onAccount && !onNotification && (
+                      <>
+                        <div className="mx-4 mt-8">
+                          <p className="text-muted-foreground/50 text-xs text-light tracking-wider truncate">
+                            Top traders
+                          </p>
+                        </div>
+                        <TopTraders />
+                        <div className="text-zinc-300 dark:text-zinc-700 font-light mx-4 border border-zinc-100 dark:border-zinc-800 rounded-lg p-2 h-80">
+                          {" "}
+                          advertisement
+                        </div>
+                      </>
+                    )}
                   </div>
-                </ResizablePanel>
-              </ResizablePanelGroup>{" "}
-            </div>{" "}
-            <Footer />
-          </div>
-        </PointBalanceProvider>
-      </UserProvider>
-    </SectionBContext.Provider>
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>{" "}
+          </div>{" "}
+          <Footer />
+        </div>
+      </PointBalanceProvider>
+    </UserProvider>
   );
 }

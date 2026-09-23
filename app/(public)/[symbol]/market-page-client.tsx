@@ -100,10 +100,6 @@ export default function MarketPageClient({
   // getVotingWindow() creates a new Date object on every render.
   const predictionForMs = votingWindow.predictionFor?.getTime() ?? null;
 
-  // ------------------------------------------------------------
-  // Load current round's existing prediction
-  // ------------------------------------------------------------
-
   useEffect(() => {
     if (!selectedSymbol || predictionForMs === null) {
       setSelectedVote(null);
@@ -142,10 +138,6 @@ export default function MarketPageClient({
       cancelled = true;
     };
   }, [selectedSymbol, predictionForMs]);
-
-  // ------------------------------------------------------------
-  // Submit prediction
-  // ------------------------------------------------------------
 
   const handleVote = (
     direction: VoteDirection,
@@ -291,10 +283,6 @@ export default function MarketPageClient({
     });
   };
 
-  // ------------------------------------------------------------
-  // Chart range
-  // ------------------------------------------------------------
-
   const handleRangeChange = async (range: SelectedRange) => {
     if (range === activeRange) return;
 
@@ -328,10 +316,6 @@ export default function MarketPageClient({
 
     setActiveRange(range);
   };
-
-  // ------------------------------------------------------------
-  // Scroll to top when market changes
-  // ------------------------------------------------------------
 
   useEffect(() => {
     setBetAmount(50);

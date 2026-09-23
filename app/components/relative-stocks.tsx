@@ -5,7 +5,7 @@ import { MarketSymbolItem } from "@/lib/data/market-symbols";
 import { TrendSparkline } from "./trend-sparkline";
 import { Numeric } from "./numeric";
 import { useRouter } from "next/navigation";
-import { useSectionB } from "../context/section-b-context";
+
 import { MdOutlineHowToVote } from "react-icons/md";
 
 interface RelativeStocksProps {
@@ -79,7 +79,7 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
 
 function RelativeStockRow({ item, setActiveRange }: RelativeStockRowProps) {
   const router = useRouter();
-  const { showWrite } = useSectionB();
+
   /*
    * No polling.
    *
@@ -103,7 +103,6 @@ function RelativeStockRow({ item, setActiveRange }: RelativeStockRowProps) {
   const href = `/${encodeURIComponent(item.symbol)}`;
 
   const handleRowClick = () => {
-    showWrite();
     router.push(href, { scroll: true });
   };
 
@@ -122,7 +121,7 @@ function RelativeStockRow({ item, setActiveRange }: RelativeStockRowProps) {
     >
       {/* Asset */}
       <td className="w-[37%] overflow-hidden py-3 pl-4 leading-snug md:w-[17%] md:py-2.5">
-        <div className="truncate text-[16px] font-medium leading-[18px] md:text-[17px]">
+        <div className="truncate text-[16px] font-medium leading-4.5 md:text-[17px]">
           {item.displaySymbol}
         </div>
 
@@ -149,7 +148,7 @@ function RelativeStockRow({ item, setActiveRange }: RelativeStockRowProps) {
           {quote?.value ?? "-"}
 
           <span
-            className={`mt-0.5 block text-[12px] leading-[16px] font-medium md:hidden ${priceColor}`}
+            className={`mt-0.5 block text-[12px] leading-4 font-medium md:hidden ${priceColor}`}
           >
             {quote?.percent ?? "-"}
           </span>
