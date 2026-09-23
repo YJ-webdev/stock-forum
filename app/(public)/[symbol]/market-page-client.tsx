@@ -3,7 +3,6 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import {
@@ -19,7 +18,12 @@ import { MarketDetailHeader } from "@/app/components/market-detail-header";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { ALL_MARKET_SYMBOLS, AssetType } from "@/lib/data/market-symbols";
 
-import { getMarketVote, type VoteDirection } from "@/app/actions/market-vote";
+import {
+  getMarketVote,
+  getMarketVoteStats,
+  type MarketVoteStats,
+  type VoteDirection,
+} from "@/app/actions/market-vote";
 
 import { createComment, type MarketPageComments } from "@/app/actions/post";
 
@@ -32,6 +36,7 @@ import { TrendSparkline } from "@/app/components/trend-sparkline";
 
 import { MarketComments } from "@/app/components/comment";
 import { usePointBalance } from "@/app/context/point-balance-context";
+import { countryCodeToFlag } from "@/lib/utils/nationality-flag";
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
@@ -59,6 +64,7 @@ export default function MarketPageClient({
 
   const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
   const [selectedVote, setSelectedVote] = useState<VoteDirection | null>(null);
+  const [voteStats, setVoteStats] = useState<MarketVoteStats | null>(null);
 
   const [now] = useState(() => Date.now());
 
@@ -133,6 +139,38 @@ export default function MarketPageClient({
     }
 
     loadVote(predictionForMs);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSymbol, predictionForMs]);
+
+  useEffect(() => {
+    if (!selectedSymbol || predictionForMs === null) {
+      setVoteStats(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadVoteStats(sessionMs: number) {
+      try {
+        const stats = await getMarketVoteStats({
+          symbol: selectedSymbol,
+          sessionDate: new Date(sessionMs),
+        });
+
+        if (!cancelled) {
+          setVoteStats(stats);
+        }
+      } catch {
+        if (!cancelled) {
+          setVoteStats(null);
+        }
+      }
+    }
+
+    loadVoteStats(predictionForMs);
 
     return () => {
       cancelled = true;
@@ -265,6 +303,12 @@ export default function MarketPageClient({
 
         await onSuccess?.();
 
+        const stats = await getMarketVoteStats({
+          symbol: selectedSymbol,
+          sessionDate,
+        });
+        setVoteStats(stats);
+
         toast.success(
           direction === "BULL"
             ? `Bullish prediction submitted with ${betAmount} pts.`
@@ -326,6 +370,14 @@ export default function MarketPageClient({
       behavior: "instant",
     });
   }, [selectedSymbol]);
+
+  const SENTIMENT_BLOCKS = 17;
+  const bullBlocks = voteStats
+    ? Math.round((voteStats.bullPercent / 100) * SENTIMENT_BLOCKS)
+    : 0;
+  const bearBlocks = SENTIMENT_BLOCKS - bullBlocks;
+  const bullBar = "█".repeat(bullBlocks);
+  const bearBar = "░".repeat(bearBlocks);
 
   return (
     <div className="mx-auto mt-20 max-w-4xl">
@@ -498,6 +550,115 @@ export default function MarketPageClient({
             </div>
           </div>
         </>
+      )}
+
+      {/* Market sentiment */}
+      {data && voteStats && (
+        <div className="ibmPlexMono mx-4 mt-8">
+          <div
+            className="
+        flex flex-col gap-5
+        rounded-xl
+        bg-zinc-50
+        px-5 py-4
+        dark:bg-zinc-800/50
+        sm:flex-row sm:items-start sm:justify-between
+      "
+          >
+            {/* Voter nationalities */}
+            <div className="min-w-0">
+              <p className="text-[14px] font-medium">Voters</p>
+
+              {voteStats.totalVotes > 0 ? (
+                <div
+                  className="
+              mt-2
+              grid grid-cols-2
+              gap-x-6 gap-y-1.5
+              text-[13px]
+              text-zinc-500
+              dark:text-zinc-400
+            "
+                >
+                  {voteStats.nationalities.map((country) => (
+                    <div
+                      key={country.nationality}
+                      className="flex items-center gap-2 whitespace-nowrap"
+                    >
+                      <span>
+                        {country.nationality === "OTHER"
+                          ? "🌐"
+                          : countryCodeToFlag(country.nationality)}
+                      </span>
+
+                      <span>
+                        {country.nationality === "OTHER"
+                          ? "Other"
+                          : country.nationality}
+                      </span>
+
+                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                        {country.percent}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-[13px] text-zinc-500 dark:text-zinc-400">
+                  No votes yet
+                </p>
+              )}
+            </div>
+
+            {/* Bull / Bear sentiment */}
+            <div
+              className="
+          w-full
+          border-t border-zinc-200
+          pt-4
+          dark:border-zinc-700
+          sm:w-56 sm:shrink-0
+          sm:border-t-0 sm:pt-0
+        "
+            >
+              <div className="flex items-center justify-between text-[14px] font-medium">
+                <span>
+                  {voteStats.totalVotes > 0
+                    ? voteStats.bullPercent >= voteStats.bearPercent
+                      ? "Bullish"
+                      : "Bearish"
+                    : "No sentiment"}
+                </span>
+
+                <span>
+                  {voteStats.bullPercent}% / {voteStats.bearPercent}%
+                </span>
+              </div>
+
+              <div
+                className="
+            mt-2
+            flex w-full
+            overflow-hidden
+            whitespace-nowrap
+            text-[15px]
+            leading-none
+          "
+              >
+                <span className="text-emerald-600">{bullBar}</span>
+
+                <span className="text-zinc-300 dark:text-zinc-600">
+                  {bearBar}
+                </span>
+              </div>
+
+              <p className="mt-2 text-end text-[14px] font-medium">
+                {voteStats.totalVotes}{" "}
+                {voteStats.totalVotes === 1 ? "vote" : "votes"}
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
       <div ref={discussionRef} className="mx-4 mt-10 mb-20">

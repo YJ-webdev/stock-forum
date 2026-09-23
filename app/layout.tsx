@@ -6,6 +6,7 @@ import {
   Roboto_Mono,
   Red_Hat_Display,
   Plus_Jakarta_Sans,
+  IBM_Plex_Mono,
 } from "next/font/google";
 import "@/app/globals.css";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,11 @@ import { SessionProvider } from "@/components/providers/session-provider";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-ibm-plex-mono",
+});
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
@@ -59,6 +65,7 @@ export default function RootLayout({
         robotoMono.variable,
         redHatDisplay.variable,
         jakartaSans.variable,
+        ibmPlexMono.variable,
       )}
       suppressHydrationWarning
     >

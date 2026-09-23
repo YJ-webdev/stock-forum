@@ -210,6 +210,10 @@
   font-family: var(--font-jakarta), sans-serif;
 }
 
+.ibmPlexMono {
+  font-family: var(--font-ibm-plex-mono), monospace;
+}
+
 /* --------------------------------
    TipTap Editor
 --------------------------------- */

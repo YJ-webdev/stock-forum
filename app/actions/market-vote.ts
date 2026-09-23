@@ -48,6 +48,126 @@ export async function getMarketVote({
   return prediction?.direction ?? null;
 }
 
+export type MarketVoteStats = {
+  totalVotes: number;
+  bullVotes: number;
+  bearVotes: number;
+  bullPercent: number;
+  bearPercent: number;
+
+  nationalities: {
+    nationality: string;
+    votes: number;
+    percent: number;
+  }[];
+};
+
+interface GetMarketVoteStatsInput {
+  symbol: string;
+  sessionDate: Date;
+}
+
+export async function getMarketVoteStats({
+  symbol,
+  sessionDate,
+}: GetMarketVoteStatsInput): Promise<MarketVoteStats> {
+  const predictions = await prisma.prediction.findMany({
+    where: {
+      symbol,
+      sessionDate,
+    },
+    select: {
+      direction: true,
+      nationality: true,
+    },
+  });
+
+  const totalVotes = predictions.length;
+
+  if (totalVotes === 0) {
+    return {
+      totalVotes: 0,
+      bullVotes: 0,
+      bearVotes: 0,
+      bullPercent: 0,
+      bearPercent: 0,
+      nationalities: [],
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // BULL / BEAR
+  // ---------------------------------------------------------------------------
+
+  let bullVotes = 0;
+  let bearVotes = 0;
+
+  for (const prediction of predictions) {
+    if (prediction.direction === "BULL") {
+      bullVotes++;
+    } else if (prediction.direction === "BEAR") {
+      bearVotes++;
+    }
+  }
+
+  const bullPercent = Math.round((bullVotes / totalVotes) * 100);
+  const bearPercent = 100 - bullPercent;
+
+  // ---------------------------------------------------------------------------
+  // NATIONALITIES
+  // ---------------------------------------------------------------------------
+
+  const nationalityCounts = new Map<string, number>();
+
+  for (const prediction of predictions) {
+    const nationality = prediction.nationality?.trim().toUpperCase() || "OTHER";
+
+    nationalityCounts.set(
+      nationality,
+      (nationalityCounts.get(nationality) ?? 0) + 1,
+    );
+  }
+
+  const sortedNationalities = [...nationalityCounts.entries()]
+    .filter(([nationality]) => nationality !== "OTHER")
+    .sort((a, b) => b[1] - a[1]);
+
+  // Show top 3 actual countries.
+  const topNationalities = sortedNationalities.slice(0, 3);
+
+  // Everything else + null nationalities becomes Other.
+  const remainingNationalityVotes = sortedNationalities
+    .slice(3)
+    .reduce((total, [, votes]) => total + votes, 0);
+
+  const nullNationalityVotes = nationalityCounts.get("OTHER") ?? 0;
+
+  const otherVotes = remainingNationalityVotes + nullNationalityVotes;
+
+  const nationalities = topNationalities.map(([nationality, votes]) => ({
+    nationality,
+    votes,
+    percent: Math.round((votes / totalVotes) * 100),
+  }));
+
+  if (otherVotes > 0) {
+    nationalities.push({
+      nationality: "OTHER",
+      votes: otherVotes,
+      percent: Math.round((otherVotes / totalVotes) * 100),
+    });
+  }
+
+  return {
+    totalVotes,
+    bullVotes,
+    bearVotes,
+    bullPercent,
+    bearPercent,
+    nationalities,
+  };
+}
+
 export async function submitMarketVote({
   symbol,
   nationality,
