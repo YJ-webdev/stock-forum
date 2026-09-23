@@ -789,14 +789,15 @@ export async function getMostLikedComments(): Promise<MostLikedComment[]> {
         createdAt: "desc",
       },
     ],
-
-    // Fetch extra because prediction-only / GIF-only comments
-    // may be removed below.
     take: 30,
   });
 
   return comments
-    .filter((comment) => hasTextContent(comment.content as JSONContent))
+    .filter((comment) => {
+      const content = comment.content as JSONContent;
+
+      return hasTextContent(content) && !isDeletedCommentContent(content);
+    })
     .slice(0, 5)
     .map((comment) => ({
       ...comment,
@@ -1310,3 +1311,14 @@ export async function restoreReply(replyId: string) {
 }
 
 export type MarketPageComments = Awaited<ReturnType<typeof getMarketComments>>;
+
+function isDeletedCommentContent(content: JSONContent): boolean {
+  const text =
+    content.content
+      ?.flatMap((node) => node.content ?? [])
+      .map((node) => node.text ?? "")
+      .join("")
+      .trim() ?? "";
+
+  return text === "Comment deleted by user";
+}
