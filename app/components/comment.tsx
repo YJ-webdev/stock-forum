@@ -154,6 +154,8 @@ export function MarketComments({
 
   const buttonDisabled = voteLoading || isMarketOpen;
 
+  const showPredictionInput = !voteLoading && !hasAlreadyVoted && !isMarketOpen;
+
   const submitVote = (comment: string, gif: GifResult | null) => {
     if (!user) {
       toast.error("Please log in to vote.");
@@ -198,16 +200,7 @@ export function MarketComments({
       </div>
 
       {/* Input */}
-      {hasAlreadyVoted || isMarketOpen ? (
-        <CommentOnlyInput
-          assetSymbol={assetSymbol}
-          targetMs={targetMs}
-          countdownType={countdownType}
-          showCountdown={showCountdown}
-          isMarketOpen={isMarketOpen}
-          onCommentCreated={loadComments}
-        />
-      ) : (
+      {showPredictionInput ? (
         <PredictionCommentInput
           direction={direction}
           setDirection={setDirection}
@@ -222,6 +215,15 @@ export function MarketComments({
           targetMs={targetMs}
           countdownType={countdownType}
           showCountdown={showCountdown}
+        />
+      ) : (
+        <CommentOnlyInput
+          assetSymbol={assetSymbol}
+          targetMs={targetMs}
+          countdownType={countdownType}
+          showCountdown={showCountdown}
+          isMarketOpen={isMarketOpen}
+          onCommentCreated={loadComments}
         />
       )}
 
@@ -288,6 +290,9 @@ function CommentItem({
 
   const username = comment.author.name ?? "User";
 
+  const isDeletedPredictionComment =
+    !!comment.prediction && isDeletedPredictionContent(comment.content);
+
   const threadEvents = {
     onMouseEnter: () => setThreadHovered(true),
     onMouseLeave: () => setThreadHovered(false),
@@ -320,10 +325,13 @@ function CommentItem({
 
       await onDeleted();
 
-      // notifyCommentChanged();
+      if (result.action === "ALREADY_CONTENT_REMOVED") {
+        toast.info("Comment already deleted. Your prediction remains.");
+        return;
+      }
 
       if (result.action === "CONTENT_REMOVED") {
-        toast.success("Comment content deleted. Your prediction remains.");
+        toast.success("Comment deleted. Your prediction remains.");
         return;
       }
 
@@ -388,14 +396,6 @@ function CommentItem({
       setIsModerating(false);
     }
   };
-
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // LIKE
-  // ---------------------------------------------------------------------------
 
   const handleCommentLike = () => {
     if (!currentUser) {
@@ -491,6 +491,10 @@ function CommentItem({
               <p className="mt-1 text-[15px] italic text-zinc-400">
                 Comment hidden by moderation
               </p>
+            ) : isDeletedPredictionComment ? (
+              <p className="mt-1 text-[15px] italic text-zinc-400">
+                Comment deleted by user
+              </p>
             ) : isEditing ? (
               <CommentEditInput
                 commentId={comment.id}
@@ -500,12 +504,10 @@ function CommentItem({
                   setIsEditing(false);
 
                   await onCommentUpdated();
-
-                  // notifyCommentChanged();
                 }}
               />
             ) : (
-              <div className="flex items-baseline gap-1 lowercase mt-0.5">
+              <div className="mt-0.5 flex items-baseline gap-1 lowercase">
                 <CommentContent content={comment.content} />
 
                 {comment.editedAt && (
@@ -921,4 +923,14 @@ function formatTimeAgo(date: Date | string) {
   }
 
   return new Date(date).toLocaleDateString();
+}
+
+function isDeletedPredictionContent(content: JSONContent): boolean {
+  const text = content.content
+    ?.flatMap((node) => node.content ?? [])
+    .map((node) => node.text ?? "")
+    .join("")
+    .trim();
+
+  return text === "Comment deleted by user";
 }

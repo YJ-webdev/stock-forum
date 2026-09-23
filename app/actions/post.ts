@@ -522,12 +522,20 @@ export async function deleteComment(commentId: string) {
     where: {
       id: commentId,
     },
-
     select: {
       id: true,
       authorId: true,
       predictionId: true,
+      content: true,
+
+      withdrawnAt: true,
       moderatedAt: true,
+
+      _count: {
+        select: {
+          replies: true,
+        },
+      },
     },
   });
 
@@ -551,19 +559,44 @@ export async function deleteComment(commentId: string) {
   //
   // Replies remain untouched.
   // ---------------------------------------------------------------------------
-
   if (comment.predictionId) {
+    const deletedContent: JSONContent = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: "Comment deleted by user",
+            },
+          ],
+        },
+      ],
+    };
+
+    const currentContent = comment.content as JSONContent;
+
+    const currentText =
+      currentContent.content
+        ?.flatMap((node) => node.content ?? [])
+        .map((node) => node.text ?? "")
+        .join("")
+        .trim() ?? "";
+
+    if (currentText === "Comment deleted by user") {
+      return {
+        success: true,
+        action: "ALREADY_CONTENT_REMOVED" as const,
+      };
+    }
+
     await prisma.comment.update({
       where: {
         id: commentId,
       },
-
       data: {
-        content: {
-          type: "doc",
-          content: [],
-        },
-
+        content: deletedContent,
         editedAt: null,
       },
     });
