@@ -7,7 +7,7 @@ import { MostLikedComments } from "./most-liked-comments";
 import { PopularBoards } from "./major-indices";
 import React from "react";
 import { MostLikedComment } from "../actions/post";
-import { getPopularBoards, PopularBoard } from "../actions/query";
+import { PopularBoard } from "../actions/query";
 
 interface PanelLeftProps {
   isOpen: boolean;
@@ -32,14 +32,14 @@ export default function PanelLeft({
         }`}
       >
         <ScrollArea className="h-full w-full mt-10">
-          <div className="flex min-h-full flex-col pb-20">
+          <div className="flex min-h-screen flex-col">
             {/* News Section */}
             {/* <div className="mt-8">
                 <NewsCarousel news={news} />
               </div> */}
 
             {/* Topics */}
-            <div className=" mt-12">
+            <div className="mt-12">
               <p className="px-4 text-muted-foreground/50 text-xs text-light mb-3.5 tracking-wider">
                 Popular boards
               </p>
@@ -54,7 +54,7 @@ export default function PanelLeft({
               <MostLikedComments comments={comments} />
             </div>
 
-            <div className="md:hidden mt-auto p-3 -translate-y-10 self-end">
+            <div className="mt-auto self-end p-4 md:hidden mb-10">
               <ModeToggle />
             </div>
           </div>
