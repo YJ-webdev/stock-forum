@@ -201,3 +201,23 @@ export async function markAllNotificationsAsRead() {
 export type MyNotification = Awaited<
   ReturnType<typeof getNotifications>
 >[number];
+
+export async function hasUnreadNotifications() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return false;
+  }
+
+  const notification = await prisma.notification.findFirst({
+    where: {
+      userId: session.user.id,
+      readAt: null,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return Boolean(notification);
+}

@@ -43,6 +43,7 @@ export default function LayoutShell({
   const [onWrite, setOnWrite] = useState(false);
   const [onAccount, setOnAccount] = useState(false);
   const [onNotification, setOnNotification] = useState(false);
+  const [notificationRefreshKey, setNotificationRefreshKey] = useState(0);
   const sectionBRef = useRef<HTMLDivElement>(null);
 
   const [sectionBPosition, setSectionBPosition] = useState({
@@ -58,7 +59,6 @@ export default function LayoutShell({
     panelBRef.current?.resize("30%");
   };
   const pathname = usePathname();
-  const isMarketPage = pathname === "/market";
 
   const handleWrite = () => {
     resetPanelB();
@@ -82,6 +82,8 @@ export default function LayoutShell({
     setOnWrite(false);
     setOnAccount(false);
     setOnNotification(true);
+
+    setNotificationRefreshKey((prev) => prev + 1);
   };
 
   const handleCommentCreated = async () => {
@@ -246,7 +248,11 @@ export default function LayoutShell({
                       {user && onAccount && !onWrite && (
                         <AccountPanel user={user} setOnAccount={setOnAccount} />
                       )}
-                      {user && onNotification && <NotificationPanel />}
+                      {user && onNotification && (
+                        <NotificationPanel
+                          refreshKey={notificationRefreshKey}
+                        />
+                      )}
                       {!onWrite && !onAccount && !onNotification && (
                         <>
                           <div className="mx-4 mt-8">

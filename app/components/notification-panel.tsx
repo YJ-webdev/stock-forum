@@ -79,7 +79,7 @@ function getNotificationHref(notification: MyNotification): string | null {
 // NOTIFICATION PANEL
 // -----------------------------------------------------------------------------
 
-export function NotificationPanel() {
+export function NotificationPanel({ refreshKey }: { refreshKey: number }) {
   const router = useRouter();
 
   const [notifications, setNotifications] = useState<MyNotification[]>([]);
@@ -116,7 +116,7 @@ export function NotificationPanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   // ---------------------------------------------------------------------------
   // MARK ONE READ
