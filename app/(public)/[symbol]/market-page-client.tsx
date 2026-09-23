@@ -31,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TrendSparkline } from "@/app/components/trend-sparkline";
 
 import { MarketComments } from "@/app/components/comment";
+import { usePointBalance } from "@/app/context/point-balance-context";
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
@@ -44,6 +45,11 @@ export default function MarketPageClient({
   initialComments,
 }: MarketPageClientProps) {
   const user = useCurrentUser();
+  const {
+    points: userPoints,
+    isLoading: pointsLoading,
+    setPoints: setUserPoints,
+  } = usePointBalance();
 
   const [betAmount, setBetAmount] = useState(50);
   const [showDetailChart, setShowDetailChart] = useState(false);
@@ -177,8 +183,6 @@ export default function MarketPageClient({
       return;
     }
 
-    const userPoints = 1234; // TODO: replace with real user points
-
     if (userPoints < 50) {
       toast.error("Please add balance to continue voting.");
       return;
@@ -251,7 +255,7 @@ export default function MarketPageClient({
 
     startTransition(async () => {
       try {
-        await createComment({
+        const result = await createComment({
           content,
           assetSymbols: [selectedSymbol],
 
@@ -262,6 +266,10 @@ export default function MarketPageClient({
             sessionDate,
           },
         });
+
+        if (result.points !== null) {
+          setUserPoints(result.points);
+        }
 
         await onSuccess?.();
 
@@ -513,9 +521,9 @@ export default function MarketPageClient({
           key={selectedSymbol}
           assetSymbol={selectedSymbol}
           selectedVote={selectedVote}
-          voteLoading={voteLoading || isPending}
+          voteLoading={voteLoading || isPending || pointsLoading}
           isMarketOpen={isMarketOpen}
-          userPoints={1234}
+          userPoints={userPoints}
           betAmount={betAmount}
           setBetAmount={setBetAmount}
           handleVote={handleVote}

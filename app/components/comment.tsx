@@ -25,13 +25,10 @@ import { ReplyItem } from "./reply-item";
 import { CommentEditInput } from "./comment-edit-input";
 
 import { toggleCommentLike } from "../actions/like";
-
-// -----------------------------------------------------------------------------
-// TYPES
-// -----------------------------------------------------------------------------
-
-type VoteDirection = "BULL" | "BEAR";
-type PredictionStatus = "PENDING" | "WON" | "LOST" | "VOID";
+import {
+  PredictionDirection,
+  PredictionStatus,
+} from "@/generated/prisma/enums";
 
 export interface MarketReply {
   id: string;
@@ -80,7 +77,7 @@ interface MarketComment {
   };
 
   prediction: {
-    direction: VoteDirection;
+    direction: PredictionDirection;
     pointsBet: number;
     status: PredictionStatus;
   } | null;
@@ -95,7 +92,7 @@ interface MarketComment {
 interface MarketCommentsProps {
   assetSymbol: string;
 
-  selectedVote: VoteDirection | null;
+  selectedVote: PredictionDirection | null;
   voteLoading: boolean;
   isMarketOpen: boolean;
 
@@ -105,7 +102,7 @@ interface MarketCommentsProps {
   setBetAmount: React.Dispatch<React.SetStateAction<number>>;
 
   handleVote: (
-    direction: VoteDirection,
+    direction: PredictionDirection,
     betAmount: number,
     comment: string,
     gif: GifResult | null,
@@ -138,7 +135,7 @@ export function MarketComments({
 }: MarketCommentsProps) {
   const user = useCurrentUser();
 
-  const [direction, setDirection] = useState<VoteDirection | null>(null);
+  const [direction, setDirection] = useState<PredictionDirection | null>(null);
 
   const [comments, setComments] = useState<MarketPageComments>(initialComments);
 

@@ -41,6 +41,10 @@ export async function createComment({
     throw new Error("You must be logged in.");
   }
 
+  // ---------------------------------------------------------------------------
+  // USER
+  // ---------------------------------------------------------------------------
+
   const user = await prisma.user.findUnique({
     where: {
       id: session.user.id,
@@ -58,9 +62,9 @@ export async function createComment({
     throw new Error("Please set your nationality before voting.");
   }
 
-  if (!hasEditorContent(content)) {
-    throw new Error("Comment cannot be empty.");
-  }
+  // ---------------------------------------------------------------------------
+  // MARKETS
+  // ---------------------------------------------------------------------------
 
   const uniqueSymbols = [...new Set(assetSymbols)];
 
@@ -82,8 +86,16 @@ export async function createComment({
     throw new Error("A prediction must belong to exactly one market.");
   }
 
+  // ---------------------------------------------------------------------------
+  // PREDICTION VALIDATION
+  // ---------------------------------------------------------------------------
+
   if (prediction) {
-    if (prediction.pointsBet < 50 || prediction.pointsBet > 500) {
+    if (
+      !Number.isInteger(prediction.pointsBet) ||
+      prediction.pointsBet < 50 ||
+      prediction.pointsBet > 500
+    ) {
       throw new Error("Prediction must be between 50 and 500 points.");
     }
 
@@ -102,12 +114,28 @@ export async function createComment({
     }
   }
 
-  const hasContent =
-    content && Array.isArray(content.content) && content.content.length > 0;
+  // ---------------------------------------------------------------------------
+  // COMMENT CONTENT
+  // ---------------------------------------------------------------------------
 
+  const hasContent =
+    content !== null &&
+    Array.isArray(content.content) &&
+    content.content.length > 0;
+
+  // Normal comments still require content.
+  // Predictions are allowed without a comment/GIF.
   if (!hasContent && !prediction) {
     throw new Error("Please write a comment or select a GIF.");
   }
+
+  const plainContent = hasContent
+    ? (JSON.parse(JSON.stringify(content)) as Prisma.InputJsonValue)
+    : null;
+
+  // ---------------------------------------------------------------------------
+  // ENSURE MARKET ASSETS EXIST
+  // ---------------------------------------------------------------------------
 
   await Promise.all(
     selectedMarkets.map((market) =>
@@ -136,10 +164,6 @@ export async function createComment({
     ),
   );
 
-  const plainContent = hasContent
-    ? (JSON.parse(JSON.stringify(content)) as Prisma.InputJsonValue)
-    : null;
-
   // ---------------------------------------------------------------------------
   // CREATE
   // ---------------------------------------------------------------------------
@@ -153,6 +177,27 @@ export async function createComment({
 
     if (prediction) {
       const market = selectedMarkets[0];
+
+      // -----------------------------------------------------------------------
+      // ENSURE POINT BALANCE EXISTS
+      // -----------------------------------------------------------------------
+
+      await tx.pointBalance.upsert({
+        where: {
+          userId: session.user.id,
+        },
+
+        update: {},
+
+        create: {
+          userId: session.user.id,
+          points: 10000,
+        },
+      });
+
+      // -----------------------------------------------------------------------
+      // CREATE PREDICTION
+      // -----------------------------------------------------------------------
 
       createdPrediction = await tx.prediction.create({
         data: {
@@ -170,6 +215,50 @@ export async function createComment({
 
         select: {
           id: true,
+        },
+      });
+
+      // -----------------------------------------------------------------------
+      // DEDUCT BET
+      //
+      // Only succeeds when the user has enough points.
+      // Using updateMany with points >= pointsBet prevents the balance from
+      // going negative if multiple requests arrive around the same time.
+      // -----------------------------------------------------------------------
+
+      const deducted = await tx.pointBalance.updateMany({
+        where: {
+          userId: session.user.id,
+
+          points: {
+            gte: prediction.pointsBet,
+          },
+        },
+
+        data: {
+          points: {
+            decrement: prediction.pointsBet,
+          },
+        },
+      });
+
+      if (deducted.count !== 1) {
+        throw new Error("You do not have enough points.");
+      }
+
+      // -----------------------------------------------------------------------
+      // POINT LEDGER — BET
+      // -----------------------------------------------------------------------
+
+      await tx.pointTransaction.create({
+        data: {
+          userId: session.user.id,
+          predictionId: createdPrediction.id,
+
+          type: "BET",
+
+          // Ledger deductions are stored as negative values.
+          amount: -prediction.pointsBet,
         },
       });
     }
@@ -204,8 +293,25 @@ export async function createComment({
       });
     }
 
+    // -------------------------------------------------------------------------
+    // RESULT
+    // -------------------------------------------------------------------------
+
+    const pointBalance = prediction
+      ? await tx.pointBalance.findUnique({
+          where: {
+            userId: session.user.id,
+          },
+          select: {
+            points: true,
+          },
+        })
+      : null;
+
     return {
       success: true,
+      predictionId: createdPrediction?.id ?? null,
+      points: pointBalance?.points ?? null,
     };
   });
 }

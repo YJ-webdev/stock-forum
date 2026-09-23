@@ -17,22 +17,6 @@ export const Role = {
 export type Role = (typeof Role)[keyof typeof Role]
 
 
-export const TradeType = {
-  BUY: 'BUY',
-  SELL: 'SELL'
-} as const
-
-export type TradeType = (typeof TradeType)[keyof typeof TradeType]
-
-
-export const TradeStatus = {
-  OPEN: 'OPEN',
-  CLOSED: 'CLOSED'
-} as const
-
-export type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus]
-
-
 export const PredictionDirection = {
   BULL: 'BULL',
   BEAR: 'BEAR'
@@ -45,6 +29,7 @@ export const PredictionStatus = {
   PENDING: 'PENDING',
   WON: 'WON',
   LOST: 'LOST',
+  DRAW: 'DRAW',
   VOID: 'VOID'
 } as const
 
@@ -70,3 +55,23 @@ export const ModerationActionType = {
 } as const
 
 export type ModerationActionType = (typeof ModerationActionType)[keyof typeof ModerationActionType]
+
+
+export const NotificationType = {
+  PREDICTION_WON: 'PREDICTION_WON',
+  PREDICTION_LOST: 'PREDICTION_LOST',
+  PREDICTION_DRAW: 'PREDICTION_DRAW',
+  PREDICTION_VOID: 'PREDICTION_VOID'
+} as const
+
+export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]
+
+
+export const PointTransactionType = {
+  BET: 'BET',
+  WIN_PAYOUT: 'WIN_PAYOUT',
+  DRAW_REFUND: 'DRAW_REFUND',
+  VOID_REFUND: 'VOID_REFUND'
+} as const
+
+export type PointTransactionType = (typeof PointTransactionType)[keyof typeof PointTransactionType]

@@ -64,9 +64,10 @@ export const ModelName = {
   ReplyLike: 'ReplyLike',
   MarketAsset: 'MarketAsset',
   AccountBalance: 'AccountBalance',
-  PortfolioPosition: 'PortfolioPosition',
-  Trade: 'Trade',
-  Watchlist: 'Watchlist'
+  Watchlist: 'Watchlist',
+  Notification: 'Notification',
+  PointBalance: 'PointBalance',
+  PointTransaction: 'PointTransaction'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -177,7 +178,7 @@ export const PredictionScalarFieldEnum = {
   pointsBet: 'pointsBet',
   predictionPrice: 'predictionPrice',
   sessionDate: 'sessionDate',
-  closingPrice: 'closingPrice',
+  settlementPrice: 'settlementPrice',
   status: 'status',
   pointsChange: 'pointsChange',
   nationality: 'nationality',
@@ -266,35 +267,6 @@ export const AccountBalanceScalarFieldEnum = {
 export type AccountBalanceScalarFieldEnum = (typeof AccountBalanceScalarFieldEnum)[keyof typeof AccountBalanceScalarFieldEnum]
 
 
-export const PortfolioPositionScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  symbol: 'symbol',
-  quantity: 'quantity',
-  avgCost: 'avgCost',
-  updatedAt: 'updatedAt'
-} as const
-
-export type PortfolioPositionScalarFieldEnum = (typeof PortfolioPositionScalarFieldEnum)[keyof typeof PortfolioPositionScalarFieldEnum]
-
-
-export const TradeScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  symbol: 'symbol',
-  type: 'type',
-  status: 'status',
-  quantity: 'quantity',
-  entryPrice: 'entryPrice',
-  exitPrice: 'exitPrice',
-  pnl: 'pnl',
-  createdAt: 'createdAt',
-  closedAt: 'closedAt'
-} as const
-
-export type TradeScalarFieldEnum = (typeof TradeScalarFieldEnum)[keyof typeof TradeScalarFieldEnum]
-
-
 export const WatchlistScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -303,6 +275,43 @@ export const WatchlistScalarFieldEnum = {
 } as const
 
 export type WatchlistScalarFieldEnum = (typeof WatchlistScalarFieldEnum)[keyof typeof WatchlistScalarFieldEnum]
+
+
+export const NotificationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  type: 'type',
+  title: 'title',
+  message: 'message',
+  predictionId: 'predictionId',
+  readAt: 'readAt',
+  createdAt: 'createdAt'
+} as const
+
+export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+export const PointBalanceScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  points: 'points',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PointBalanceScalarFieldEnum = (typeof PointBalanceScalarFieldEnum)[keyof typeof PointBalanceScalarFieldEnum]
+
+
+export const PointTransactionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  predictionId: 'predictionId',
+  type: 'type',
+  amount: 'amount',
+  createdAt: 'createdAt'
+} as const
+
+export type PointTransactionScalarFieldEnum = (typeof PointTransactionScalarFieldEnum)[keyof typeof PointTransactionScalarFieldEnum]
 
 
 export const SortOrder = {

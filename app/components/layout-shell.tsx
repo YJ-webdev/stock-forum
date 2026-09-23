@@ -21,8 +21,8 @@ import { BreadCrumbs } from "./breadcrumbs";
 import { User } from "@/types/user";
 import { TopTraders } from "./top-trader";
 import { getMostLikedComments, MostLikedComment } from "../actions/post";
-import { CommentRefreshProvider } from "../context/comment-refresh-context";
 import { PopularBoard } from "../actions/query";
+import { PointBalanceProvider } from "../context/point-balance-context";
 
 interface LayoutShellProps {
   user: User | null;
@@ -174,7 +174,7 @@ export default function LayoutShell({
       }}
     >
       <UserProvider user={user}>
-        <CommentRefreshProvider>
+        <PointBalanceProvider>
           <div className="relative flex flex-col min-h-screen">
             <Header
               user={user}
@@ -272,7 +272,7 @@ export default function LayoutShell({
             </div>{" "}
             <Footer />
           </div>
-        </CommentRefreshProvider>
+        </PointBalanceProvider>
       </UserProvider>
     </SectionBContext.Provider>
   );

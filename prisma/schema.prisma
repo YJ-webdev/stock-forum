@@ -12,16 +12,6 @@ enum Role {
   ADMIN
 }
 
-enum TradeType {
-  BUY
-  SELL
-}
-
-enum TradeStatus {
-  OPEN
-  CLOSED
-}
-
 enum PredictionDirection {
   BULL
   BEAR
@@ -31,6 +21,7 @@ enum PredictionStatus {
   PENDING
   WON
   LOST
+  DRAW
   VOID
 }
 
@@ -66,17 +57,18 @@ model User {
   moderationActionsReceived  ModerationAction[] @relation("ModerationTargetUser")
   moderationActionsPerformed ModerationAction[] @relation("ModerationModerator")
 
-  accounts     Account[]
-  sessions     Session[]
-  replies      Reply[]
-  comments     Comment[]
-  replyLikes   ReplyLike[]
-  commentLikes CommentLike[]
-  balance      AccountBalance?
-  trades       Trade[]
-  positions    PortfolioPosition[]
-  watchlist    Watchlist[]
-  predictions  Prediction[]
+  accounts          Account[]
+  sessions          Session[]
+  replies           Reply[]
+  comments          Comment[]
+  replyLikes        ReplyLike[]
+  commentLikes      CommentLike[]
+  balance           AccountBalance?
+  watchlist         Watchlist[]
+  predictions       Prediction[]
+  notifications     Notification[]
+  pointBalance      PointBalance?
+  pointTransactions PointTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -177,20 +169,21 @@ model Prediction {
   asset  MarketAsset @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   direction PredictionDirection
-  pointsBet Int
 
+  pointsBet       Int
   predictionPrice Decimal  @db.Decimal(18, 4)
   sessionDate     DateTime
 
-  closingPrice Decimal?         @db.Decimal(18, 4)
-  status       PredictionStatus @default(PENDING)
-  pointsChange Int?
+  settlementPrice Decimal?         @db.Decimal(18, 4)
+  status          PredictionStatus @default(PENDING)
+  pointsChange    Int?
 
-  // Snapshot of User.nationality when prediction is submitted
   nationality String?
 
-  // Optional comment attached to this prediction
   comment Comment?
+
+  notification      Notification?
+  pointTransactions PointTransaction[]
 
   createdAt DateTime  @default(now())
   settledAt DateTime?
@@ -295,8 +288,6 @@ model MarketAsset {
   low           Decimal @default(0.0) @db.Decimal(18, 4)
   volume        Decimal @default(0.0) @db.Decimal(18, 2)
 
-  trades         Trade[]
-  positions      PortfolioPosition[]
   watchlistItems Watchlist[]
   comments       CommentAsset[]
   predictions    Prediction[]
@@ -317,44 +308,6 @@ model AccountBalance {
   updatedAt DateTime @updatedAt
 }
 
-model PortfolioPosition {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  symbol String
-  asset  MarketAsset @relation(fields: [symbol], references: [symbol])
-
-  quantity Decimal @default(0.0) @db.Decimal(18, 8)
-  avgCost  Decimal @default(0.0) @db.Decimal(18, 4)
-
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, symbol])
-}
-
-model Trade {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  symbol String
-  asset  MarketAsset @relation(fields: [symbol], references: [symbol])
-
-  type   TradeType
-  status TradeStatus @default(OPEN)
-
-  quantity   Decimal  @db.Decimal(18, 8)
-  entryPrice Decimal  @db.Decimal(18, 4)
-  exitPrice  Decimal? @db.Decimal(18, 4)
-  pnl        Decimal? @db.Decimal(18, 2)
-
-  createdAt DateTime  @default(now())
-  closedAt  DateTime?
-
-  @@index([userId, status])
-}
-
 model Watchlist {
   id     String @id @default(cuid())
   userId String
@@ -366,4 +319,71 @@ model Watchlist {
   createdAt DateTime @default(now())
 
   @@unique([userId, symbol])
+}
+
+enum NotificationType {
+  PREDICTION_WON
+  PREDICTION_LOST
+  PREDICTION_DRAW
+  PREDICTION_VOID
+}
+
+model Notification {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type NotificationType
+
+  title   String
+  message String
+
+  predictionId String? @unique
+
+  prediction Prediction? @relation(fields: [predictionId], references: [id], onDelete: SetNull)
+  readAt     DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+}
+
+model PointBalance {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  points Int @default(10000)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PointTransactionType {
+  BET
+  WIN_PAYOUT
+  DRAW_REFUND
+  VOID_REFUND
+}
+
+model PointTransaction {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  predictionId String
+  prediction   Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+
+  type   PointTransactionType
+  amount Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([predictionId, type])
+  @@index([userId, createdAt])
+  @@index([predictionId])
 }
