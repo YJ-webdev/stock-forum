@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toggleReplyLike } from "@/app/actions/like";
 import { ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
@@ -29,6 +29,8 @@ interface ReplyItemProps {
   depth?: number;
 
   isLast?: boolean;
+
+  targetReplyId?: string | null;
 }
 
 export function ReplyItem({
@@ -38,6 +40,7 @@ export function ReplyItem({
   replies,
   depth = 0,
   isLast = false,
+  targetReplyId = null,
 }: ReplyItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -64,6 +67,12 @@ export function ReplyItem({
   );
 
   const hasChild = childReplies.length > 0;
+
+  const containsTargetReply =
+    targetReplyId !== null &&
+    getDescendants(reply.id, replies).some(
+      (descendant) => descendant.id === targetReplyId,
+    );
 
   const collapseThreadEvents = {
     onMouseEnter: () => setThreadHovered(true),
@@ -174,8 +183,37 @@ export function ReplyItem({
     });
   };
 
+  useEffect(() => {
+    if (containsTargetReply) {
+      setChildrenCollapsed(false);
+    }
+  }, [containsTargetReply]);
+
+  useEffect(() => {
+    if (targetReplyId !== reply.id) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      const element = document.getElementById(`reply-${reply.id}`);
+
+      if (!element) {
+        return;
+      }
+
+      element.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 100);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [targetReplyId, reply.id]);
+
   return (
-    <div className="relative">
+    <div id={`reply-${reply.id}`} className="relative scroll-mt-24">
       {/* ---------------------------------------------------------------
           CURRENT REPLY
       ---------------------------------------------------------------- */}
@@ -342,7 +380,6 @@ export function ReplyItem({
               </button>
             </div>
           )}
-
           {/* Reply input */}
           {!reply.moderatedAt && showReplyInput && (
             <ReplyInput
@@ -351,9 +388,29 @@ export function ReplyItem({
               username={username}
               currentUser={currentUser}
               onCancel={() => setShowReplyInput(false)}
-              onReplyCreated={async () => {
+              onReplyCreated={async (newReplyId) => {
+                // Close reply input.
                 setShowReplyInput(false);
+
+                // Open this reply's child thread.
+                setChildrenCollapsed(false);
+
+                // Refresh replies so the newly created reply is rendered.
                 await onReplyUpdated();
+
+                // Wait for React to render the new reply, then scroll to it.
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(() => {
+                    const element = document.getElementById(
+                      `reply-${newReplyId}`,
+                    );
+
+                    element?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "center",
+                    });
+                  });
+                });
               }}
             />
           )}
@@ -519,6 +576,7 @@ export function ReplyItem({
                         currentUser={currentUser}
                         onReplyUpdated={onReplyUpdated}
                         depth={depth + 1}
+                        targetReplyId={targetReplyId}
                       />
                     </div>
                   );

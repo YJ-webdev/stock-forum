@@ -19,7 +19,7 @@ interface ReplyInputProps {
   } | null;
 
   onCancel: () => void;
-  onReplyCreated: () => Promise<void>;
+  onReplyCreated: (replyId: string) => Promise<void>;
 }
 
 export function ReplyInput({
@@ -47,7 +47,7 @@ export function ReplyInput({
 
     startTransition(async () => {
       try {
-        await createReply({
+        const result = await createReply({
           commentId,
           parentId,
           content: reply.trim(),
@@ -58,7 +58,7 @@ export function ReplyInput({
         setSelectedGif(null);
         setGifPickerOpen(false);
 
-        await onReplyCreated();
+        await onReplyCreated(result.reply.id);
 
         toast.success("Reply posted.");
       } catch (error) {

@@ -257,7 +257,8 @@ export type UserWhereInput = {
   balance?: Prisma.XOR<Prisma.AccountBalanceNullableScalarRelationFilter, Prisma.AccountBalanceWhereInput> | null
   watchlist?: Prisma.WatchlistListRelationFilter
   predictions?: Prisma.PredictionListRelationFilter
-  notifications?: Prisma.NotificationListRelationFilter
+  notificationsReceived?: Prisma.NotificationListRelationFilter
+  notificationsSent?: Prisma.NotificationListRelationFilter
   pointBalance?: Prisma.XOR<Prisma.PointBalanceNullableScalarRelationFilter, Prisma.PointBalanceWhereInput> | null
   pointTransactions?: Prisma.PointTransactionListRelationFilter
 }
@@ -287,7 +288,8 @@ export type UserOrderByWithRelationInput = {
   balance?: Prisma.AccountBalanceOrderByWithRelationInput
   watchlist?: Prisma.WatchlistOrderByRelationAggregateInput
   predictions?: Prisma.PredictionOrderByRelationAggregateInput
-  notifications?: Prisma.NotificationOrderByRelationAggregateInput
+  notificationsReceived?: Prisma.NotificationOrderByRelationAggregateInput
+  notificationsSent?: Prisma.NotificationOrderByRelationAggregateInput
   pointBalance?: Prisma.PointBalanceOrderByWithRelationInput
   pointTransactions?: Prisma.PointTransactionOrderByRelationAggregateInput
 }
@@ -320,7 +322,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   balance?: Prisma.XOR<Prisma.AccountBalanceNullableScalarRelationFilter, Prisma.AccountBalanceWhereInput> | null
   watchlist?: Prisma.WatchlistListRelationFilter
   predictions?: Prisma.PredictionListRelationFilter
-  notifications?: Prisma.NotificationListRelationFilter
+  notificationsReceived?: Prisma.NotificationListRelationFilter
+  notificationsSent?: Prisma.NotificationListRelationFilter
   pointBalance?: Prisma.XOR<Prisma.PointBalanceNullableScalarRelationFilter, Prisma.PointBalanceWhereInput> | null
   pointTransactions?: Prisma.PointTransactionListRelationFilter
 }, "id" | "email">
@@ -388,7 +391,8 @@ export type UserCreateInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
@@ -418,7 +422,8 @@ export type UserUncheckedCreateInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -448,7 +453,8 @@ export type UserUpdateInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
@@ -478,7 +484,8 @@ export type UserUncheckedUpdateInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -769,18 +776,34 @@ export type UserUpdateOneRequiredWithoutWatchlistNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWatchlistInput, Prisma.UserUpdateWithoutWatchlistInput>, Prisma.UserUncheckedUpdateWithoutWatchlistInput>
 }
 
-export type UserCreateNestedOneWithoutNotificationsInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsInput
+export type UserCreateNestedOneWithoutNotificationsReceivedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsReceivedInput, Prisma.UserUncheckedCreateWithoutNotificationsReceivedInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsReceivedInput
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutNotificationsNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsInput
-  upsert?: Prisma.UserUpsertWithoutNotificationsInput
+export type UserCreateNestedOneWithoutNotificationsSentInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsSentInput, Prisma.UserUncheckedCreateWithoutNotificationsSentInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsSentInput
   connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutNotificationsInput, Prisma.UserUpdateWithoutNotificationsInput>, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+}
+
+export type UserUpdateOneRequiredWithoutNotificationsReceivedNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsReceivedInput, Prisma.UserUncheckedCreateWithoutNotificationsReceivedInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsReceivedInput
+  upsert?: Prisma.UserUpsertWithoutNotificationsReceivedInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutNotificationsReceivedInput, Prisma.UserUpdateWithoutNotificationsReceivedInput>, Prisma.UserUncheckedUpdateWithoutNotificationsReceivedInput>
+}
+
+export type UserUpdateOneWithoutNotificationsSentNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsSentInput, Prisma.UserUncheckedCreateWithoutNotificationsSentInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsSentInput
+  upsert?: Prisma.UserUpsertWithoutNotificationsSentInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutNotificationsSentInput, Prisma.UserUpdateWithoutNotificationsSentInput>, Prisma.UserUncheckedUpdateWithoutNotificationsSentInput>
 }
 
 export type UserCreateNestedOneWithoutPointBalanceInput = {
@@ -835,7 +858,8 @@ export type UserCreateWithoutAccountsInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
@@ -864,7 +888,8 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -909,7 +934,8 @@ export type UserUpdateWithoutAccountsInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
@@ -938,7 +964,8 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -967,7 +994,8 @@ export type UserCreateWithoutSessionsInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
@@ -996,7 +1024,8 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -1041,7 +1070,8 @@ export type UserUpdateWithoutSessionsInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
@@ -1070,7 +1100,8 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -1099,7 +1130,8 @@ export type UserCreateWithoutCommentsInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
@@ -1128,7 +1160,8 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -1173,7 +1206,8 @@ export type UserUpdateWithoutCommentsInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
@@ -1202,7 +1236,8 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -1231,7 +1266,8 @@ export type UserCreateWithoutModerationActionsPerformedInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
@@ -1260,7 +1296,8 @@ export type UserUncheckedCreateWithoutModerationActionsPerformedInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -1294,7 +1331,8 @@ export type UserCreateWithoutModerationActionsReceivedInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
@@ -1323,7 +1361,8 @@ export type UserUncheckedCreateWithoutModerationActionsReceivedInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -1368,7 +1407,8 @@ export type UserUpdateWithoutModerationActionsPerformedInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
@@ -1397,7 +1437,8 @@ export type UserUncheckedUpdateWithoutModerationActionsPerformedInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -1437,7 +1478,8 @@ export type UserUpdateWithoutModerationActionsReceivedInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
@@ -1466,7 +1508,8 @@ export type UserUncheckedUpdateWithoutModerationActionsReceivedInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -1495,7 +1538,8 @@ export type UserCreateWithoutPredictionsInput = {
   commentLikes?: Prisma.CommentLikeCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
@@ -1524,7 +1568,8 @@ export type UserUncheckedCreateWithoutPredictionsInput = {
   commentLikes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -1569,7 +1614,8 @@ export type UserUpdateWithoutPredictionsInput = {
   commentLikes?: Prisma.CommentLikeUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
@@ -1598,7 +1644,8 @@ export type UserUncheckedUpdateWithoutPredictionsInput = {
   commentLikes?: Prisma.CommentLikeUncheckedUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -1627,7 +1674,8 @@ export type UserCreateWithoutRepliesInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
@@ -1656,7 +1704,8 @@ export type UserUncheckedCreateWithoutRepliesInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -1701,7 +1750,8 @@ export type UserUpdateWithoutRepliesInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
@@ -1730,7 +1780,8 @@ export type UserUncheckedUpdateWithoutRepliesInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -1759,7 +1810,8 @@ export type UserCreateWithoutCommentLikesInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
@@ -1788,7 +1840,8 @@ export type UserUncheckedCreateWithoutCommentLikesInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -1833,7 +1886,8 @@ export type UserUpdateWithoutCommentLikesInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
@@ -1862,7 +1916,8 @@ export type UserUncheckedUpdateWithoutCommentLikesInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -1891,7 +1946,8 @@ export type UserCreateWithoutReplyLikesInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
@@ -1920,7 +1976,8 @@ export type UserUncheckedCreateWithoutReplyLikesInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -1965,7 +2022,8 @@ export type UserUpdateWithoutReplyLikesInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
@@ -1994,7 +2052,8 @@ export type UserUncheckedUpdateWithoutReplyLikesInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -2023,7 +2082,8 @@ export type UserCreateWithoutBalanceInput = {
   commentLikes?: Prisma.CommentLikeCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
@@ -2052,7 +2112,8 @@ export type UserUncheckedCreateWithoutBalanceInput = {
   commentLikes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -2097,7 +2158,8 @@ export type UserUpdateWithoutBalanceInput = {
   commentLikes?: Prisma.CommentLikeUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
@@ -2126,7 +2188,8 @@ export type UserUncheckedUpdateWithoutBalanceInput = {
   commentLikes?: Prisma.CommentLikeUncheckedUpdateManyWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -2155,7 +2218,8 @@ export type UserCreateWithoutWatchlistInput = {
   commentLikes?: Prisma.CommentLikeCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
@@ -2184,7 +2248,8 @@ export type UserUncheckedCreateWithoutWatchlistInput = {
   commentLikes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutUserInput
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -2229,7 +2294,8 @@ export type UserUpdateWithoutWatchlistInput = {
   commentLikes?: Prisma.CommentLikeUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
@@ -2258,12 +2324,13 @@ export type UserUncheckedUpdateWithoutWatchlistInput = {
   commentLikes?: Prisma.CommentLikeUncheckedUpdateManyWithoutUserNestedInput
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
-export type UserCreateWithoutNotificationsInput = {
+export type UserCreateWithoutNotificationsReceivedInput = {
   id?: string
   name?: string | null
   email?: string | null
@@ -2288,11 +2355,12 @@ export type UserCreateWithoutNotificationsInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
 
-export type UserUncheckedCreateWithoutNotificationsInput = {
+export type UserUncheckedCreateWithoutNotificationsReceivedInput = {
   id?: string
   name?: string | null
   email?: string | null
@@ -2317,27 +2385,93 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
 
-export type UserCreateOrConnectWithoutNotificationsInput = {
+export type UserCreateOrConnectWithoutNotificationsReceivedInput = {
   where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsReceivedInput, Prisma.UserUncheckedCreateWithoutNotificationsReceivedInput>
 }
 
-export type UserUpsertWithoutNotificationsInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsInput, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+export type UserCreateWithoutNotificationsSentInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  nationality?: string | null
+  language?: string
+  role?: $Enums.Role
+  status?: $Enums.UserStatus
+  mutedAt?: Date | string | null
+  bannedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
+  moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
+  replyLikes?: Prisma.ReplyLikeCreateNestedManyWithoutUserInput
+  commentLikes?: Prisma.CommentLikeCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
+  pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutNotificationsSentInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  nationality?: string | null
+  language?: string
+  role?: $Enums.Role
+  status?: $Enums.UserStatus
+  mutedAt?: Date | string | null
+  bannedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
+  moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
+  replyLikes?: Prisma.ReplyLikeUncheckedCreateNestedManyWithoutUserInput
+  commentLikes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
+  pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutNotificationsSentInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsSentInput, Prisma.UserUncheckedCreateWithoutNotificationsSentInput>
+}
+
+export type UserUpsertWithoutNotificationsReceivedInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsReceivedInput, Prisma.UserUncheckedUpdateWithoutNotificationsReceivedInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsReceivedInput, Prisma.UserUncheckedCreateWithoutNotificationsReceivedInput>
   where?: Prisma.UserWhereInput
 }
 
-export type UserUpdateToOneWithWhereWithoutNotificationsInput = {
+export type UserUpdateToOneWithWhereWithoutNotificationsReceivedInput = {
   where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsInput, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+  data: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsReceivedInput, Prisma.UserUncheckedUpdateWithoutNotificationsReceivedInput>
 }
 
-export type UserUpdateWithoutNotificationsInput = {
+export type UserUpdateWithoutNotificationsReceivedInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2362,11 +2496,12 @@ export type UserUpdateWithoutNotificationsInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
 
-export type UserUncheckedUpdateWithoutNotificationsInput = {
+export type UserUncheckedUpdateWithoutNotificationsReceivedInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2391,6 +2526,78 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
+  pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
+  pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserUpsertWithoutNotificationsSentInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsSentInput, Prisma.UserUncheckedUpdateWithoutNotificationsSentInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsSentInput, Prisma.UserUncheckedCreateWithoutNotificationsSentInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutNotificationsSentInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsSentInput, Prisma.UserUncheckedUpdateWithoutNotificationsSentInput>
+}
+
+export type UserUpdateWithoutNotificationsSentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
+  moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
+  replyLikes?: Prisma.ReplyLikeUpdateManyWithoutUserNestedInput
+  commentLikes?: Prisma.CommentLikeUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
+  pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutNotificationsSentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
+  moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
+  replyLikes?: Prisma.ReplyLikeUncheckedUpdateManyWithoutUserNestedInput
+  commentLikes?: Prisma.CommentLikeUncheckedUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -2420,7 +2627,8 @@ export type UserCreateWithoutPointBalanceInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
 }
 
@@ -2449,7 +2657,8 @@ export type UserUncheckedCreateWithoutPointBalanceInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -2494,7 +2703,8 @@ export type UserUpdateWithoutPointBalanceInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
 }
 
@@ -2523,7 +2733,8 @@ export type UserUncheckedUpdateWithoutPointBalanceInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -2552,7 +2763,8 @@ export type UserCreateWithoutPointTransactionsInput = {
   balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
 }
 
@@ -2581,7 +2793,8 @@ export type UserUncheckedCreateWithoutPointTransactionsInput = {
   balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
   watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
 }
 
@@ -2626,7 +2839,8 @@ export type UserUpdateWithoutPointTransactionsInput = {
   balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
 }
 
@@ -2655,7 +2869,8 @@ export type UserUncheckedUpdateWithoutPointTransactionsInput = {
   balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
   watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
 }
 
@@ -2675,7 +2890,8 @@ export type UserCountOutputType = {
   commentLikes: number
   watchlist: number
   predictions: number
-  notifications: number
+  notificationsReceived: number
+  notificationsSent: number
   pointTransactions: number
 }
 
@@ -2690,7 +2906,8 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   commentLikes?: boolean | UserCountOutputTypeCountCommentLikesArgs
   watchlist?: boolean | UserCountOutputTypeCountWatchlistArgs
   predictions?: boolean | UserCountOutputTypeCountPredictionsArgs
-  notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
+  notificationsReceived?: boolean | UserCountOutputTypeCountNotificationsReceivedArgs
+  notificationsSent?: boolean | UserCountOutputTypeCountNotificationsSentArgs
   pointTransactions?: boolean | UserCountOutputTypeCountPointTransactionsArgs
 }
 
@@ -2777,7 +2994,14 @@ export type UserCountOutputTypeCountPredictionsArgs<ExtArgs extends runtime.Type
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type UserCountOutputTypeCountNotificationsReceivedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountNotificationsSentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.NotificationWhereInput
 }
 
@@ -2814,7 +3038,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   balance?: boolean | Prisma.User$balanceArgs<ExtArgs>
   watchlist?: boolean | Prisma.User$watchlistArgs<ExtArgs>
   predictions?: boolean | Prisma.User$predictionsArgs<ExtArgs>
-  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
+  notificationsReceived?: boolean | Prisma.User$notificationsReceivedArgs<ExtArgs>
+  notificationsSent?: boolean | Prisma.User$notificationsSentArgs<ExtArgs>
   pointBalance?: boolean | Prisma.User$pointBalanceArgs<ExtArgs>
   pointTransactions?: boolean | Prisma.User$pointTransactionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -2881,7 +3106,8 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   balance?: boolean | Prisma.User$balanceArgs<ExtArgs>
   watchlist?: boolean | Prisma.User$watchlistArgs<ExtArgs>
   predictions?: boolean | Prisma.User$predictionsArgs<ExtArgs>
-  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
+  notificationsReceived?: boolean | Prisma.User$notificationsReceivedArgs<ExtArgs>
+  notificationsSent?: boolean | Prisma.User$notificationsSentArgs<ExtArgs>
   pointBalance?: boolean | Prisma.User$pointBalanceArgs<ExtArgs>
   pointTransactions?: boolean | Prisma.User$pointTransactionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -2903,7 +3129,8 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     balance: Prisma.$AccountBalancePayload<ExtArgs> | null
     watchlist: Prisma.$WatchlistPayload<ExtArgs>[]
     predictions: Prisma.$PredictionPayload<ExtArgs>[]
-    notifications: Prisma.$NotificationPayload<ExtArgs>[]
+    notificationsReceived: Prisma.$NotificationPayload<ExtArgs>[]
+    notificationsSent: Prisma.$NotificationPayload<ExtArgs>[]
     pointBalance: Prisma.$PointBalancePayload<ExtArgs> | null
     pointTransactions: Prisma.$PointTransactionPayload<ExtArgs>[]
   }
@@ -3326,7 +3553,8 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   balance<T extends Prisma.User$balanceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$balanceArgs<ExtArgs>>): Prisma.Prisma__AccountBalanceClient<runtime.Types.Result.GetResult<Prisma.$AccountBalancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   watchlist<T extends Prisma.User$watchlistArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$watchlistArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WatchlistPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   predictions<T extends Prisma.User$predictionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$predictionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PredictionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  notifications<T extends Prisma.User$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  notificationsReceived<T extends Prisma.User$notificationsReceivedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsReceivedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  notificationsSent<T extends Prisma.User$notificationsSentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsSentArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   pointBalance<T extends Prisma.User$pointBalanceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$pointBalanceArgs<ExtArgs>>): Prisma.Prisma__PointBalanceClient<runtime.Types.Result.GetResult<Prisma.$PointBalancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   pointTransactions<T extends Prisma.User$pointTransactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$pointTransactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PointTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -4023,9 +4251,33 @@ export type User$predictionsArgs<ExtArgs extends runtime.Types.Extensions.Intern
 }
 
 /**
- * User.notifications
+ * User.notificationsReceived
  */
-export type User$notificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$notificationsReceivedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Notification
+   */
+  select?: Prisma.NotificationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Notification
+   */
+  omit?: Prisma.NotificationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationInclude<ExtArgs> | null
+  where?: Prisma.NotificationWhereInput
+  orderBy?: Prisma.NotificationOrderByWithRelationInput | Prisma.NotificationOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
+}
+
+/**
+ * User.notificationsSent
+ */
+export type User$notificationsSentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
    * Select specific fields to fetch from the Notification
    */

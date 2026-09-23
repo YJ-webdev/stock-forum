@@ -10,17 +10,78 @@ import {
 } from "lucide-react";
 
 import {
-  getMyNotifications,
+  getNotifications,
   markAllNotificationsAsRead,
   markNotificationAsRead,
   type MyNotification,
 } from "@/app/actions/notification";
+import { useRouter } from "next/navigation";
 
+function getNotificationHref(notification: MyNotification): string | null {
+  switch (notification.type) {
+    // ---------------------------------------------------------
+    // COMMENT
+    // ---------------------------------------------------------
+
+    case "COMMENT_LIKED": {
+      const symbol = notification.comment?.assets[0]?.asset.symbol;
+
+      if (!symbol || !notification.commentId) {
+        return null;
+      }
+
+      return `/${encodeURIComponent(symbol)}?comment=${encodeURIComponent(
+        notification.commentId,
+      )}`;
+    }
+
+    // ---------------------------------------------------------
+    // REPLY
+    // ---------------------------------------------------------
+
+    case "REPLY_LIKED":
+    case "COMMENT_REPLIED":
+    case "REPLY_REPLIED": {
+      const symbol = notification.reply?.comment.assets[0]?.asset.symbol;
+
+      if (!symbol || !notification.replyId) {
+        return null;
+      }
+
+      return `/${encodeURIComponent(symbol)}?reply=${encodeURIComponent(
+        notification.replyId,
+      )}`;
+    }
+
+    // ---------------------------------------------------------
+    // PREDICTION
+    // ---------------------------------------------------------
+
+    case "PREDICTION_WON":
+    case "PREDICTION_LOST":
+    case "PREDICTION_DRAW":
+    case "PREDICTION_VOID":
+    case "PREDICTION_PENDING": {
+      const symbol = notification.prediction?.symbol;
+
+      if (!symbol) {
+        return null;
+      }
+
+      return `/${encodeURIComponent(symbol)}`;
+    }
+
+    default:
+      return null;
+  }
+}
 // -----------------------------------------------------------------------------
 // NOTIFICATION PANEL
 // -----------------------------------------------------------------------------
 
 export function NotificationPanel() {
+  const router = useRouter();
+
   const [notifications, setNotifications] = useState<MyNotification[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -36,7 +97,7 @@ export function NotificationPanel() {
 
     async function loadNotifications() {
       try {
-        const result = await getMyNotifications();
+        const result = await getNotifications();
 
         if (!cancelled) {
           setNotifications(result);
@@ -61,39 +122,39 @@ export function NotificationPanel() {
   // MARK ONE READ
   // ---------------------------------------------------------------------------
 
-  const handleNotificationClick = (notificationId: string) => {
-    const notification = notifications.find(
-      (item) => item.id === notificationId,
-    );
+  const handleNotificationClick = (notification: MyNotification) => {
+    const href = getNotificationHref(notification);
 
-    if (!notification || notification.readAt) {
-      return;
+    // Mark unread notification as read.
+    if (!notification.readAt) {
+      setNotifications((current) =>
+        current.map((item) =>
+          item.id === notification.id
+            ? {
+                ...item,
+                readAt: new Date(),
+              }
+            : item,
+        ),
+      );
+
+      startTransition(async () => {
+        try {
+          await markNotificationAsRead(notification.id);
+        } catch (error) {
+          console.error("Failed to mark notification as read:", error);
+
+          const result = await getNotifications();
+
+          setNotifications(result);
+        }
+      });
     }
 
-    // Optimistic UI update.
-    setNotifications((current) =>
-      current.map((item) =>
-        item.id === notificationId
-          ? {
-              ...item,
-              readAt: new Date(),
-            }
-          : item,
-      ),
-    );
-
-    startTransition(async () => {
-      try {
-        await markNotificationAsRead(notificationId);
-      } catch (error) {
-        console.error("Failed to mark notification as read:", error);
-
-        // Reload authoritative state if it failed.
-        const result = await getMyNotifications();
-
-        setNotifications(result);
-      }
-    });
+    // Navigate even if the notification was already read.
+    if (href) {
+      router.push(href);
+    }
   };
 
   // ---------------------------------------------------------------------------
@@ -124,7 +185,7 @@ export function NotificationPanel() {
       } catch (error) {
         console.error("Failed to mark all notifications as read:", error);
 
-        const result = await getMyNotifications();
+        const result = await getNotifications();
 
         setNotifications(result);
       }
@@ -185,7 +246,7 @@ export function NotificationPanel() {
             <NotificationItem
               key={notification.id}
               notification={notification}
-              onClick={() => handleNotificationClick(notification.id)}
+              onClick={() => handleNotificationClick(notification)}
             />
           ))
         )}

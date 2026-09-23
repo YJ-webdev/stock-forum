@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { ChevronDown, ThumbsUp } from "lucide-react";
 
@@ -29,6 +29,7 @@ import {
   PredictionDirection,
   PredictionStatus,
 } from "@/generated/prisma/enums";
+import { useSearchParams } from "next/navigation";
 
 export interface MarketReply {
   id: string;
@@ -118,6 +119,20 @@ interface MarketCommentsProps {
 // -----------------------------------------------------------------------------
 // MARKET COMMENTS
 // -----------------------------------------------------------------------------
+function findCommentIdForReply(
+  comments: MarketPageComments,
+  replyId: string,
+): string | null {
+  for (const comment of comments) {
+    const found = comment.replies.some((reply) => reply.id === replyId);
+
+    if (found) {
+      return comment.id;
+    }
+  }
+
+  return null;
+}
 
 export function MarketComments({
   assetSymbol,
@@ -134,6 +149,10 @@ export function MarketComments({
   initialComments,
 }: MarketCommentsProps) {
   const user = useCurrentUser();
+  const searchParams = useSearchParams();
+
+  const targetCommentId = searchParams.get("comment");
+  const targetReplyId = searchParams.get("reply");
 
   const [direction, setDirection] = useState<PredictionDirection | null>(null);
 
@@ -234,15 +253,24 @@ export function MarketComments({
             No comments yet.
           </div>
         ) : (
-          comments.map((comment) => (
-            <CommentItem
-              key={comment.id}
-              comment={comment}
-              currentUser={user}
-              onDeleted={loadComments}
-              onCommentUpdated={loadComments}
-            />
-          ))
+          comments.map((comment) => {
+            const targetReplyCommentId = targetReplyId
+              ? findCommentIdForReply(comments, targetReplyId)
+              : null;
+
+            return (
+              <CommentItem
+                key={comment.id}
+                comment={comment}
+                currentUser={user}
+                onDeleted={loadComments}
+                onCommentUpdated={loadComments}
+                targetCommentId={targetCommentId}
+                targetReplyId={targetReplyId}
+                shouldOpenReplies={targetReplyCommentId === comment.id}
+              />
+            );
+          })
         )}
       </div>
     </section>
@@ -258,9 +286,11 @@ function CommentItem({
   currentUser,
   onDeleted,
   onCommentUpdated,
+  targetCommentId,
+  targetReplyId,
+  shouldOpenReplies,
 }: {
   comment: MarketComment;
-
   currentUser: {
     id: string;
     role?: string | null;
@@ -268,6 +298,9 @@ function CommentItem({
     name?: string | null;
   } | null;
 
+  targetCommentId: string | null;
+  targetReplyId: string | null;
+  shouldOpenReplies: boolean;
   onDeleted: () => Promise<void>;
   onCommentUpdated: () => Promise<void>;
 }) {
@@ -276,6 +309,13 @@ function CommentItem({
   const [isLikePending, startLikeTransition] = useTransition();
 
   const [showReplies, setShowReplies] = useState(false);
+
+  useEffect(() => {
+    if (shouldOpenReplies) {
+      setShowReplies(true);
+    }
+  }, [shouldOpenReplies]);
+
   const [threadHovered, setThreadHovered] = useState(false);
   const [replying, setReplying] = useState(false);
 
@@ -434,8 +474,27 @@ function CommentItem({
     });
   };
 
+  useEffect(() => {
+    if (targetCommentId !== comment.id) {
+      return;
+    }
+
+    const element = document.getElementById(`comment-${comment.id}`);
+
+    if (!element) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      element.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+  }, [targetCommentId, comment.id]);
+
   return (
-    <div className="mb-6">
+    <div id={`comment-${comment.id}`} className="mb-6 scroll-mt-24">
       <div className="flex gap-3 z-1">
         <Avatar label={username} image={comment.author.image} />
 
@@ -796,6 +855,7 @@ function CommentItem({
                           currentUser={currentUser}
                           onReplyUpdated={onCommentUpdated}
                           depth={0}
+                          targetReplyId={targetReplyId}
                         />
                       </div>
                     );

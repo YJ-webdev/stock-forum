@@ -57,16 +57,18 @@ model User {
   moderationActionsReceived  ModerationAction[] @relation("ModerationTargetUser")
   moderationActionsPerformed ModerationAction[] @relation("ModerationModerator")
 
-  accounts          Account[]
-  sessions          Session[]
-  replies           Reply[]
-  comments          Comment[]
-  replyLikes        ReplyLike[]
-  commentLikes      CommentLike[]
-  balance           AccountBalance?
-  watchlist         Watchlist[]
-  predictions       Prediction[]
-  notifications     Notification[]
+  accounts              Account[]
+  sessions              Session[]
+  replies               Reply[]
+  comments              Comment[]
+  replyLikes            ReplyLike[]
+  commentLikes          CommentLike[]
+  balance               AccountBalance?
+  watchlist             Watchlist[]
+  predictions           Prediction[]
+  notificationsReceived Notification[]  @relation("NotificationRecipient")
+  notificationsSent     Notification[]  @relation("NotificationActor")
+
   pointBalance      PointBalance?
   pointTransactions PointTransaction[]
 
@@ -125,6 +127,8 @@ model Comment {
 
   predictionId String?     @unique
   prediction   Prediction? @relation(fields: [predictionId], references: [id], onDelete: SetNull)
+
+  notifications Notification[]
 
   assets  CommentAsset[]
   replies Reply[]
@@ -224,9 +228,9 @@ model Reply {
   parent   Reply?  @relation("ReplyThread", fields: [parentId], references: [id], onDelete: Cascade)
 
   // Child replies
-  replies Reply[] @relation("ReplyThread")
-
-  likes ReplyLike[]
+  replies       Reply[]        @relation("ReplyThread")
+  notifications Notification[]
+  likes         ReplyLike[]
 
   editedAt    DateTime?
   moderatedAt DateTime?
@@ -326,13 +330,25 @@ enum NotificationType {
   PREDICTION_DRAW
   PREDICTION_VOID
   PREDICTION_PENDING
+
+  COMMENT_LIKED
+  REPLY_LIKED
+
+  COMMENT_REPLIED
+  REPLY_REPLIED
 }
 
 model Notification {
   id String @id @default(cuid())
 
+  // Recipient
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+
+  // User who caused the notification.
+  // Null for system-generated prediction notifications.
+  actorId String?
+  actor   User?   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
 
   type NotificationType
 
@@ -340,8 +356,13 @@ model Notification {
   message String
 
   predictionId String?
+  prediction   Prediction? @relation(fields: [predictionId], references: [id], onDelete: SetNull)
 
-  prediction Prediction? @relation(fields: [predictionId], references: [id], onDelete: SetNull)
+  commentId String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  replyId String?
+  reply   Reply?  @relation(fields: [replyId], references: [id], onDelete: Cascade)
 
   eventKey String? @unique
 
@@ -350,7 +371,10 @@ model Notification {
 
   @@index([userId, createdAt])
   @@index([userId, readAt])
+  @@index([actorId])
   @@index([predictionId])
+  @@index([commentId])
+  @@index([replyId])
 }
 
 model PointBalance {

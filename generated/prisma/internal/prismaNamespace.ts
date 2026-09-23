@@ -1924,10 +1924,13 @@ export type WatchlistScalarFieldEnum = (typeof WatchlistScalarFieldEnum)[keyof t
 export const NotificationScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  actorId: 'actorId',
   type: 'type',
   title: 'title',
   message: 'message',
   predictionId: 'predictionId',
+  commentId: 'commentId',
+  replyId: 'replyId',
   eventKey: 'eventKey',
   readAt: 'readAt',
   createdAt: 'createdAt'

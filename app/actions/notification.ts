@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function getMyNotifications() {
+export async function getNotifications() {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -29,6 +29,78 @@ export async function getMyNotifications() {
 
       readAt: true,
       createdAt: true,
+
+      // -----------------------------------------------------------------------
+      // ACTOR
+      // -----------------------------------------------------------------------
+
+      actorId: true,
+
+      actor: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          nationality: true,
+        },
+      },
+
+      // -----------------------------------------------------------------------
+      // COMMENT
+      // -----------------------------------------------------------------------
+
+      commentId: true,
+
+      comment: {
+        select: {
+          id: true,
+
+          assets: {
+            select: {
+              asset: {
+                select: {
+                  symbol: true,
+                  displaySymbol: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+
+      // -----------------------------------------------------------------------
+      // REPLY
+      // -----------------------------------------------------------------------
+
+      replyId: true,
+
+      reply: {
+        select: {
+          id: true,
+          commentId: true,
+
+          comment: {
+            select: {
+              assets: {
+                select: {
+                  asset: {
+                    select: {
+                      symbol: true,
+                      displaySymbol: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      // -----------------------------------------------------------------------
+      // PREDICTION
+      // -----------------------------------------------------------------------
 
       predictionId: true,
 
@@ -127,5 +199,5 @@ export async function markAllNotificationsAsRead() {
 // -----------------------------------------------------------------------------
 
 export type MyNotification = Awaited<
-  ReturnType<typeof getMyNotifications>
+  ReturnType<typeof getNotifications>
 >[number];

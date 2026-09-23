@@ -948,6 +948,7 @@ export async function createReply({
     throw new Error("You must be logged in.");
   }
 
+  const userId = session.user.id;
   const trimmedContent = content.trim();
 
   if (!trimmedContent && !gifUrl) {
@@ -965,6 +966,7 @@ export async function createReply({
 
     select: {
       id: true,
+      authorId: true,
       withdrawnAt: true,
       moderatedAt: true,
     },
@@ -982,8 +984,15 @@ export async function createReply({
   // PARENT REPLY
   // ---------------------------------------------------------------------------
 
+  let parentReply: {
+    id: string;
+    commentId: string;
+    authorId: string;
+    moderatedAt: Date | null;
+  } | null = null;
+
   if (parentId) {
-    const parentReply = await prisma.reply.findUnique({
+    parentReply = await prisma.reply.findUnique({
       where: {
         id: parentId,
       },
@@ -991,6 +1000,7 @@ export async function createReply({
       select: {
         id: true,
         commentId: true,
+        authorId: true,
         moderatedAt: true,
       },
     });
@@ -1010,7 +1020,7 @@ export async function createReply({
   }
 
   // ---------------------------------------------------------------------------
-  // CREATE
+  // CREATE REPLY
   // ---------------------------------------------------------------------------
 
   const reply = await prisma.reply.create({
@@ -1019,7 +1029,7 @@ export async function createReply({
       gifUrl,
 
       commentId,
-      authorId: session.user.id,
+      authorId: userId,
 
       parentId,
     },
@@ -1056,6 +1066,68 @@ export async function createReply({
       },
     },
   });
+
+  // ---------------------------------------------------------------------------
+  // NOTIFICATION
+  // ---------------------------------------------------------------------------
+
+  if (parentReply) {
+    // -------------------------------------------------------------------------
+    // REPLIED TO ANOTHER REPLY
+    // -------------------------------------------------------------------------
+
+    if (parentReply.authorId !== userId) {
+      await prisma.notification.create({
+        data: {
+          // Recipient = author of the reply being replied to.
+          userId: parentReply.authorId,
+
+          // Actor = current user who created the new reply.
+          actorId: userId,
+
+          type: "REPLY_REPLIED",
+
+          title: "New reply",
+          message: `${session.user.name ?? "Someone"} replied to your reply.`,
+
+          // IMPORTANT:
+          // Store the NEW reply, not the parent reply.
+          // This lets the notification navigate directly to the response.
+          replyId: reply.id,
+
+          eventKey: `reply-replied:${reply.id}`,
+        },
+      });
+    }
+  } else {
+    // -------------------------------------------------------------------------
+    // REPLIED DIRECTLY TO COMMENT
+    // -------------------------------------------------------------------------
+
+    if (comment.authorId !== userId) {
+      await prisma.notification.create({
+        data: {
+          // Recipient = author of the original comment.
+          userId: comment.authorId,
+
+          // Actor = current user who created the reply.
+          actorId: userId,
+
+          type: "COMMENT_REPLIED",
+
+          title: "New reply",
+          message: `${session.user.name ?? "Someone"} replied to your comment.`,
+
+          // IMPORTANT:
+          // Store the NEW reply here too.
+          // We can get its original comment through reply.commentId.
+          replyId: reply.id,
+
+          eventKey: `comment-replied:${reply.id}`,
+        },
+      });
+    }
+  }
 
   return {
     success: true,
