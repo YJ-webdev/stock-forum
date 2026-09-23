@@ -246,11 +246,7 @@ export default function LayoutShell({
                       {user && onAccount && !onWrite && (
                         <AccountPanel user={user} setOnAccount={setOnAccount} />
                       )}
-                      {user && onNotification && (
-                        <NotificationPanel
-                          setOnNotification={setOnNotification}
-                        />
-                      )}
+                      {user && onNotification && <NotificationPanel />}
                       {!onWrite && !onAccount && !onNotification && (
                         <>
                           <div className="mx-4 mt-8">

@@ -284,6 +284,7 @@ export const NotificationScalarFieldEnum = {
   title: 'title',
   message: 'message',
   predictionId: 'predictionId',
+  eventKey: 'eventKey',
   readAt: 'readAt',
   createdAt: 'createdAt'
 } as const

@@ -295,7 +295,7 @@ export type PredictionWhereInput = {
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   asset?: Prisma.XOR<Prisma.MarketAssetScalarRelationFilter, Prisma.MarketAssetWhereInput>
   comment?: Prisma.XOR<Prisma.CommentNullableScalarRelationFilter, Prisma.CommentWhereInput> | null
-  notification?: Prisma.XOR<Prisma.NotificationNullableScalarRelationFilter, Prisma.NotificationWhereInput> | null
+  notification?: Prisma.NotificationListRelationFilter
   pointTransactions?: Prisma.PointTransactionListRelationFilter
 }
 
@@ -316,7 +316,7 @@ export type PredictionOrderByWithRelationInput = {
   user?: Prisma.UserOrderByWithRelationInput
   asset?: Prisma.MarketAssetOrderByWithRelationInput
   comment?: Prisma.CommentOrderByWithRelationInput
-  notification?: Prisma.NotificationOrderByWithRelationInput
+  notification?: Prisma.NotificationOrderByRelationAggregateInput
   pointTransactions?: Prisma.PointTransactionOrderByRelationAggregateInput
 }
 
@@ -341,7 +341,7 @@ export type PredictionWhereUniqueInput = Prisma.AtLeast<{
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   asset?: Prisma.XOR<Prisma.MarketAssetScalarRelationFilter, Prisma.MarketAssetWhereInput>
   comment?: Prisma.XOR<Prisma.CommentNullableScalarRelationFilter, Prisma.CommentWhereInput> | null
-  notification?: Prisma.XOR<Prisma.NotificationNullableScalarRelationFilter, Prisma.NotificationWhereInput> | null
+  notification?: Prisma.NotificationListRelationFilter
   pointTransactions?: Prisma.PointTransactionListRelationFilter
 }, "id" | "userId_symbol_sessionDate">
 
@@ -400,7 +400,7 @@ export type PredictionCreateInput = {
   user: Prisma.UserCreateNestedOneWithoutPredictionsInput
   asset: Prisma.MarketAssetCreateNestedOneWithoutPredictionsInput
   comment?: Prisma.CommentCreateNestedOneWithoutPredictionInput
-  notification?: Prisma.NotificationCreateNestedOneWithoutPredictionInput
+  notification?: Prisma.NotificationCreateNestedManyWithoutPredictionInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutPredictionInput
 }
 
@@ -419,7 +419,7 @@ export type PredictionUncheckedCreateInput = {
   createdAt?: Date | string
   settledAt?: Date | string | null
   comment?: Prisma.CommentUncheckedCreateNestedOneWithoutPredictionInput
-  notification?: Prisma.NotificationUncheckedCreateNestedOneWithoutPredictionInput
+  notification?: Prisma.NotificationUncheckedCreateNestedManyWithoutPredictionInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutPredictionInput
 }
 
@@ -438,7 +438,7 @@ export type PredictionUpdateInput = {
   user?: Prisma.UserUpdateOneRequiredWithoutPredictionsNestedInput
   asset?: Prisma.MarketAssetUpdateOneRequiredWithoutPredictionsNestedInput
   comment?: Prisma.CommentUpdateOneWithoutPredictionNestedInput
-  notification?: Prisma.NotificationUpdateOneWithoutPredictionNestedInput
+  notification?: Prisma.NotificationUpdateManyWithoutPredictionNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutPredictionNestedInput
 }
 
@@ -457,7 +457,7 @@ export type PredictionUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comment?: Prisma.CommentUncheckedUpdateOneWithoutPredictionNestedInput
-  notification?: Prisma.NotificationUncheckedUpdateOneWithoutPredictionNestedInput
+  notification?: Prisma.NotificationUncheckedUpdateManyWithoutPredictionNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutPredictionNestedInput
 }
 
@@ -771,7 +771,7 @@ export type PredictionCreateWithoutUserInput = {
   settledAt?: Date | string | null
   asset: Prisma.MarketAssetCreateNestedOneWithoutPredictionsInput
   comment?: Prisma.CommentCreateNestedOneWithoutPredictionInput
-  notification?: Prisma.NotificationCreateNestedOneWithoutPredictionInput
+  notification?: Prisma.NotificationCreateNestedManyWithoutPredictionInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutPredictionInput
 }
 
@@ -789,7 +789,7 @@ export type PredictionUncheckedCreateWithoutUserInput = {
   createdAt?: Date | string
   settledAt?: Date | string | null
   comment?: Prisma.CommentUncheckedCreateNestedOneWithoutPredictionInput
-  notification?: Prisma.NotificationUncheckedCreateNestedOneWithoutPredictionInput
+  notification?: Prisma.NotificationUncheckedCreateNestedManyWithoutPredictionInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutPredictionInput
 }
 
@@ -852,7 +852,7 @@ export type PredictionCreateWithoutCommentInput = {
   settledAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutPredictionsInput
   asset: Prisma.MarketAssetCreateNestedOneWithoutPredictionsInput
-  notification?: Prisma.NotificationCreateNestedOneWithoutPredictionInput
+  notification?: Prisma.NotificationCreateNestedManyWithoutPredictionInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutPredictionInput
 }
 
@@ -870,7 +870,7 @@ export type PredictionUncheckedCreateWithoutCommentInput = {
   nationality?: string | null
   createdAt?: Date | string
   settledAt?: Date | string | null
-  notification?: Prisma.NotificationUncheckedCreateNestedOneWithoutPredictionInput
+  notification?: Prisma.NotificationUncheckedCreateNestedManyWithoutPredictionInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutPredictionInput
 }
 
@@ -904,7 +904,7 @@ export type PredictionUpdateWithoutCommentInput = {
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutPredictionsNestedInput
   asset?: Prisma.MarketAssetUpdateOneRequiredWithoutPredictionsNestedInput
-  notification?: Prisma.NotificationUpdateOneWithoutPredictionNestedInput
+  notification?: Prisma.NotificationUpdateManyWithoutPredictionNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutPredictionNestedInput
 }
 
@@ -922,7 +922,7 @@ export type PredictionUncheckedUpdateWithoutCommentInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  notification?: Prisma.NotificationUncheckedUpdateOneWithoutPredictionNestedInput
+  notification?: Prisma.NotificationUncheckedUpdateManyWithoutPredictionNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutPredictionNestedInput
 }
 
@@ -940,7 +940,7 @@ export type PredictionCreateWithoutAssetInput = {
   settledAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutPredictionsInput
   comment?: Prisma.CommentCreateNestedOneWithoutPredictionInput
-  notification?: Prisma.NotificationCreateNestedOneWithoutPredictionInput
+  notification?: Prisma.NotificationCreateNestedManyWithoutPredictionInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutPredictionInput
 }
 
@@ -958,7 +958,7 @@ export type PredictionUncheckedCreateWithoutAssetInput = {
   createdAt?: Date | string
   settledAt?: Date | string | null
   comment?: Prisma.CommentUncheckedCreateNestedOneWithoutPredictionInput
-  notification?: Prisma.NotificationUncheckedCreateNestedOneWithoutPredictionInput
+  notification?: Prisma.NotificationUncheckedCreateNestedManyWithoutPredictionInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutPredictionInput
 }
 
@@ -1091,7 +1091,7 @@ export type PredictionCreateWithoutPointTransactionsInput = {
   user: Prisma.UserCreateNestedOneWithoutPredictionsInput
   asset: Prisma.MarketAssetCreateNestedOneWithoutPredictionsInput
   comment?: Prisma.CommentCreateNestedOneWithoutPredictionInput
-  notification?: Prisma.NotificationCreateNestedOneWithoutPredictionInput
+  notification?: Prisma.NotificationCreateNestedManyWithoutPredictionInput
 }
 
 export type PredictionUncheckedCreateWithoutPointTransactionsInput = {
@@ -1109,7 +1109,7 @@ export type PredictionUncheckedCreateWithoutPointTransactionsInput = {
   createdAt?: Date | string
   settledAt?: Date | string | null
   comment?: Prisma.CommentUncheckedCreateNestedOneWithoutPredictionInput
-  notification?: Prisma.NotificationUncheckedCreateNestedOneWithoutPredictionInput
+  notification?: Prisma.NotificationUncheckedCreateNestedManyWithoutPredictionInput
 }
 
 export type PredictionCreateOrConnectWithoutPointTransactionsInput = {
@@ -1143,7 +1143,7 @@ export type PredictionUpdateWithoutPointTransactionsInput = {
   user?: Prisma.UserUpdateOneRequiredWithoutPredictionsNestedInput
   asset?: Prisma.MarketAssetUpdateOneRequiredWithoutPredictionsNestedInput
   comment?: Prisma.CommentUpdateOneWithoutPredictionNestedInput
-  notification?: Prisma.NotificationUpdateOneWithoutPredictionNestedInput
+  notification?: Prisma.NotificationUpdateManyWithoutPredictionNestedInput
 }
 
 export type PredictionUncheckedUpdateWithoutPointTransactionsInput = {
@@ -1161,7 +1161,7 @@ export type PredictionUncheckedUpdateWithoutPointTransactionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comment?: Prisma.CommentUncheckedUpdateOneWithoutPredictionNestedInput
-  notification?: Prisma.NotificationUncheckedUpdateOneWithoutPredictionNestedInput
+  notification?: Prisma.NotificationUncheckedUpdateManyWithoutPredictionNestedInput
 }
 
 export type PredictionCreateManyUserInput = {
@@ -1193,7 +1193,7 @@ export type PredictionUpdateWithoutUserInput = {
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   asset?: Prisma.MarketAssetUpdateOneRequiredWithoutPredictionsNestedInput
   comment?: Prisma.CommentUpdateOneWithoutPredictionNestedInput
-  notification?: Prisma.NotificationUpdateOneWithoutPredictionNestedInput
+  notification?: Prisma.NotificationUpdateManyWithoutPredictionNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutPredictionNestedInput
 }
 
@@ -1211,7 +1211,7 @@ export type PredictionUncheckedUpdateWithoutUserInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comment?: Prisma.CommentUncheckedUpdateOneWithoutPredictionNestedInput
-  notification?: Prisma.NotificationUncheckedUpdateOneWithoutPredictionNestedInput
+  notification?: Prisma.NotificationUncheckedUpdateManyWithoutPredictionNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutPredictionNestedInput
 }
 
@@ -1259,7 +1259,7 @@ export type PredictionUpdateWithoutAssetInput = {
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutPredictionsNestedInput
   comment?: Prisma.CommentUpdateOneWithoutPredictionNestedInput
-  notification?: Prisma.NotificationUpdateOneWithoutPredictionNestedInput
+  notification?: Prisma.NotificationUpdateManyWithoutPredictionNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutPredictionNestedInput
 }
 
@@ -1277,7 +1277,7 @@ export type PredictionUncheckedUpdateWithoutAssetInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comment?: Prisma.CommentUncheckedUpdateOneWithoutPredictionNestedInput
-  notification?: Prisma.NotificationUncheckedUpdateOneWithoutPredictionNestedInput
+  notification?: Prisma.NotificationUncheckedUpdateManyWithoutPredictionNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutPredictionNestedInput
 }
 
@@ -1302,10 +1302,12 @@ export type PredictionUncheckedUpdateManyWithoutAssetInput = {
  */
 
 export type PredictionCountOutputType = {
+  notification: number
   pointTransactions: number
 }
 
 export type PredictionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  notification?: boolean | PredictionCountOutputTypeCountNotificationArgs
   pointTransactions?: boolean | PredictionCountOutputTypeCountPointTransactionsArgs
 }
 
@@ -1317,6 +1319,13 @@ export type PredictionCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.E
    * Select specific fields to fetch from the PredictionCountOutputType
    */
   select?: Prisma.PredictionCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * PredictionCountOutputType without action
+ */
+export type PredictionCountOutputTypeCountNotificationArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationWhereInput
 }
 
 /**
@@ -1425,7 +1434,7 @@ export type $PredictionPayload<ExtArgs extends runtime.Types.Extensions.Internal
     user: Prisma.$UserPayload<ExtArgs>
     asset: Prisma.$MarketAssetPayload<ExtArgs>
     comment: Prisma.$CommentPayload<ExtArgs> | null
-    notification: Prisma.$NotificationPayload<ExtArgs> | null
+    notification: Prisma.$NotificationPayload<ExtArgs>[]
     pointTransactions: Prisma.$PointTransactionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1839,7 +1848,7 @@ export interface Prisma__PredictionClient<T, Null = never, ExtArgs extends runti
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   asset<T extends Prisma.MarketAssetDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketAssetDefaultArgs<ExtArgs>>): Prisma.Prisma__MarketAssetClient<runtime.Types.Result.GetResult<Prisma.$MarketAssetPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   comment<T extends Prisma.Prediction$commentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Prediction$commentArgs<ExtArgs>>): Prisma.Prisma__CommentClient<runtime.Types.Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  notification<T extends Prisma.Prediction$notificationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Prediction$notificationArgs<ExtArgs>>): Prisma.Prisma__NotificationClient<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  notification<T extends Prisma.Prediction$notificationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Prediction$notificationArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   pointTransactions<T extends Prisma.Prediction$pointTransactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Prediction$pointTransactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PointTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2319,6 +2328,11 @@ export type Prediction$notificationArgs<ExtArgs extends runtime.Types.Extensions
    */
   include?: Prisma.NotificationInclude<ExtArgs> | null
   where?: Prisma.NotificationWhereInput
+  orderBy?: Prisma.NotificationOrderByWithRelationInput | Prisma.NotificationOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
 }
 
 /**

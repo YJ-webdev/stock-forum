@@ -59,6 +59,7 @@ export default function MarketPageClient({
 
   const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
   const [selectedVote, setSelectedVote] = useState<VoteDirection | null>(null);
+
   const [now] = useState(() => Date.now());
 
   const [unavailableRanges, setUnavailableRanges] = useState<
@@ -262,7 +263,6 @@ export default function MarketPageClient({
           prediction: {
             direction,
             pointsBet: betAmount,
-            referenceClose,
             sessionDate,
           },
         });

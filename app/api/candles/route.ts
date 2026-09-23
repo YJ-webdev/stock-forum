@@ -11,18 +11,9 @@ import {
 export const dynamic = "force-dynamic";
 
 const yahoo = new YahooFinance();
-
-// -----------------------------------------------------------------------------
-// PROVIDER SYMBOL OVERRIDES
-// -----------------------------------------------------------------------------
-
 const PROVIDER_SYMBOLS: Record<string, string> = {
   TOPIX: "1306.T",
 };
-
-// -----------------------------------------------------------------------------
-// TYPES
-// -----------------------------------------------------------------------------
 
 type YahooInterval = "1m" | "2m" | "5m" | "15m" | "30m" | "60m" | "1d" | "1wk";
 
@@ -31,10 +22,6 @@ interface MarketSession {
   marketOpenMs: number | null;
   marketCloseMs: number | null;
 }
-
-// -----------------------------------------------------------------------------
-// INTERVALS
-// -----------------------------------------------------------------------------
 
 const INTERVALS: Record<string, YahooInterval> = {
   "1D": "15m",
@@ -57,10 +44,6 @@ const INTERVAL_MS: Record<YahooInterval, number> = {
   "1d": 24 * 60 * 60_000,
   "1wk": 7 * 24 * 60 * 60_000,
 };
-
-// -----------------------------------------------------------------------------
-// RANGE
-// -----------------------------------------------------------------------------
 
 function getPeriod1(range: string): Date {
   const now = new Date();
@@ -100,10 +83,6 @@ function getPeriod1(range: string): Date {
   }
 }
 
-// -----------------------------------------------------------------------------
-// EXCHANGE DATE
-// -----------------------------------------------------------------------------
-
 function getExchangeDate(date: Date, timezone?: string): string {
   if (!timezone) {
     return date.toISOString().slice(0, 10);
@@ -116,10 +95,6 @@ function getExchangeDate(date: Date, timezone?: string): string {
     day: "2-digit",
   }).format(date);
 }
-
-// -----------------------------------------------------------------------------
-// EXCHANGE WEEKDAY
-// -----------------------------------------------------------------------------
 
 function getExchangeWeekday(date: Date, timezone: string): number {
   const weekday = new Intl.DateTimeFormat("en-US", {
@@ -139,10 +114,6 @@ function getExchangeWeekday(date: Date, timezone: string): number {
 
   return days[weekday] ?? 0;
 }
-
-// -----------------------------------------------------------------------------
-// MARKET TIME -> TIMESTAMP
-// -----------------------------------------------------------------------------
 
 function getTimestampForMarketTime(
   date: string,
@@ -166,10 +137,6 @@ function getTimestampForMarketTime(
   return zonedDate.getTime();
 }
 
-// -----------------------------------------------------------------------------
-// ADD DAYS IN EXCHANGE CALENDAR
-// -----------------------------------------------------------------------------
-
 function addCalendarDays(dateString: string, amount: number): string {
   const [year, month, day] = dateString.split("-").map(Number);
 
@@ -185,19 +152,11 @@ function addCalendarDays(dateString: string, amount: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-// -----------------------------------------------------------------------------
-// WEEKDAY FOR YYYY-MM-DD
-// -----------------------------------------------------------------------------
-
 function getCalendarWeekday(dateString: string): number {
   const [year, month, day] = dateString.split("-").map(Number);
 
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 }
-
-// -----------------------------------------------------------------------------
-// NEXT WEEKDAY
-// -----------------------------------------------------------------------------
 
 function getNextWeekday(dateString: string): string {
   let nextDate = addCalendarDays(dateString, 1);
@@ -212,10 +171,6 @@ function getNextWeekday(dateString: string): string {
     nextDate = addCalendarDays(nextDate, 1);
   }
 }
-
-// -----------------------------------------------------------------------------
-// LATEST TRADING SESSION
-// -----------------------------------------------------------------------------
 
 function getLatestTradingSession(quotes: any[], timezone?: string): any[] {
   if (quotes.length === 0) {
@@ -394,10 +349,6 @@ function detectTradingBreak(
     }
   }
 
-  // --------------------------------------------------
-  // FALLBACK: actual timestamp gap
-  // --------------------------------------------------
-
   if (bestStartMs == null || bestEndMs == null) {
     const validQuotes = quotes.filter(
       (quote) =>
@@ -430,10 +381,6 @@ function detectTradingBreak(
     lunchEndMs: bestEndMs,
   };
 }
-
-// -----------------------------------------------------------------------------
-// INDEX / STOCK SESSION
-// -----------------------------------------------------------------------------
 
 function getRegularMarketSession(
   market: MarketSymbolItem,
@@ -511,9 +458,6 @@ function getRegularMarketSession(
     marketCloseMs: todayCloseMs,
   };
 }
-// -----------------------------------------------------------------------------
-// FOREX SESSION
-// -----------------------------------------------------------------------------
 
 function getForexSession(now = new Date()): MarketSession {
   /*
@@ -681,15 +625,7 @@ export async function GET(request: Request) {
       meta.exchangeTimezoneName ||
       undefined;
 
-    // -------------------------------------------------------------------------
-    // MARKET SESSION
-    // -------------------------------------------------------------------------
-
     const { isClosed, marketOpenMs, marketCloseMs } = getMarketSession(market);
-
-    // -------------------------------------------------------------------------
-    // SELECT CHART DATA
-    // -------------------------------------------------------------------------
 
     let sessionQuotes = rawQuotes;
 
@@ -703,10 +639,6 @@ export async function GET(request: Request) {
       sessionQuotes = getLatestTradingSession(rawQuotes, exchangeTimezone);
     }
 
-    // -------------------------------------------------------------------------
-    // DYNAMIC TRADING BREAK
-    // -------------------------------------------------------------------------
-
     let lunchStartMs: number | null = null;
     let lunchEndMs: number | null = null;
 
@@ -716,9 +648,6 @@ export async function GET(request: Request) {
       lunchStartMs = detectedBreak.lunchStartMs;
       lunchEndMs = detectedBreak.lunchEndMs;
     }
-    // -------------------------------------------------------------------------
-    // NO QUOTES
-    // -------------------------------------------------------------------------
 
     if (sessionQuotes.length === 0) {
       return NextResponse.json({
@@ -755,10 +684,6 @@ export async function GET(request: Request) {
       });
     }
 
-    // -------------------------------------------------------------------------
-    // NORMALIZE CANDLES
-    // -------------------------------------------------------------------------
-
     const points = sessionQuotes
       .filter(
         (quote: any) =>
@@ -792,10 +717,6 @@ export async function GET(request: Request) {
           close: normalizedClose,
         };
       });
-
-    // -------------------------------------------------------------------------
-    // NO VALID POINTS
-    // -------------------------------------------------------------------------
 
     if (points.length === 0) {
       return NextResponse.json({
@@ -832,10 +753,6 @@ export async function GET(request: Request) {
       });
     }
 
-    // -------------------------------------------------------------------------
-    // PRICE
-    // -------------------------------------------------------------------------
-
     const currentPrice =
       typeof meta.regularMarketPrice === "number"
         ? meta.regularMarketPrice
@@ -850,10 +767,6 @@ export async function GET(request: Request) {
 
     const rangeStartPrice = points[0]?.price ?? previousClose;
 
-    // -------------------------------------------------------------------------
-    // CHANGE
-    // -------------------------------------------------------------------------
-
     const dailyChangePercent =
       previousClose !== 0
         ? ((currentPrice - previousClose) / previousClose) * 100
@@ -863,10 +776,6 @@ export async function GET(request: Request) {
       rangeStartPrice !== 0
         ? ((currentPrice - rangeStartPrice) / rangeStartPrice) * 100
         : 0;
-
-    // -------------------------------------------------------------------------
-    // RESPONSE
-    // -------------------------------------------------------------------------
 
     return NextResponse.json({
       points,

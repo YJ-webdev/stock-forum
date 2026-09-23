@@ -171,17 +171,17 @@ model Prediction {
   direction PredictionDirection
 
   pointsBet       Int
-  referenceClose Decimal @db.Decimal(18, 4)
+  referenceClose  Decimal  @db.Decimal(18, 4)
   settlementClose Decimal? @db.Decimal(18, 4)
   sessionDate     DateTime
 
-  status          PredictionStatus @default(PENDING)
-  pointsChange    Int?
+  status       PredictionStatus @default(PENDING)
+  pointsChange Int?
 
   nationality String?
 
-  comment Comment?
-  notification      Notification?
+  comment           Comment?
+  notification      Notification[]
   pointTransactions PointTransaction[]
 
   createdAt DateTime  @default(now())
@@ -325,6 +325,7 @@ enum NotificationType {
   PREDICTION_LOST
   PREDICTION_DRAW
   PREDICTION_VOID
+  PREDICTION_PENDING
 }
 
 model Notification {
@@ -338,15 +339,18 @@ model Notification {
   title   String
   message String
 
-  predictionId String? @unique
+  predictionId String?
 
   prediction Prediction? @relation(fields: [predictionId], references: [id], onDelete: SetNull)
-  readAt     DateTime?
 
-  createdAt DateTime @default(now())
+  eventKey String? @unique
+
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
 
   @@index([userId, createdAt])
   @@index([userId, readAt])
+  @@index([predictionId])
 }
 
 model PointBalance {

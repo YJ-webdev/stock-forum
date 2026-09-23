@@ -12,6 +12,7 @@ import {
 } from "@/lib/data/market-symbols";
 
 import { hasEditorContent } from "@/lib/utils/tiptap-utils";
+import { getReferenceClose } from "@/lib/market/yahoo";
 
 // -----------------------------------------------------------------------------
 // TYPES
@@ -20,7 +21,6 @@ import { hasEditorContent } from "@/lib/utils/tiptap-utils";
 type PredictionInput = {
   direction: "BULL" | "BEAR";
   pointsBet: number;
-  referenceClose: number;
   sessionDate: Date;
 };
 
@@ -49,6 +49,7 @@ export async function createComment({
     where: {
       id: session.user.id,
     },
+
     select: {
       nationality: true,
     },
@@ -100,13 +101,6 @@ export async function createComment({
     }
 
     if (
-      !Number.isFinite(prediction.referenceClose) ||
-      prediction.referenceClose <= 0
-    ) {
-      throw new Error("Invalid prediction price.");
-    }
-
-    if (
       !(prediction.sessionDate instanceof Date) ||
       Number.isNaN(prediction.sessionDate.getTime())
     ) {
@@ -123,8 +117,8 @@ export async function createComment({
     Array.isArray(content.content) &&
     content.content.length > 0;
 
-  // Normal comments still require content.
-  // Predictions are allowed without a comment/GIF.
+  // Normal comments require content.
+  // Predictions are allowed without comment text / GIF content.
   if (!hasContent && !prediction) {
     throw new Error("Please write a comment or select a GIF.");
   }
@@ -132,6 +126,35 @@ export async function createComment({
   const plainContent = hasContent
     ? (JSON.parse(JSON.stringify(content)) as Prisma.InputJsonValue)
     : null;
+
+  // ---------------------------------------------------------------------------
+  // REFERENCE CLOSE
+  //
+  // IMPORTANT:
+  // This is intentionally determined on the server.
+  //
+  // The browser must never be trusted to provide the market price used to
+  // determine whether a prediction wins or loses.
+  //
+  // This happens BEFORE the Prisma transaction because Yahoo is an external
+  // network request. We don't want to keep a DB transaction open while waiting
+  // for market data.
+  // ---------------------------------------------------------------------------
+
+  let referenceClose: number | null = null;
+
+  if (prediction) {
+    const market = selectedMarkets[0];
+
+    referenceClose = await getReferenceClose(
+      market.symbol,
+      prediction.sessionDate,
+    );
+
+    if (!Number.isFinite(referenceClose) || referenceClose <= 0) {
+      throw new Error("Could not determine the previous market close.");
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // ENSURE MARKET ASSETS EXIST
@@ -178,6 +201,10 @@ export async function createComment({
     if (prediction) {
       const market = selectedMarkets[0];
 
+      if (referenceClose === null) {
+        throw new Error("Could not determine the previous market close.");
+      }
+
       // -----------------------------------------------------------------------
       // ENSURE POINT BALANCE EXISTS
       // -----------------------------------------------------------------------
@@ -207,7 +234,7 @@ export async function createComment({
           direction: prediction.direction,
           pointsBet: prediction.pointsBet,
 
-          referenceClose: prediction.referenceClose,
+          referenceClose,
           sessionDate: prediction.sessionDate,
 
           nationality: user.nationality!,
@@ -221,9 +248,12 @@ export async function createComment({
       // -----------------------------------------------------------------------
       // DEDUCT BET
       //
-      // Only succeeds when the user has enough points.
-      // Using updateMany with points >= pointsBet prevents the balance from
-      // going negative if multiple requests arrive around the same time.
+      // updateMany + points >= pointsBet ensures the balance cannot go
+      // negative if multiple prediction requests arrive at roughly the
+      // same time.
+      //
+      // Because this happens in the same transaction as Prediction creation,
+      // failure here rolls back the Prediction as well.
       // -----------------------------------------------------------------------
 
       const deducted = await tx.pointBalance.updateMany({
@@ -257,7 +287,7 @@ export async function createComment({
 
           type: "BET",
 
-          // Ledger deductions are stored as negative values.
+          // Point deductions are negative ledger movements.
           amount: -prediction.pointsBet,
         },
       });
@@ -294,7 +324,10 @@ export async function createComment({
     }
 
     // -------------------------------------------------------------------------
-    // RESULT
+    // CURRENT POINT BALANCE
+    //
+    // Return the authoritative balance from the DB so PointBalanceContext can
+    // synchronize the UI immediately after a successful prediction.
     // -------------------------------------------------------------------------
 
     const pointBalance = prediction
@@ -302,11 +335,16 @@ export async function createComment({
           where: {
             userId: session.user.id,
           },
+
           select: {
             points: true,
           },
         })
       : null;
+
+    // -------------------------------------------------------------------------
+    // RESULT
+    // -------------------------------------------------------------------------
 
     return {
       success: true,
@@ -315,7 +353,6 @@ export async function createComment({
     };
   });
 }
-
 export async function getMarketComments(assetSymbol: string) {
   const session = await auth();
   const userId = session?.user?.id;

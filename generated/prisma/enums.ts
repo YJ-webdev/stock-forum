@@ -61,7 +61,8 @@ export const NotificationType = {
   PREDICTION_WON: 'PREDICTION_WON',
   PREDICTION_LOST: 'PREDICTION_LOST',
   PREDICTION_DRAW: 'PREDICTION_DRAW',
-  PREDICTION_VOID: 'PREDICTION_VOID'
+  PREDICTION_VOID: 'PREDICTION_VOID',
+  PREDICTION_PENDING: 'PREDICTION_PENDING'
 } as const
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]
