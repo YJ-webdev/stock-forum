@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 
-import { Header } from "./header";
+import { Navbar } from "./navbar";
 import PanelLeft from "./panel-left";
 import {
   ResizableHandle,
@@ -313,7 +313,7 @@ export default function LayoutShell({
               HEADER
           ------------------------------------------------------------------ */}
 
-          <Header
+          <Navbar
             user={user}
             onTogglePanel={handleToggleLeftPanel}
             onWrite={handleWrite}

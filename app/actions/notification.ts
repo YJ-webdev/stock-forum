@@ -32,7 +32,7 @@ export async function getNotifications() {
     return [];
   }
 
-  return prisma.notification.findMany({
+  const notifications = await prisma.notification.findMany({
     where: {
       userId: session.user.id,
     },
@@ -71,8 +71,6 @@ export async function getNotifications() {
       comment: {
         select: {
           id: true,
-
-          // Important: needed for notification preview.
           content: true,
 
           assets: {
@@ -99,8 +97,6 @@ export async function getNotifications() {
         select: {
           id: true,
           commentId: true,
-
-          // Important: needed for notification preview.
           content: true,
 
           comment: {
@@ -139,6 +135,30 @@ export async function getNotifications() {
       },
     },
   });
+
+  // ---------------------------------------------------------------------------
+  // SERIALIZE DECIMAL VALUES FOR CLIENT COMPONENTS
+  // ---------------------------------------------------------------------------
+
+  return notifications.map((notification) => ({
+    ...notification,
+
+    prediction: notification.prediction
+      ? {
+          ...notification.prediction,
+
+          referenceClose:
+            notification.prediction.referenceClose === null
+              ? null
+              : Number(notification.prediction.referenceClose),
+
+          settlementClose:
+            notification.prediction.settlementClose === null
+              ? null
+              : Number(notification.prediction.settlementClose),
+        }
+      : null,
+  }));
 }
 
 export type MyNotification = Awaited<

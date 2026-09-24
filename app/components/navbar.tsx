@@ -70,7 +70,7 @@ interface UserMenuProps {
 // HEADER
 // -----------------------------------------------------------------------------
 
-export function Header({
+export function Navbar({
   user,
   onTogglePanel,
   onWrite,
@@ -80,7 +80,7 @@ export function Header({
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   return (
-    <header
+    <nav
       className="
         fixed top-0 right-0 left-0 z-50
         flex h-18.5 items-center justify-between
@@ -126,7 +126,7 @@ export function Header({
       </div>
 
       <LoginDialog isOpen={isLoginOpen} setIsOpen={setIsLoginOpen} />
-    </header>
+    </nav>
   );
 }
 
