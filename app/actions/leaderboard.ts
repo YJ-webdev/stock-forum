@@ -5,36 +5,110 @@ import { prisma } from "@/lib/prisma";
 export interface LeaderboardUser {
   id: string;
   name: string;
-  image?: string | null;
-  winRate: number; // e.g. 78.5
-  totalProfit: number; // e.g. 12450.00
+  image: string | null;
+  winRate: number;
+  points: number;
   rank: number;
 }
 
 export async function getTopBetters(limit = 5): Promise<LeaderboardUser[]> {
   try {
-    // Query users sorted by profit/balance or win rate
     const users = await prisma.user.findMany({
-      take: limit,
+      // -----------------------------------------------------------------------
+      // Only users who have participated in predictions
+      // -----------------------------------------------------------------------
+
+      where: {
+        pointBalance: {
+          isNot: null,
+        },
+
+        predictions: {
+          some: {
+            status: {
+              in: ["WON", "LOST"],
+            },
+          },
+        },
+      },
+
+      // -----------------------------------------------------------------------
+      // DATA
+      // -----------------------------------------------------------------------
+
       select: {
         id: true,
         name: true,
         image: true,
-        // Replace with your schema fields (e.g., totalProfit, winRate, balance)
+
+        // Current point balance
+        pointBalance: {
+          select: {
+            points: true,
+          },
+        },
+
+        // Only settled predictions are needed for win rate
+        predictions: {
+          where: {
+            status: {
+              in: ["WON", "LOST"],
+            },
+          },
+
+          select: {
+            status: true,
+          },
+        },
       },
-      // orderBy: { totalProfit: "desc" },
+
+      // -----------------------------------------------------------------------
+      // RANKING
+      // -----------------------------------------------------------------------
+
+      orderBy: {
+        pointBalance: {
+          points: "desc",
+        },
+      },
+
+      take: limit,
     });
 
-    return users.map((user, index) => ({
-      id: user.id,
-      name: user.name || "Anonymous Trader",
-      image: user.image,
-      winRate: Math.floor(Math.random() * 30) + 65, // Replace with calculated field from DB
-      totalProfit: Math.floor(Math.random() * 10000) + 1000, // Replace with calculated field from DB
-      rank: index + 1,
-    }));
+    // -------------------------------------------------------------------------
+    // FORMAT LEADERBOARD
+    // -------------------------------------------------------------------------
+
+    return users.map((user, index) => {
+      const totalPredictions = user.predictions.length;
+
+      const wins = user.predictions.filter(
+        (prediction) => prediction.status === "WON",
+      ).length;
+
+      const winRate =
+        totalPredictions > 0 ? (wins / totalPredictions) * 100 : 0;
+
+      return {
+        id: user.id,
+
+        name: user.name || "Anonymous Trader",
+
+        image: user.image,
+
+        // Keep one decimal place:
+        // 78.428... -> 78.4
+        winRate: Math.round(winRate * 10) / 10,
+
+        // Actual current points
+        points: user.pointBalance?.points ?? 0,
+
+        rank: index + 1,
+      };
+    });
   } catch (error) {
     console.error("Failed to fetch leaderboard users:", error);
+
     return [];
   }
 }

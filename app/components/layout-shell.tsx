@@ -16,7 +16,7 @@ import { PostEditor } from "@/components/post-editor";
 import { AccountPanel } from "./account-panel";
 import { NotificationPanel } from "./notification-panel";
 import { BreadCrumbs } from "./breadcrumbs";
-import { TopTraders } from "./top-trader";
+import { LeaderBoard } from "./leader-board";
 
 import { UserProvider } from "../context/user-context";
 import { PointBalanceProvider } from "../context/point-balance-context";
@@ -26,6 +26,7 @@ import { PopularBoard } from "../actions/query";
 
 import { NewsItem } from "@/types";
 import { User } from "@/types/user";
+import { LeaderboardUser } from "../actions/leaderboard";
 
 interface LayoutShellProps {
   user: User | null;
@@ -33,6 +34,7 @@ interface LayoutShellProps {
   children: React.ReactNode;
   comments: MostLikedComment[];
   popularBoards: PopularBoard[];
+  traders: LeaderboardUser[];
 }
 
 export default function LayoutShell({
@@ -41,6 +43,7 @@ export default function LayoutShell({
   children,
   comments,
   popularBoards,
+  traders,
 }: LayoutShellProps) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -310,7 +313,7 @@ export default function LayoutShell({
       <PointBalanceProvider>
         <div className="relative flex min-h-screen flex-col">
           {/* -----------------------------------------------------------------
-              HEADER
+              NAVBAR
           ------------------------------------------------------------------ */}
 
           <Navbar
@@ -486,7 +489,7 @@ export default function LayoutShell({
                             </p>
                           </div>
 
-                          <TopTraders />
+                          <LeaderBoard traders={traders} />
 
                           <div
                             className="

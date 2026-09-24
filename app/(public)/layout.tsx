@@ -1,8 +1,11 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+
 import LayoutShell from "../components/layout-shell";
+
 import { getMostLikedComments } from "../actions/post";
 import { getPopularBoards } from "../actions/query";
+import { getTopBetters } from "../actions/leaderboard";
 
 async function getNews() {
   try {
@@ -10,7 +13,9 @@ async function getNews() {
       next: { revalidate: 300 },
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      return [];
+    }
 
     return res.json();
   } catch {
@@ -25,31 +30,35 @@ export default async function MainLayout({
 }) {
   const session = await auth();
 
-  const [user, news, mostLikedComments, popularBoards] = await Promise.all([
-    session?.user?.id
-      ? prisma.user.findUnique({
-          where: {
-            id: session.user.id,
-          },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-            role: true,
-            status: true,
-            nationality: true,
-            language: true,
-          },
-        })
-      : null,
+  const [user, news, mostLikedComments, popularBoards, traders] =
+    await Promise.all([
+      // -------------------------------------------------------------------------
+      // USER
+      // -------------------------------------------------------------------------
 
-    getNews(),
+      session?.user?.id
+        ? prisma.user.findUnique({
+            where: {
+              id: session.user.id,
+            },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              role: true,
+              status: true,
+              nationality: true,
+              language: true,
+            },
+          })
+        : null,
 
-    getMostLikedComments(),
-
-    getPopularBoards(7),
-  ]);
+      getNews(),
+      getMostLikedComments(),
+      getPopularBoards(7),
+      getTopBetters(5),
+    ]);
 
   return (
     <LayoutShell
@@ -57,6 +66,7 @@ export default async function MainLayout({
       news={news}
       comments={mostLikedComments}
       popularBoards={popularBoards}
+      traders={traders}
     >
       {children}
     </LayoutShell>
