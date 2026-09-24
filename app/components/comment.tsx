@@ -204,6 +204,11 @@ export function MarketComments({
       return;
     }
 
+    if (!comment.trim() && !gif) {
+      toast.error("Add a comment or GIF to submit.");
+      return;
+    }
+
     handleVote(direction, betAmount, comment, gif, loadComments);
   };
 
@@ -344,17 +349,9 @@ function CommentItem({
 
   const canEdit = isAuthor && !comment.withdrawnAt && !comment.moderatedAt;
 
-  // ---------------------------------------------------------------------------
-  // EDIT
-  // ---------------------------------------------------------------------------
-
   const handleEdit = () => {
     setIsEditing(true);
   };
-
-  // ---------------------------------------------------------------------------
-  // DELETE
-  // ---------------------------------------------------------------------------
 
   const handleDelete = async () => {
     if (isDeleting) return;
@@ -386,10 +383,6 @@ function CommentItem({
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // HIDE COMMENT
-  // ---------------------------------------------------------------------------
-
   const handleHideComment = async () => {
     if (isModerating) return;
 
@@ -411,10 +404,6 @@ function CommentItem({
       setIsModerating(false);
     }
   };
-
-  // ---------------------------------------------------------------------------
-  // RESTORE COMMENT
-  // ---------------------------------------------------------------------------
 
   const handleRestoreComment = async () => {
     if (isModerating) return;
@@ -895,30 +884,52 @@ function CommentContent({ content }: { content: JSONContent }) {
       "
     >
       {content.content?.map((node, index) => {
-        // Text paragraph
+        // ---------------------------------------------------------------------
+        // TEXT
+        // ---------------------------------------------------------------------
+
         if (node.type === "paragraph") {
           const text =
             node.content?.map((child) => child.text ?? "").join("") ?? "";
 
-          if (!text) return null;
+          if (!text) {
+            return null;
+          }
 
-          return <p key={index}>{text}</p>;
+          return (
+            <p key={index} className="min-w-0">
+              {text}
+            </p>
+          );
         }
 
-        // GIF / image
+        // ---------------------------------------------------------------------
+        // GIF / IMAGE
+        //
+        // < lg:
+        //   Keep the current responsive behavior.
+        //
+        // lg+:
+        //   Constrain the image inside a 240 × 240 area.
+        //   The original aspect ratio is preserved automatically.
+        // ---------------------------------------------------------------------
+
         if (node.type === "image" && node.attrs?.src) {
+          const src = String(node.attrs.src);
+          const alt = String(node.attrs.alt ?? "GIF");
+
           return (
             <img
               key={index}
-              src={String(node.attrs.src)}
-              alt={String(node.attrs.alt ?? "GIF")}
+              src={src}
+              alt={alt}
               className="
+                block
                 h-auto
-                w-45
-                max-w-full
-                rounded-lg
+                rounded-xl
                 object-contain
-                sm:w-45
+                max-h-64
+                max-w-56
               "
             />
           );
