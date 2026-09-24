@@ -339,7 +339,7 @@ export async function submitMarketVote({
       pointsBet,
       referenceClose,
       sessionDate,
-      nationality: nationality,
+      nationality,
     },
     select: {
       id: true,
@@ -354,5 +354,8 @@ export async function submitMarketVote({
     },
   });
 
-  return prediction;
+  return {
+    ...prediction,
+    referenceClose: Number(prediction.referenceClose),
+  };
 }

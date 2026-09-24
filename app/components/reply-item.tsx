@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { toggleReplyLike } from "@/app/actions/like";
 import { RiHeartFill } from "react-icons/ri";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { toast } from "sonner";
 
@@ -221,7 +222,17 @@ export function ReplyItem({
 
       <div className="group/reply relative flex gap-3">
         <div className="relative z-1 shrink-0">
-          <Avatar label={username} image={reply.author.image} />
+          <Avatar className="size-8 shrink-0">
+            <AvatarImage
+              src={reply.author.image ?? undefined}
+              alt={username ?? "User"}
+              className="object-cover"
+            />
+
+            <AvatarFallback className="text-sm">
+              {(currentUser?.name ?? "User").slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
         </div>
 
         <div className="relative min-w-0 flex-1">
@@ -239,9 +250,10 @@ export function ReplyItem({
                 ? expandThreadEvents
                 : collapseThreadEvents)}
               className="
+              z-1
                 absolute
                 -left-9
-                top-0
+                top-8
                 bottom-0
                 w-5
                 cursor-pointer
@@ -588,37 +600,6 @@ export function ReplyItem({
           )}
         </>
       )}
-    </div>
-  );
-}
-// -----------------------------------------------------------------------------
-// AVATAR
-// -----------------------------------------------------------------------------
-
-function Avatar({ label, image }: { label: string; image?: string | null }) {
-  if (image) {
-    return (
-      <img
-        src={image}
-        alt={label}
-        className="size-8 shrink-0 rounded-full object-cover"
-      />
-    );
-  }
-
-  return (
-    <div
-      className="
-        flex size-8 shrink-0
-        items-center justify-center
-        rounded-full
-        bg-zinc-200
-        text-xs font-medium text-zinc-700
-        dark:bg-zinc-700
-        dark:text-zinc-200
-      "
-    >
-      {label.slice(0, 2).toUpperCase()}
     </div>
   );
 }

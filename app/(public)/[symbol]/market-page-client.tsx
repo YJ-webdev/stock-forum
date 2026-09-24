@@ -597,7 +597,7 @@ export default function MarketPageClient({
                       </span>
 
                       <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {country.percent}%
+                        {country.percent}% ({country.votes})
                       </span>
                     </div>
                   ))}

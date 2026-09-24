@@ -7,6 +7,7 @@ import { VotingCountdown } from "./voting-countdown";
 import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { GifPicker, GifResult } from "./gif-picker";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type VoteDirection = "BULL" | "BEAR";
 
@@ -20,13 +21,17 @@ interface PredictionCommentInputProps {
   userPoints: number;
   maxBet: number;
 
+  currentUser: {
+    name?: string | null;
+    image?: string | null;
+  } | null;
+
   voteLoading: boolean;
   isMarketOpen: boolean;
   buttonDisabled: boolean;
 
   submitVote: (comment: string, gif: GifResult | null) => void;
 
-  // countdown
   targetMs: number | null;
   countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
   showCountdown: boolean;
@@ -39,6 +44,7 @@ export function PredictionCommentInput({
   setBetAmount,
   userPoints,
   maxBet,
+  currentUser,
   voteLoading,
   isMarketOpen,
   buttonDisabled,
@@ -57,6 +63,11 @@ export function PredictionCommentInput({
   const handleDirectionClick = (direction: VoteDirection) => {
     if (buttonDisabled) return;
 
+    if (!currentUser) {
+      toast.error("Please log in to vote.");
+      return;
+    }
+
     if (userPoints < 50) {
       toast.error("Please add balance to continue voting.");
       return;
@@ -67,7 +78,17 @@ export function PredictionCommentInput({
 
   return (
     <div className="mb-8 flex gap-3">
-      <Avatar label="YJ" />
+      <Avatar className="size-9 shrink-0">
+        <AvatarImage
+          src={currentUser?.image ?? undefined}
+          alt={currentUser?.name ?? "User"}
+          className="object-cover"
+        />
+
+        <AvatarFallback className="text-sm">
+          {currentUser?.name ? currentUser.name.slice(0, 2).toUpperCase() : "G"}
+        </AvatarFallback>
+      </Avatar>
 
       <div className="min-w-0 flex-1">
         <div className="rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
@@ -121,7 +142,7 @@ export function PredictionCommentInput({
     cursor-pointer items-center justify-center
     rounded-full
     transition-colors
-    disabled:cursor-not-allowed
+    active:translate-y-0.5
 
     ${direction === "BEAR" ? "text-white" : "text-zinc-500"}
   `}
@@ -139,7 +160,7 @@ export function PredictionCommentInput({
     cursor-pointer items-center justify-center
     rounded-full
     transition-colors
-    disabled:cursor-not-allowed
+    active:translate-y-0.5
 
     ${direction === "BULL" ? "text-white" : "text-zinc-500"}
   `}
@@ -159,7 +180,7 @@ export function PredictionCommentInput({
                 min={50}
                 max={maxBet}
                 step={50}
-                disabled={buttonDisabled}
+                disabled={buttonDisabled || !currentUser}
                 className="
                   field-sizing-content
                   min-w-[3.5ch]
@@ -168,7 +189,7 @@ export function PredictionCommentInput({
                   text-zinc-500
                   outline-none
 
-                  disabled:cursor-not-allowed
+                  disabled:cursor-default
                   disabled:opacity-50
 
                   [&::-webkit-inner-spin-button]:cursor-pointer
@@ -316,23 +337,6 @@ export function PredictionCommentInput({
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Avatar({ label }: { label: string }) {
-  return (
-    <div
-      className="
-        flex size-9 shrink-0
-        items-center justify-center
-        rounded-full
-        bg-zinc-200
-        text-sm font-medium text-zinc-700
-        dark:bg-zinc-700 dark:text-zinc-200
-      "
-    >
-      {label.slice(0, 2).toUpperCase()}
     </div>
   );
 }

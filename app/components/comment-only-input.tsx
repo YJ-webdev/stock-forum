@@ -8,6 +8,7 @@ import { VotingCountdown } from "./voting-countdown";
 import { GifPicker, type GifResult } from "@/app/components/gif-picker";
 import { toast } from "sonner";
 import { createComment } from "../actions/post";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CommentOnlyInputProps {
   assetSymbol: string;
@@ -16,6 +17,10 @@ interface CommentOnlyInputProps {
   countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
   showCountdown: boolean;
   isMarketOpen: boolean;
+  currentUser: {
+    name?: string | null;
+    image?: string | null;
+  } | null;
 
   onCommentCreated: () => Promise<void>;
 }
@@ -27,6 +32,7 @@ export function CommentOnlyInput({
   showCountdown,
   isMarketOpen,
   onCommentCreated,
+  currentUser,
 }: CommentOnlyInputProps) {
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
@@ -95,7 +101,17 @@ export function CommentOnlyInput({
 
   return (
     <div className="mb-8 flex gap-3">
-      <Avatar label="YJ" />
+      <Avatar className="size-9 shrink-0">
+        <AvatarImage
+          src={currentUser?.image ?? undefined}
+          alt={currentUser?.name ?? "User"}
+          className="object-cover"
+        />
+
+        <AvatarFallback className="text-sm">
+          {(currentUser?.name ?? "User").slice(0, 2).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
 
       <div className="min-w-0 flex-1">
         <div className="relative rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
@@ -197,23 +213,6 @@ export function CommentOnlyInput({
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Avatar({ label }: { label: string }) {
-  return (
-    <div
-      className="
-        flex size-9 shrink-0
-        items-center justify-center
-        rounded-full
-        bg-zinc-200
-        text-sm font-medium text-zinc-700
-        dark:bg-zinc-700 dark:text-zinc-200
-      "
-    >
-      {label.slice(0, 2).toUpperCase()}
     </div>
   );
 }

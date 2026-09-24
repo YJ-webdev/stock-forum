@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { ChevronDown } from "lucide-react";
 import { RiHeartFill } from "react-icons/ri";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { useCurrentUser } from "@/app/context/user-context";
 import {
@@ -233,6 +234,7 @@ export function MarketComments({
           setBetAmount={setBetAmount}
           userPoints={userPoints}
           maxBet={maxBet}
+          currentUser={user}
           voteLoading={voteLoading}
           isMarketOpen={isMarketOpen}
           buttonDisabled={buttonDisabled}
@@ -249,6 +251,7 @@ export function MarketComments({
           showCountdown={showCountdown}
           isMarketOpen={isMarketOpen}
           onCommentCreated={loadComments}
+          currentUser={user}
         />
       )}
 
@@ -486,7 +489,17 @@ function CommentItem({
   return (
     <div id={`comment-${comment.id}`} className="mb-6 scroll-mt-24">
       <div className="flex gap-3 z-1">
-        <Avatar label={username} image={comment.author.image} />
+        <Avatar className="size-9 shrink-0">
+          <AvatarImage
+            src={comment.author.image ?? undefined}
+            alt={username ?? "User"}
+            className="object-cover"
+          />
+
+          <AvatarFallback className="text-sm">
+            {(currentUser?.name ?? "User").slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
 
         <div className="min-w-0 flex-1">
           {/* Only THIS comment participates in hover */}
@@ -937,46 +950,6 @@ function CommentContent({ content }: { content: JSONContent }) {
 
         return null;
       })}
-    </div>
-  );
-}
-
-// -----------------------------------------------------------------------------
-// AVATAR
-// -----------------------------------------------------------------------------
-
-function Avatar({
-  label,
-  image,
-  small = false,
-}: {
-  label: string;
-  image?: string | null;
-  small?: boolean;
-}) {
-  const size = small ? "size-8" : "size-9";
-
-  if (image) {
-    return (
-      <img
-        src={image}
-        alt={label}
-        className={`${size} shrink-0 rounded-full object-cover`}
-      />
-    );
-  }
-
-  return (
-    <div
-      className={`
-        flex shrink-0 items-center justify-center
-        rounded-full
-        bg-zinc-200 font-medium text-zinc-700
-        dark:bg-zinc-700 dark:text-zinc-200
-        ${small ? "size-8 text-xs" : "size-9 text-sm"}
-      `}
-    >
-      {label.slice(0, 2).toUpperCase()}
     </div>
   );
 }
