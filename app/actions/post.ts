@@ -13,7 +13,6 @@ import {
 
 import { hasEditorContent } from "@/lib/utils/tiptap-utils";
 import { getReferenceClose } from "@/lib/market/yahoo";
-import { useRef } from "react";
 
 type PredictionInput = {
   direction: "BULL" | "BEAR";
