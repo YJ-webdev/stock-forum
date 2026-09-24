@@ -13,10 +13,7 @@ import {
 
 import { hasEditorContent } from "@/lib/utils/tiptap-utils";
 import { getReferenceClose } from "@/lib/market/yahoo";
-
-// -----------------------------------------------------------------------------
-// TYPES
-// -----------------------------------------------------------------------------
+import { useRef } from "react";
 
 type PredictionInput = {
   direction: "BULL" | "BEAR";
@@ -29,6 +26,76 @@ type CreateCommentInput = {
   assetSymbols: string[];
   prediction?: PredictionInput | null;
 };
+
+async function getCommentById(commentId: string, userId: string) {
+  const comment = await prisma.comment.findUnique({
+    where: {
+      id: commentId,
+    },
+
+    select: {
+      id: true,
+      content: true,
+
+      createdAt: true,
+      updatedAt: true,
+
+      editedAt: true,
+      withdrawnAt: true,
+      moderatedAt: true,
+
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          nationality: true,
+        },
+      },
+
+      prediction: {
+        select: {
+          direction: true,
+          pointsBet: true,
+          status: true,
+        },
+      },
+
+      likes: {
+        where: {
+          userId,
+        },
+        select: {
+          id: true,
+        },
+      },
+
+      _count: {
+        select: {
+          likes: true,
+          replies: true,
+        },
+      },
+    },
+  });
+
+  if (!comment) {
+    return null;
+  }
+
+  const { _count, likes, ...rest } = comment;
+
+  return {
+    ...rest,
+
+    content: comment.content as JSONContent,
+
+    likeCount: _count.likes,
+    replyCount: _count.replies,
+
+    likedByMe: likes.length > 0,
+  };
+}
 
 export async function createComment({
   content = null,
@@ -191,7 +258,7 @@ export async function createComment({
   // CREATE
   // ---------------------------------------------------------------------------
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     let createdPrediction: { id: string } | null = null;
 
     // -------------------------------------------------------------------------
@@ -358,149 +425,159 @@ export async function createComment({
       points: pointBalance?.points ?? null,
     };
   });
+  const createdComment = result.commentId
+    ? await getCommentById(result.commentId, session.user.id)
+    : null;
+
+  return {
+    ...result,
+    comment: createdComment,
+  };
 }
-export async function getMarketComments(assetSymbol: string) {
+
+const MARKET_COMMENTS_PAGE_SIZE = 20;
+
+export async function getMarketComments(
+  assetSymbol: string,
+  cursor?: {
+    createdAt: Date;
+    id: string;
+  } | null,
+) {
   const session = await auth();
   const userId = session?.user?.id;
 
-  const comments = await prisma.comment.findMany({
-    where: {
-      assets: {
-        some: {
-          assetSymbol,
-        },
+  // ---------------------------------------------------------------------------
+  // BASE FILTER
+  // ---------------------------------------------------------------------------
+
+  const baseWhere = {
+    assets: {
+      some: {
+        assetSymbol,
       },
     },
+  };
 
-    orderBy: {
-      createdAt: "desc",
-    },
+  // ---------------------------------------------------------------------------
+  // COMMENTS + TOTAL COUNT
+  // ---------------------------------------------------------------------------
 
-    select: {
-      id: true,
-      content: true,
+  const [comments, totalCount] = await Promise.all([
+    prisma.comment.findMany({
+      where: {
+        ...baseWhere,
 
-      createdAt: true,
-      updatedAt: true,
-
-      editedAt: true,
-      withdrawnAt: true,
-      moderatedAt: true,
-
-      author: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          nationality: true,
-        },
+        ...(cursor
+          ? {
+              OR: [
+                {
+                  createdAt: {
+                    lt: cursor.createdAt,
+                  },
+                },
+                {
+                  createdAt: cursor.createdAt,
+                  id: {
+                    lt: cursor.id,
+                  },
+                },
+              ],
+            }
+          : {}),
       },
 
-      prediction: {
-        select: {
-          direction: true,
-          pointsBet: true,
-          status: true,
+      orderBy: [
+        {
+          createdAt: "desc",
         },
-      },
-
-      // -----------------------------------------------------------------------
-      // CURRENT USER'S LIKE
-      // -----------------------------------------------------------------------
-
-      likes: userId
-        ? {
-            where: {
-              userId,
-            },
-            select: {
-              id: true,
-            },
-          }
-        : false,
-
-      // -----------------------------------------------------------------------
-      // REPLIES
-      // -----------------------------------------------------------------------
-
-      replies: {
-        orderBy: {
-          createdAt: "asc",
+        {
+          id: "desc",
         },
+      ],
 
-        select: {
-          id: true,
+      // Fetch one extra comment so we know whether another page exists.
+      take: MARKET_COMMENTS_PAGE_SIZE + 1,
 
-          commentId: true,
-          parentId: true,
+      select: {
+        id: true,
+        content: true,
 
-          content: true,
-          gifUrl: true,
+        createdAt: true,
+        updatedAt: true,
 
-          createdAt: true,
-          updatedAt: true,
+        editedAt: true,
+        withdrawnAt: true,
+        moderatedAt: true,
 
-          editedAt: true,
-          moderatedAt: true,
-
-          author: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-              nationality: true,
-            },
-          },
-
-          // Current user's like on this reply
-          likes: userId
-            ? {
-                where: {
-                  userId,
-                },
-                select: {
-                  id: true,
-                },
-              }
-            : false,
-
-          _count: {
-            select: {
-              likes: true,
-              replies: true,
-            },
+        author: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            nationality: true,
           },
         },
-      },
 
-      _count: {
-        select: {
-          likes: true,
-          replies: true,
+        prediction: {
+          select: {
+            direction: true,
+            pointsBet: true,
+            status: true,
+          },
+        },
+
+        // ---------------------------------------------------------------------
+        // CURRENT USER'S LIKE
+        // ---------------------------------------------------------------------
+
+        likes: userId
+          ? {
+              where: {
+                userId,
+              },
+              select: {
+                id: true,
+              },
+            }
+          : false,
+
+        // ---------------------------------------------------------------------
+        // COUNTS ONLY
+        //
+        // Replies themselves are loaded separately when a thread is opened.
+        // ---------------------------------------------------------------------
+
+        _count: {
+          select: {
+            likes: true,
+            replies: true,
+          },
         },
       },
-    },
-  });
+    }),
+
+    prisma.comment.count({
+      where: baseWhere,
+    }),
+  ]);
+
+  // ---------------------------------------------------------------------------
+  // PAGINATION
+  // ---------------------------------------------------------------------------
+
+  const hasMore = comments.length > MARKET_COMMENTS_PAGE_SIZE;
+
+  const page = hasMore
+    ? comments.slice(0, MARKET_COMMENTS_PAGE_SIZE)
+    : comments;
 
   // ---------------------------------------------------------------------------
   // NORMALIZE
   // ---------------------------------------------------------------------------
 
-  return comments.map((comment) => {
-    const { _count, likes, replies, ...rest } = comment;
-
-    const normalizedReplies = replies.map((reply) => {
-      const { _count: replyCount, likes: replyLikes, ...replyRest } = reply;
-
-      return {
-        ...replyRest,
-
-        likeCount: replyCount.likes,
-        replyCount: replyCount.replies,
-
-        likedByMe: Array.isArray(replyLikes) && replyLikes.length > 0,
-      };
-    });
+  const normalizedComments = page.map((comment) => {
+    const { _count, likes, ...rest } = comment;
 
     return {
       ...rest,
@@ -511,11 +588,28 @@ export async function getMarketComments(assetSymbol: string) {
       replyCount: _count.replies,
 
       likedByMe: Array.isArray(likes) && likes.length > 0,
-
-      replies: normalizedReplies,
     };
   });
+
+  const lastComment = normalizedComments.at(-1);
+
+  const nextCursor =
+    hasMore && lastComment
+      ? {
+          createdAt: lastComment.createdAt,
+          id: lastComment.id,
+        }
+      : null;
+
+  return {
+    comments: normalizedComments,
+    nextCursor,
+    totalCount,
+  };
 }
+
+export type MarketCommentsPage = Awaited<ReturnType<typeof getMarketComments>>;
+export type MarketPageComments = MarketCommentsPage["comments"];
 
 export async function deleteComment(commentId: string) {
   const session = await auth();
@@ -528,6 +622,7 @@ export async function deleteComment(commentId: string) {
     where: {
       id: commentId,
     },
+
     select: {
       id: true,
       authorId: true,
@@ -536,12 +631,6 @@ export async function deleteComment(commentId: string) {
 
       withdrawnAt: true,
       moderatedAt: true,
-
-      _count: {
-        select: {
-          replies: true,
-        },
-      },
     },
   });
 
@@ -559,12 +648,8 @@ export async function deleteComment(commentId: string) {
 
   // ---------------------------------------------------------------------------
   // PREDICTION COMMENT
-  //
-  // Prediction comments must remain because the Comment row is attached to
-  // the Prediction. Only remove the accompanying comment content.
-  //
-  // Replies remain untouched.
   // ---------------------------------------------------------------------------
+
   if (comment.predictionId) {
     const deletedContent: JSONContent = {
       type: "doc",
@@ -594,6 +679,7 @@ export async function deleteComment(commentId: string) {
       return {
         success: true,
         action: "ALREADY_CONTENT_REMOVED" as const,
+        content: deletedContent,
       };
     }
 
@@ -601,6 +687,7 @@ export async function deleteComment(commentId: string) {
       where: {
         id: commentId,
       },
+
       data: {
         content: deletedContent,
         editedAt: null,
@@ -610,17 +697,12 @@ export async function deleteComment(commentId: string) {
     return {
       success: true,
       action: "CONTENT_REMOVED" as const,
+      content: deletedContent,
     };
   }
 
   // ---------------------------------------------------------------------------
   // NORMAL COMMENT
-  //
-  // Hard delete.
-  //
-  // Comment -> Reply uses onDelete: Cascade.
-  // Reply -> child Reply also uses onDelete: Cascade.
-  // Therefore the whole reply tree is removed automatically.
   // ---------------------------------------------------------------------------
 
   await prisma.comment.delete({
@@ -661,12 +743,6 @@ export async function editComment({
       authorId: true,
       withdrawnAt: true,
       moderatedAt: true,
-
-      _count: {
-        select: {
-          replies: true,
-        },
-      },
     },
   });
 
@@ -682,6 +758,8 @@ export async function editComment({
     throw new Error("This comment can no longer be edited.");
   }
 
+  const editedAt = new Date();
+
   await prisma.comment.update({
     where: {
       id: commentId,
@@ -689,12 +767,14 @@ export async function editComment({
 
     data: {
       content: content as Prisma.InputJsonValue,
-      editedAt: new Date(),
+      editedAt,
     },
   });
 
   return {
     success: true,
+    content,
+    editedAt,
   };
 }
 
@@ -844,6 +924,7 @@ export async function hideComment(commentId: string, reason?: string) {
     return {
       success: true,
       action: "ALREADY_HIDDEN" as const,
+      moderatedAt: comment.moderatedAt,
     };
   }
 
@@ -874,6 +955,7 @@ export async function hideComment(commentId: string, reason?: string) {
   return {
     success: true,
     action: "HIDDEN" as const,
+    moderatedAt: now,
   };
 }
 
@@ -1389,8 +1471,6 @@ export async function restoreReply(replyId: string) {
     action: "RESTORED" as const,
   };
 }
-
-export type MarketPageComments = Awaited<ReturnType<typeof getMarketComments>>;
 
 function isDeletedCommentContent(content: JSONContent): boolean {
   const text =

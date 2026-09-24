@@ -36,6 +36,7 @@ import { useSearchParams } from "next/navigation";
 import { isDeletedPredictionContent } from "@/lib/utils/is-deleted-prediction-content";
 import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 import { CommentContent } from "./comment-content";
+import { Button } from "@/components/ui/button";
 
 export interface MarketReply {
   id: string;
@@ -81,7 +82,7 @@ interface MarketCommentsProps {
     betAmount: number,
     comment: string,
     gif: GifResult | null,
-    onSuccess?: () => void | Promise<void>,
+    onSuccess?: (comment: MarketPageComments[number]) => void | Promise<void>,
   ) => void;
 
   targetMs: number | null;
@@ -89,6 +90,13 @@ interface MarketCommentsProps {
   showCountdown: boolean;
 
   initialComments: MarketPageComments;
+
+  initialNextCursor: {
+    createdAt: Date;
+    id: string;
+  } | null;
+
+  initialTotalCount: number;
 }
 
 export function MarketComments({
@@ -104,6 +112,8 @@ export function MarketComments({
   countdownType,
   showCountdown,
   initialComments,
+  initialNextCursor,
+  initialTotalCount,
 }: MarketCommentsProps) {
   const user = useCurrentUser();
   const searchParams = useSearchParams();
@@ -111,30 +121,92 @@ export function MarketComments({
   const targetCommentId = searchParams.get("comment");
   const targetReplyId = searchParams.get("reply");
 
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
   const [direction, setDirection] = useState<PredictionDirection | null>(null);
 
   const [comments, setComments] = useState<MarketPageComments>(initialComments);
+  const [nextCursor, setNextCursor] = useState(initialNextCursor);
+
+  const [totalCount, setTotalCount] = useState(initialTotalCount);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
     setComments(initialComments);
-  }, [initialComments]);
+    setNextCursor(initialNextCursor);
+    setTotalCount(initialTotalCount);
+  }, [initialComments, initialNextCursor, initialTotalCount]);
 
-  const loadComments = useCallback(async () => {
-    try {
-      const result = await getMarketComments(assetSymbol);
-
-      setComments(result);
-    } catch (error) {
-      console.error("Failed to load comments:", error);
+  const loadMoreComments = useCallback(async () => {
+    if (!nextCursor || isLoadingMore) {
+      return;
     }
-  }, [assetSymbol]);
+
+    try {
+      setIsLoadingMore(true);
+
+      const result = await getMarketComments(assetSymbol, nextCursor);
+
+      setComments((current) => {
+        const existingIds = new Set(current.map((comment) => comment.id));
+
+        const newComments = result.comments.filter(
+          (comment) => !existingIds.has(comment.id),
+        );
+
+        return [...current, ...newComments];
+      });
+
+      setNextCursor(result.nextCursor);
+    } catch (error) {
+      console.error("Failed to load more comments:", error);
+
+      toast.error("Failed to load more comments.");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [assetSymbol, nextCursor, isLoadingMore]);
+
+  const updateComment = useCallback(
+    (
+      commentId: string,
+      updater: (
+        comment: MarketPageComments[number],
+      ) => MarketPageComments[number],
+    ) => {
+      setComments((current) =>
+        current.map((comment) =>
+          comment.id === commentId ? updater(comment) : comment,
+        ),
+      );
+    },
+    [],
+  );
+
+  const removeComment = useCallback((commentId: string) => {
+    setComments((current) =>
+      current.filter((comment) => comment.id !== commentId),
+    );
+
+    setTotalCount((current) => Math.max(0, current - 1));
+  }, []);
+
+  const addComment = useCallback((comment: MarketPageComments[number]) => {
+    setComments((current) => {
+      if (current.some((existing) => existing.id === comment.id)) {
+        return current;
+      }
+
+      setTotalCount((count) => count + 1);
+
+      return [comment, ...current].slice(0, 20);
+    });
+  }, []);
 
   const hasAlreadyVoted = selectedVote !== null;
-
   const maxBet = Math.min(500, userPoints);
 
   const buttonDisabled = voteLoading || isMarketOpen;
-
   const showPredictionInput = !voteLoading && !hasAlreadyVoted && !isMarketOpen;
 
   const submitVote = (comment: string, gif: GifResult | null) => {
@@ -170,8 +242,35 @@ export function MarketComments({
       return;
     }
 
-    handleVote(direction, betAmount, comment, gif, loadComments);
+    handleVote(direction, betAmount, comment, gif, addComment);
   };
+
+  useEffect(() => {
+    const element = loadMoreRef.current;
+
+    if (!element || !nextCursor) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isLoadingMore) {
+          void loadMoreComments();
+        }
+      },
+      {
+        root: null,
+        rootMargin: "600px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [nextCursor, isLoadingMore, loadMoreComments]);
 
   return (
     <section className="w-full">
@@ -180,7 +279,7 @@ export function MarketComments({
           Comment
         </h2>
 
-        <span className="jakarta text-sm text-zinc-500">{comments.length}</span>
+        <span className="jakarta text-sm text-zinc-500">{totalCount}</span>
       </div>
 
       {showPredictionInput ? (
@@ -207,7 +306,7 @@ export function MarketComments({
           countdownType={countdownType}
           showCountdown={showCountdown}
           isMarketOpen={isMarketOpen}
-          onCommentCreated={loadComments}
+          onCommentCreated={addComment}
           currentUser={user}
         />
       )}
@@ -223,7 +322,8 @@ export function MarketComments({
               key={comment.id}
               comment={comment}
               currentUser={user}
-              onRefresh={loadComments}
+              onUpdate={updateComment}
+              onRemove={removeComment}
               targetCommentId={targetCommentId}
               targetReplyId={targetReplyId}
               shouldOpenReplies={
@@ -233,39 +333,22 @@ export function MarketComments({
           ))
         )}
       </div>
+
+      {nextCursor && (
+        <div
+          ref={loadMoreRef}
+          className="flex h-16 items-center justify-center"
+        >
+          {isLoadingMore && (
+            <span className="text-sm text-zinc-500">Loading...</span>
+          )}
+        </div>
+      )}
     </section>
   );
 }
 
-interface Comment {
-  id: string;
-
-  content: JSONContent;
-
-  createdAt: Date;
-  updatedAt: Date;
-
-  editedAt: Date | null;
-  withdrawnAt: Date | null;
-  moderatedAt: Date | null;
-
-  author: {
-    id: string;
-    name: string | null;
-    image: string | null;
-    nationality: string | null;
-  };
-
-  prediction: {
-    direction: PredictionDirection;
-    pointsBet: number;
-    status: PredictionStatus;
-  } | null;
-
-  likeCount: number;
-  likedByMe: boolean;
-  replyCount: number;
-}
+type Comment = MarketPageComments[number];
 
 export type CommentUser = {
   id: string;
@@ -277,16 +360,21 @@ export type CommentUser = {
 interface CommentItemProps {
   comment: Comment;
   currentUser: CommentUser | null;
+
   targetCommentId: string | null;
   targetReplyId: string | null;
   shouldOpenReplies: boolean;
-  onRefresh: () => Promise<void>;
+
+  onUpdate: (commentId: string, updater: (comment: Comment) => Comment) => void;
+
+  onRemove: (commentId: string) => void;
 }
 
 function CommentItem({
   comment,
   currentUser,
-  onRefresh,
+  onUpdate,
+  onRemove,
   targetCommentId,
   targetReplyId,
   shouldOpenReplies,
@@ -294,41 +382,25 @@ function CommentItem({
   const commentRef = useRef<HTMLDivElement>(null);
 
   const [likedByMe, setLikedByMe] = useState(comment.likedByMe);
-
   const [likeCount, setLikeCount] = useState(comment.likeCount);
-
   const [isLikePending, startLikeTransition] = useTransition();
-
   const [showReplies, setShowReplies] = useState(false);
-
   const [replies, setReplies] = useState<MarketReply[]>([]);
-
   const [repliesLoaded, setRepliesLoaded] = useState(false);
-
   const [repliesLoading, setRepliesLoading] = useState(false);
-
   const [threadHovered, setThreadHovered] = useState(false);
-
   const [replying, setReplying] = useState(false);
-
   const [isDeleting, setIsDeleting] = useState(false);
-
   const [isEditing, setIsEditing] = useState(false);
-
   const [isModerating, setIsModerating] = useState(false);
 
   const isAdmin = currentUser?.role === "ADMIN";
-
   const isAuthor = currentUser?.id === comment.author.id;
-
   const replyCount = comment.replyCount;
-
   const username = comment.author.name ?? "Guest";
 
   const isDeletedPredictionComment =
     !!comment.prediction && isDeletedPredictionContent(comment.content);
-
-  const canModify = isAuthor && !comment.withdrawnAt && !comment.moderatedAt;
 
   // ---------------------------------------------------------------------------
   // REPLIES
@@ -419,19 +491,35 @@ function CommentItem({
 
       const result = await deleteComment(comment.id);
 
-      await onRefresh();
-
       if (result.action === "ALREADY_CONTENT_REMOVED") {
+        onUpdate(comment.id, (current) => ({
+          ...current,
+          content: result.content,
+          editedAt: null,
+        }));
+
         toast.info("Comment already deleted. Your prediction remains.");
+
         return;
       }
 
       if (result.action === "CONTENT_REMOVED") {
+        onUpdate(comment.id, (current) => ({
+          ...current,
+          content: result.content,
+          editedAt: null,
+        }));
+
         toast.success("Comment deleted. Your prediction remains.");
+
         return;
       }
 
-      toast.success("Comment deleted.");
+      if (result.action === "DELETED") {
+        onRemove(comment.id);
+
+        toast.success("Comment deleted.");
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete comment.",
@@ -447,9 +535,12 @@ function CommentItem({
     try {
       setIsModerating(true);
 
-      await hideComment(comment.id);
+      const result = await hideComment(comment.id);
 
-      await onRefresh();
+      onUpdate(comment.id, (current) => ({
+        ...current,
+        moderatedAt: result.moderatedAt,
+      }));
 
       toast.success("Comment hidden.");
     } catch (error) {
@@ -469,7 +560,10 @@ function CommentItem({
 
       await restoreComment(comment.id);
 
-      await onRefresh();
+      onUpdate(comment.id, (current) => ({
+        ...current,
+        moderatedAt: null,
+      }));
 
       toast.success("Comment restored.");
     } catch (error) {
@@ -566,8 +660,8 @@ function CommentItem({
               </span>
 
               <ContentActionsMenu
-                canModify={canModify}
                 isAdmin={isAdmin}
+                isAuthor={isAuthor}
                 isModerated={Boolean(comment.moderatedAt)}
                 isDeleting={isDeleting}
                 isModerating={isModerating}
@@ -599,10 +693,14 @@ function CommentItem({
                     : comment.content
                 }
                 onCancel={() => setIsEditing(false)}
-                onSaved={async () => {
+                onSaved={(result) => {
                   setIsEditing(false);
 
-                  await onRefresh();
+                  onUpdate(comment.id, (current) => ({
+                    ...current,
+                    content: result.content,
+                    editedAt: result.editedAt,
+                  }));
                 }}
               />
             ) : isDeletedPredictionComment ? (
@@ -674,7 +772,10 @@ function CommentItem({
 
                   await loadReplies();
 
-                  await onRefresh();
+                  onUpdate(comment.id, (current) => ({
+                    ...current,
+                    replyCount: current.replyCount + 1,
+                  }));
                 }}
               />
             )}

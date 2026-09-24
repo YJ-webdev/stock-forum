@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { VotingCountdown } from "./voting-countdown";
 import { GifPicker, type GifResult } from "@/app/components/gif-picker";
 import { toast } from "sonner";
-import { createComment } from "../actions/post";
+import { createComment, MarketPageComments } from "../actions/post";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CommentOnlyInputProps {
@@ -22,7 +22,9 @@ interface CommentOnlyInputProps {
     image?: string | null;
   } | null;
 
-  onCommentCreated: () => Promise<void>;
+  onCommentCreated: (
+    comment: MarketPageComments[number],
+  ) => void | Promise<void>;
 }
 
 export function CommentOnlyInput({
@@ -79,7 +81,7 @@ export function CommentOnlyInput({
           ],
         };
 
-        await createComment({
+        const result = await createComment({
           content,
           assetSymbols: [assetSymbol],
         });
@@ -88,7 +90,9 @@ export function CommentOnlyInput({
         setSelectedGif(null);
         setGifPickerOpen(false);
 
-        await onCommentCreated();
+        if (result.comment) {
+          await onCommentCreated(result.comment);
+        }
 
         toast.success("Comment added.");
       } catch (error) {

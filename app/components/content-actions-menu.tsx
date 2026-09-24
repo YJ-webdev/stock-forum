@@ -16,8 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface ContentActionsMenuProps {
-  canModify?: boolean;
-
+  isAuthor?: boolean;
   isAdmin?: boolean;
   isModerated?: boolean;
 
@@ -32,8 +31,7 @@ interface ContentActionsMenuProps {
 }
 
 export function ContentActionsMenu({
-  canModify = false,
-
+  isAuthor = false,
   isAdmin = false,
   isModerated = false,
 
@@ -46,14 +44,6 @@ export function ContentActionsMenu({
   onHide,
   onRestore,
 }: ContentActionsMenuProps) {
-  const hasActions =
-    canModify ||
-    (isAdmin && (!isModerated ? Boolean(onHide) : Boolean(onRestore)));
-
-  if (!hasActions) {
-    return null;
-  }
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -74,23 +64,23 @@ export function ContentActionsMenu({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end">
-        {canModify && onEdit && (
-          <DropdownMenuItem onClick={onEdit}>
-            <Pencil className="mr-2 size-4" />
-            Edit
-          </DropdownMenuItem>
-        )}
+        {isAuthor && (
+          <>
+            <DropdownMenuItem onClick={onEdit}>
+              <Pencil className="mr-2 size-4" />
+              Edit
+            </DropdownMenuItem>
 
-        {canModify && onDelete && (
-          <DropdownMenuItem
-            disabled={isDeleting}
-            onClick={onDelete}
-            className="text-red-600 focus:text-red-600"
-          >
-            <Trash2 className="mr-2 size-4" />
+            <DropdownMenuItem
+              disabled={isDeleting}
+              onClick={onDelete}
+              className="text-red-600 focus:text-red-600"
+            >
+              <Trash2 className="mr-2 size-4" />
 
-            {isDeleting ? "Deleting..." : "Delete"}
-          </DropdownMenuItem>
+              {isDeleting ? "Deleting..." : "Delete"}
+            </DropdownMenuItem>
+          </>
         )}
 
         {isAdmin && !isModerated && onHide && (

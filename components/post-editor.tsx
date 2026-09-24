@@ -17,14 +17,12 @@ import {
 
 interface PostEditorProps {
   setOnWrite: React.Dispatch<React.SetStateAction<boolean>>;
-  onCommentCreated: () => Promise<void>;
 }
 
-const MAX_SELECTED_ASSETS = 1;
 const RECENT_ASSETS_KEY = "recent-post-assets";
 const MAX_RECENT_ASSETS = 5;
 
-export function PostEditor({ setOnWrite, onCommentCreated }: PostEditorProps) {
+export function PostEditor({ setOnWrite }: PostEditorProps) {
   const params = useParams<{ asset: string }>();
 
   const symbol = params.asset;
@@ -44,9 +42,15 @@ export function PostEditor({ setOnWrite, onCommentCreated }: PostEditorProps) {
 
   const router = useRouter();
 
-  const currentAsset = symbol
-    ? (ALL_MARKET_SYMBOLS.find((asset) => asset.symbol === symbol) ?? null)
-    : null;
+  const currentAsset = useMemo(() => {
+    if (!symbol) return null;
+
+    return (
+      ALL_MARKET_SYMBOLS.find((asset) => asset.symbol === symbol) ??
+      ALL_MARKET_SYMBOLS.find((asset) => asset.displaySymbol === symbol) ??
+      null
+    );
+  }, [symbol]);
 
   useEffect(() => {
     try {
@@ -123,9 +127,14 @@ export function PostEditor({ setOnWrite, onCommentCreated }: PostEditorProps) {
     }).slice(0, 10);
   }, [assetQuery]);
 
+  const visibleAssets =
+    assetQuery.trim().length > 0 ? searchResults : suggestedAssets;
+
   const isAssetSelected = (asset: MarketSymbolItem) => {
     return selectedAssets.some((selected) => selected.symbol === asset.symbol);
   };
+
+  const MAX_SELECTED_ASSETS = 1;
 
   const toggleAsset = (asset: MarketSymbolItem) => {
     setSelectedAssets((prev) => {
@@ -219,23 +228,15 @@ export function PostEditor({ setOnWrite, onCommentCreated }: PostEditorProps) {
 
         setEditorKey((prev) => prev + 1);
 
-        await onCommentCreated();
-
         setOnWrite(false);
 
         toast.success("Comment posted.");
 
-        const targetSymbol = selectedAssets[0]?.symbol ?? symbol;
+        const targetUrl = `/${encodeURIComponent(
+          selectedAssets[0]?.symbol ?? symbol,
+        )}?comment=${encodeURIComponent(result.commentId)}`;
 
-        if (!targetSymbol) {
-          return;
-        }
-
-        router.push(
-          `/${encodeURIComponent(targetSymbol)}?comment=${result.commentId}`,
-        );
-
-        router.refresh();
+        router.push(targetUrl);
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to post comment.",
@@ -357,8 +358,14 @@ export function PostEditor({ setOnWrite, onCommentCreated }: PostEditorProps) {
                     />
                   ))}
 
-                {suggestedAssets.length === 0 && (
-                  <div className="px-3 py-4 text-center text-[13px] text-zinc-400">
+                {visibleAssets.length === 0 && (
+                  <div
+                    className="
+                      px-3 py-4
+                      text-center text-[13px]
+                      text-zinc-400
+                    "
+                  >
                     Start typing to search assets
                   </div>
                 )}

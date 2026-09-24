@@ -12,7 +12,9 @@ export default async function Page({ params }: PageProps) {
 
   const decodedSymbol = decodeURIComponent(symbol);
 
-  const comments = await getMarketComments(decodedSymbol);
+  const commentsPage = await getMarketComments(decodedSymbol);
 
-  return <MarketPageClient symbol={decodedSymbol} initialComments={comments} />;
+  return (
+    <MarketPageClient symbol={decodedSymbol} commentsPage={commentsPage} />
+  );
 }

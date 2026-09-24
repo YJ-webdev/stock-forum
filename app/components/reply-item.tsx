@@ -288,8 +288,6 @@ export function ReplyItem({
             </span>
 
             <ContentActionsMenu
-              canEdit={canEdit}
-              canDelete={canDelete}
               isAdmin={isAdmin}
               isModerated={Boolean(reply.moderatedAt)}
               isDeleting={isDeleting}

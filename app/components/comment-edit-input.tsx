@@ -13,7 +13,11 @@ interface CommentEditInputProps {
   commentId: string;
   initialContent: JSONContent;
   onCancel: () => void;
-  onSaved: () => void | Promise<void>;
+  onSaved: (result: {
+    success: boolean;
+    content: JSONContent;
+    editedAt: Date;
+  }) => void | Promise<void>;
 }
 
 interface EditableGif {
@@ -104,12 +108,12 @@ export function CommentEditInput({
           ],
         };
 
-        await editComment({
+        const result = await editComment({
           commentId,
           content,
         });
 
-        await onSaved();
+        await onSaved(result);
 
         toast.success("Comment updated.");
       } catch (error) {

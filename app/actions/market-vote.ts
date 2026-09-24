@@ -103,14 +103,6 @@ interface GetMarketVoteInput {
   sessionDate: Date;
 }
 
-interface SubmitMarketVoteInput {
-  symbol: string;
-  nationality: string;
-  direction: VoteDirection;
-  pointsBet: number;
-  referenceClose: number;
-  sessionDate: Date;
-}
 // GET CURRENT USER'S VOTE
 // -----------------------------------------------------------------------------
 
@@ -258,6 +250,15 @@ export async function getMarketVoteStats({
     bearPercent,
     nationalities,
   };
+}
+
+interface SubmitMarketVoteInput {
+  symbol: string;
+  nationality: string;
+  direction: VoteDirection;
+  pointsBet: number;
+  referenceClose: number;
+  sessionDate: Date;
 }
 
 export async function submitMarketVote({

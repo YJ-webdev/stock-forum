@@ -6,11 +6,13 @@ import type { PanelImperativeHandle } from "react-resizable-panels";
 
 import { Navbar } from "./navbar";
 import PanelLeft from "./panel-left";
+
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+
 import { Footer } from "./footer";
 import { PostEditor } from "@/components/post-editor";
 import { AccountPanel } from "./account-panel";
@@ -21,12 +23,12 @@ import { LeaderBoard } from "./leader-board";
 import { UserProvider } from "../context/user-context";
 import { PointBalanceProvider } from "../context/point-balance-context";
 
-import { getMostLikedComments, MostLikedComment } from "../actions/post";
-import { PopularBoard } from "../actions/query";
+import type { MostLikedComment } from "../actions/post";
+import type { PopularBoard } from "../actions/query";
+import type { LeaderboardUser } from "../actions/leaderboard";
 
-import { NewsItem } from "@/types";
-import { User } from "@/types/user";
-import { LeaderboardUser } from "../actions/leaderboard";
+import type { NewsItem } from "@/types";
+import type { User } from "@/types/user";
 
 interface LayoutShellProps {
   user: User | null;
@@ -53,15 +55,7 @@ export default function LayoutShell({
 
   const [notificationRefreshKey, setNotificationRefreshKey] = useState(0);
 
-  const [mostLikedComments, setMostLikedComments] =
-    useState<MostLikedComment[]>(comments);
-
   const pathname = usePathname();
-
-  // ---------------------------------------------------------------------------
-  // SECTION B
-  // ---------------------------------------------------------------------------
-
   const sectionBRef = useRef<HTMLDivElement>(null);
   const panelBRef = useRef<PanelImperativeHandle>(null);
 
@@ -71,10 +65,6 @@ export default function LayoutShell({
   });
 
   const [isMobileLayout, setIsMobileLayout] = useState(false);
-
-  // ---------------------------------------------------------------------------
-  // HELPERS
-  // ---------------------------------------------------------------------------
 
   const isMobile = () => {
     return window.innerWidth < 768;
@@ -94,22 +84,13 @@ export default function LayoutShell({
     panelBRef.current?.resize("30%");
   };
 
-  // ---------------------------------------------------------------------------
-  // LEFT PANEL
-  // ---------------------------------------------------------------------------
-
   const handleToggleLeftPanel = () => {
     setIsOpen((prev) => !prev);
 
-    // PanelLeft and Section B are mutually exclusive only on mobile.
     if (isMobile()) {
       closeSectionB();
     }
   };
-
-  // ---------------------------------------------------------------------------
-  // WRITE
-  // ---------------------------------------------------------------------------
 
   const handleWrite = () => {
     if (isMobile()) {
@@ -123,10 +104,6 @@ export default function LayoutShell({
     setOnNotification(false);
   };
 
-  // ---------------------------------------------------------------------------
-  // ACCOUNT
-  // ---------------------------------------------------------------------------
-
   const handleAccount = () => {
     if (isMobile()) {
       setIsOpen(false);
@@ -138,10 +115,6 @@ export default function LayoutShell({
     setOnAccount(true);
     setOnNotification(false);
   };
-
-  // ---------------------------------------------------------------------------
-  // NOTIFICATIONS
-  // ---------------------------------------------------------------------------
 
   const handleNotification = () => {
     if (isMobile()) {
@@ -157,30 +130,8 @@ export default function LayoutShell({
     setNotificationRefreshKey((prev) => prev + 1);
   };
 
-  // ---------------------------------------------------------------------------
-  // MOBILE SECTION B
-  // ---------------------------------------------------------------------------
-
   const mobilePanelOpen =
     isMobileLayout && !!user && (onWrite || onAccount || onNotification);
-
-  // ---------------------------------------------------------------------------
-  // COMMENTS
-  // ---------------------------------------------------------------------------
-
-  const handleCommentCreated = async () => {
-    const updatedComments = await getMostLikedComments();
-
-    setMostLikedComments(updatedComments);
-  };
-
-  useEffect(() => {
-    setMostLikedComments(comments);
-  }, [comments]);
-
-  // ---------------------------------------------------------------------------
-  // RESPONSIVE BEHAVIOR
-  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     type LayoutMode = "mobile" | "tablet" | "desktop";
@@ -188,8 +139,13 @@ export default function LayoutShell({
     const getLayoutMode = (): LayoutMode => {
       const width = window.innerWidth;
 
-      if (width < 768) return "mobile";
-      if (width < 1280) return "tablet";
+      if (width < 768) {
+        return "mobile";
+      }
+
+      if (width < 1280) {
+        return "tablet";
+      }
 
       return "desktop";
     };
@@ -201,14 +157,12 @@ export default function LayoutShell({
 
       setIsMobileLayout(mobile);
 
-      // LEFT PANEL
       if (mode === "desktop") {
         setIsOpen(true);
       } else {
         setIsOpen(false);
       }
 
-      // RIGHT PANEL
       if (mobile) {
         panelBRef.current?.resize("0%");
       } else {
@@ -216,19 +170,17 @@ export default function LayoutShell({
       }
     };
 
-    // Initial layout
     applyLayout(previousMode);
 
     const handleResize = () => {
       const nextMode = getLayoutMode();
 
-      // Ignore mobile browser viewport resizing caused by
-      // scrolling / address bar appearing or disappearing.
       if (nextMode === previousMode) {
         return;
       }
 
       previousMode = nextMode;
+
       applyLayout(nextMode);
     };
 
@@ -238,12 +190,6 @@ export default function LayoutShell({
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-  // ---------------------------------------------------------------------------
-  // KEYBOARD SHORTCUTS
-  //
-  // Ctrl+B / Cmd+B = toggle PanelLeft
-  // Escape = close PanelLeft / Section B
-  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -287,10 +233,6 @@ export default function LayoutShell({
     };
   }, [isOpen, onWrite, onAccount, onNotification]);
 
-  // ---------------------------------------------------------------------------
-  // TRACK DESKTOP / TABLET SECTION B POSITION
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
     const panel = sectionBRef.current;
 
@@ -326,10 +268,6 @@ export default function LayoutShell({
     <UserProvider user={user}>
       <PointBalanceProvider>
         <div className="relative flex min-h-screen flex-col">
-          {/* -----------------------------------------------------------------
-              NAVBAR
-          ------------------------------------------------------------------ */}
-
           <Navbar
             user={user}
             onTogglePanel={handleToggleLeftPanel}
@@ -338,24 +276,13 @@ export default function LayoutShell({
             onNotification={handleNotification}
           />
 
-          {/* -----------------------------------------------------------------
-              LEFT PANEL
-          ------------------------------------------------------------------ */}
-
           <PanelLeft
             isOpen={isOpen}
             setIsOpen={setIsOpen}
             news={news}
-            comments={mostLikedComments}
+            comments={comments}
             popularBoards={popularBoards}
           />
-
-          {/* =================================================================
-              MAIN LAYOUT
-
-              IMPORTANT:
-              {children} exists ONLY ONCE.
-          ================================================================== */}
 
           <div
             className={`
@@ -369,12 +296,6 @@ export default function LayoutShell({
             `}
           >
             <ResizablePanelGroup orientation="horizontal">
-              {/* -------------------------------------------------------------
-                  SECTION A
-
-                  This is the ONLY place children is rendered.
-              -------------------------------------------------------------- */}
-
               <ResizablePanel minSize="30%">
                 <section
                   className="
@@ -394,12 +315,6 @@ export default function LayoutShell({
                 </section>
               </ResizablePanel>
 
-              {/* -------------------------------------------------------------
-                  RESIZE HANDLE
-
-                  Hidden visually on mobile.
-              -------------------------------------------------------------- */}
-
               <ResizableHandle
                 className="
                   hidden
@@ -408,13 +323,6 @@ export default function LayoutShell({
                   md:flex
                 "
               />
-
-              {/* -------------------------------------------------------------
-                  DESKTOP / TABLET SECTION B
-
-                  On mobile its panel size becomes 0%.
-                  We do NOT use display:none on ResizablePanel itself.
-              -------------------------------------------------------------- */}
 
               <ResizablePanel
                 panelRef={panelBRef}
@@ -459,24 +367,13 @@ export default function LayoutShell({
                         width: sectionBPosition.width,
                       }}
                     >
-                      {/* WRITE */}
-
                       {user && onWrite && (
-                        <PostEditor
-                          isLoggedIn={!!user}
-                          nationality={user.nationality ?? null}
-                          setOnWrite={setOnWrite}
-                          onCommentCreated={handleCommentCreated}
-                        />
+                        <PostEditor setOnWrite={setOnWrite} />
                       )}
-
-                      {/* ACCOUNT */}
 
                       {user && onAccount && !onWrite && (
                         <AccountPanel user={user} setOnAccount={setOnAccount} />
                       )}
-
-                      {/* NOTIFICATIONS */}
 
                       {user && onNotification && (
                         <NotificationPanel
@@ -485,19 +382,17 @@ export default function LayoutShell({
                         />
                       )}
 
-                      {/* DEFAULT */}
-
                       {!onWrite && !onAccount && !onNotification && (
                         <>
                           <div className="mx-4 mt-8">
                             <p
                               className="
-                                truncate
-                                text-xs
-                                font-light
-                                tracking-wider
-                                text-muted-foreground/50
-                              "
+                                  truncate
+                                  text-xs
+                                  font-light
+                                  tracking-wider
+                                  text-muted-foreground/50
+                                "
                             >
                               Top traders
                             </p>
@@ -507,17 +402,17 @@ export default function LayoutShell({
 
                           <div
                             className="
-                              mx-4
-                              h-80
-                              rounded-lg
-                              border
-                              border-zinc-100
-                              p-2
-                              font-light
-                              text-zinc-300
-                              dark:border-zinc-800
-                              dark:text-zinc-700
-                            "
+                                mx-4
+                                h-80
+                                rounded-lg
+                                border
+                                border-zinc-100
+                                p-2
+                                font-light
+                                text-zinc-300
+                                dark:border-zinc-800
+                                dark:text-zinc-700
+                              "
                           >
                             advertisement
                           </div>
@@ -529,15 +424,6 @@ export default function LayoutShell({
               </ResizablePanel>
             </ResizablePanelGroup>
           </div>
-
-          {/* =================================================================
-              MOBILE SECTION B
-
-              Separate overlay.
-
-              It does NOT contain {children}, so there is still only one
-              copy of your comments / market page in the DOM.
-          ================================================================== */}
 
           {mobilePanelOpen && (
             <div
@@ -562,24 +448,11 @@ export default function LayoutShell({
                 dark:bg-zinc-900
               "
             >
-              {/* WRITE */}
-
-              {user && onWrite && (
-                <PostEditor
-                  isLoggedIn={!!user}
-                  nationality={user.nationality ?? null}
-                  setOnWrite={setOnWrite}
-                  onCommentCreated={handleCommentCreated}
-                />
-              )}
-
-              {/* ACCOUNT */}
+              {user && onWrite && <PostEditor setOnWrite={setOnWrite} />}
 
               {user && onAccount && !onWrite && (
                 <AccountPanel user={user} setOnAccount={setOnAccount} />
               )}
-
-              {/* NOTIFICATIONS */}
 
               {user && onNotification && (
                 <NotificationPanel
@@ -589,10 +462,6 @@ export default function LayoutShell({
               )}
             </div>
           )}
-
-          {/* -----------------------------------------------------------------
-              FOOTER
-          ------------------------------------------------------------------ */}
 
           <Footer />
         </div>

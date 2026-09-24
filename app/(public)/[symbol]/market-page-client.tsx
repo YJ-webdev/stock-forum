@@ -24,7 +24,11 @@ import {
   type VoteDirection,
 } from "@/app/actions/market-vote";
 
-import { createComment, type MarketPageComments } from "@/app/actions/post";
+import {
+  createComment,
+  MarketCommentsPage,
+  type MarketPageComments,
+} from "@/app/actions/post";
 
 import type { GifResult } from "@/app/components/gif-picker";
 import type { JSONContent } from "@tiptap/react";
@@ -41,12 +45,12 @@ const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
 interface MarketPageClientProps {
   symbol: string;
-  initialComments: MarketPageComments;
+  commentsPage: MarketCommentsPage;
 }
 
 export default function MarketPageClient({
   symbol,
-  initialComments,
+  commentsPage,
 }: MarketPageClientProps) {
   const user = useCurrentUser();
   const {
@@ -181,7 +185,7 @@ export default function MarketPageClient({
     betAmount: number,
     comment: string,
     gif: GifResult | null,
-    onSuccess?: () => void | Promise<void>,
+    onSuccess?: (comment: MarketPageComments[number]) => void | Promise<void>,
   ) => {
     if (!isLoggedIn) {
       toast.error("Please log in to vote.");
@@ -300,12 +304,15 @@ export default function MarketPageClient({
           setUserPoints(result.points);
         }
 
-        await onSuccess?.();
+        if (result.comment) {
+          await onSuccess?.(result.comment);
+        }
 
         const stats = await getMarketVoteStats({
           symbol: selectedSymbol,
           sessionDate,
         });
+
         setVoteStats(stats);
 
         toast.success(
@@ -369,14 +376,6 @@ export default function MarketPageClient({
       behavior: "smooth",
     });
   }, [selectedSymbol]);
-
-  // const SENTIMENT_BLOCKS = 17;
-  // const bullBlocks = voteStats
-  //   ? Math.round((voteStats.bullPercent / 100) * SENTIMENT_BLOCKS)
-  //   : 0;
-  // const bearBlocks = SENTIMENT_BLOCKS - bullBlocks;
-  // const bullBar = "█".repeat(bullBlocks);
-  // const bearBar = "░".repeat(bearBlocks);
 
   return (
     <div className="mx-auto mt-20 max-w-4xl">
@@ -696,7 +695,9 @@ export default function MarketPageClient({
           targetMs={votingWindow.targetMs}
           countdownType={votingWindow.countdownType}
           showCountdown={votingWindow.showCountdown}
-          initialComments={initialComments}
+          initialComments={commentsPage.comments}
+          initialNextCursor={commentsPage.nextCursor}
+          initialTotalCount={commentsPage.totalCount}
         />
       </div>
     </div>
