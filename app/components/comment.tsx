@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { ChevronDown } from "lucide-react";
 import { RiHeartFill } from "react-icons/ri";
@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/app/context/user-context";
 import {
   deleteComment,
+  getCommentReplies,
   getMarketComments,
   hideComment,
   MarketPageComments,
@@ -32,6 +33,9 @@ import {
   PredictionStatus,
 } from "@/generated/prisma/enums";
 import { useSearchParams } from "next/navigation";
+import { isDeletedPredictionContent } from "@/lib/utils/is-deleted-prediction-content";
+import { formatTimeAgo } from "@/lib/utils/format-time-ago";
+import { CommentContent } from "./comment-content";
 
 export interface MarketReply {
   id: string;
@@ -54,38 +58,6 @@ export interface MarketReply {
     image: string | null;
     nationality: string | null;
   };
-
-  likeCount: number;
-  likedByMe: boolean;
-  replyCount: number;
-}
-
-interface MarketComment {
-  id: string;
-
-  content: JSONContent;
-
-  createdAt: Date;
-  updatedAt: Date;
-
-  editedAt: Date | null;
-  withdrawnAt: Date | null;
-  moderatedAt: Date | null;
-
-  author: {
-    id: string;
-    name: string | null;
-    image: string | null;
-    nationality: string | null;
-  };
-
-  prediction: {
-    direction: PredictionDirection;
-    pointsBet: number;
-    status: PredictionStatus;
-  } | null;
-
-  replies: MarketReply[];
 
   likeCount: number;
   likedByMe: boolean;
@@ -115,25 +87,8 @@ interface MarketCommentsProps {
   targetMs: number | null;
   countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
   showCountdown: boolean;
+
   initialComments: MarketPageComments;
-}
-
-// -----------------------------------------------------------------------------
-// MARKET COMMENTS
-// -----------------------------------------------------------------------------
-function findCommentIdForReply(
-  comments: MarketPageComments,
-  replyId: string,
-): string | null {
-  for (const comment of comments) {
-    const found = comment.replies.some((reply) => reply.id === replyId);
-
-    if (found) {
-      return comment.id;
-    }
-  }
-
-  return null;
 }
 
 export function MarketComments({
@@ -160,9 +115,14 @@ export function MarketComments({
 
   const [comments, setComments] = useState<MarketPageComments>(initialComments);
 
+  useEffect(() => {
+    setComments(initialComments);
+  }, [initialComments]);
+
   const loadComments = useCallback(async () => {
     try {
       const result = await getMarketComments(assetSymbol);
+
       setComments(result);
     } catch (error) {
       console.error("Failed to load comments:", error);
@@ -215,8 +175,6 @@ export function MarketComments({
 
   return (
     <section className="w-full">
-      {/* Header */}
-
       <div className="mb-6 flex items-center gap-2">
         <h2 className="text-[13px] text-zinc-600 dark:text-zinc-500">
           Comment
@@ -225,7 +183,6 @@ export function MarketComments({
         <span className="jakarta text-sm text-zinc-500">{comments.length}</span>
       </div>
 
-      {/* Input */}
       {showPredictionInput ? (
         <PredictionCommentInput
           direction={direction}
@@ -255,102 +212,200 @@ export function MarketComments({
         />
       )}
 
-      {/* Comments */}
       <div>
         {comments.length === 0 ? (
           <div className="py-8 text-center text-sm text-zinc-500">
             No comments yet.
           </div>
         ) : (
-          comments.map((comment) => {
-            const targetReplyCommentId = targetReplyId
-              ? findCommentIdForReply(comments, targetReplyId)
-              : null;
-
-            return (
-              <CommentItem
-                key={comment.id}
-                comment={comment}
-                currentUser={user}
-                onDeleted={loadComments}
-                onCommentUpdated={loadComments}
-                targetCommentId={targetCommentId}
-                targetReplyId={targetReplyId}
-                shouldOpenReplies={targetReplyCommentId === comment.id}
-              />
-            );
-          })
+          comments.map((comment) => (
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              currentUser={user}
+              onRefresh={loadComments}
+              targetCommentId={targetCommentId}
+              targetReplyId={targetReplyId}
+              shouldOpenReplies={
+                Boolean(targetReplyId) && targetCommentId === comment.id
+              }
+            />
+          ))
         )}
       </div>
     </section>
   );
 }
 
-// -----------------------------------------------------------------------------
-// COMMENT ITEM
-// -----------------------------------------------------------------------------
+interface Comment {
+  id: string;
+
+  content: JSONContent;
+
+  createdAt: Date;
+  updatedAt: Date;
+
+  editedAt: Date | null;
+  withdrawnAt: Date | null;
+  moderatedAt: Date | null;
+
+  author: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    nationality: string | null;
+  };
+
+  prediction: {
+    direction: PredictionDirection;
+    pointsBet: number;
+    status: PredictionStatus;
+  } | null;
+
+  likeCount: number;
+  likedByMe: boolean;
+  replyCount: number;
+}
+
+export type CommentUser = {
+  id: string;
+  role?: string | null;
+  image?: string | null;
+  name?: string | null;
+};
+
+interface CommentItemProps {
+  comment: Comment;
+  currentUser: CommentUser | null;
+  targetCommentId: string | null;
+  targetReplyId: string | null;
+  shouldOpenReplies: boolean;
+  onRefresh: () => Promise<void>;
+}
 
 function CommentItem({
   comment,
   currentUser,
-  onDeleted,
-  onCommentUpdated,
+  onRefresh,
   targetCommentId,
   targetReplyId,
   shouldOpenReplies,
-}: {
-  comment: MarketComment;
-  currentUser: {
-    id: string;
-    role?: string | null;
-    image?: string | null;
-    name?: string | null;
-  } | null;
+}: CommentItemProps) {
+  const commentRef = useRef<HTMLDivElement>(null);
 
-  targetCommentId: string | null;
-  targetReplyId: string | null;
-  shouldOpenReplies: boolean;
-  onDeleted: () => Promise<void>;
-  onCommentUpdated: () => Promise<void>;
-}) {
   const [likedByMe, setLikedByMe] = useState(comment.likedByMe);
+
   const [likeCount, setLikeCount] = useState(comment.likeCount);
+
   const [isLikePending, startLikeTransition] = useTransition();
 
   const [showReplies, setShowReplies] = useState(false);
 
-  useEffect(() => {
-    if (shouldOpenReplies) {
-      setShowReplies(true);
-    }
-  }, [shouldOpenReplies]);
+  const [replies, setReplies] = useState<MarketReply[]>([]);
+
+  const [repliesLoaded, setRepliesLoaded] = useState(false);
+
+  const [repliesLoading, setRepliesLoading] = useState(false);
 
   const [threadHovered, setThreadHovered] = useState(false);
+
   const [replying, setReplying] = useState(false);
 
   const [isDeleting, setIsDeleting] = useState(false);
+
   const [isEditing, setIsEditing] = useState(false);
+
   const [isModerating, setIsModerating] = useState(false);
 
   const isAdmin = currentUser?.role === "ADMIN";
+
   const isAuthor = currentUser?.id === comment.author.id;
 
   const replyCount = comment.replyCount;
 
-  const username = comment.author.name ?? "User";
+  const username = comment.author.name ?? "Guest";
 
   const isDeletedPredictionComment =
     !!comment.prediction && isDeletedPredictionContent(comment.content);
 
-  const threadEvents = {
-    onMouseEnter: () => setThreadHovered(true),
-    onMouseLeave: () => setThreadHovered(false),
-    onClick: () => setShowReplies((prev) => !prev),
+  const canModify = isAuthor && !comment.withdrawnAt && !comment.moderatedAt;
+
+  // ---------------------------------------------------------------------------
+  // REPLIES
+  // ---------------------------------------------------------------------------
+
+  const loadReplies = useCallback(async () => {
+    if (repliesLoading) return;
+
+    try {
+      setRepliesLoading(true);
+
+      const result = await getCommentReplies(comment.id);
+
+      setReplies(result);
+      setRepliesLoaded(true);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load replies.",
+      );
+    } finally {
+      setRepliesLoading(false);
+    }
+  }, [comment.id, repliesLoading]);
+
+  const toggleReplies = async () => {
+    if (!showReplies && !repliesLoaded) {
+      await loadReplies();
+    }
+
+    setShowReplies((prev) => !prev);
   };
 
-  const canDelete = isAuthor && !comment.withdrawnAt && !comment.moderatedAt;
+  // ---------------------------------------------------------------------------
+  // THREAD EVENTS
+  // ---------------------------------------------------------------------------
 
-  const canEdit = isAuthor && !comment.withdrawnAt && !comment.moderatedAt;
+  const threadEvents = {
+    onMouseEnter: () => setThreadHovered(true),
+
+    onMouseLeave: () => setThreadHovered(false),
+
+    onClick: toggleReplies,
+  };
+
+  // ---------------------------------------------------------------------------
+  // EFFECTS
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!shouldOpenReplies) return;
+
+    setShowReplies(true);
+
+    if (!repliesLoaded) {
+      void loadReplies();
+    }
+  }, [shouldOpenReplies, repliesLoaded, loadReplies]);
+
+  useEffect(() => {
+    if (targetCommentId !== comment.id) return;
+
+    requestAnimationFrame(() => {
+      commentRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+  }, [targetCommentId, comment.id]);
+
+  useEffect(() => {
+    setLikedByMe(comment.likedByMe);
+    setLikeCount(comment.likeCount);
+  }, [comment.likedByMe, comment.likeCount]);
+
+  // ---------------------------------------------------------------------------
+  // ACTIONS
+  // ---------------------------------------------------------------------------
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -364,7 +419,7 @@ function CommentItem({
 
       const result = await deleteComment(comment.id);
 
-      await onDeleted();
+      await onRefresh();
 
       if (result.action === "ALREADY_CONTENT_REMOVED") {
         toast.info("Comment already deleted. Your prediction remains.");
@@ -394,9 +449,7 @@ function CommentItem({
 
       await hideComment(comment.id);
 
-      await onCommentUpdated();
-
-      // notifyCommentChanged();
+      await onRefresh();
 
       toast.success("Comment hidden.");
     } catch (error) {
@@ -416,9 +469,7 @@ function CommentItem({
 
       await restoreComment(comment.id);
 
-      await onCommentUpdated();
-
-      // notifyCommentChanged();
+      await onRefresh();
 
       toast.success("Comment restored.");
     } catch (error) {
@@ -441,7 +492,6 @@ function CommentItem({
     const previousLiked = likedByMe;
     const previousCount = likeCount;
 
-    // Optimistic update
     setLikedByMe(!previousLiked);
 
     setLikeCount((count) =>
@@ -452,11 +502,9 @@ function CommentItem({
       try {
         const result = await toggleCommentLike(comment.id);
 
-        // Synchronize with the actual DB result
         setLikedByMe(result.liked);
         setLikeCount(result.likeCount);
       } catch (error) {
-        // Roll back optimistic update
         setLikedByMe(previousLiked);
         setLikeCount(previousCount);
 
@@ -467,48 +515,32 @@ function CommentItem({
     });
   };
 
-  useEffect(() => {
-    if (targetCommentId !== comment.id) {
-      return;
-    }
-
-    const element = document.getElementById(`comment-${comment.id}`);
-
-    if (!element) {
-      return;
-    }
-
-    requestAnimationFrame(() => {
-      element.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    });
-  }, [targetCommentId, comment.id]);
-
   return (
-    <div id={`comment-${comment.id}`} className="mb-6 scroll-mt-24">
-      <div className="flex gap-3 z-1">
+    <div
+      ref={commentRef}
+      id={`comment-${comment.id}`}
+      className="mb-6 scroll-mt-24"
+    >
+      <div className="z-1 flex gap-3">
         <Avatar className="size-9 shrink-0">
           <AvatarImage
             src={comment.author.image ?? undefined}
-            alt={username ?? "User"}
+            alt={username}
             className="object-cover"
           />
 
           <AvatarFallback className="text-sm">
-            {(currentUser?.name ?? "User").slice(0, 2).toUpperCase()}
+            {comment.author.name
+              ? comment.author.name.slice(0, 2).toUpperCase()
+              : "G"}
           </AvatarFallback>
         </Avatar>
 
         <div className="min-w-0 flex-1">
-          {/* Only THIS comment participates in hover */}
           <div className="group/comment relative min-w-0 flex-1">
-            {/* User */}
             <div className="flex items-center gap-1.5">
               <span className="text-[14px] font-semibold">{username}</span>
 
-              {/* Prediction */}
               {comment.prediction && (
                 <div className="flex items-center gap-2">
                   <span
@@ -534,8 +566,7 @@ function CommentItem({
               </span>
 
               <ContentActionsMenu
-                canEdit={canEdit}
-                canDelete={canDelete}
+                canModify={canModify}
                 isAdmin={isAdmin}
                 isModerated={Boolean(comment.moderatedAt)}
                 isDeleting={isDeleting}
@@ -548,7 +579,6 @@ function CommentItem({
               />
             </div>
 
-            {/* Content */}
             {comment.moderatedAt ? (
               <p className="mt-1 text-[15px] italic text-zinc-400">
                 Comment hidden by moderation
@@ -560,14 +590,19 @@ function CommentItem({
                   isDeletedPredictionComment
                     ? {
                         type: "doc",
-                        content: [{ type: "paragraph" }],
+                        content: [
+                          {
+                            type: "paragraph",
+                          },
+                        ],
                       }
                     : comment.content
                 }
                 onCancel={() => setIsEditing(false)}
                 onSaved={async () => {
                   setIsEditing(false);
-                  await onCommentUpdated();
+
+                  await onRefresh();
                 }}
               />
             ) : isDeletedPredictionComment ? (
@@ -584,7 +619,6 @@ function CommentItem({
               </div>
             )}
 
-            {/* Actions */}
             {!comment.moderatedAt && (
               <div className="mt-2 flex items-center gap-4">
                 <button
@@ -594,14 +628,14 @@ function CommentItem({
                   aria-label={likedByMe ? "Unlike comment" : "Like comment"}
                   aria-pressed={likedByMe}
                   className="
-    flex cursor-pointer items-center gap-1.5
-    text-sm text-zinc-500
-    transition-colors
-    hover:text-zinc-900
-    disabled:cursor-default
-    dark:text-zinc-400
-    dark:hover:text-zinc-100
-  "
+                    flex cursor-pointer items-center gap-1.5
+                    text-sm text-zinc-500
+                    transition-colors
+                    hover:text-zinc-900
+                    disabled:cursor-default
+                    dark:text-zinc-400
+                    dark:hover:text-zinc-100
+                  "
                 >
                   <RiHeartFill
                     className={`h-4 w-4 ${
@@ -628,7 +662,6 @@ function CommentItem({
               </div>
             )}
 
-            {/* Reply input */}
             {!comment.moderatedAt && replying && (
               <ReplyInput
                 commentId={comment.id}
@@ -639,16 +672,12 @@ function CommentItem({
                   setReplying(false);
                   setShowReplies(true);
 
-                  await onCommentUpdated();
+                  await loadReplies();
 
-                  // notifyCommentChanged();
+                  await onRefresh();
                 }}
               />
             )}
-
-            {/* ---------------------------------------------------------------
-                1. COMMENT VERTICAL RAIL
-            ---------------------------------------------------------------- */}
 
             {replyCount > 0 && (
               <button
@@ -686,183 +715,176 @@ function CommentItem({
             )}
           </div>
 
-          {/* ---------------------------------------------------------------
-              2. COLLAPSED REPLIES BUTTON + CURVE
-          ---------------------------------------------------------------- */}
-
           {replyCount > 0 && !showReplies && (
             <div className="relative mt-5">
-              {/* Curve from comment rail into replies button */}
               <button
                 type="button"
                 aria-label="Show replies"
                 {...threadEvents}
                 className="
-                  absolute
-                  -left-9.5
-                  -top-3
-                  z-0
-                  h-6
-                  w-10
-                  cursor-pointer
-                "
+                    absolute
+                    -left-9.5
+                    -top-3
+                    z-0
+                    h-6
+                    w-10
+                    cursor-pointer
+                  "
               >
                 <span
                   className={`
-                    pointer-events-none
-                    absolute
-                    left-2
-                    top-0
-                    h-6
-                    w-8
-                    rounded-bl-xl
-                    border-b border-l
-                    transition-colors
+                      pointer-events-none
+                      absolute
+                      left-2
+                      top-0
+                      h-6
+                      w-8
+                      rounded-bl-xl
+                      border-b border-l
+                      transition-colors
 
-                    ${
-                      threadHovered
-                        ? "border-zinc-400 dark:border-zinc-500"
-                        : "border-zinc-200 dark:border-zinc-700"
-                    }
-                  `}
+                      ${
+                        threadHovered
+                          ? "border-zinc-400 dark:border-zinc-500"
+                          : "border-zinc-200 dark:border-zinc-700"
+                      }
+                    `}
                 />
               </button>
 
               <button
                 type="button"
-                onClick={() => setShowReplies((prev) => !prev)}
+                onClick={toggleReplies}
+                disabled={repliesLoading}
                 className="
-                  -translate-x-2
-                  flex items-center gap-2
-                  rounded-xl
-                  bg-white
-                  px-2
-                  text-sm font-semibold
-                  text-zinc-600
-                  hover:text-zinc-900
-                  dark:bg-zinc-900
-                  dark:text-zinc-400
-                  dark:hover:text-zinc-200
-                "
+                    -translate-x-2
+                    flex items-center gap-2
+                    rounded-xl
+                    bg-white
+                    px-2
+                    text-sm font-semibold
+                    text-zinc-600
+                    hover:text-zinc-900
+                    disabled:cursor-default
+                    dark:bg-zinc-900
+                    dark:text-zinc-400
+                    dark:hover:text-zinc-200
+                  "
               >
                 <ChevronDown className="size-4" />
-                {replyCount} {replyCount === 1 ? "reply" : "replies"}
+
+                {repliesLoading
+                  ? "Loading..."
+                  : `${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
               </button>
             </div>
           )}
 
-          {/* ---------------------------------------------------------------
-              OPEN REPLIES
-          ---------------------------------------------------------------- */}
+          {showReplies && repliesLoading && (
+            <div className="py-3 text-sm text-zinc-400">Loading replies...</div>
+          )}
 
-          {showReplies && comment.replies.length > 0 && (
+          {showReplies && !repliesLoading && replies.length > 0 && (
             <div className="relative mt-4 pb-3">
-              {/* Connect comment down to first root reply */}
               <button
                 type="button"
                 aria-label="Collapse replies"
                 {...threadEvents}
                 className="
-                  absolute
-                  -left-9.5
-                  -top-18
-                  z-20
-                  h-16
-                  w-5
-                  cursor-pointer
-                "
+                    absolute
+                    -left-9.5
+                    -top-18
+                    z-20
+                    h-16
+                    w-5
+                    cursor-pointer
+                  "
               />
 
-              <div className="space-y-6 pl-0 py-3">
-                {comment.replies
+              <div className="space-y-6 py-3 pl-0">
+                {replies
                   .filter((reply) => reply.parentId === null)
                   .map((reply, index, rootReplies) => {
                     const isLastReply = index === rootReplies.length - 1;
 
                     return (
                       <div key={reply.id} className="relative">
-                        {/* -------------------------------------------------
-                            3. DYNAMIC VERTICAL RAIL
-                        -------------------------------------------------- */}
-
                         <button
                           type="button"
                           aria-label="Collapse replies"
                           {...threadEvents}
                           className={`
-                            absolute
-                            -left-9.5
-                            -top-6
-                            z-0
-                            w-5
-                            cursor-pointer
+                                absolute
+                                -left-9.5
+                                -top-6
+                                z-0
+                                w-5
+                                cursor-pointer
 
-                            ${isLastReply ? "h-7" : "-bottom-1"}
-                          `}
+                                ${isLastReply ? "h-7" : "-bottom-1"}
+                              `}
                         >
                           <span
                             className={`
-                              pointer-events-none
-                              absolute
-                              left-2
-                              top-0
-                              bottom-0
-                              w-px
-                              transition-colors
+                                  pointer-events-none
+                                  absolute
+                                  left-2
+                                  top-0
+                                  bottom-0
+                                  w-px
+                                  transition-colors
 
-                              ${
-                                threadHovered
-                                  ? "bg-zinc-400 dark:bg-zinc-500"
-                                  : "bg-zinc-200 dark:bg-zinc-700"
-                              }
-                            `}
+                                  ${
+                                    threadHovered
+                                      ? "bg-zinc-400 dark:bg-zinc-500"
+                                      : "bg-zinc-200 dark:bg-zinc-700"
+                                  }
+                                `}
                           />
                         </button>
-
-                        {/* -------------------------------------------------
-                            4. CURVE INTO THIS ROOT REPLY
-                        -------------------------------------------------- */}
 
                         <button
                           type="button"
                           aria-label="Collapse replies"
                           {...threadEvents}
                           className="
-                            absolute
-                            -left-9.5
-                            top-0
-                            z-0
-                            h-4
-                            w-10
-                            cursor-pointer
-                          "
+                                absolute
+                                -left-9.5
+                                top-0
+                                z-0
+                                h-4
+                                w-10
+                                cursor-pointer
+                              "
                         >
                           <span
                             className={`
-                              pointer-events-none
-                              absolute
-                              left-2
-                              top-0
-                              h-4
-                              w-8
-                              rounded-bl-xl
-                              border-b border-l
-                              transition-colors
+                                  pointer-events-none
+                                  absolute
+                                  left-2
+                                  top-0
+                                  h-4
+                                  w-8
+                                  rounded-bl-xl
+                                  border-b border-l
+                                  transition-colors
 
-                              ${
-                                threadHovered
-                                  ? "border-zinc-400 dark:border-zinc-500"
-                                  : "border-zinc-200 dark:border-zinc-700"
-                              }
-                            `}
+                                  ${
+                                    threadHovered
+                                      ? "border-zinc-400 dark:border-zinc-500"
+                                      : "border-zinc-200 dark:border-zinc-700"
+                                  }
+                                `}
                           />
                         </button>
 
                         <ReplyItem
                           reply={reply}
-                          replies={comment.replies}
+                          replies={replies}
                           currentUser={currentUser}
-                          onReplyUpdated={onCommentUpdated}
+                          onReplyUpdated={async () => {
+                            await loadReplies();
+                          }}
                           depth={0}
                           targetReplyId={targetReplyId}
                         />
@@ -876,123 +898,4 @@ function CommentItem({
       </div>
     </div>
   );
-}
-
-// -----------------------------------------------------------------------------
-// COMMENT CONTENT
-// -----------------------------------------------------------------------------
-
-function CommentContent({ content }: { content: JSONContent }) {
-  return (
-    <div
-      className="
-        mt-0.5
-        min-w-0
-        space-y-2
-        text-[15px]
-        leading-6
-        text-zinc-900
-        wrap-anywhere
-        dark:text-zinc-200
-      "
-    >
-      {content.content?.map((node, index) => {
-        // ---------------------------------------------------------------------
-        // TEXT
-        // ---------------------------------------------------------------------
-
-        if (node.type === "paragraph") {
-          const text =
-            node.content?.map((child) => child.text ?? "").join("") ?? "";
-
-          if (!text) {
-            return null;
-          }
-
-          return (
-            <p key={index} className="min-w-0">
-              {text}
-            </p>
-          );
-        }
-
-        // ---------------------------------------------------------------------
-        // GIF / IMAGE
-        //
-        // < lg:
-        //   Keep the current responsive behavior.
-        //
-        // lg+:
-        //   Constrain the image inside a 240 × 240 area.
-        //   The original aspect ratio is preserved automatically.
-        // ---------------------------------------------------------------------
-
-        if (node.type === "image" && node.attrs?.src) {
-          const src = String(node.attrs.src);
-          const alt = String(node.attrs.alt ?? "GIF");
-
-          return (
-            <img
-              key={index}
-              src={src}
-              alt={alt}
-              className="
-                block
-                h-auto
-                rounded-xl
-                object-contain
-                max-h-64
-                max-w-56
-              "
-            />
-          );
-        }
-
-        return null;
-      })}
-    </div>
-  );
-}
-
-// -----------------------------------------------------------------------------
-// TIME
-// -----------------------------------------------------------------------------
-
-function formatTimeAgo(date: Date | string) {
-  const time = new Date(date).getTime();
-
-  const diff = Math.max(0, Date.now() - time);
-
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (seconds < 60) {
-    return "Just now";
-  }
-
-  if (minutes < 60) {
-    return `${minutes}m`;
-  }
-
-  if (hours < 24) {
-    return `${hours}h`;
-  }
-
-  if (days < 7) {
-    return `${days}d`;
-  }
-
-  return new Date(date).toLocaleDateString();
-}
-
-function isDeletedPredictionContent(content: JSONContent): boolean {
-  const text = content.content
-    ?.flatMap((node) => node.content ?? [])
-    .map((node) => node.text ?? "")
-    .join("")
-    .trim();
-
-  return text === "Comment deleted by user";
 }

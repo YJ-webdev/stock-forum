@@ -16,8 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface ContentActionsMenuProps {
-  canEdit?: boolean;
-  canDelete?: boolean;
+  canModify?: boolean;
 
   isAdmin?: boolean;
   isModerated?: boolean;
@@ -33,8 +32,7 @@ interface ContentActionsMenuProps {
 }
 
 export function ContentActionsMenu({
-  canEdit = false,
-  canDelete = false,
+  canModify = false,
 
   isAdmin = false,
   isModerated = false,
@@ -49,8 +47,7 @@ export function ContentActionsMenu({
   onRestore,
 }: ContentActionsMenuProps) {
   const hasActions =
-    canEdit ||
-    canDelete ||
+    canModify ||
     (isAdmin && (!isModerated ? Boolean(onHide) : Boolean(onRestore)));
 
   if (!hasActions) {
@@ -77,14 +74,14 @@ export function ContentActionsMenu({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end">
-        {canEdit && onEdit && (
+        {canModify && onEdit && (
           <DropdownMenuItem onClick={onEdit}>
             <Pencil className="mr-2 size-4" />
             Edit
           </DropdownMenuItem>
         )}
 
-        {canDelete && onDelete && (
+        {canModify && onDelete && (
           <DropdownMenuItem
             disabled={isDeleting}
             onClick={onDelete}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import type { JSONContent } from "@tiptap/react";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
@@ -14,26 +14,20 @@ import {
   ALL_MARKET_SYMBOLS,
   type MarketSymbolItem,
 } from "@/lib/data/market-symbols";
-// import { useCommentRefresh } from "@/app/context/comment-refresh-context";
 
 interface PostEditorProps {
-  isLoggedIn: boolean;
-  nationality: string | null;
   setOnWrite: React.Dispatch<React.SetStateAction<boolean>>;
   onCommentCreated: () => Promise<void>;
 }
 
+const MAX_SELECTED_ASSETS = 1;
 const RECENT_ASSETS_KEY = "recent-post-assets";
 const MAX_RECENT_ASSETS = 5;
 
-export function PostEditor({
-  isLoggedIn,
-  nationality,
-  setOnWrite,
-  onCommentCreated,
-}: PostEditorProps) {
-  const searchParams = useSearchParams();
-  const symbol = searchParams.get("symbol");
+export function PostEditor({ setOnWrite, onCommentCreated }: PostEditorProps) {
+  const params = useParams<{ asset: string }>();
+
+  const symbol = params.asset;
   const topicRef = useRef<HTMLDivElement>(null);
 
   const [content, setContent] = useState<JSONContent>({
@@ -42,38 +36,17 @@ export function PostEditor({
   });
 
   const [editorKey, setEditorKey] = useState(0);
-
-  // ---------------------------------------------------------------------------
-  // ASSET SELECTOR
-  // ---------------------------------------------------------------------------
-
   const [assetQuery, setAssetQuery] = useState("");
   const [assetSelectorOpen, setAssetSelectorOpen] = useState(false);
-
   const [selectedAssets, setSelectedAssets] = useState<MarketSymbolItem[]>([]);
   const [recentAssetSymbols, setRecentAssetSymbols] = useState<string[]>([]);
-
   const [isPending, startTransition] = useTransition();
 
-  // ---------------------------------------------------------------------------
-  // CURRENT ASSET
-  // ---------------------------------------------------------------------------
+  const router = useRouter();
 
-  const currentAsset = useMemo(() => {
-    if (!symbol) return null;
-
-    return (
-      ALL_MARKET_SYMBOLS.find((asset) => asset.symbol === symbol) ??
-      ALL_MARKET_SYMBOLS.find((asset) => asset.displaySymbol === symbol) ??
-      null
-    );
-  }, [symbol]);
-
-  // const { notifyCommentChanged } = useCommentRefresh();
-
-  // ---------------------------------------------------------------------------
-  // LOAD RECENT ASSETS
-  // ---------------------------------------------------------------------------
+  const currentAsset = symbol
+    ? (ALL_MARKET_SYMBOLS.find((asset) => asset.symbol === symbol) ?? null)
+    : null;
 
   useEffect(() => {
     try {
@@ -93,10 +66,6 @@ export function PostEditor({
     }
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // CLOSE SELECTOR WHEN CLICKING OUTSIDE
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
       if (
@@ -114,10 +83,6 @@ export function PostEditor({
     };
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // RECENT ASSETS
-  // ---------------------------------------------------------------------------
-
   const recentAssets = useMemo(() => {
     return recentAssetSymbols
       .map((recentSymbol) =>
@@ -125,14 +90,6 @@ export function PostEditor({
       )
       .filter((asset): asset is MarketSymbolItem => Boolean(asset));
   }, [recentAssetSymbols]);
-
-  // ---------------------------------------------------------------------------
-  // EMPTY INPUT SUGGESTIONS
-  //
-  // Current asset first.
-  // Then recently used assets.
-  // No huge asset list until the user starts typing.
-  // ---------------------------------------------------------------------------
 
   const suggestedAssets = useMemo(() => {
     const suggestions: MarketSymbolItem[] = [];
@@ -152,10 +109,6 @@ export function PostEditor({
     return suggestions.slice(0, MAX_RECENT_ASSETS + 1);
   }, [currentAsset, recentAssets]);
 
-  // ---------------------------------------------------------------------------
-  // AUTOCOMPLETE RESULTS
-  // ---------------------------------------------------------------------------
-
   const searchResults = useMemo(() => {
     const query = assetQuery.trim().toLowerCase();
 
@@ -170,18 +123,9 @@ export function PostEditor({
     }).slice(0, 10);
   }, [assetQuery]);
 
-  const visibleAssets =
-    assetQuery.trim().length > 0 ? searchResults : suggestedAssets;
-
-  // ---------------------------------------------------------------------------
-  // SELECT / DESELECT
-  // ---------------------------------------------------------------------------
-
   const isAssetSelected = (asset: MarketSymbolItem) => {
     return selectedAssets.some((selected) => selected.symbol === asset.symbol);
   };
-
-  const MAX_SELECTED_ASSETS = 1;
 
   const toggleAsset = (asset: MarketSymbolItem) => {
     setSelectedAssets((prev) => {
@@ -189,12 +133,10 @@ export function PostEditor({
         (selected) => selected.symbol === asset.symbol,
       );
 
-      // Allow deselecting anytime
       if (alreadySelected) {
         return prev.filter((selected) => selected.symbol !== asset.symbol);
       }
 
-      // Maximum 2 assets
       if (prev.length >= MAX_SELECTED_ASSETS) {
         toast.error("You can select one index board.");
         return prev;
@@ -206,11 +148,6 @@ export function PostEditor({
     setAssetQuery("");
     setAssetSelectorOpen(false);
   };
-  // ---------------------------------------------------------------------------
-  // SAVE RECENT ASSETS
-  //
-  // Only call this AFTER the post was successfully created.
-  // ---------------------------------------------------------------------------
 
   const saveRecentAssets = (assets: MarketSymbolItem[]) => {
     if (assets.length === 0) return;
@@ -233,47 +170,41 @@ export function PostEditor({
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // SUBMIT
-  // ---------------------------------------------------------------------------
-
   const hasEditorContent = (node: JSONContent): boolean => {
-    // Actual text
     if (node.text?.trim()) {
       return true;
     }
 
-    // Non-text content that should count as content
     if (node.type === "image") {
       return true;
     }
 
-    // Check child nodes
     return node.content?.some(hasEditorContent) ?? false;
   };
 
   const handleSubmit = () => {
+    if (selectedAssets.length === 0) {
+      toast.error("Please select a board.");
+      return;
+    }
+
+    if (!hasEditorContent(content)) {
+      toast.error("Please write something.");
+      return;
+    }
+
     startTransition(async () => {
       try {
-        if (selectedAssets.length === 0) {
-          toast.error("Please select at least one board.");
-          return;
-        }
-
-        if (!hasEditorContent(content)) {
-          toast.error("Please write something.");
-          return;
-        }
-
         const plainContent = JSON.parse(JSON.stringify(content));
 
-        await createComment({
+        const result = await createComment({
           content: plainContent,
           assetSymbols: selectedAssets.map((asset) => asset.symbol),
         });
 
-        // DELETE:
-        // notifyCommentChanged();
+        if (!result.commentId) {
+          throw new Error("Comment was created without an ID.");
+        }
 
         saveRecentAssets(selectedAssets);
 
@@ -288,7 +219,23 @@ export function PostEditor({
 
         setEditorKey((prev) => prev + 1);
 
+        await onCommentCreated();
+
+        setOnWrite(false);
+
         toast.success("Comment posted.");
+
+        const targetSymbol = selectedAssets[0]?.symbol ?? symbol;
+
+        if (!targetSymbol) {
+          return;
+        }
+
+        router.push(
+          `/${encodeURIComponent(targetSymbol)}?comment=${result.commentId}`,
+        );
+
+        router.refresh();
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to post comment.",
@@ -299,16 +246,10 @@ export function PostEditor({
 
   return (
     <div className="mt-5 flex h-full min-h-0 w-full space-y-2 flex-col px-4">
-      {/* ============================================================= */}
-      {/* ASSET / TOPIC SELECTOR                                        */}
-      {/* ============================================================= */}
-
       <div
         ref={topicRef}
         className="relative flex flex-wrap gap-4 items-center mt-4 shrink-0 mb-5"
       >
-        {/* Selected assets */}
-
         {selectedAssets.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {selectedAssets.map((asset) => (
@@ -329,8 +270,6 @@ export function PostEditor({
             ))}
           </div>
         )}
-
-        {/* Search input */}
 
         <div
           className="
@@ -367,10 +306,6 @@ export function PostEditor({
           />
         </div>
 
-        {/* =========================================================== */}
-        {/* AUTOCOMPLETE                                                */}
-        {/* =========================================================== */}
-
         {assetSelectorOpen && (
           <div
             className="
@@ -384,11 +319,6 @@ export function PostEditor({
               dark:bg-black
             "
           >
-            {/* ------------------------------------------------------- */}
-            {/* Empty query                                             */}
-            {/* Current + recent only                                   */}
-            {/* ------------------------------------------------------- */}
-
             {!assetQuery.trim() && (
               <>
                 {currentAsset && (
@@ -427,23 +357,13 @@ export function PostEditor({
                     />
                   ))}
 
-                {visibleAssets.length === 0 && (
-                  <div
-                    className="
-                      px-3 py-4
-                      text-center text-[13px]
-                      text-zinc-400
-                    "
-                  >
+                {suggestedAssets.length === 0 && (
+                  <div className="px-3 py-4 text-center text-[13px] text-zinc-400">
                     Start typing to search assets
                   </div>
                 )}
               </>
             )}
-
-            {/* ------------------------------------------------------- */}
-            {/* Search mode                                             */}
-            {/* ------------------------------------------------------- */}
 
             {assetQuery.trim() && (
               <>
@@ -473,17 +393,9 @@ export function PostEditor({
         )}
       </div>
 
-      {/* ============================================================= */}
-      {/* EDITOR                                                        */}
-      {/* ============================================================= */}
-
       <div className="hide-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto">
         <Tiptap key={editorKey} content={content} onChange={setContent} />
       </div>
-
-      {/* ============================================================= */}
-      {/* ACTIONS                                                       */}
-      {/* ============================================================= */}
 
       <div className="ml-auto mb-4 mt-2 flex shrink-0 gap-2">
         <Button
@@ -508,10 +420,6 @@ export function PostEditor({
     </div>
   );
 }
-
-// =============================================================================
-// ASSET OPTION
-// =============================================================================
 
 function AssetOption({
   asset,

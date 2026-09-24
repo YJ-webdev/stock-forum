@@ -297,13 +297,15 @@ export async function createComment({
     // COMMENT
     // -------------------------------------------------------------------------
 
+    let createdComment: { id: string } | null = null;
+
     if (hasContent || createdPrediction) {
       const commentContent: Prisma.InputJsonValue = plainContent ?? {
         type: "doc",
         content: [],
       };
 
-      await tx.comment.create({
+      createdComment = await tx.comment.create({
         data: {
           content: commentContent,
           authorId: session.user.id,
@@ -320,9 +322,12 @@ export async function createComment({
             })),
           },
         },
+
+        select: {
+          id: true,
+        },
       });
     }
-
     // -------------------------------------------------------------------------
     // CURRENT POINT BALANCE
     //
@@ -348,6 +353,7 @@ export async function createComment({
 
     return {
       success: true,
+      commentId: createdComment?.id ?? null,
       predictionId: createdPrediction?.id ?? null,
       points: pointBalance?.points ?? null,
     };
@@ -1395,4 +1401,87 @@ function isDeletedCommentContent(content: JSONContent): boolean {
       .trim() ?? "";
 
   return text === "Comment deleted by user";
+}
+
+export async function getCommentReplies(commentId: string) {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  const replies = await prisma.reply.findMany({
+    where: {
+      commentId,
+    },
+
+    orderBy: {
+      createdAt: "asc",
+    },
+
+    select: {
+      id: true,
+
+      commentId: true,
+      parentId: true,
+
+      content: true,
+      gifUrl: true,
+
+      createdAt: true,
+      updatedAt: true,
+
+      editedAt: true,
+      moderatedAt: true,
+
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          nationality: true,
+        },
+      },
+
+      // -----------------------------------------------------------------------
+      // CURRENT USER'S LIKE
+      // -----------------------------------------------------------------------
+
+      likes: userId
+        ? {
+            where: {
+              userId,
+            },
+            select: {
+              id: true,
+            },
+          }
+        : false,
+
+      // -----------------------------------------------------------------------
+      // COUNTS
+      // -----------------------------------------------------------------------
+
+      _count: {
+        select: {
+          likes: true,
+          replies: true,
+        },
+      },
+    },
+  });
+
+  // ---------------------------------------------------------------------------
+  // NORMALIZE
+  // ---------------------------------------------------------------------------
+
+  return replies.map((reply) => {
+    const { _count, likes, ...rest } = reply;
+
+    return {
+      ...rest,
+
+      likeCount: _count.likes,
+      replyCount: _count.replies,
+
+      likedByMe: Array.isArray(likes) && likes.length > 0,
+    };
+  });
 }
