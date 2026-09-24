@@ -562,6 +562,7 @@ export default function MarketPageClient({
         px-5 py-4
         dark:bg-zinc-800/50
         sm:flex-row sm:items-start sm:justify-between
+        border
       "
           >
             {/* Voter nationalities */}
@@ -616,8 +617,9 @@ export default function MarketPageClient({
           border-t border-zinc-200
           pt-4
           dark:border-zinc-700
-          sm:w-56 sm:shrink-0
+          sm:w-1/2 sm:shrink-0
           sm:border-t-0 sm:pt-0
+         
         "
             >
               <div className="flex items-center justify-between text-[14px] font-medium">
@@ -642,16 +644,10 @@ export default function MarketPageClient({
             whitespace-nowrap
             text-[15px]
             leading-none
+           
          
           "
               >
-                {/* <span className="text-emerald-600 tracking-tighter">
-                  {bullBar}
-                </span>
-
-                <span className="text-zinc-300 tracking-wider dark:text-zinc-600">
-                  {bearBar}
-                </span> */}
                 <div className="mt-2 flex h-5 w-full overflow-hidden">
                   <div
                     className="h-full bg-emerald-600"
@@ -682,7 +678,7 @@ export default function MarketPageClient({
             </div>
           </div>
         ) : (
-          <Skeleton className="h-26.25 w-full rounded-xl" />
+          <Skeleton className="h-30 w-full rounded-xl" />
         )}
       </div>
 

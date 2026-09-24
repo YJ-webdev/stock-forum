@@ -513,7 +513,7 @@ export function DetailChart({
   // --------------------------------------------------
 
   return (
-    <div className="w-full relative bg-zinc-50 dark:bg-zinc-800 md:rounded-2xl md:border border-zinc-200 dark:border-zinc-800 p-4 md:shadow-sm select-none">
+    <div className="w-full relative bg-zinc-50 dark:bg-zinc-800/50 md:rounded-2xl md:border border-zinc-200 dark:border-zinc-800 p-4 select-none">
       {/* TOP CONTROL BAR */}
 
       <div className="relative z-5 flex items-center justify-between gap-6 dark:text-zinc-300">
