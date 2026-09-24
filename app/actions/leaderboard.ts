@@ -15,20 +15,12 @@ export async function getTopBetters(limit = 5): Promise<LeaderboardUser[]> {
   try {
     const users = await prisma.user.findMany({
       // -----------------------------------------------------------------------
-      // Only users who have participated in predictions
+      // Only require a point balance
       // -----------------------------------------------------------------------
 
       where: {
         pointBalance: {
           isNot: null,
-        },
-
-        predictions: {
-          some: {
-            status: {
-              in: ["WON", "LOST"],
-            },
-          },
         },
       },
 
@@ -41,14 +33,12 @@ export async function getTopBetters(limit = 5): Promise<LeaderboardUser[]> {
         name: true,
         image: true,
 
-        // Current point balance
         pointBalance: {
           select: {
             points: true,
           },
         },
 
-        // Only settled predictions are needed for win rate
         predictions: {
           where: {
             status: {
@@ -76,7 +66,7 @@ export async function getTopBetters(limit = 5): Promise<LeaderboardUser[]> {
     });
 
     // -------------------------------------------------------------------------
-    // FORMAT LEADERBOARD
+    // FORMAT
     // -------------------------------------------------------------------------
 
     return users.map((user, index) => {
@@ -91,16 +81,11 @@ export async function getTopBetters(limit = 5): Promise<LeaderboardUser[]> {
 
       return {
         id: user.id,
-
         name: user.name || "Anonymous Trader",
-
         image: user.image,
 
-        // Keep one decimal place:
-        // 78.428... -> 78.4
         winRate: Math.round(winRate * 10) / 10,
 
-        // Actual current points
         points: user.pointBalance?.points ?? 0,
 
         rank: index + 1,
