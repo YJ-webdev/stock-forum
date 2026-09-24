@@ -19,6 +19,7 @@ import {
   Sun,
   SquarePen,
   TextAlignJustify as MenuButton,
+  Settings,
 } from "lucide-react";
 
 import { TbUser } from "react-icons/tb";
@@ -357,8 +358,6 @@ export default function UserMenu({
 
         <DropdownMenuContent align="end" className="z-60 mt-1 w-56">
           <DropdownMenuGroup>
-            {/* Write */}
-
             <DropdownMenuItem
               onClick={onWrite}
               className="
@@ -369,21 +368,6 @@ export default function UserMenu({
               <SquarePen className="mr-2 size-4.5" strokeWidth={1.5} />
               Write
             </DropdownMenuItem>
-
-            {/* Account */}
-
-            <DropdownMenuItem
-              onClick={onAccount}
-              className="
-                h-11 cursor-pointer
-                text-[15px]
-              "
-            >
-              <BadgeCheckIcon className="mr-2 size-4.5" strokeWidth={1.5} />
-              Account
-            </DropdownMenuItem>
-
-            {/* Notifications */}
 
             <DropdownMenuItem
               onClick={onNotification}
@@ -396,7 +380,16 @@ export default function UserMenu({
               Notifications
             </DropdownMenuItem>
 
-            {/* Mobile Theme Toggle */}
+            <DropdownMenuItem
+              onClick={onAccount}
+              className="
+                h-11 cursor-pointer
+                text-[15px]
+              "
+            >
+              <Settings className="mr-2 size-4.5" strokeWidth={1.5} />
+              Settings
+            </DropdownMenuItem>
 
             <DropdownMenuItem
               onClick={toggleTheme}

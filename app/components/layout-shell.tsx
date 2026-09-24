@@ -183,31 +183,32 @@ export default function LayoutShell({
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
+    type LayoutMode = "mobile" | "tablet" | "desktop";
+
+    const getLayoutMode = (): LayoutMode => {
+      const width = window.innerWidth;
+
+      if (width < 768) return "mobile";
+      if (width < 1280) return "tablet";
+
+      return "desktop";
+    };
+
+    let previousMode: LayoutMode = getLayoutMode();
+
+    const applyLayout = (mode: LayoutMode) => {
+      const mobile = mode === "mobile";
 
       setIsMobileLayout(mobile);
 
-      // -----------------------------------------------------------------------
       // LEFT PANEL
-      // -----------------------------------------------------------------------
-
-      if (window.innerWidth >= 1280) {
+      if (mode === "desktop") {
         setIsOpen(true);
       } else {
         setIsOpen(false);
       }
 
-      // -----------------------------------------------------------------------
       // RIGHT PANEL
-      //
-      // Mobile:
-      // collapse desktop Section B so Section A gets 100%.
-      //
-      // Desktop/tablet:
-      // restore Section B to 30%.
-      // -----------------------------------------------------------------------
-
       if (mobile) {
         panelBRef.current?.resize("0%");
       } else {
@@ -215,7 +216,21 @@ export default function LayoutShell({
       }
     };
 
-    handleResize();
+    // Initial layout
+    applyLayout(previousMode);
+
+    const handleResize = () => {
+      const nextMode = getLayoutMode();
+
+      // Ignore mobile browser viewport resizing caused by
+      // scrolling / address bar appearing or disappearing.
+      if (nextMode === previousMode) {
+        return;
+      }
+
+      previousMode = nextMode;
+      applyLayout(nextMode);
+    };
 
     window.addEventListener("resize", handleResize);
 
@@ -223,7 +238,6 @@ export default function LayoutShell({
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-
   // ---------------------------------------------------------------------------
   // KEYBOARD SHORTCUTS
   //
