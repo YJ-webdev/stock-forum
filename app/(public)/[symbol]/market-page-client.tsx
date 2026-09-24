@@ -370,13 +370,13 @@ export default function MarketPageClient({
     });
   }, [selectedSymbol]);
 
-  const SENTIMENT_BLOCKS = 17;
-  const bullBlocks = voteStats
-    ? Math.round((voteStats.bullPercent / 100) * SENTIMENT_BLOCKS)
-    : 0;
-  const bearBlocks = SENTIMENT_BLOCKS - bullBlocks;
-  const bullBar = "█".repeat(bullBlocks);
-  const bearBar = "░".repeat(bearBlocks);
+  // const SENTIMENT_BLOCKS = 17;
+  // const bullBlocks = voteStats
+  //   ? Math.round((voteStats.bullPercent / 100) * SENTIMENT_BLOCKS)
+  //   : 0;
+  // const bearBlocks = SENTIMENT_BLOCKS - bullBlocks;
+  // const bullBar = "█".repeat(bullBlocks);
+  // const bearBar = "░".repeat(bearBlocks);
 
   return (
     <div className="mx-auto mt-20 max-w-4xl">
@@ -642,13 +642,37 @@ export default function MarketPageClient({
             whitespace-nowrap
             text-[15px]
             leading-none
+         
           "
               >
-                <span className="text-emerald-600">{bullBar}</span>
-
-                <span className="text-zinc-300 dark:text-zinc-600">
-                  {bearBar}
+                {/* <span className="text-emerald-600 tracking-tighter">
+                  {bullBar}
                 </span>
+
+                <span className="text-zinc-300 tracking-wider dark:text-zinc-600">
+                  {bearBar}
+                </span> */}
+                <div className="mt-2 flex h-5 w-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-600"
+                    style={{
+                      width: `${voteStats.bullPercent}%`,
+                    }}
+                  />
+
+                  <div
+                    className="
+      h-full
+      bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)]
+      bg-size-[2.5px_2.5px]
+      text-zinc-300
+      dark:text-zinc-600
+    "
+                    style={{
+                      width: `${voteStats.bearPercent}%`,
+                    }}
+                  />
+                </div>
               </div>
 
               <p className="mt-2 text-end text-[14px] font-medium">

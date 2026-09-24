@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { JSONContent } from "@tiptap/react";
-import { Ellipsis, MessageCircle } from "lucide-react";
+import { Ellipsis } from "lucide-react";
 import { RiHeartFill } from "react-icons/ri";
+import { BiSolidChat } from "react-icons/bi";
+
 import Link from "next/link";
 
 import { type MostLikedComment } from "@/app/actions/post";
@@ -141,10 +143,10 @@ export function MostLikedComments({
               <span className="jakarta ml-auto flex items-center gap-1">
                 <RiHeartFill
                   className="
-                    h-4 w-4 fill-none
-                    text-zinc-600
+                    h-4 w-4 fill-zinc-500
                     dark:fill-zinc-300
                     dark:text-muted
+                    text-mute
                   "
                 />
 
@@ -152,12 +154,12 @@ export function MostLikedComments({
               </span>
 
               <span className="jakarta flex items-center gap-1">
-                <MessageCircle
+                <BiSolidChat
                   className="
-                    h-4 w-4 fill-none
-                    text-zinc-600
+                    h-4 w-4 fill-zinc-500
                     dark:fill-zinc-300
                     dark:text-muted
+                    text-mute
                   "
                   strokeWidth={1.5}
                 />

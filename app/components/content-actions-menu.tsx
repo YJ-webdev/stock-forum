@@ -62,14 +62,14 @@ export function ContentActionsMenu({
       <DropdownMenuTrigger
         className={`
           ml-auto rounded-full p-1.5
-          opacity-0
+          lg:opacity-0
           hover:bg-zinc-100
-          dark:hover:bg-zinc-800
+          lg:dark:hover:bg-zinc-800
 
           ${
             hoverGroup === "comment"
-              ? "group-hover/comment:opacity-100"
-              : "group-hover/reply:opacity-100"
+              ? "lg:group-hover/comment:opacity-100"
+              : "lg:group-hover/reply:opacity-100"
           }
         `}
       >

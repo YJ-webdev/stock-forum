@@ -314,6 +314,7 @@ export function ReplyItem({
                     text-[15px] leading-6
                     text-zinc-900
                     dark:text-zinc-200
+                    wrap-anywhere
                   "
                 >
                   {reply.content}
