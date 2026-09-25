@@ -188,7 +188,7 @@ export default function MarketPageClient({
     onSuccess?: (comment: MarketPageComments[number]) => void | Promise<void>,
   ) => {
     if (!isLoggedIn) {
-      toast.error("Please log in to vote.");
+      toast.error("Log in to vote.");
       return;
     }
 

@@ -95,77 +95,78 @@ export function PredictionCommentInput({
           {/* Prediction */}
           <div className="flex items-center gap-3 pt-2">
             {/* Bull / Bear */}
+            {/* Bull / Bear */}
             <div
-              className={`
-                relative flex h-8 w-30 items-center
-                rounded-full p-0.5
-                text-[14px] font-normal
-                transition-colors duration-200
+              className={` 
+    relative flex h-8 w-30 items-center 
+    rounded-full p-0.5 
+    text-[14px] font-normal 
+    transition-colors duration-200 
 
-                ${
-                  direction === "BULL"
-                    ? "bg-emerald-600/15"
-                    : direction === "BEAR"
-                      ? "bg-rose-700/15"
-                      : "bg-zinc-200 dark:bg-zinc-700"
-                }
+    ${
+      direction === "BULL"
+        ? "bg-emerald-600/15"
+        : direction === "BEAR"
+          ? "bg-rose-700/15"
+          : "bg-zinc-200 dark:bg-zinc-700"
+    }
 
-                ${buttonDisabled ? "opacity-50" : ""}
-              `}
+    ${buttonDisabled ? "opacity-50" : ""}
+  `}
             >
               {/* Sliding selected background */}
               {direction && (
                 <span
-                  className={`
-                    pointer-events-none
-                    absolute top-0.5
-                    h-7 w-14.5
-                    rounded-full
-                    transition-transform duration-200 ease-out
+                  className={` 
+        pointer-events-none 
+        absolute top-0.5 
+        h-7 w-14.5 
+        rounded-full 
+        transition-transform duration-200 ease-out 
 
-                    ${
-                      direction === "BULL"
-                        ? "translate-x-14.5 bg-emerald-600"
-                        : "translate-x-0 bg-rose-700"
-                    }
-                  `}
+        ${
+          direction === "BULL"
+            ? "translate-x-0 bg-emerald-600"
+            : "translate-x-14.5 bg-rose-700"
+        }
+      `}
                 />
               )}
-
-              {/* Bear */}
-              <button
-                type="button"
-                disabled={buttonDisabled}
-                onClick={() => handleDirectionClick("BEAR")}
-                className={`
-    relative z-10 flex h-full flex-1
-    cursor-pointer items-center justify-center
-    rounded-full
-    transition-colors
-    active:translate-y-0.5
-
-    ${direction === "BEAR" ? "text-white" : "text-zinc-500"}
-  `}
-              >
-                Bear
-              </button>
 
               {/* Bull */}
               <button
                 type="button"
                 disabled={buttonDisabled}
                 onClick={() => handleDirectionClick("BULL")}
-                className={`
-    relative z-10 flex h-full flex-1
-    cursor-pointer items-center justify-center
-    rounded-full
-    transition-colors
-    active:translate-y-0.5
+                className={` 
+      relative z-10 flex h-full flex-1 
+      cursor-pointer items-center justify-center 
+      rounded-full 
+      transition-colors 
+      active:translate-y-0.5 
 
-    ${direction === "BULL" ? "text-white" : "text-zinc-500"}
-  `}
+      ${direction === "BULL" ? "text-white" : "text-zinc-500"}
+    `}
               >
                 Bull
+              </button>
+
+              {/* Bear */}
+              <button
+                type="button"
+                disabled={buttonDisabled}
+                onClick={() => handleDirectionClick("BEAR")}
+                className={` 
+      relative z-10 flex h-full flex-1 
+      cursor-pointer items-center justify-center 
+      rounded-full 
+      transition-colors 
+      active:translate-y-0.5 
+
+      ${direction === "BEAR" ? "text-white" : "text-zinc-500"}
+    `}
+              >
+                Bear
               </button>
             </div>
 

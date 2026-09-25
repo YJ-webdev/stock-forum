@@ -145,7 +145,14 @@ export function MarketComments({
     try {
       setIsLoadingMore(true);
 
-      const result = await getMarketComments(assetSymbol, nextCursor);
+      const minimumLoadingTime = new Promise((resolve) =>
+        setTimeout(resolve, 1000),
+      );
+
+      const [result] = await Promise.all([
+        getMarketComments(assetSymbol, nextCursor),
+        minimumLoadingTime,
+      ]);
 
       setComments((current) => {
         const existingIds = new Set(current.map((comment) => comment.id));
@@ -160,7 +167,6 @@ export function MarketComments({
       setNextCursor(result.nextCursor);
     } catch (error) {
       console.error("Failed to load more comments:", error);
-
       toast.error("Failed to load more comments.");
     } finally {
       setIsLoadingMore(false);
@@ -337,10 +343,16 @@ export function MarketComments({
       {nextCursor && (
         <div
           ref={loadMoreRef}
-          className="flex h-16 items-center justify-center"
+          className="flex h-20 items-center justify-center"
         >
           {isLoadingMore && (
-            <span className="text-sm text-zinc-500">Loading...</span>
+            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+              <div className="flex items-center gap-1">
+                <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
+                <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
+                <span className="size-1 animate-bounce rounded-full bg-current" />
+              </div>
+            </div>
           )}
         </div>
       )}
