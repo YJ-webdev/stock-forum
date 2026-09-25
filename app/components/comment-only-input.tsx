@@ -113,7 +113,7 @@ export function CommentOnlyInput({
         />
 
         <AvatarFallback className="text-sm">
-          {(currentUser?.name ?? "User").slice(0, 2).toUpperCase()}
+          {currentUser?.name ? currentUser.name.slice(0, 2).toUpperCase() : "G"}
         </AvatarFallback>
       </Avatar>
 
@@ -124,7 +124,8 @@ export function CommentOnlyInput({
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={1}
-            placeholder="Write a text to add comments..."
+            disabled={!currentUser}
+            placeholder={`${currentUser ? "Write a text to add comments..." : "Log in to comment..."}`}
             className="
     min-h-11 w-full resize-none
     bg-transparent py-3

@@ -381,7 +381,14 @@ export function ReplyItem({
 
               <button
                 type="button"
-                onClick={() => setShowReplyInput((prev) => !prev)}
+                onClick={() => {
+                  if (!currentUser) {
+                    toast.error("You must log in to reply.");
+                    return;
+                  }
+
+                  setShowReplyInput((prev) => !prev);
+                }}
                 className="
                   text-sm font-medium text-zinc-500
                   hover:text-zinc-900

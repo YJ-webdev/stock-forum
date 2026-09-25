@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import type { JSONContent } from "@tiptap/react";
 import { ChevronDown } from "lucide-react";
 import { RiHeartFill } from "react-icons/ri";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -36,7 +35,6 @@ import { useSearchParams } from "next/navigation";
 import { isDeletedPredictionContent } from "@/lib/utils/is-deleted-prediction-content";
 import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 import { CommentContent } from "./comment-content";
-import { Button } from "@/components/ui/button";
 
 export interface MarketReply {
   id: string;
@@ -217,7 +215,7 @@ export function MarketComments({
 
   const submitVote = (comment: string, gif: GifResult | null) => {
     if (!user) {
-      toast.error("Please log in to vote.");
+      toast.error("Log in to vote.");
       return;
     }
 
@@ -589,7 +587,7 @@ function CommentItem({
 
   const handleCommentLike = () => {
     if (!currentUser) {
-      toast.error("Please log in to like comments.");
+      toast.error("Log in to like comments.");
       return;
     }
 
@@ -760,12 +758,19 @@ function CommentItem({
 
                 <button
                   type="button"
-                  onClick={() => setReplying((prev) => !prev)}
+                  onClick={() => {
+                    if (!currentUser) {
+                      toast.error("You must log in to reply.");
+                      return;
+                    }
+
+                    setReplying((prev) => !prev);
+                  }}
                   className="
-                    text-sm font-medium text-zinc-500
-                    hover:text-zinc-900
-                    dark:hover:text-zinc-200
-                  "
+    text-sm font-medium text-zinc-500
+    hover:text-zinc-900
+    dark:hover:text-zinc-200
+  "
                 >
                   Reply
                 </button>

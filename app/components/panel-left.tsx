@@ -61,7 +61,7 @@ export default function PanelLeft({
             {/* Topics */}
             <div className=" p-4 mt-3">
               <p className="text-muted-foreground/50  text-xs text-light mb-2 tracking-wider">
-                Popular comments
+                Most liked comments
               </p>
               <MostLikedComments comments={comments} />
             </div>

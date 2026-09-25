@@ -71,7 +71,7 @@ export function ReplyInput({
 
   return (
     <div className="mt-3 flex gap-2">
-      <Avatar label={currentUser?.name ?? "You"} image={currentUser?.image} />
+      <Avatar label={currentUser?.name ?? "G"} image={currentUser?.image} />
 
       <div className="min-w-0 flex-1">
         <div className="relative rounded-lg bg-zinc-100 px-3 dark:bg-zinc-800">

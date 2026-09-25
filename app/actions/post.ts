@@ -122,7 +122,7 @@ export async function createComment({
   });
 
   if (!user) {
-    throw new Error("Please log in to comment.");
+    throw new Error("Log in to comment.");
   }
 
   if (prediction && !user.nationality) {
@@ -817,7 +817,9 @@ function hasTextContent(content: JSONContent): boolean {
   return content.content.some(hasTextContent);
 }
 
-export async function getMostLikedComments(): Promise<MostLikedComment[]> {
+export async function getMostLikedComments(
+  limit = 5,
+): Promise<MostLikedComment[]> {
   const comments = await prisma.comment.findMany({
     where: {
       withdrawnAt: null,
@@ -875,8 +877,8 @@ export async function getMostLikedComments(): Promise<MostLikedComment[]> {
       },
     ],
 
-    // Fetch extra because some are removed below.
-    take: 30,
+    // Fetch extras because some comments may be filtered out below.
+    take: Math.max(limit * 3, limit),
   });
 
   return comments
@@ -885,7 +887,7 @@ export async function getMostLikedComments(): Promise<MostLikedComment[]> {
 
       return hasTextContent(content) && !isDeletedCommentContent(content);
     })
-    .slice(0, 20)
+    .slice(0, limit)
     .map((comment) => ({
       ...comment,
       content: comment.content as JSONContent,

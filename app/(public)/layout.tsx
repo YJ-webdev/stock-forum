@@ -32,10 +32,6 @@ export default async function MainLayout({
 
   const [user, news, mostLikedComments, popularBoards, traders] =
     await Promise.all([
-      // -------------------------------------------------------------------------
-      // USER
-      // -------------------------------------------------------------------------
-
       session?.user?.id
         ? prisma.user.findUnique({
             where: {
@@ -55,7 +51,7 @@ export default async function MainLayout({
         : null,
 
       getNews(),
-      getMostLikedComments(),
+      getMostLikedComments(5),
       getPopularBoards(7),
       getTopBetters(5),
     ]);
