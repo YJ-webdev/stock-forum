@@ -394,7 +394,7 @@ export default function LayoutShell({
                                   text-muted-foreground/50
                                 "
                             >
-                              Top traders
+                              Leaderboard
                             </p>
                           </div>
 
