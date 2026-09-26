@@ -40,17 +40,21 @@ import { TrendSparkline } from "@/app/components/trend-sparkline";
 import { MarketComments } from "@/app/components/comment";
 import { usePointBalance } from "@/app/context/point-balance-context";
 import { countryCodeToFlag } from "@/lib/utils/nationality-flag";
+import MarketNews from "@/app/components/market-news";
+import { MarketNewsItem } from "@/app/actions/news";
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
 interface MarketPageClientProps {
   symbol: string;
   commentsPage: MarketCommentsPage;
+  latestNews: MarketNewsItem[];
 }
 
 export default function MarketPageClient({
   symbol,
   commentsPage,
+  latestNews,
 }: MarketPageClientProps) {
   const user = useCurrentUser();
   const {
@@ -378,9 +382,13 @@ export default function MarketPageClient({
   }, [selectedSymbol]);
 
   return (
-    <div className="mx-auto mt-20 max-w-4xl">
+    <div className="mx-auto mt-13 max-w-4xl">
+      {/* News */}
+      <div className="flex gap-2 mx-4 w-full self-end">
+        <MarketNews symbol={selectedSymbol} news={latestNews} />
+      </div>
       {/* Title */}
-      <div className="relative w-full space-y-2 px-4">
+      <div className="relative w-full space-y-2 px-4 mt-10">
         <div className="mt-2 flex items-baseline justify-between gap-4">
           <h1 className="text-[44px] font-bold leading-none tracking-tight text-gray-500/50 dark:text-zinc-700">
             {selectedName}

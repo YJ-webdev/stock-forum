@@ -63,6 +63,7 @@ export const ModelName = {
   CommentLike: 'CommentLike',
   ReplyLike: 'ReplyLike',
   MarketAsset: 'MarketAsset',
+  MarketNews: 'MarketNews',
   AccountBalance: 'AccountBalance',
   Watchlist: 'Watchlist',
   Notification: 'Notification',
@@ -248,11 +249,28 @@ export const MarketAssetScalarFieldEnum = {
   high: 'high',
   low: 'low',
   volume: 'volume',
+  newsLastFetchedAt: 'newsLastFetchedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type MarketAssetScalarFieldEnum = (typeof MarketAssetScalarFieldEnum)[keyof typeof MarketAssetScalarFieldEnum]
+
+
+export const MarketNewsScalarFieldEnum = {
+  id: 'id',
+  marketSymbol: 'marketSymbol',
+  title: 'title',
+  summary: 'summary',
+  source: 'source',
+  url: 'url',
+  sourceIcon: 'sourceIcon',
+  publishedAt: 'publishedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MarketNewsScalarFieldEnum = (typeof MarketNewsScalarFieldEnum)[keyof typeof MarketNewsScalarFieldEnum]
 
 
 export const AccountBalanceScalarFieldEnum = {

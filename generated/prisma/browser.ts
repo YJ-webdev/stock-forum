@@ -78,6 +78,11 @@ export type ReplyLike = Prisma.ReplyLikeModel
  */
 export type MarketAsset = Prisma.MarketAssetModel
 /**
+ * Model MarketNews
+ * 
+ */
+export type MarketNews = Prisma.MarketNewsModel
+/**
  * Model AccountBalance
  * 
  */

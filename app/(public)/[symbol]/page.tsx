@@ -1,4 +1,5 @@
 import { getMarketComments } from "@/app/actions/post";
+import { getLatestMarketNews } from "@/app/actions/news";
 import MarketPageClient from "./market-page-client";
 
 interface PageProps {
@@ -13,8 +14,13 @@ export default async function Page({ params }: PageProps) {
   const decodedSymbol = decodeURIComponent(symbol);
 
   const commentsPage = await getMarketComments(decodedSymbol);
+  const latestNews = await getLatestMarketNews(decodedSymbol, 3);
 
   return (
-    <MarketPageClient symbol={decodedSymbol} commentsPage={commentsPage} />
+    <MarketPageClient
+      symbol={decodedSymbol}
+      commentsPage={commentsPage}
+      latestNews={latestNews}
+    />
   );
 }

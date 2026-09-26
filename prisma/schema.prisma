@@ -294,9 +294,35 @@ model MarketAsset {
   watchlistItems Watchlist[]
   comments       CommentAsset[]
   predictions    Prediction[]
+   news MarketNews[]
+
+ newsLastFetchedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MarketNews {
+  id String @id @default(cuid())
+
+  marketSymbol String
+
+  title   String
+  summary String? @db.Text
+  source  String
+  url     String
+
+  sourceIcon String?
+
+  publishedAt DateTime
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  market MarketAsset @relation(fields: [marketSymbol],references: [symbol],onDelete: Cascade)
+
+  @@unique([marketSymbol, url])
+  @@index([marketSymbol, publishedAt])
+  @@index([publishedAt])
 }
 
 model AccountBalance {

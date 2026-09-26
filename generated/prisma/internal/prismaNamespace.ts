@@ -409,6 +409,7 @@ export const ModelName = {
   CommentLike: 'CommentLike',
   ReplyLike: 'ReplyLike',
   MarketAsset: 'MarketAsset',
+  MarketNews: 'MarketNews',
   AccountBalance: 'AccountBalance',
   Watchlist: 'Watchlist',
   Notification: 'Notification',
@@ -429,7 +430,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "moderationAction" | "prediction" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "accountBalance" | "watchlist" | "notification" | "pointBalance" | "pointTransaction"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "moderationAction" | "prediction" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "marketNews" | "accountBalance" | "watchlist" | "notification" | "pointBalance" | "pointTransaction"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1321,6 +1322,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MarketNews: {
+      payload: Prisma.$MarketNewsPayload<ExtArgs>
+      fields: Prisma.MarketNewsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MarketNewsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketNewsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MarketNewsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketNewsPayload>
+        }
+        findFirst: {
+          args: Prisma.MarketNewsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketNewsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MarketNewsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketNewsPayload>
+        }
+        findMany: {
+          args: Prisma.MarketNewsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketNewsPayload>[]
+        }
+        create: {
+          args: Prisma.MarketNewsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketNewsPayload>
+        }
+        createMany: {
+          args: Prisma.MarketNewsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MarketNewsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketNewsPayload>[]
+        }
+        delete: {
+          args: Prisma.MarketNewsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketNewsPayload>
+        }
+        update: {
+          args: Prisma.MarketNewsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketNewsPayload>
+        }
+        deleteMany: {
+          args: Prisma.MarketNewsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MarketNewsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MarketNewsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketNewsPayload>[]
+        }
+        upsert: {
+          args: Prisma.MarketNewsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketNewsPayload>
+        }
+        aggregate: {
+          args: Prisma.MarketNewsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMarketNews>
+        }
+        groupBy: {
+          args: Prisma.MarketNewsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MarketNewsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MarketNewsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MarketNewsCountAggregateOutputType> | number
+        }
+      }
+    }
     AccountBalance: {
       payload: Prisma.$AccountBalancePayload<ExtArgs>
       fields: Prisma.AccountBalanceFieldRefs
@@ -1892,11 +1967,28 @@ export const MarketAssetScalarFieldEnum = {
   high: 'high',
   low: 'low',
   volume: 'volume',
+  newsLastFetchedAt: 'newsLastFetchedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type MarketAssetScalarFieldEnum = (typeof MarketAssetScalarFieldEnum)[keyof typeof MarketAssetScalarFieldEnum]
+
+
+export const MarketNewsScalarFieldEnum = {
+  id: 'id',
+  marketSymbol: 'marketSymbol',
+  title: 'title',
+  summary: 'summary',
+  source: 'source',
+  url: 'url',
+  sourceIcon: 'sourceIcon',
+  publishedAt: 'publishedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MarketNewsScalarFieldEnum = (typeof MarketNewsScalarFieldEnum)[keyof typeof MarketNewsScalarFieldEnum]
 
 
 export const AccountBalanceScalarFieldEnum = {
@@ -2352,6 +2444,7 @@ export type GlobalOmitConfig = {
   commentLike?: Prisma.CommentLikeOmit
   replyLike?: Prisma.ReplyLikeOmit
   marketAsset?: Prisma.MarketAssetOmit
+  marketNews?: Prisma.MarketNewsOmit
   accountBalance?: Prisma.AccountBalanceOmit
   watchlist?: Prisma.WatchlistOmit
   notification?: Prisma.NotificationOmit

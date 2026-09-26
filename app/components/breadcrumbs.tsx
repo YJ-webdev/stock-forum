@@ -26,10 +26,6 @@ export const BreadCrumbs = () => {
   const selectedDisplaySymbol =
     matchedMarketItem?.displaySymbol ?? selectedSymbol;
 
-  // -------------------------
-  // Asset / [symbol]
-  // -------------------------
-
   const rawRouteSymbol =
     section && section !== "market" && section !== "news" ? section : null;
 
@@ -53,28 +49,14 @@ export const BreadCrumbs = () => {
     ? "General"
     : (matchedRouteItem?.displaySymbol ?? routeSymbol ?? "General");
 
-  // -------------------------
-  // Breadcrumb items
-  // -------------------------
-
   const items: { label: string; href?: string }[] = [];
 
-  // /market
   if (section === "market") {
     items.push({
       label: selectedDisplaySymbol,
     });
   }
 
-  // /news/[id]
-  if (section === "news") {
-    items.push({
-      label: "News",
-    });
-  }
-
-  // /[symbol]
-  // /[symbol]/post/[slug]
   if (routeSymbol) {
     items.push({
       label: routeDisplaySymbol,
@@ -89,10 +71,6 @@ export const BreadCrumbs = () => {
       });
     }
   }
-
-  // -------------------------
-  // Scroll border
-  // -------------------------
 
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -111,10 +89,6 @@ export const BreadCrumbs = () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-
-  // -------------------------
-  // Render
-  // -------------------------
 
   return (
     <div

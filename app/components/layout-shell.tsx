@@ -27,12 +27,10 @@ import type { MostLikedComment } from "../actions/post";
 import type { PopularBoard } from "../actions/query";
 import type { LeaderboardUser } from "../actions/leaderboard";
 
-import type { NewsItem } from "@/types";
 import type { User } from "@/types/user";
 
 interface LayoutShellProps {
   user: User | null;
-  news: NewsItem[];
   children: React.ReactNode;
   comments: MostLikedComment[];
   popularBoards: PopularBoard[];
@@ -41,7 +39,6 @@ interface LayoutShellProps {
 
 export default function LayoutShell({
   user,
-  news,
   children,
   comments,
   popularBoards,
@@ -279,7 +276,6 @@ export default function LayoutShell({
           <PanelLeft
             isOpen={isOpen}
             setIsOpen={setIsOpen}
-            news={news}
             comments={comments}
             popularBoards={popularBoards}
           />
