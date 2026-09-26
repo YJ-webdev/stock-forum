@@ -95,7 +95,7 @@ export function PredictionCommentInput({
           {/* Prediction */}
           <div className="flex items-center gap-3 pt-2">
             {/* Bull / Bear */}
-            {/* Bull / Bear */}
+
             <div
               className={` 
     relative flex h-8 w-30 items-center 
@@ -136,14 +136,13 @@ export function PredictionCommentInput({
               {/* Bull */}
               <button
                 type="button"
-                disabled={buttonDisabled}
                 onClick={() => handleDirectionClick("BULL")}
                 className={` 
       relative z-10 flex h-full flex-1 
       cursor-pointer items-center justify-center 
       rounded-full 
       transition-colors 
-      active:translate-y-0.5 
+    ${currentUser ? "" : "active:translate-y-0.5 active:scale-[0.98]"}
 
       ${direction === "BULL" ? "text-white" : "text-zinc-500"}
     `}
@@ -154,14 +153,13 @@ export function PredictionCommentInput({
               {/* Bear */}
               <button
                 type="button"
-                disabled={buttonDisabled}
                 onClick={() => handleDirectionClick("BEAR")}
                 className={` 
       relative z-10 flex h-full flex-1 
       cursor-pointer items-center justify-center 
       rounded-full 
       transition-colors 
-      active:translate-y-0.5 
+   ${currentUser ? "" : "active:translate-y-0.5 active:scale-[0.98]"}
 
       ${direction === "BEAR" ? "text-white" : "text-zinc-500"}
     `}
