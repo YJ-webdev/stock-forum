@@ -399,23 +399,6 @@ export default function LayoutShell({
                           </div>
 
                           <LeaderBoard traders={traders} />
-
-                          <div
-                            className="
-                                mx-4
-                                h-80
-                                rounded-lg
-                                border
-                                border-zinc-100
-                                p-2
-                                font-light
-                                text-zinc-300
-                                dark:border-zinc-800
-                                dark:text-zinc-700
-                              "
-                          >
-                            advertisement
-                          </div>
                         </>
                       )}
                     </div>

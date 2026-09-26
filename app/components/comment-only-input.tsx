@@ -122,10 +122,18 @@ export function CommentOnlyInput({
           {/* Comment */}
           <textarea
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            onChange={(e) => {
+              if (!currentUser) {
+                toast.error("Log in to write a comment.", {
+                  id: "login-required",
+                });
+                return;
+              }
+              setComment(e.target.value);
+            }}
+            autoFocus
             rows={1}
-            disabled={!currentUser}
-            placeholder={`${currentUser ? "Write a text to add comments..." : "Log in to comment..."}`}
+            placeholder={`${currentUser ? "Write a comment..." : "Log in to comment..."}`}
             className="
     min-h-11 w-full resize-none
     bg-transparent py-3
