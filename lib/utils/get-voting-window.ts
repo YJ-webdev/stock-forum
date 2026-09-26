@@ -6,42 +6,15 @@ const COUNTDOWN_THRESHOLD_MS = 6 * 60 * 60 * 1000;
 export type VotingCountdownType = "VOTING_OPENS" | "VOTING_CLOSES";
 
 export interface VotingWindow {
-  // true while the exchange is inside normal trading hours
   isMarketOpen: boolean;
-
-  // inverse of isMarketOpen for scheduled equity markets
   canVote: boolean;
-
-  // Timestamp the countdown is counting toward:
-  //
-  // Market closed -> next market OPEN
-  // Market open   -> current market CLOSE
   targetMs: number | null;
-
-  // The trading session this prediction belongs to.
-  //
-  // Before today's open -> today's open
-  // After today's close -> next weekday's open
-  // Weekend             -> next weekday's open
   predictionFor: Date | null;
-
-  // Only display countdown when target is <= 6 hours away
   showCountdown: boolean;
-
-  // Market closed -> "Voting closes in..."
-  // Market open   -> "Voting opens in..."
   countdownType: VotingCountdownType | null;
+  currentSessionStartMs: number | null;
 }
 
-/**
- * Creates an absolute timestamp for a wall-clock time in the
- * exchange's own timezone.
- *
- * Example:
- * timezone = "Asia/Seoul"
- * date     = 2026-09-16
- * time     = "09:00"
- */
 function getTimestampForMarketTime(
   year: number,
   month: number,
@@ -54,12 +27,34 @@ function getTimestampForMarketTime(
   return new TZDate(year, month, day, hours, minutes, 0, 0, timezone).getTime();
 }
 
-/**
- * Finds the next Monday-Friday market opening.
- *
- * For now this skips weekends only.
- * Exchange holidays / special sessions can be added later.
- */
+function getPreviousWeekdayClose(
+  nowMs: number,
+  closeTime: string,
+  timezone: string,
+): number | null {
+  const date = new TZDate(nowMs, timezone);
+
+  for (let i = 0; i < 7; i++) {
+    date.setDate(date.getDate() - 1);
+
+    const day = date.getDay();
+
+    if (day === 0 || day === 6) {
+      continue;
+    }
+
+    return getTimestampForMarketTime(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      closeTime,
+      timezone,
+    );
+  }
+
+  return null;
+}
+
 function getNextWeekdayOpen(
   nowMs: number,
   open: string,
@@ -81,8 +76,6 @@ function getNextWeekdayOpen(
 
     const dayOfWeek = date.getDay();
 
-    // Sunday = 0
-    // Saturday = 6
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       continue;
     }
@@ -99,33 +92,12 @@ function getNextWeekdayOpen(
   return null;
 }
 
-/**
- * Returns whether the countdown should currently be displayed.
- */
 function shouldShowCountdown(targetMs: number, nowMs: number): boolean {
   const remaining = targetMs - nowMs;
 
   return remaining > 0 && remaining <= COUNTDOWN_THRESHOLD_MS;
 }
 
-/**
- * Calculate the current voting state for a market.
- *
- * Voting rules:
- *
- * MARKET CLOSED
- * -> voting enabled
- * -> predictionFor = next trading session
- * -> countdown points toward market OPEN
- *
- * MARKET OPEN
- * -> voting disabled
- * -> predictionFor = current trading session
- * -> countdown points toward market CLOSE
- *
- * Countdown is only shown when the next transition is
- * 6 hours or less away.
- */
 export function getVotingWindow(
   symbol: string,
   nowMs = Date.now(),
@@ -144,6 +116,7 @@ export function getVotingWindow(
       predictionFor: null,
       showCountdown: false,
       countdownType: null,
+      currentSessionStartMs: null,
     };
   }
 
@@ -173,6 +146,12 @@ export function getVotingWindow(
       schedule.timezone,
     );
 
+    const currentSessionStartMs = getPreviousWeekdayClose(
+      nowMs,
+      schedule.close,
+      schedule.timezone,
+    );
+
     if (!nextOpenMs) {
       return {
         isMarketOpen: false,
@@ -181,6 +160,7 @@ export function getVotingWindow(
         predictionFor: null,
         showCountdown: false,
         countdownType: null,
+        currentSessionStartMs,
       };
     }
 
@@ -195,6 +175,8 @@ export function getVotingWindow(
       showCountdown: shouldShowCountdown(nextOpenMs, nowMs),
 
       countdownType: "VOTING_CLOSES",
+
+      currentSessionStartMs,
     };
   }
 
@@ -233,6 +215,12 @@ export function getVotingWindow(
   // =====================================================
 
   if (nowMs < openMs) {
+    const currentSessionStartMs = getPreviousWeekdayClose(
+      nowMs,
+      schedule.close,
+      schedule.timezone,
+    );
+
     return {
       isMarketOpen: false,
       canVote: true,
@@ -244,6 +232,8 @@ export function getVotingWindow(
       showCountdown: shouldShowCountdown(openMs, nowMs),
 
       countdownType: "VOTING_CLOSES",
+
+      currentSessionStartMs,
     };
   }
 
@@ -273,6 +263,8 @@ export function getVotingWindow(
       showCountdown: shouldShowCountdown(closeMs, nowMs),
 
       countdownType: "VOTING_OPENS",
+
+      currentSessionStartMs: null,
     };
   }
 
@@ -306,9 +298,10 @@ export function getVotingWindow(
 
       showCountdown: false,
       countdownType: null,
+
+      currentSessionStartMs: closeMs,
     };
   }
-
   return {
     isMarketOpen: false,
     canVote: true,
@@ -320,5 +313,7 @@ export function getVotingWindow(
     showCountdown: shouldShowCountdown(nextOpenMs, nowMs),
 
     countdownType: "VOTING_CLOSES",
+
+    currentSessionStartMs: closeMs,
   };
 }

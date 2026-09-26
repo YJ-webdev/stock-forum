@@ -706,6 +706,7 @@ export default function MarketPageClient({
           initialComments={commentsPage.comments}
           initialNextCursor={commentsPage.nextCursor}
           initialTotalCount={commentsPage.totalCount}
+          currentSessionStartMs={votingWindow.currentSessionStartMs}
         />
       </div>
     </div>

@@ -95,6 +95,8 @@ interface MarketCommentsProps {
   } | null;
 
   initialTotalCount: number;
+
+  currentSessionStartMs: number | null;
 }
 
 export function MarketComments({
@@ -112,6 +114,7 @@ export function MarketComments({
   initialComments,
   initialNextCursor,
   initialTotalCount,
+  currentSessionStartMs,
 }: MarketCommentsProps) {
   const user = useCurrentUser();
   const searchParams = useSearchParams();
@@ -321,20 +324,42 @@ export function MarketComments({
             No comments yet.
           </div>
         ) : (
-          comments.map((comment) => (
-            <CommentItem
-              key={comment.id}
-              comment={comment}
-              currentUser={user}
-              onUpdate={updateComment}
-              onRemove={removeComment}
-              targetCommentId={targetCommentId}
-              targetReplyId={targetReplyId}
-              shouldOpenReplies={
-                Boolean(targetReplyId) && targetCommentId === comment.id
-              }
-            />
-          ))
+          comments.map((comment, index) => {
+            const previousComment = comments[index - 1];
+
+            const isCurrentSession =
+              currentSessionStartMs !== null &&
+              new Date(comment.createdAt).getTime() >= currentSessionStartMs;
+
+            const previousIsCurrentSession =
+              currentSessionStartMs !== null &&
+              previousComment != null &&
+              new Date(previousComment.createdAt).getTime() >=
+                currentSessionStartMs;
+
+            const showSessionBoundary =
+              index > 0 && previousIsCurrentSession && !isCurrentSession;
+
+            return (
+              <div key={comment.id}>
+                {showSessionBoundary && (
+                  <div className="my-7 h-px bg-zinc-200 dark:bg-zinc-800" />
+                )}
+
+                <CommentItem
+                  comment={comment}
+                  currentUser={user}
+                  onUpdate={updateComment}
+                  onRemove={removeComment}
+                  targetCommentId={targetCommentId}
+                  targetReplyId={targetReplyId}
+                  shouldOpenReplies={
+                    Boolean(targetReplyId) && targetCommentId === comment.id
+                  }
+                />
+              </div>
+            );
+          })
         )}
       </div>
 
