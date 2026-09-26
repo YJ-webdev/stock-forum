@@ -132,11 +132,10 @@ export function MarketComments({
   const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  useEffect(() => {
-    setComments(initialComments);
-    setNextCursor(initialNextCursor);
-    setTotalCount(initialTotalCount);
-  }, [initialComments, initialNextCursor, initialTotalCount]);
+  const from = searchParams.get("from");
+
+  const highlightTargetComment =
+    from === "most-liked" && Boolean(targetCommentId);
 
   const loadMoreComments = useCallback(async () => {
     if (!nextCursor || isLoadingMore) {
@@ -253,6 +252,12 @@ export function MarketComments({
   };
 
   useEffect(() => {
+    setComments(initialComments);
+    setNextCursor(initialNextCursor);
+    setTotalCount(initialTotalCount);
+  }, [initialComments, initialNextCursor, initialTotalCount]);
+
+  useEffect(() => {
     const element = loadMoreRef.current;
 
     if (!element || !nextCursor) {
@@ -356,6 +361,7 @@ export function MarketComments({
                   shouldOpenReplies={
                     Boolean(targetReplyId) && targetCommentId === comment.id
                   }
+                  highlightTargetComment={highlightTargetComment}
                 />
               </div>
             );
@@ -400,6 +406,8 @@ interface CommentItemProps {
   targetReplyId: string | null;
   shouldOpenReplies: boolean;
 
+  highlightTargetComment: boolean;
+
   onUpdate: (commentId: string, updater: (comment: Comment) => Comment) => void;
 
   onRemove: (commentId: string) => void;
@@ -413,6 +421,7 @@ function CommentItem({
   targetCommentId,
   targetReplyId,
   shouldOpenReplies,
+  highlightTargetComment,
 }: CommentItemProps) {
   const commentRef = useRef<HTMLDivElement>(null);
 
@@ -433,6 +442,8 @@ function CommentItem({
   const isAuthor = currentUser?.id === comment.author.id;
   const replyCount = comment.replyCount;
   const username = comment.author.name ?? "Guest";
+  const isHighlighted =
+    highlightTargetComment && targetCommentId === comment.id;
 
   const isDeletedPredictionComment =
     !!comment.prediction && isDeletedPredictionContent(comment.content);
@@ -500,7 +511,7 @@ function CommentItem({
     requestAnimationFrame(() => {
       commentRef.current?.scrollIntoView({
         behavior: "smooth",
-        block: "center",
+        block: "start",
       });
     });
   }, [targetCommentId, comment.id]);
@@ -648,7 +659,13 @@ function CommentItem({
     <div
       ref={commentRef}
       id={`comment-${comment.id}`}
-      className="mb-6 scroll-mt-24"
+      className={`
+    relative mb-6 scroll-mt-24
+    rounded-xl
+    transition-colors duration-700
+
+    ${isHighlighted ? "bg-amber-50/80 dark:bg-amber-950/20" : ""}
+  `}
     >
       <div className="z-1 flex gap-3">
         <Avatar className="size-9 shrink-0">

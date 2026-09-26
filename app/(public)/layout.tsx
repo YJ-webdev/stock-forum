@@ -32,7 +32,7 @@ export default async function MainLayout({
           },
         })
       : null,
-    getMostLikedComments(5),
+    getMostLikedComments(3),
     getPopularBoards(7),
     getTopBetters(5),
   ]);

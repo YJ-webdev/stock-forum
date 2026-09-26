@@ -299,11 +299,15 @@ async function fetchRelevantMarketNews(
     });
 
     if (!response.ok) {
-      console.error(
-        "Marketaux news failed:",
-        response.status,
-        await response.text(),
-      );
+      const errorText = await response.text();
+
+      if (response.status === 402 || response.status === 429) {
+        console.warn(`Marketaux unavailable (${response.status}):`, errorText);
+
+        return [];
+      }
+
+      console.error(`Marketaux news failed (${response.status}):`, errorText);
 
       return [];
     }
@@ -370,9 +374,13 @@ export async function syncMarketNews(
     return [];
   }
 
-  // ---------------------------------------------------------------------------
-  // FETCH
-  // ---------------------------------------------------------------------------
+  if (market.newsLastFetchedAt) {
+    const elapsed = Date.now() - new Date(market.newsLastFetchedAt).getTime();
+
+    if (elapsed < NEWS_CACHE_TIME_MS) {
+      return [];
+    }
+  }
 
   let articles: MarketauxArticle[] = [];
 

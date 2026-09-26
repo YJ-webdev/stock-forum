@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { JSONContent } from "@tiptap/react";
-import { Ellipsis } from "lucide-react";
+// import { Ellipsis } from "lucide-react";
 import { RiHeartFill } from "react-icons/ri";
 import { BiSolidChat } from "react-icons/bi";
 
@@ -35,10 +35,10 @@ export function MostLikedComments({
 
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  // const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const visibleComments = comments.slice(0, visibleCount);
-  const hasMore = visibleCount < comments.length;
+  // const hasMore = visibleCount < comments.length;
 
   // Reset when comments from the server change.
   useEffect(() => {
@@ -47,34 +47,34 @@ export function MostLikedComments({
   }, [initialComments]);
 
   // Load another 5 when the dots enter the visible area.
-  useEffect(() => {
-    const target = loadMoreRef.current;
+  // useEffect(() => {
+  //   const target = loadMoreRef.current;
 
-    if (!target || !hasMore) {
-      return;
-    }
+  //   if (!target || !hasMore) {
+  //     return;
+  //   }
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) {
-          return;
-        }
+  //   const observer = new IntersectionObserver(
+  //     ([entry]) => {
+  //       if (!entry.isIntersecting) {
+  //         return;
+  //       }
 
-        setVisibleCount((current) =>
-          Math.min(current + ITEMS_PER_PAGE, comments.length),
-        );
-      },
-      {
-        rootMargin: "100px 0px",
-      },
-    );
+  //       setVisibleCount((current) =>
+  //         Math.min(current + ITEMS_PER_PAGE, comments.length),
+  //       );
+  //     },
+  //     {
+  //       rootMargin: "100px 0px",
+  //     },
+  //   );
 
-    observer.observe(target);
+  //   observer.observe(target);
 
-    return () => {
-      observer.disconnect();
-    };
-  }, [comments.length, hasMore]);
+  //   return () => {
+  //     observer.disconnect();
+  //   };
+  // }, [comments.length, hasMore]);
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -90,7 +90,9 @@ export function MostLikedComments({
         return (
           <Link
             key={comment.id}
-            href={`/${encodeURIComponent(primaryAsset.symbol)}?comment=${encodeURIComponent(comment.id)}`}
+            href={`/${encodeURIComponent(
+              primaryAsset.symbol,
+            )}?comment=${encodeURIComponent(comment.id)}&from=most-liked`}
             className="
               block rounded-xl
               bg-zinc-100/70 px-3.5 py-3.5
@@ -172,7 +174,7 @@ export function MostLikedComments({
       })}
 
       {/* Load more sentinel */}
-      {hasMore && (
+      {/* {hasMore && (
         <div
           ref={loadMoreRef}
           className="
@@ -188,7 +190,7 @@ export function MostLikedComments({
             "
           />
         </div>
-      )}
+      )} */}
     </div>
   );
 }
