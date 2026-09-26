@@ -4,13 +4,18 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PredictionDirection } from "@/generated/prisma/client";
 
-export type MarketVoteListStats = {
+export interface MarketVoteListStats {
   totalVotes: number;
   bullVotes: number;
   bearVotes: number;
   bullPercent: number;
   bearPercent: number;
-};
+
+  myPrediction: {
+    direction: "BULL" | "BEAR";
+    pointsBet: number;
+  } | null;
+}
 
 export type MarketVoteListStatsMap = Record<string, MarketVoteListStats>;
 
@@ -26,29 +31,44 @@ export async function getMarketVoteListStats({
     return {};
   }
 
-  const predictions = await prisma.prediction.groupBy({
-    by: ["symbol", "direction"],
+  const session = await auth();
 
-    where: {
-      OR: markets.map((market) => ({
-        symbol: market.symbol,
-        sessionDate: market.sessionDate,
-      })),
-    },
+  const marketConditions = markets.map((market) => ({
+    symbol: market.symbol,
+    sessionDate: market.sessionDate,
+  }));
 
-    _count: {
-      _all: true,
-    },
-  });
+  const [predictions, myPredictions] = await Promise.all([
+    prisma.prediction.groupBy({
+      by: ["symbol", "direction"],
+
+      where: {
+        OR: marketConditions,
+      },
+
+      _count: {
+        _all: true,
+      },
+    }),
+
+    session?.user?.id
+      ? prisma.prediction.findMany({
+          where: {
+            userId: session.user.id,
+            OR: marketConditions,
+          },
+
+          select: {
+            symbol: true,
+            direction: true,
+            pointsBet: true,
+          },
+        })
+      : Promise.resolve([]),
+  ]);
 
   const result: MarketVoteListStatsMap = {};
 
-  /*
-   * Initialize every requested market.
-   *
-   * This means markets with zero predictions still get
-   * a result instead of being missing from the object.
-   */
   for (const market of markets) {
     result[market.symbol] = {
       totalVotes: 0,
@@ -56,6 +76,7 @@ export async function getMarketVoteListStats({
       bearVotes: 0,
       bullPercent: 0,
       bearPercent: 0,
+      myPrediction: null,
     };
   }
 
@@ -79,10 +100,19 @@ export async function getMarketVoteListStats({
     stats.totalVotes += count;
   }
 
-  /*
-   * Calculate percentages after all groups have
-   * been accumulated.
-   */
+  for (const prediction of myPredictions) {
+    const stats = result[prediction.symbol];
+
+    if (!stats) {
+      continue;
+    }
+
+    stats.myPrediction = {
+      direction: prediction.direction,
+      pointsBet: prediction.pointsBet,
+    };
+  }
+
   for (const stats of Object.values(result)) {
     if (stats.totalVotes === 0) {
       continue;

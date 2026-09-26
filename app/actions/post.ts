@@ -107,10 +107,6 @@ export async function createComment({
     throw new Error("You must be logged in.");
   }
 
-  // ---------------------------------------------------------------------------
-  // USER
-  // ---------------------------------------------------------------------------
-
   const user = await prisma.user.findUnique({
     where: {
       id: session.user.id,
@@ -128,10 +124,6 @@ export async function createComment({
   if (prediction && !user.nationality) {
     throw new Error("Please set your nationality before voting.");
   }
-
-  // ---------------------------------------------------------------------------
-  // MARKETS
-  // ---------------------------------------------------------------------------
 
   const uniqueSymbols = [...new Set(assetSymbols)];
 
@@ -153,10 +145,6 @@ export async function createComment({
     throw new Error("A prediction must belong to exactly one market.");
   }
 
-  // ---------------------------------------------------------------------------
-  // PREDICTION VALIDATION
-  // ---------------------------------------------------------------------------
-
   if (prediction) {
     if (
       !Number.isInteger(prediction.pointsBet) ||
@@ -174,17 +162,11 @@ export async function createComment({
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // COMMENT CONTENT
-  // ---------------------------------------------------------------------------
-
   const hasContent =
     content !== null &&
     Array.isArray(content.content) &&
     content.content.length > 0;
 
-  // Normal comments require content.
-  // Predictions are allowed without comment text / GIF content.
   if (!hasContent && !prediction) {
     throw new Error("Please write a comment or select a GIF.");
   }
@@ -222,10 +204,6 @@ export async function createComment({
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // ENSURE MARKET ASSETS EXIST
-  // ---------------------------------------------------------------------------
-
   await Promise.all(
     selectedMarkets.map((market) =>
       prisma.marketAsset.upsert({
@@ -253,16 +231,8 @@ export async function createComment({
     ),
   );
 
-  // ---------------------------------------------------------------------------
-  // CREATE
-  // ---------------------------------------------------------------------------
-
   const result = await prisma.$transaction(async (tx) => {
     let createdPrediction: { id: string } | null = null;
-
-    // -------------------------------------------------------------------------
-    // PREDICTION
-    // -------------------------------------------------------------------------
 
     if (prediction) {
       const market = selectedMarkets[0];
@@ -270,10 +240,6 @@ export async function createComment({
       if (referenceClose === null) {
         throw new Error("Could not determine the previous market close.");
       }
-
-      // -----------------------------------------------------------------------
-      // ENSURE POINT BALANCE EXISTS
-      // -----------------------------------------------------------------------
 
       await tx.pointBalance.upsert({
         where: {
@@ -287,10 +253,6 @@ export async function createComment({
           points: 10000,
         },
       });
-
-      // -----------------------------------------------------------------------
-      // CREATE PREDICTION
-      // -----------------------------------------------------------------------
 
       createdPrediction = await tx.prediction.create({
         data: {
@@ -342,10 +304,6 @@ export async function createComment({
         throw new Error("You do not have enough points.");
       }
 
-      // -----------------------------------------------------------------------
-      // POINT LEDGER — BET
-      // -----------------------------------------------------------------------
-
       await tx.pointTransaction.create({
         data: {
           userId: session.user.id,
@@ -353,15 +311,10 @@ export async function createComment({
 
           type: "BET",
 
-          // Point deductions are negative ledger movements.
           amount: -prediction.pointsBet,
         },
       });
     }
-
-    // -------------------------------------------------------------------------
-    // COMMENT
-    // -------------------------------------------------------------------------
 
     let createdComment: { id: string } | null = null;
 
@@ -394,12 +347,6 @@ export async function createComment({
         },
       });
     }
-    // -------------------------------------------------------------------------
-    // CURRENT POINT BALANCE
-    //
-    // Return the authoritative balance from the DB so PointBalanceContext can
-    // synchronize the UI immediately after a successful prediction.
-    // -------------------------------------------------------------------------
 
     const pointBalance = prediction
       ? await tx.pointBalance.findUnique({
@@ -412,10 +359,6 @@ export async function createComment({
           },
         })
       : null;
-
-    // -------------------------------------------------------------------------
-    // RESULT
-    // -------------------------------------------------------------------------
 
     return {
       success: true,
@@ -446,10 +389,6 @@ export async function getMarketComments(
   const session = await auth();
   const userId = session?.user?.id;
 
-  // ---------------------------------------------------------------------------
-  // BASE FILTER
-  // ---------------------------------------------------------------------------
-
   const baseWhere = {
     assets: {
       some: {
@@ -457,10 +396,6 @@ export async function getMarketComments(
       },
     },
   };
-
-  // ---------------------------------------------------------------------------
-  // COMMENTS + TOTAL COUNT
-  // ---------------------------------------------------------------------------
 
   const [comments, totalCount] = await Promise.all([
     prisma.comment.findMany({
@@ -495,7 +430,6 @@ export async function getMarketComments(
         },
       ],
 
-      // Fetch one extra comment so we know whether another page exists.
       take: MARKET_COMMENTS_PAGE_SIZE + 1,
 
       select: {
@@ -526,10 +460,6 @@ export async function getMarketComments(
           },
         },
 
-        // ---------------------------------------------------------------------
-        // CURRENT USER'S LIKE
-        // ---------------------------------------------------------------------
-
         likes: userId
           ? {
               where: {
@@ -540,12 +470,6 @@ export async function getMarketComments(
               },
             }
           : false,
-
-        // ---------------------------------------------------------------------
-        // COUNTS ONLY
-        //
-        // Replies themselves are loaded separately when a thread is opened.
-        // ---------------------------------------------------------------------
 
         _count: {
           select: {
@@ -561,19 +485,11 @@ export async function getMarketComments(
     }),
   ]);
 
-  // ---------------------------------------------------------------------------
-  // PAGINATION
-  // ---------------------------------------------------------------------------
-
   const hasMore = comments.length > MARKET_COMMENTS_PAGE_SIZE;
 
   const page = hasMore
     ? comments.slice(0, MARKET_COMMENTS_PAGE_SIZE)
     : comments;
-
-  // ---------------------------------------------------------------------------
-  // NORMALIZE
-  // ---------------------------------------------------------------------------
 
   const normalizedComments = page.map((comment) => {
     const { _count, likes, ...rest } = comment;

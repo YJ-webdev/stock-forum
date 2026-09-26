@@ -225,6 +225,8 @@ function RelativeStockRow({
   };
 
   const hasVotes = (voteStats?.totalVotes ?? 0) > 0;
+  const myPrediction = voteStats?.myPrediction ?? null;
+  const hasVoted = myPrediction !== null;
 
   /*
    * The width itself communicates sentiment.
@@ -369,34 +371,59 @@ function RelativeStockRow({
       {/* Action */}
       <td className="w-[11%] py-3 pr-3 text-center md:w-[8%] md:px-2 md:py-3.5">
         <div
-          title={canVote ? "Voting is open" : "Voting is closed"}
+          title={
+            hasVoted
+              ? `You voted ${myPrediction.direction} · ${myPrediction.pointsBet} pts`
+              : canVote
+                ? "Voting is open"
+                : "Voting is closed"
+          }
           className="relative mx-auto w-fit"
         >
           <MdOutlineHowToVote
             className={`
-              h-5 w-5
-              transition-colors
-              ${
-                canVote
-                  ? "text-zinc-700 dark:text-zinc-300"
-                  : "text-zinc-400 dark:text-zinc-600"
-              }
-            `}
+        h-5 w-5
+        transition-colors
+
+        ${
+          canVote
+            ? "text-zinc-700 dark:text-zinc-300"
+            : "text-zinc-400 dark:text-zinc-600"
+        }
+      `}
           />
 
-          {/* Voting-open indicator */}
-          {canVote && (
+          {/* Already voted */}
+          {hasVoted ? (
             <span
-              className="
-                absolute
-                -right-1 -top-1
-                h-2 w-2
-                rounded-full
-                bg-emerald-500
-                ring-2 ring-white
-                dark:ring-zinc-900
-              "
-            />
+              className={`
+      absolute
+      -right-2 -top-2
+      flex h-4 w-4
+      items-center justify-center
+
+      ${
+        myPrediction.direction === "BULL" ? "text-emerald-500" : "text-rose-500"
+      }
+    `}
+            >
+              ✘
+            </span>
+          ) : (
+            canVote && (
+              <span
+                className="
+        absolute
+        -right-1 -top-1
+        h-2 w-2
+        rounded-full
+        bg-emerald-500
+        ring-2 ring-white
+        dark:ring-zinc-900
+        pulse-animation
+      "
+              />
+            )
           )}
         </div>
       </td>
