@@ -262,9 +262,10 @@ export const MarketNewsScalarFieldEnum = {
   marketSymbol: 'marketSymbol',
   title: 'title',
   summary: 'summary',
+  imageUrl: 'imageUrl',
   source: 'source',
-  url: 'url',
   sourceIcon: 'sourceIcon',
+  url: 'url',
   publishedAt: 'publishedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

@@ -308,10 +308,12 @@ model MarketNews {
 
   title   String
   summary String? @db.Text
-  source  String
-  url     String
+    imageUrl String?
 
+
+  source  String
   sourceIcon String?
+  url     String
 
   publishedAt DateTime
 

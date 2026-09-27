@@ -46,6 +46,7 @@ export interface MarketNewsItem {
 
   title: string;
   summary: string | null;
+  imageUrl: string | null;
 
   source: string;
   sourceIcon: string | null;
@@ -64,11 +65,10 @@ const NEWS_CACHE_TIME_MS = 6 * 60 * 60 * 1000; // 6 hours
 const NEWS_HISTORY_DAYS = 7;
 
 const MARKET_PAGE_NEWS_LIMIT = 3;
-const MARKET_NEWS_PAGE_LIMIT = 21;
 
 // Fetch more candidates than we display because some will be rejected by
 // our relevance filter.
-const MARKETAUX_CANDIDATE_LIMIT = 10;
+const MARKETAUX_CANDIDATE_LIMIT = 3;
 
 // -----------------------------------------------------------------------------
 // HELPERS
@@ -443,9 +443,9 @@ export async function syncMarketNews(
         update: {
           title: article.title,
           summary: cleanSummary(article),
+          imageUrl: article.image_url ?? null,
 
           source: article.source || "Market News",
-
           sourceIcon: getSourceIcon(article.url),
 
           publishedAt,
@@ -456,9 +456,9 @@ export async function syncMarketNews(
 
           title: article.title,
           summary: cleanSummary(article),
+          imageUrl: article.image_url ?? null,
 
           source: article.source || "Market News",
-
           sourceIcon: getSourceIcon(article.url),
 
           url: article.url,
@@ -507,17 +507,11 @@ export async function getLatestMarketNews(
   });
 }
 
-// -----------------------------------------------------------------------------
-// MARKET NEWS PAGE
-//
-// Used on:
-// /[asset]/news
-//
-// Last 7 days, maximum 21 stored articles.
-// -----------------------------------------------------------------------------
-
-export async function getMarketNews(symbol: string): Promise<MarketNewsItem[]> {
-  await syncMarketNews(symbol, MARKET_NEWS_PAGE_LIMIT);
+export async function getMarketNews(
+  symbol: string,
+  limit = 21,
+): Promise<MarketNewsItem[]> {
+  await syncMarketNews(symbol, limit);
 
   return prisma.marketNews.findMany({
     where: {
@@ -532,6 +526,6 @@ export async function getMarketNews(symbol: string): Promise<MarketNewsItem[]> {
       publishedAt: "desc",
     },
 
-    take: MARKET_NEWS_PAGE_LIMIT,
+    take: limit,
   });
 }

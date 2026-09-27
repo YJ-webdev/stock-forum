@@ -29,9 +29,10 @@ export type MarketNewsMinAggregateOutputType = {
   marketSymbol: string | null
   title: string | null
   summary: string | null
+  imageUrl: string | null
   source: string | null
-  url: string | null
   sourceIcon: string | null
+  url: string | null
   publishedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -42,9 +43,10 @@ export type MarketNewsMaxAggregateOutputType = {
   marketSymbol: string | null
   title: string | null
   summary: string | null
+  imageUrl: string | null
   source: string | null
-  url: string | null
   sourceIcon: string | null
+  url: string | null
   publishedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -55,9 +57,10 @@ export type MarketNewsCountAggregateOutputType = {
   marketSymbol: number
   title: number
   summary: number
+  imageUrl: number
   source: number
-  url: number
   sourceIcon: number
+  url: number
   publishedAt: number
   createdAt: number
   updatedAt: number
@@ -70,9 +73,10 @@ export type MarketNewsMinAggregateInputType = {
   marketSymbol?: true
   title?: true
   summary?: true
+  imageUrl?: true
   source?: true
-  url?: true
   sourceIcon?: true
+  url?: true
   publishedAt?: true
   createdAt?: true
   updatedAt?: true
@@ -83,9 +87,10 @@ export type MarketNewsMaxAggregateInputType = {
   marketSymbol?: true
   title?: true
   summary?: true
+  imageUrl?: true
   source?: true
-  url?: true
   sourceIcon?: true
+  url?: true
   publishedAt?: true
   createdAt?: true
   updatedAt?: true
@@ -96,9 +101,10 @@ export type MarketNewsCountAggregateInputType = {
   marketSymbol?: true
   title?: true
   summary?: true
+  imageUrl?: true
   source?: true
-  url?: true
   sourceIcon?: true
+  url?: true
   publishedAt?: true
   createdAt?: true
   updatedAt?: true
@@ -182,9 +188,10 @@ export type MarketNewsGroupByOutputType = {
   marketSymbol: string
   title: string
   summary: string | null
+  imageUrl: string | null
   source: string
-  url: string
   sourceIcon: string | null
+  url: string
   publishedAt: Date
   createdAt: Date
   updatedAt: Date
@@ -216,9 +223,10 @@ export type MarketNewsWhereInput = {
   marketSymbol?: Prisma.StringFilter<"MarketNews"> | string
   title?: Prisma.StringFilter<"MarketNews"> | string
   summary?: Prisma.StringNullableFilter<"MarketNews"> | string | null
+  imageUrl?: Prisma.StringNullableFilter<"MarketNews"> | string | null
   source?: Prisma.StringFilter<"MarketNews"> | string
-  url?: Prisma.StringFilter<"MarketNews"> | string
   sourceIcon?: Prisma.StringNullableFilter<"MarketNews"> | string | null
+  url?: Prisma.StringFilter<"MarketNews"> | string
   publishedAt?: Prisma.DateTimeFilter<"MarketNews"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"MarketNews"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MarketNews"> | Date | string
@@ -230,9 +238,10 @@ export type MarketNewsOrderByWithRelationInput = {
   marketSymbol?: Prisma.SortOrder
   title?: Prisma.SortOrder
   summary?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   source?: Prisma.SortOrder
-  url?: Prisma.SortOrder
   sourceIcon?: Prisma.SortOrderInput | Prisma.SortOrder
+  url?: Prisma.SortOrder
   publishedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -248,9 +257,10 @@ export type MarketNewsWhereUniqueInput = Prisma.AtLeast<{
   marketSymbol?: Prisma.StringFilter<"MarketNews"> | string
   title?: Prisma.StringFilter<"MarketNews"> | string
   summary?: Prisma.StringNullableFilter<"MarketNews"> | string | null
+  imageUrl?: Prisma.StringNullableFilter<"MarketNews"> | string | null
   source?: Prisma.StringFilter<"MarketNews"> | string
-  url?: Prisma.StringFilter<"MarketNews"> | string
   sourceIcon?: Prisma.StringNullableFilter<"MarketNews"> | string | null
+  url?: Prisma.StringFilter<"MarketNews"> | string
   publishedAt?: Prisma.DateTimeFilter<"MarketNews"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"MarketNews"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MarketNews"> | Date | string
@@ -262,9 +272,10 @@ export type MarketNewsOrderByWithAggregationInput = {
   marketSymbol?: Prisma.SortOrder
   title?: Prisma.SortOrder
   summary?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   source?: Prisma.SortOrder
-  url?: Prisma.SortOrder
   sourceIcon?: Prisma.SortOrderInput | Prisma.SortOrder
+  url?: Prisma.SortOrder
   publishedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -281,9 +292,10 @@ export type MarketNewsScalarWhereWithAggregatesInput = {
   marketSymbol?: Prisma.StringWithAggregatesFilter<"MarketNews"> | string
   title?: Prisma.StringWithAggregatesFilter<"MarketNews"> | string
   summary?: Prisma.StringNullableWithAggregatesFilter<"MarketNews"> | string | null
+  imageUrl?: Prisma.StringNullableWithAggregatesFilter<"MarketNews"> | string | null
   source?: Prisma.StringWithAggregatesFilter<"MarketNews"> | string
-  url?: Prisma.StringWithAggregatesFilter<"MarketNews"> | string
   sourceIcon?: Prisma.StringNullableWithAggregatesFilter<"MarketNews"> | string | null
+  url?: Prisma.StringWithAggregatesFilter<"MarketNews"> | string
   publishedAt?: Prisma.DateTimeWithAggregatesFilter<"MarketNews"> | Date | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"MarketNews"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"MarketNews"> | Date | string
@@ -293,9 +305,10 @@ export type MarketNewsCreateInput = {
   id?: string
   title: string
   summary?: string | null
+  imageUrl?: string | null
   source: string
-  url: string
   sourceIcon?: string | null
+  url: string
   publishedAt: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -307,9 +320,10 @@ export type MarketNewsUncheckedCreateInput = {
   marketSymbol: string
   title: string
   summary?: string | null
+  imageUrl?: string | null
   source: string
-  url: string
   sourceIcon?: string | null
+  url: string
   publishedAt: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -319,9 +333,10 @@ export type MarketNewsUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
-  url?: Prisma.StringFieldUpdateOperationsInput | string
   sourceIcon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  url?: Prisma.StringFieldUpdateOperationsInput | string
   publishedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -333,9 +348,10 @@ export type MarketNewsUncheckedUpdateInput = {
   marketSymbol?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
-  url?: Prisma.StringFieldUpdateOperationsInput | string
   sourceIcon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  url?: Prisma.StringFieldUpdateOperationsInput | string
   publishedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -346,9 +362,10 @@ export type MarketNewsCreateManyInput = {
   marketSymbol: string
   title: string
   summary?: string | null
+  imageUrl?: string | null
   source: string
-  url: string
   sourceIcon?: string | null
+  url: string
   publishedAt: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -358,9 +375,10 @@ export type MarketNewsUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
-  url?: Prisma.StringFieldUpdateOperationsInput | string
   sourceIcon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  url?: Prisma.StringFieldUpdateOperationsInput | string
   publishedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -371,9 +389,10 @@ export type MarketNewsUncheckedUpdateManyInput = {
   marketSymbol?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
-  url?: Prisma.StringFieldUpdateOperationsInput | string
   sourceIcon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  url?: Prisma.StringFieldUpdateOperationsInput | string
   publishedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -399,9 +418,10 @@ export type MarketNewsCountOrderByAggregateInput = {
   marketSymbol?: Prisma.SortOrder
   title?: Prisma.SortOrder
   summary?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
   source?: Prisma.SortOrder
-  url?: Prisma.SortOrder
   sourceIcon?: Prisma.SortOrder
+  url?: Prisma.SortOrder
   publishedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -412,9 +432,10 @@ export type MarketNewsMaxOrderByAggregateInput = {
   marketSymbol?: Prisma.SortOrder
   title?: Prisma.SortOrder
   summary?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
   source?: Prisma.SortOrder
-  url?: Prisma.SortOrder
   sourceIcon?: Prisma.SortOrder
+  url?: Prisma.SortOrder
   publishedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -425,9 +446,10 @@ export type MarketNewsMinOrderByAggregateInput = {
   marketSymbol?: Prisma.SortOrder
   title?: Prisma.SortOrder
   summary?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
   source?: Prisma.SortOrder
-  url?: Prisma.SortOrder
   sourceIcon?: Prisma.SortOrder
+  url?: Prisma.SortOrder
   publishedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -479,9 +501,10 @@ export type MarketNewsCreateWithoutMarketInput = {
   id?: string
   title: string
   summary?: string | null
+  imageUrl?: string | null
   source: string
-  url: string
   sourceIcon?: string | null
+  url: string
   publishedAt: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -491,9 +514,10 @@ export type MarketNewsUncheckedCreateWithoutMarketInput = {
   id?: string
   title: string
   summary?: string | null
+  imageUrl?: string | null
   source: string
-  url: string
   sourceIcon?: string | null
+  url: string
   publishedAt: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -533,9 +557,10 @@ export type MarketNewsScalarWhereInput = {
   marketSymbol?: Prisma.StringFilter<"MarketNews"> | string
   title?: Prisma.StringFilter<"MarketNews"> | string
   summary?: Prisma.StringNullableFilter<"MarketNews"> | string | null
+  imageUrl?: Prisma.StringNullableFilter<"MarketNews"> | string | null
   source?: Prisma.StringFilter<"MarketNews"> | string
-  url?: Prisma.StringFilter<"MarketNews"> | string
   sourceIcon?: Prisma.StringNullableFilter<"MarketNews"> | string | null
+  url?: Prisma.StringFilter<"MarketNews"> | string
   publishedAt?: Prisma.DateTimeFilter<"MarketNews"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"MarketNews"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MarketNews"> | Date | string
@@ -545,9 +570,10 @@ export type MarketNewsCreateManyMarketInput = {
   id?: string
   title: string
   summary?: string | null
+  imageUrl?: string | null
   source: string
-  url: string
   sourceIcon?: string | null
+  url: string
   publishedAt: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -557,9 +583,10 @@ export type MarketNewsUpdateWithoutMarketInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
-  url?: Prisma.StringFieldUpdateOperationsInput | string
   sourceIcon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  url?: Prisma.StringFieldUpdateOperationsInput | string
   publishedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -569,9 +596,10 @@ export type MarketNewsUncheckedUpdateWithoutMarketInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
-  url?: Prisma.StringFieldUpdateOperationsInput | string
   sourceIcon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  url?: Prisma.StringFieldUpdateOperationsInput | string
   publishedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -581,9 +609,10 @@ export type MarketNewsUncheckedUpdateManyWithoutMarketInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
-  url?: Prisma.StringFieldUpdateOperationsInput | string
   sourceIcon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  url?: Prisma.StringFieldUpdateOperationsInput | string
   publishedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -596,9 +625,10 @@ export type MarketNewsSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   marketSymbol?: boolean
   title?: boolean
   summary?: boolean
+  imageUrl?: boolean
   source?: boolean
-  url?: boolean
   sourceIcon?: boolean
+  url?: boolean
   publishedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -610,9 +640,10 @@ export type MarketNewsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   marketSymbol?: boolean
   title?: boolean
   summary?: boolean
+  imageUrl?: boolean
   source?: boolean
-  url?: boolean
   sourceIcon?: boolean
+  url?: boolean
   publishedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -624,9 +655,10 @@ export type MarketNewsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   marketSymbol?: boolean
   title?: boolean
   summary?: boolean
+  imageUrl?: boolean
   source?: boolean
-  url?: boolean
   sourceIcon?: boolean
+  url?: boolean
   publishedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -638,15 +670,16 @@ export type MarketNewsSelectScalar = {
   marketSymbol?: boolean
   title?: boolean
   summary?: boolean
+  imageUrl?: boolean
   source?: boolean
-  url?: boolean
   sourceIcon?: boolean
+  url?: boolean
   publishedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type MarketNewsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "marketSymbol" | "title" | "summary" | "source" | "url" | "sourceIcon" | "publishedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["marketNews"]>
+export type MarketNewsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "marketSymbol" | "title" | "summary" | "imageUrl" | "source" | "sourceIcon" | "url" | "publishedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["marketNews"]>
 export type MarketNewsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   market?: boolean | Prisma.MarketAssetDefaultArgs<ExtArgs>
 }
@@ -667,9 +700,10 @@ export type $MarketNewsPayload<ExtArgs extends runtime.Types.Extensions.Internal
     marketSymbol: string
     title: string
     summary: string | null
+    imageUrl: string | null
     source: string
-    url: string
     sourceIcon: string | null
+    url: string
     publishedAt: Date
     createdAt: Date
     updatedAt: Date
@@ -1101,9 +1135,10 @@ export interface MarketNewsFieldRefs {
   readonly marketSymbol: Prisma.FieldRef<"MarketNews", 'String'>
   readonly title: Prisma.FieldRef<"MarketNews", 'String'>
   readonly summary: Prisma.FieldRef<"MarketNews", 'String'>
+  readonly imageUrl: Prisma.FieldRef<"MarketNews", 'String'>
   readonly source: Prisma.FieldRef<"MarketNews", 'String'>
-  readonly url: Prisma.FieldRef<"MarketNews", 'String'>
   readonly sourceIcon: Prisma.FieldRef<"MarketNews", 'String'>
+  readonly url: Prisma.FieldRef<"MarketNews", 'String'>
   readonly publishedAt: Prisma.FieldRef<"MarketNews", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"MarketNews", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"MarketNews", 'DateTime'>
