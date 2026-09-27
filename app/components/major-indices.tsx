@@ -3,12 +3,7 @@
 import { Globe, Plus } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-
-interface PopularBoard {
-  symbol: string;
-  name: string;
-  commentCount: number;
-}
+import { PopularBoard } from "../actions/query";
 
 interface PopularBoardsProps {
   boards: PopularBoard[];
@@ -91,15 +86,15 @@ export function PopularBoards({ boards }: PopularBoardsProps) {
             {/* Right side */}
             <div className="ml-2 flex shrink-0 items-center justify-end">
               {/* Comment count */}
-              {item.commentCount > 0 && (
+              {item.newCommentCount > 0 && (
                 <span
-                  className={`
-                    jakarta text-[12px] font-light
-                    text-zinc-600 dark:text-zinc-500
-                    group-hover:hidden
-                  `}
+                  className="
+      jakarta text-[12px] font-light
+      text-zinc-600 dark:text-zinc-500
+      group-hover:hidden
+    "
                 >
-                  {item.commentCount} New
+                  New {item.newCommentCount}
                 </span>
               )}
 

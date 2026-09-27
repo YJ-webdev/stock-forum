@@ -345,6 +345,8 @@ export default function UserMenu({
                     fill-amber-100
                     dark:text-zinc-300
                     dark:fill-amber-200
+
+                  hover:animate-[bell-ring_1s_ease-in-out_infinite]
                   "
                 />
               )}

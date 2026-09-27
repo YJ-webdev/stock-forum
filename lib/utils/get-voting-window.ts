@@ -264,7 +264,7 @@ export function getVotingWindow(
 
       countdownType: "VOTING_OPENS",
 
-      currentSessionStartMs: null,
+      currentSessionStartMs: openMs,
     };
   }
 
