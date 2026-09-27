@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { createReply } from "@/app/actions/post";
 import { GifPicker, type GifResult } from "@/app/components/gif-picker";
+import { MarketReply } from "./comment";
 
 interface ReplyInputProps {
   commentId: string;
@@ -19,7 +20,7 @@ interface ReplyInputProps {
   } | null;
 
   onCancel: () => void;
-  onReplyCreated: (replyId: string) => Promise<void>;
+  onReplyCreated: (reply: MarketReply) => void | Promise<void>;
 }
 
 export function ReplyInput({
@@ -58,7 +59,14 @@ export function ReplyInput({
         setSelectedGif(null);
         setGifPickerOpen(false);
 
-        await onReplyCreated(result.reply.id);
+        const newReply: MarketReply = {
+          ...result.reply,
+          likeCount: 0,
+          likedByMe: false,
+          replyCount: 0,
+        };
+
+        await onReplyCreated(newReply);
 
         toast.success("Reply posted.");
       } catch (error) {

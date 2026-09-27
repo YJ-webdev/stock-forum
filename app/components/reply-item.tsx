@@ -25,13 +25,12 @@ interface ReplyItemProps {
   } | null;
 
   onReplyUpdated: () => Promise<void>;
+  onReplyCreated: (reply: MarketReply) => void;
 
   replies: MarketReply[];
 
   depth?: number;
-
   isLast?: boolean;
-
   targetReplyId?: string | null;
 }
 
@@ -39,6 +38,7 @@ export function ReplyItem({
   reply,
   currentUser,
   onReplyUpdated,
+  onReplyCreated,
   replies,
   depth = 0,
   isLast = false,
@@ -407,28 +407,19 @@ export function ReplyItem({
               username={username}
               currentUser={currentUser}
               onCancel={() => setShowReplyInput(false)}
-              onReplyCreated={async (newReplyId) => {
-                // Close reply input.
+              onReplyCreated={(newReply) => {
                 setShowReplyInput(false);
-
-                // Open this reply's child thread.
                 setChildrenCollapsed(false);
 
-                // Refresh replies so the newly created reply is rendered.
-                await onReplyUpdated();
+                onReplyCreated(newReply);
 
-                // Wait for React to render the new reply, then scroll to it.
                 requestAnimationFrame(() => {
-                  requestAnimationFrame(() => {
-                    const element = document.getElementById(
-                      `reply-${newReplyId}`,
-                    );
-
-                    element?.scrollIntoView({
+                  document
+                    .getElementById(`reply-${newReply.id}`)
+                    ?.scrollIntoView({
                       behavior: "smooth",
                       block: "center",
                     });
-                  });
                 });
               }}
             />
@@ -594,6 +585,7 @@ export function ReplyItem({
                         replies={replies}
                         currentUser={currentUser}
                         onReplyUpdated={onReplyUpdated}
+                        onReplyCreated={onReplyCreated}
                         depth={depth + 1}
                         targetReplyId={targetReplyId}
                       />

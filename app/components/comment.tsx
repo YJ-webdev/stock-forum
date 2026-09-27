@@ -432,6 +432,7 @@ function CommentItem({
   const [replies, setReplies] = useState<MarketReply[]>([]);
   const [repliesLoaded, setRepliesLoaded] = useState(false);
   const [repliesLoading, setRepliesLoading] = useState(false);
+
   const [threadHovered, setThreadHovered] = useState(false);
   const [replying, setReplying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -596,6 +597,15 @@ function CommentItem({
     } finally {
       setIsModerating(false);
     }
+  };
+
+  const handleReplyCreated = (newReply: MarketReply) => {
+    setReplies((current) => [...current, newReply]);
+
+    onUpdate(comment.id, (current) => ({
+      ...current,
+      replyCount: current.replyCount + 1,
+    }));
   };
 
   const handleRestoreComment = async () => {
@@ -822,19 +832,15 @@ function CommentItem({
             {!comment.moderatedAt && replying && (
               <ReplyInput
                 commentId={comment.id}
+                parentId={null}
                 username={username}
                 currentUser={currentUser}
                 onCancel={() => setReplying(false)}
-                onReplyCreated={async () => {
+                onReplyCreated={(newReply) => {
                   setReplying(false);
                   setShowReplies(true);
 
-                  await loadReplies();
-
-                  onUpdate(comment.id, (current) => ({
-                    ...current,
-                    replyCount: current.replyCount + 1,
-                  }));
+                  handleReplyCreated(newReply);
                 }}
               />
             )}
@@ -920,13 +926,13 @@ function CommentItem({
                     -translate-x-2
                     flex items-center gap-2
                     rounded-xl
-                    bg-white
+                  
                     px-2
                     text-sm font-semibold
                     text-zinc-600
                     hover:text-zinc-900
                     disabled:cursor-default
-                    dark:bg-zinc-900
+                
                     dark:text-zinc-400
                     dark:hover:text-zinc-200
                   "
@@ -1037,14 +1043,12 @@ function CommentItem({
                                 `}
                           />
                         </button>
-
                         <ReplyItem
                           reply={reply}
                           replies={replies}
                           currentUser={currentUser}
-                          onReplyUpdated={async () => {
-                            await loadReplies();
-                          }}
+                          onReplyUpdated={loadReplies}
+                          onReplyCreated={handleReplyCreated}
                           depth={0}
                           targetReplyId={targetReplyId}
                         />
