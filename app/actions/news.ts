@@ -61,7 +61,7 @@ export interface MarketNewsItem {
 
 const MARKETAUX_URL = "https://api.marketaux.com/v1/news/all";
 
-const NEWS_CACHE_TIME_MS = 6 * 60 * 60 * 1000; // 6 hours
+const NEWS_CACHE_TIME_MS = 24 * 60 * 60 * 1000; // 24 hours
 const NEWS_HISTORY_DAYS = 7;
 
 const MARKET_PAGE_NEWS_LIMIT = 3;
