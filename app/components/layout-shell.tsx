@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+
 import type { PanelImperativeHandle } from "react-resizable-panels";
 
 import { Navbar } from "./navbar";
@@ -53,6 +54,7 @@ export default function LayoutShell({
   const [notificationRefreshKey, setNotificationRefreshKey] = useState(0);
 
   const pathname = usePathname();
+
   const sectionBRef = useRef<HTMLDivElement>(null);
   const panelBRef = useRef<PanelImperativeHandle>(null);
 
@@ -63,7 +65,15 @@ export default function LayoutShell({
 
   const [isMobileLayout, setIsMobileLayout] = useState(false);
 
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
   const isMobile = () => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
     return window.innerWidth < 768;
   };
 
@@ -81,6 +91,10 @@ export default function LayoutShell({
     panelBRef.current?.resize("30%");
   };
 
+  // ---------------------------------------------------------------------------
+  // Left panel
+  // ---------------------------------------------------------------------------
+
   const handleToggleLeftPanel = () => {
     setIsOpen((prev) => !prev);
 
@@ -88,6 +102,10 @@ export default function LayoutShell({
       closeSectionB();
     }
   };
+
+  // ---------------------------------------------------------------------------
+  // Section B
+  // ---------------------------------------------------------------------------
 
   const handleWrite = () => {
     if (isMobile()) {
@@ -129,6 +147,10 @@ export default function LayoutShell({
 
   const mobilePanelOpen =
     isMobileLayout && !!user && (onWrite || onAccount || onNotification);
+
+  // ---------------------------------------------------------------------------
+  // Responsive layout
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     type LayoutMode = "mobile" | "tablet" | "desktop";
@@ -188,6 +210,10 @@ export default function LayoutShell({
     };
   }, []);
 
+  // ---------------------------------------------------------------------------
+  // Keyboard shortcuts
+  // ---------------------------------------------------------------------------
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -230,6 +256,13 @@ export default function LayoutShell({
     };
   }, [isOpen, onWrite, onAccount, onNotification]);
 
+  // ---------------------------------------------------------------------------
+  // Keep the fixed desktop Section B aligned with ResizablePanel.
+  //
+  // ResizeObserver can fire many times while the left panel is animating.
+  // requestAnimationFrame limits React state updates to once per frame.
+  // ---------------------------------------------------------------------------
+
   useEffect(() => {
     const panel = sectionBRef.current;
 
@@ -237,12 +270,32 @@ export default function LayoutShell({
       return;
     }
 
-    const updatePosition = () => {
-      const rect = panel.getBoundingClientRect();
+    let frameId: number | null = null;
 
-      setSectionBPosition({
-        left: rect.left,
-        width: rect.width,
+    const updatePosition = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+
+      frameId = requestAnimationFrame(() => {
+        const rect = panel.getBoundingClientRect();
+
+        setSectionBPosition((previous) => {
+          // Avoid a React render when nothing actually changed.
+          if (
+            Math.abs(previous.left - rect.left) < 0.5 &&
+            Math.abs(previous.width - rect.width) < 0.5
+          ) {
+            return previous;
+          }
+
+          return {
+            left: rect.left,
+            width: rect.width,
+          };
+        });
+
+        frameId = null;
       });
     };
 
@@ -258,13 +311,25 @@ export default function LayoutShell({
       observer.disconnect();
 
       window.removeEventListener("resize", updatePosition);
+
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
     };
   }, []);
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   return (
     <UserProvider user={user}>
       <PointBalanceProvider>
         <div className="relative flex min-h-screen flex-col">
+          {/* ---------------------------------------------------------------- */}
+          {/* Navbar                                                           */}
+          {/* ---------------------------------------------------------------- */}
+
           <Navbar
             user={user}
             onTogglePanel={handleToggleLeftPanel}
@@ -273,6 +338,10 @@ export default function LayoutShell({
             onNotification={handleNotification}
           />
 
+          {/* ---------------------------------------------------------------- */}
+          {/* Left panel                                                       */}
+          {/* ---------------------------------------------------------------- */}
+
           <PanelLeft
             isOpen={isOpen}
             setIsOpen={setIsOpen}
@@ -280,18 +349,31 @@ export default function LayoutShell({
             popularBoards={popularBoards}
           />
 
+          {/* ---------------------------------------------------------------- */}
+          {/* Main layout                                                      */}
+          {/* ---------------------------------------------------------------- */}
+
           <div
             className={`
               w-full
               pt-14
-              transition-all
-              duration-300
-              ease-in-out
 
-              ${isOpen ? "xl:ml-80 xl:w-[calc(100%-320px)]" : "ml-0 w-full"}
+              transition-[margin-left,width]
+              duration-300
+              ease-out
+
+              ${
+                isOpen
+                  ? "xl:ml-80 xl:w-[calc(100%-320px)]"
+                  : "xl:ml-0 xl:w-full"
+              }
             `}
           >
             <ResizablePanelGroup orientation="horizontal">
+              {/* ------------------------------------------------------------ */}
+              {/* Main content                                                 */}
+              {/* ------------------------------------------------------------ */}
+
               <ResizablePanel minSize="30%">
                 <section
                   className="
@@ -311,6 +393,10 @@ export default function LayoutShell({
                 </section>
               </ResizablePanel>
 
+              {/* ------------------------------------------------------------ */}
+              {/* Resize handle                                                */}
+              {/* ------------------------------------------------------------ */}
+
               <ResizableHandle
                 className="
                   hidden
@@ -319,6 +405,10 @@ export default function LayoutShell({
                   md:flex
                 "
               />
+
+              {/* ------------------------------------------------------------ */}
+              {/* Desktop Section B                                            */}
+              {/* ------------------------------------------------------------ */}
 
               <ResizablePanel
                 panelRef={panelBRef}
@@ -363,13 +453,19 @@ export default function LayoutShell({
                         width: sectionBPosition.width,
                       }}
                     >
+                      {/* Write */}
+
                       {user && onWrite && (
                         <PostEditor setOnWrite={setOnWrite} />
                       )}
 
+                      {/* Account */}
+
                       {user && onAccount && !onWrite && (
                         <AccountPanel user={user} setOnAccount={setOnAccount} />
                       )}
+
+                      {/* Notifications */}
 
                       {user && onNotification && (
                         <NotificationPanel
@@ -378,17 +474,19 @@ export default function LayoutShell({
                         />
                       )}
 
+                      {/* Default right panel */}
+
                       {!onWrite && !onAccount && !onNotification && (
                         <>
                           <div className="mx-4 mt-8">
                             <p
                               className="
-                                  truncate
-                                  text-xs
-                                  font-light
-                                  tracking-wider
-                                  text-muted-foreground/50
-                                "
+                                truncate
+                                text-xs
+                                font-light
+                                tracking-wider
+                                text-muted-foreground/50
+                              "
                             >
                               Leaderboard
                             </p>
@@ -404,6 +502,10 @@ export default function LayoutShell({
             </ResizablePanelGroup>
           </div>
 
+          {/* ---------------------------------------------------------------- */}
+          {/* Mobile Section B overlay                                         */}
+          {/* ---------------------------------------------------------------- */}
+
           {mobilePanelOpen && (
             <div
               className="
@@ -412,6 +514,7 @@ export default function LayoutShell({
                 right-0
                 bottom-0
                 left-0
+
                 z-40
 
                 flex

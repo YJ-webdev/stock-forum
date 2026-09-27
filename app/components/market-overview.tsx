@@ -199,7 +199,7 @@ export default function MarketOverview() {
   };
 
   return (
-    <div className="w-full max-w-6xl pt-4">
+    <div className="w-full max-w-6xl pt-4 mx-auto">
       {/* Navigation & Controls */}
       <div className="flex items-center justify-between mb-4">
         {/* Tab Navigation */}
