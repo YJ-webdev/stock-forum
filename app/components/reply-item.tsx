@@ -391,6 +391,7 @@ export function ReplyItem({
                   text-sm font-medium text-zinc-500
                   hover:text-zinc-900
                   dark:hover:text-zinc-200
+                  cursor-pointer
                 "
               >
                 Reply

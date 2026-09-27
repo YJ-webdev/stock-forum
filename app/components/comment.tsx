@@ -822,6 +822,7 @@ function CommentItem({
     text-sm font-medium text-zinc-500
     hover:text-zinc-900
     dark:hover:text-zinc-200
+    cursor-pointer
   "
                 >
                   Reply
@@ -926,6 +927,7 @@ function CommentItem({
                     -translate-x-2
                     flex items-center gap-2
                     rounded-xl
+                    cursor-pointer
                   
                     px-2
                     text-sm font-semibold
