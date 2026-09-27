@@ -557,10 +557,6 @@ export async function deleteComment(commentId: string) {
     throw new Error("You don't have permission to delete this comment.");
   }
 
-  if (comment.moderatedAt) {
-    throw new Error("This comment has been hidden by moderation.");
-  }
-
   // ---------------------------------------------------------------------------
   // PREDICTION COMMENT
   // ---------------------------------------------------------------------------
@@ -1262,10 +1258,6 @@ export async function deleteReply(replyId: string) {
 
   if (reply.authorId !== session.user.id) {
     throw new Error("You cannot delete this reply.");
-  }
-
-  if (reply.moderatedAt) {
-    throw new Error("A hidden reply cannot be deleted.");
   }
 
   // Hard delete.

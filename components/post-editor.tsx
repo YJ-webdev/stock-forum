@@ -23,9 +23,10 @@ const RECENT_ASSETS_KEY = "recent-post-assets";
 const MAX_RECENT_ASSETS = 5;
 
 export function PostEditor({ setOnWrite }: PostEditorProps) {
-  const params = useParams<{ asset: string }>();
+  const params = useParams<{ symbol: string }>();
 
-  const symbol = params.asset;
+  const symbol = params.symbol ? decodeURIComponent(params.symbol) : "";
+
   const topicRef = useRef<HTMLDivElement>(null);
 
   const [content, setContent] = useState<JSONContent>({

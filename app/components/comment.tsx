@@ -286,7 +286,7 @@ export function MarketComments({
 
   return (
     <section className="w-full">
-      <div className="mb-6 flex items-center gap-2">
+      <div className="mb-3 flex items-center gap-2">
         <h2 className="text-[13px] text-zinc-600 dark:text-zinc-500">
           Comment
         </h2>

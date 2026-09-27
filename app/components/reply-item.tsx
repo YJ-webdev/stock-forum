@@ -61,9 +61,6 @@ export function ReplyItem({
   const isAuthor = currentUser?.id === reply.author.id;
   const isAdmin = currentUser?.role === "ADMIN";
 
-  const canEdit = isAuthor && !reply.moderatedAt;
-  const canDelete = isAuthor && !reply.moderatedAt;
-
   const childReplies = replies.filter(
     (childReply) => childReply.parentId === reply.id,
   );
@@ -289,6 +286,7 @@ export function ReplyItem({
 
             <ContentActionsMenu
               isAdmin={isAdmin}
+              isAuthor={isAuthor}
               isModerated={Boolean(reply.moderatedAt)}
               isDeleting={isDeleting}
               isModerating={isModerating}
