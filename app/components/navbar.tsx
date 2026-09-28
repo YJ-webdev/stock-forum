@@ -308,10 +308,11 @@ export default function UserMenu({
                 rounded-full
                 px-2 py-2.75
                 transition-all
-                hover:bg-white
+              
                 sm:inline
+                text-zinc-900
                 dark:text-zinc-100
-                dark:hover:bg-zinc-900
+                
               "
             >
               {`Hi, ${user.name || user.email || "User"}`}
