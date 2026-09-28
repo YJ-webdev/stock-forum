@@ -21,12 +21,17 @@ export default async function Page({ params }: PageProps) {
     },
   });
 
-  if (!market) {
-    notFound();
-  }
+  // console.log("MARKET DEBUG:", {
+  //   symbol,
+  //   decodedSymbol,
+  //   market,
+  // });
+  // if (!market) {
+  //   notFound();
+  // }
 
   const commentsPage = await getMarketComments(decodedSymbol);
-  const latestNews = await getLatestMarketNews(decodedSymbol, 3);
+  const latestNews = await getLatestMarketNews(decodedSymbol);
 
   return (
     <MarketPageClient

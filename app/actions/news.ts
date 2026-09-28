@@ -64,11 +64,9 @@ const MARKETAUX_URL = "https://api.marketaux.com/v1/news/all";
 const NEWS_CACHE_TIME_MS = 24 * 60 * 60 * 1000; // 24 hours
 const NEWS_HISTORY_DAYS = 7;
 
-const MARKET_PAGE_NEWS_LIMIT = 3;
-
-// Fetch more candidates than we display because some will be rejected by
-// our relevance filter.
-const MARKETAUX_CANDIDATE_LIMIT = 3;
+const MARKET_PAGE_NEWS_LIMIT = 3; // market page에 표시
+const NEWS_PAGE_LIMIT = 21; // news page에서 DB로부터 표시
+const MARKETAUX_CANDIDATE_LIMIT = 10; // API에서 한 번에 요청
 
 // -----------------------------------------------------------------------------
 // HELPERS
@@ -265,7 +263,6 @@ function isRelevantMarketArticle(
 
 async function fetchRelevantMarketNews(
   newsQuery: string,
-  limit = MARKET_PAGE_NEWS_LIMIT,
 ): Promise<MarketauxArticle[]> {
   const apiKey = process.env.MARKETAUX_API_KEY;
 
@@ -336,7 +333,7 @@ async function fetchRelevantMarketNews(
       })),
     });
 
-    return relevantArticles.slice(0, limit);
+    return relevantArticles;
   } catch (error) {
     console.error(`Failed to fetch Marketaux news for "${newsQuery}":`, error);
 
@@ -385,7 +382,7 @@ export async function syncMarketNews(
   let articles: MarketauxArticle[] = [];
 
   try {
-    articles = await fetchRelevantMarketNews(newsQuery, limit);
+    articles = await fetchRelevantMarketNews(newsQuery);
   } finally {
     // Record the attempt even if:
     //
@@ -486,9 +483,8 @@ export async function syncMarketNews(
 
 export async function getLatestMarketNews(
   symbol: string,
-  limit = MARKET_PAGE_NEWS_LIMIT,
 ): Promise<MarketNewsItem[]> {
-  await syncMarketNews(symbol, limit);
+  await syncMarketNews(symbol);
 
   return prisma.marketNews.findMany({
     where: {
@@ -502,14 +498,12 @@ export async function getLatestMarketNews(
     orderBy: {
       publishedAt: "desc",
     },
-
-    take: limit,
   });
 }
 
 export async function getMarketNews(
   symbol: string,
-  limit = 21,
+  limit = NEWS_PAGE_LIMIT,
 ): Promise<MarketNewsItem[]> {
   await syncMarketNews(symbol, limit);
 
