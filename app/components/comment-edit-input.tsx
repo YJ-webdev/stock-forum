@@ -133,7 +133,6 @@ export function CommentEditInput({
       <div className="relative rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
         {/* Text */}
         <textarea
-          autoFocus
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={1}

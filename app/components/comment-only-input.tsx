@@ -131,7 +131,6 @@ export function CommentOnlyInput({
               }
               setComment(e.target.value);
             }}
-            autoFocus
             rows={1}
             placeholder={`${currentUser ? "Write a comment..." : "Log in to comment..."}`}
             className="

@@ -84,7 +84,6 @@ export function ReplyInput({
       <div className="min-w-0 flex-1">
         <div className="relative rounded-lg bg-zinc-100 px-3 dark:bg-zinc-800">
           <textarea
-            autoFocus
             rows={1}
             value={reply}
             onChange={(e) => setReply(e.target.value)}

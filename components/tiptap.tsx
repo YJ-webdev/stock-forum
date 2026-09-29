@@ -50,7 +50,6 @@ const Tiptap = ({ content, onChange }: TiptapProps) => {
       content: [{ type: "paragraph" }],
     },
 
-    autofocus: true,
     immediatelyRender: false,
 
     editorProps: {

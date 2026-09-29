@@ -29,7 +29,6 @@ export default function SearchInput() {
       <input
         ref={inputRef}
         type="text"
-        autoFocus={true}
         value={input}
         placeholder="Search..."
         className="lg:w-2xl w-full bg-transparent placeholder:text-black dark:placeholder:text-white outline-none ring-0 font-normal focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"

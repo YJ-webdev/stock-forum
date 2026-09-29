@@ -216,7 +216,6 @@ export function PredictionCommentInput({
               setComment(e.target.value);
             }}
             rows={1}
-            autoFocus
             placeholder={`${currentUser ? "Write a comment..." : "Log in to vote or comment..."}`}
             className="
     min-h-11 w-full resize-none

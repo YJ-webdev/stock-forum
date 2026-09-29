@@ -104,7 +104,6 @@ export function ReplyEditInput({
     >
       {/* Text */}
       <textarea
-        autoFocus
         rows={1}
         value={content}
         disabled={isPending}
