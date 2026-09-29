@@ -7,6 +7,7 @@ import type { PanelImperativeHandle } from "react-resizable-panels";
 
 import { Navbar } from "./navbar";
 import PanelLeft from "./panel-left";
+import PanelLeftMobile from "./panel-left-mobile";
 
 import {
   ResizableHandle,
@@ -27,7 +28,6 @@ import { PointBalanceProvider } from "../context/point-balance-context";
 import type { MostLikedComment } from "../actions/post";
 import type { PopularBoard } from "../actions/query";
 import type { LeaderboardUser } from "../actions/leaderboard";
-
 import type { User } from "@/types/user";
 
 interface LayoutShellProps {
@@ -45,7 +45,16 @@ export default function LayoutShell({
   popularBoards,
   traders,
 }: LayoutShellProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  // ---------------------------------------------------------------------------
+  // Left panels
+  // ---------------------------------------------------------------------------
+
+  const [isDesktopPanelOpen, setIsDesktopPanelOpen] = useState(true);
+  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+
+  // ---------------------------------------------------------------------------
+  // Section B
+  // ---------------------------------------------------------------------------
 
   const [onWrite, setOnWrite] = useState(false);
   const [onAccount, setOnAccount] = useState(false);
@@ -53,66 +62,56 @@ export default function LayoutShell({
 
   const [notificationRefreshKey, setNotificationRefreshKey] = useState(0);
 
+  // ---------------------------------------------------------------------------
+  // Navigation
+  // ---------------------------------------------------------------------------
+
   const pathname = usePathname();
+
+  // ---------------------------------------------------------------------------
+  // Refs
+  // ---------------------------------------------------------------------------
 
   const sectionBRef = useRef<HTMLDivElement>(null);
   const panelBRef = useRef<PanelImperativeHandle>(null);
+
+  // ---------------------------------------------------------------------------
+  // Desktop Section B position
+  // ---------------------------------------------------------------------------
 
   const [sectionBPosition, setSectionBPosition] = useState({
     left: 0,
     width: 0,
   });
 
-  const [isMobileLayout, setIsMobileLayout] = useState(false);
-
-  // ---------------------------------------------------------------------------
-  // Helpers
-  // ---------------------------------------------------------------------------
-
-  const isMobile = () => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    return window.innerWidth < 768;
-  };
-
-  const closeSectionB = () => {
-    setOnWrite(false);
-    setOnAccount(false);
-    setOnNotification(false);
-  };
-
-  const resetPanelB = () => {
-    if (isMobile()) {
-      return;
-    }
-
-    panelBRef.current?.resize("30%");
-  };
-
   // ---------------------------------------------------------------------------
   // Left panel
   // ---------------------------------------------------------------------------
 
   const handleToggleLeftPanel = () => {
-    setIsOpen((prev) => !prev);
-
-    if (isMobile()) {
-      closeSectionB();
+    if (window.innerWidth >= 1280) {
+      setIsDesktopPanelOpen((prev) => !prev);
+      return;
     }
+
+    setIsMobilePanelOpen((prev) => !prev);
   };
 
   // ---------------------------------------------------------------------------
-  // Section B
+  // Section B helpers
   // ---------------------------------------------------------------------------
 
-  const handleWrite = () => {
-    if (isMobile()) {
-      setIsOpen(false);
-    } else {
-      resetPanelB();
+  const resetPanelB = () => {
+    if (window.innerWidth >= 768) {
+      panelBRef.current?.resize("30%");
     }
+  };
+
+  const handleWrite = () => {
+    // Close mobile left drawer when opening another mobile panel.
+    setIsMobilePanelOpen(false);
+
+    resetPanelB();
 
     setOnWrite(true);
     setOnAccount(false);
@@ -120,11 +119,10 @@ export default function LayoutShell({
   };
 
   const handleAccount = () => {
-    if (isMobile()) {
-      setIsOpen(false);
-    } else {
-      resetPanelB();
-    }
+    // Close mobile left drawer when opening another mobile panel.
+    setIsMobilePanelOpen(false);
+
+    resetPanelB();
 
     setOnWrite(false);
     setOnAccount(true);
@@ -132,11 +130,10 @@ export default function LayoutShell({
   };
 
   const handleNotification = () => {
-    if (isMobile()) {
-      setIsOpen(false);
-    } else {
-      resetPanelB();
-    }
+    // Close mobile left drawer when opening another mobile panel.
+    setIsMobilePanelOpen(false);
+
+    resetPanelB();
 
     setOnWrite(false);
     setOnAccount(false);
@@ -145,121 +142,14 @@ export default function LayoutShell({
     setNotificationRefreshKey((prev) => prev + 1);
   };
 
-  const mobilePanelOpen =
-    isMobileLayout && !!user && (onWrite || onAccount || onNotification);
-
-  // ---------------------------------------------------------------------------
-  // Responsive layout
-  // ---------------------------------------------------------------------------
-
-  useEffect(() => {
-    type LayoutMode = "mobile" | "tablet" | "desktop";
-
-    const getLayoutMode = (): LayoutMode => {
-      const width = window.innerWidth;
-
-      if (width < 768) {
-        return "mobile";
-      }
-
-      if (width < 1280) {
-        return "tablet";
-      }
-
-      return "desktop";
-    };
-
-    let previousMode: LayoutMode = getLayoutMode();
-
-    const applyLayout = (mode: LayoutMode) => {
-      const mobile = mode === "mobile";
-
-      setIsMobileLayout(mobile);
-
-      if (mode === "desktop") {
-        setIsOpen(true);
-      } else {
-        setIsOpen(false);
-      }
-
-      if (mobile) {
-        panelBRef.current?.resize("0%");
-      } else {
-        panelBRef.current?.resize("30%");
-      }
-    };
-
-    applyLayout(previousMode);
-
-    const handleResize = () => {
-      const nextMode = getLayoutMode();
-
-      if (nextMode === previousMode) {
-        return;
-      }
-
-      previousMode = nextMode;
-
-      applyLayout(nextMode);
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  // ---------------------------------------------------------------------------
-  // Keyboard shortcuts
-  // ---------------------------------------------------------------------------
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (isOpen) {
-          setIsOpen(false);
-          return;
-        }
-
-        if (onWrite || onAccount || onNotification) {
-          closeSectionB();
-          return;
-        }
-      }
-
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
-        const activeElement = document.activeElement;
-
-        const isInputField =
-          activeElement?.tagName === "INPUT" ||
-          activeElement?.tagName === "TEXTAREA" ||
-          (activeElement as HTMLElement)?.isContentEditable;
-
-        if (!isInputField) {
-          e.preventDefault();
-
-          setIsOpen((prev) => !prev);
-
-          // Only close Section B on mobile.
-          if (isMobile()) {
-            closeSectionB();
-          }
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, onWrite, onAccount, onNotification]);
+  // No viewport state is required here.
+  // CSS decides whether this overlay is visible through md:hidden.
+  const mobilePanelOpen = !!user && (onWrite || onAccount || onNotification);
 
   // ---------------------------------------------------------------------------
   // Keep the fixed desktop Section B aligned with ResizablePanel.
   //
-  // ResizeObserver can fire many times while the left panel is animating.
+  // ResizeObserver can fire many times while the layout is moving.
   // requestAnimationFrame limits React state updates to once per frame.
   // ---------------------------------------------------------------------------
 
@@ -281,7 +171,6 @@ export default function LayoutShell({
         const rect = panel.getBoundingClientRect();
 
         setSectionBPosition((previous) => {
-          // Avoid a React render when nothing actually changed.
           if (
             Math.abs(previous.left - rect.left) < 0.5 &&
             Math.abs(previous.width - rect.width) < 0.5
@@ -339,12 +228,22 @@ export default function LayoutShell({
           />
 
           {/* ---------------------------------------------------------------- */}
-          {/* Left panel                                                       */}
+          {/* Desktop left panel                                               */}
           {/* ---------------------------------------------------------------- */}
 
           <PanelLeft
-            isOpen={isOpen}
-            setIsOpen={setIsOpen}
+            isOpen={isDesktopPanelOpen}
+            comments={comments}
+            popularBoards={popularBoards}
+          />
+
+          {/* ---------------------------------------------------------------- */}
+          {/* Mobile / tablet left panel                                       */}
+          {/* ---------------------------------------------------------------- */}
+
+          <PanelLeftMobile
+            isOpen={isMobilePanelOpen}
+            setIsOpen={setIsMobilePanelOpen}
             comments={comments}
             popularBoards={popularBoards}
           />
@@ -363,7 +262,7 @@ export default function LayoutShell({
               ease-out
 
               ${
-                isOpen
+                isDesktopPanelOpen
                   ? "xl:ml-80 xl:w-[calc(100%-320px)]"
                   : "xl:ml-0 xl:w-full"
               }
@@ -430,73 +329,71 @@ export default function LayoutShell({
                     min-w-0
                   "
                 >
-                  {!isMobileLayout && (
-                    <div
-                      className="
-                        fixed
-                        top-14
-                        bottom-0
+                  <div
+                    className="
+                      fixed
+                      top-14
+                      bottom-0
 
-                        flex
-                        min-w-0
-                        flex-col
-                        gap-3
+                      hidden
+                      min-w-0
+                      flex-col
+                      gap-3
 
-                        overflow-x-hidden
-                        overflow-y-auto
+                      overflow-x-hidden
+                      overflow-y-auto
 
-                        bg-white
-                        dark:bg-zinc-900
-                      "
-                      style={{
-                        left: sectionBPosition.left,
-                        width: sectionBPosition.width,
-                      }}
-                    >
-                      {/* Write */}
+                      bg-white
+                      dark:bg-zinc-900
 
-                      {user && onWrite && (
-                        <PostEditor setOnWrite={setOnWrite} />
-                      )}
+                      md:flex
+                    "
+                    style={{
+                      left: sectionBPosition.left,
+                      width: sectionBPosition.width,
+                    }}
+                  >
+                    {/* Write */}
 
-                      {/* Account */}
+                    {user && onWrite && <PostEditor setOnWrite={setOnWrite} />}
 
-                      {user && onAccount && !onWrite && (
-                        <AccountPanel user={user} setOnAccount={setOnAccount} />
-                      )}
+                    {/* Account */}
 
-                      {/* Notifications */}
+                    {user && onAccount && !onWrite && (
+                      <AccountPanel user={user} setOnAccount={setOnAccount} />
+                    )}
 
-                      {user && onNotification && (
-                        <NotificationPanel
-                          refreshKey={notificationRefreshKey}
-                          setOnNotification={setOnNotification}
-                        />
-                      )}
+                    {/* Notifications */}
 
-                      {/* Default right panel */}
+                    {user && onNotification && (
+                      <NotificationPanel
+                        refreshKey={notificationRefreshKey}
+                        setOnNotification={setOnNotification}
+                      />
+                    )}
 
-                      {!onWrite && !onAccount && !onNotification && (
-                        <>
-                          <div className="mx-4 mt-8">
-                            <p
-                              className="
-                                truncate
-                                text-xs
-                                font-light
-                                tracking-wider
-                                text-muted-foreground/50
-                              "
-                            >
-                              Leaderboard
-                            </p>
-                          </div>
+                    {/* Default right panel */}
 
-                          <LeaderBoard traders={traders} />
-                        </>
-                      )}
-                    </div>
-                  )}
+                    {!onWrite && !onAccount && !onNotification && (
+                      <>
+                        <div className="mx-4 mt-8">
+                          <p
+                            className="
+                              truncate
+                              text-xs
+                              font-light
+                              tracking-wider
+                              text-muted-foreground/50
+                            "
+                          >
+                            Leaderboard
+                          </p>
+                        </div>
+
+                        <LeaderBoard traders={traders} />
+                      </>
+                    )}
+                  </div>
                 </div>
               </ResizablePanel>
             </ResizablePanelGroup>

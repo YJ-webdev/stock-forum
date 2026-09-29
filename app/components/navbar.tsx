@@ -11,7 +11,6 @@ import { hasUnreadNotifications } from "../actions/notification";
 import SearchInput from "./search-input";
 
 import {
-  BadgeCheckIcon,
   Bell,
   BellIcon,
   LogOutIcon,
@@ -91,9 +90,10 @@ export function Navbar({
       "
     >
       {/* Left: Sidebar Toggle */}
+
       <button
-        onClick={onTogglePanel}
         type="button"
+        onClick={onTogglePanel}
         className="
           m-2 shrink-0 cursor-pointer
           rounded-md p-2.5
@@ -106,11 +106,13 @@ export function Navbar({
       </button>
 
       {/* Center: Search */}
+
       <div className="mx-auto max-w-xl flex-1">
         <SearchInput />
       </div>
 
       {/* Right */}
+
       <div className="mx-4 flex shrink-0 items-center">
         <UserMenu
           user={user}
@@ -173,10 +175,10 @@ export default function UserMenu({
       }
     }
 
-    // Check immediately
+    // Check immediately.
     void checkUnread();
 
-    // Check every 30 seconds
+    // Check every 30 seconds.
     const interval = window.setInterval(() => {
       void checkUnread();
     }, 30_000);
@@ -307,12 +309,10 @@ export default function UserMenu({
                 relative hidden
                 rounded-full
                 px-2 py-2.75
-                transition-all
-              
-                sm:inline
                 text-zinc-900
+                transition-all
+                sm:inline
                 dark:text-zinc-100
-                
               "
             >
               {`Hi, ${user.name || user.email || "User"}`}
@@ -342,12 +342,11 @@ export default function UserMenu({
                     h-5 w-5 -translate-x-3
                     origin-top
                     cursor-pointer
-                    text-zinc-800
                     fill-amber-100
-                    dark:text-zinc-300
+                    text-zinc-800
+                    hover:animate-[bell-ring_1s_ease-in-out_infinite]
                     dark:fill-amber-200
-
-                  hover:animate-[bell-ring_1s_ease-in-out_infinite]
+                    dark:text-zinc-300
                   "
                 />
               )}

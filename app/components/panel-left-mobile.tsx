@@ -1,36 +1,49 @@
 "use client";
 
+import React from "react";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ModeToggle } from "./mode-toggle";
 import { MostLikedComments } from "./most-liked-comments";
 import { PopularBoards } from "./major-indices";
 
 import type { MostLikedComment } from "../actions/post";
 import type { PopularBoard } from "../actions/query";
 
-interface PanelLeftProps {
+interface PanelLeftMobileProps {
   isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   comments: MostLikedComment[];
   popularBoards: PopularBoard[];
 }
 
-export default function PanelLeft({
+export default function PanelLeftMobile({
   isOpen,
+  setIsOpen,
   comments,
   popularBoards,
-}: PanelLeftProps) {
+}: PanelLeftMobileProps) {
+  const handlePanelClick = (event: React.MouseEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement;
+
+    if (target.closest("button, a")) {
+      setIsOpen(false);
+    }
+  };
+
   return (
     <aside
+      onClick={handlePanelClick}
       className={`
         fixed top-0 left-0 z-40
-        hidden h-screen w-[320px]
-        border-r border-zinc-100
+        h-screen w-full
         bg-white text-zinc-900
         transform-gpu
         transition-transform duration-300 ease-out
-        dark:border-zinc-800
         dark:bg-zinc-900
         dark:text-zinc-100
-        xl:block
+        sm:w-[320px]
+        xl:hidden
 
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
       `}
@@ -51,6 +64,10 @@ export default function PanelLeft({
             </p>
 
             <MostLikedComments comments={comments} />
+          </div>
+
+          <div className="mt-auto self-end p-4">
+            <ModeToggle />
           </div>
         </div>
       </ScrollArea>
