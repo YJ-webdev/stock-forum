@@ -306,7 +306,9 @@ export function NotificationPanel({
 
       {/* Content */}
 
-      <div className="min-h-[calc(100vh-8rem)] flex-1 overflow-y-auto">
+      {/* Content */}
+
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {loading ? (
           <NotificationSkeleton />
         ) : notifications.length === 0 ? (
@@ -643,9 +645,12 @@ function EmptyNotifications() {
   return (
     <div
       className="
-        flex min-h-[calc(100vh-8rem)]
-        flex-col items-center justify-center
-        px-6 text-center
+        flex h-full min-h-0
+        flex-col
+        items-center
+        justify-center
+        px-6
+        text-center
       "
     >
       <Bell
@@ -662,7 +667,8 @@ function EmptyNotifications() {
       <p
         className="
           mt-1
-          text-sm text-zinc-500
+          text-sm
+          text-zinc-500
           dark:text-zinc-400
         "
       >

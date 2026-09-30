@@ -33,7 +33,7 @@ export default async function MarketNewsPage({ params }: PageProps) {
   const news = await getMarketNews(decodedSymbol);
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-8 pt-14">
+    <main className="mx-auto w-full max-w-5xl px-5 py-8">
       <div className="mb-8">
         {/* <p className="text-sm text-zinc-500 dark:text-zinc-400">
           {market.displaySymbol ?? market.symbol}

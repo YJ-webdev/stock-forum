@@ -54,7 +54,7 @@ export default function PanelLeftMobile({
         ease-out
 
         dark:border-zinc-800
-        dark:bg-zinc-950
+        dark:bg-zinc-900
 
         xl:hidden
 

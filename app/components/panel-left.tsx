@@ -27,7 +27,7 @@ export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
       bg-white
 
       dark:border-zinc-800
-      dark:bg-zinc-950
+      dark:bg-zinc-900
     "
     >
       <ScrollArea className="min-h-0 flex-1">
