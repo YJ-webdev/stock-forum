@@ -353,3 +353,16 @@ export async function getLayoutSideData() {
 }
 
 export type LayoutSideData = Awaited<ReturnType<typeof getLayoutSideData>>;
+
+export async function checkCommentExists(commentId: string) {
+  const comment = await prisma.comment.findUnique({
+    where: {
+      id: commentId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return Boolean(comment);
+}

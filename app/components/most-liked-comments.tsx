@@ -2,12 +2,14 @@
 
 import type { JSONContent } from "@tiptap/react";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { RiHeartFill } from "react-icons/ri";
 import { BiSolidChat } from "react-icons/bi";
 
-import type { MostLikedComment } from "@/app/actions/query";
+import { toast } from "sonner";
+
+import { checkCommentExists, type MostLikedComment } from "@/app/actions/query";
 
 interface MostLikedCommentsProps {
   comments: MostLikedComment[];
@@ -26,6 +28,29 @@ function getTextFromContent(content: JSONContent): string {
 }
 
 export function MostLikedComments({ comments }: MostLikedCommentsProps) {
+  const router = useRouter();
+
+  const handleCommentClick = async (commentId: string, symbol: string) => {
+    try {
+      const exists = await checkCommentExists(commentId);
+
+      if (!exists) {
+        toast.error("Comment deleted.");
+        return;
+      }
+
+      router.push(
+        `/${encodeURIComponent(
+          symbol,
+        )}?comment=${encodeURIComponent(commentId)}&from=most-liked`,
+      );
+    } catch (error) {
+      console.error("Failed to check comment:", error);
+
+      toast.error("Unable to open comment.");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2.5">
       {comments.map((comment) => {
@@ -38,17 +63,21 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
         const text = getTextFromContent(comment.content);
 
         return (
-          <Link
+          <button
             key={comment.id}
-            href={`/${encodeURIComponent(
-              primaryAsset.symbol,
-            )}?comment=${encodeURIComponent(comment.id)}&from=most-liked`}
+            type="button"
+            onClick={() =>
+              void handleCommentClick(comment.id, primaryAsset.symbol)
+            }
             className="
               block
+              w-full
+              cursor-pointer
               rounded-xl
               bg-zinc-100/70
               px-3.5
               py-3.5
+              text-left
               transition-colors
               hover:bg-zinc-200/70
 
@@ -156,7 +185,7 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
                 {comment._count.replies}
               </span>
             </div>
-          </Link>
+          </button>
         );
       })}
     </div>
