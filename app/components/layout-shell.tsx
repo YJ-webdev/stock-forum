@@ -45,6 +45,7 @@ export default function LayoutShell({
   popularBoards,
   traders,
 }: LayoutShellProps) {
+  const [layoutReady, setLayoutReady] = useState(false);
   // ---------------------------------------------------------------------------
   // Left panels
   // ---------------------------------------------------------------------------
@@ -118,7 +119,15 @@ export default function LayoutShell({
       }
     };
 
+    // 먼저 올바른 panel 크기 적용
     updateSectionB();
+
+    // layout 계산이 실제 화면에 반영된 후 공개
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setLayoutReady(true);
+      });
+    });
 
     media.addEventListener("change", updateSectionB);
 
@@ -211,6 +220,40 @@ export default function LayoutShell({
           {/* Mobile / tablet left drawer                                      */}
           {/* ---------------------------------------------------------------- */}
 
+          {!layoutReady && (
+            <div
+              className="
+      fixed
+      top-18
+      right-0
+      bottom-0
+      left-0
+      z-50
+
+      flex
+      items-center
+      justify-center
+
+      bg-white
+      dark:bg-zinc-900
+    "
+            >
+              <div
+                className="
+        size-6
+        animate-spin
+        rounded-full
+        border-2
+        border-zinc-200
+        border-t-zinc-700
+
+        dark:border-zinc-700
+        dark:border-t-zinc-200
+      "
+              />
+            </div>
+          )}
+
           <PanelLeftMobile
             isOpen={isMobilePanelOpen}
             setIsOpen={setIsMobilePanelOpen}
@@ -275,7 +318,7 @@ export default function LayoutShell({
             {/* Main + Section B                                               */}
             {/* -------------------------------------------------------------- */}
 
-            <div className="min-w-0">
+            <div className="min-w-0 overflow-hidden">
               <ResizablePanelGroup orientation="horizontal" className="h-full">
                 {/* ---------------------------------------------------------- */}
                 {/* Main content                                               */}
@@ -342,7 +385,7 @@ pb-14
     h-screen
     min-w-0
     overflow-hidden
-z-2
+    z-2
 
     border-l
     border-gray-100
