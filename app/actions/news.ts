@@ -1,10 +1,7 @@
 "use server";
 
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
-
-// -----------------------------------------------------------------------------
-// TYPES
-// -----------------------------------------------------------------------------
 
 interface MarketauxEntity {
   symbol?: string;
@@ -55,18 +52,481 @@ export interface MarketNewsItem {
   publishedAt: Date;
 }
 
-// -----------------------------------------------------------------------------
-// CONSTANTS
-// -----------------------------------------------------------------------------
+type NewsAssetType = "index" | "crypto" | "currency" | "commodity";
+
+interface NewsContext {
+  assetType: NewsAssetType;
+
+  primaryQuery: string;
+
+  searchTerms: string[];
+
+  macroTerms: string[];
+}
 
 const MARKETAUX_URL = "https://api.marketaux.com/v1/news/all";
-
 const NEWS_CACHE_TIME_MS = 24 * 60 * 60 * 1000; // 24 hours
 const NEWS_HISTORY_DAYS = 7;
+const MARKET_PAGE_NEWS_LIMIT = 3;
+const NEWS_PAGE_LIMIT = 21;
 
-const MARKET_PAGE_NEWS_LIMIT = 3; // market page에 표시
-const NEWS_PAGE_LIMIT = 21; // news page에서 DB로부터 표시
-const MARKETAUX_CANDIDATE_LIMIT = 10; // API에서 한 번에 요청
+/**
+ * Keep this conservative for the free API.
+ *
+ * Our broader search query should already give us more candidates than before,
+ * so we don't need to increase the API result count yet.
+ */
+const MARKETAUX_CANDIDATE_LIMIT = 10;
+
+// -----------------------------------------------------------------------------
+// INDEX / COUNTRY MACRO CONTEXT
+// -----------------------------------------------------------------------------
+
+/**
+ * Used mainly for regional stock indices.
+ *
+ * This allows:
+ *
+ * Nikkei 225
+ *   -> Nikkei-specific news
+ *   -> Japan economy
+ *   -> Bank of Japan
+ *   -> yen
+ *   -> inflation
+ *
+ * without requiring another Prisma field.
+ */
+const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
+  // ---------------------------------------------------------------------------
+  // United States
+  // ---------------------------------------------------------------------------
+
+  "America/New_York": [
+    "US economy",
+    "Federal Reserve",
+    "US inflation",
+    "US interest rates",
+    "Wall Street",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Canada
+  // ---------------------------------------------------------------------------
+
+  "America/Toronto": [
+    "Canada economy",
+    "Bank of Canada",
+    "Canada inflation",
+    "Canadian dollar",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Brazil
+  // ---------------------------------------------------------------------------
+
+  "America/Sao_Paulo": [
+    "Brazil economy",
+    "Brazil central bank",
+    "Brazil inflation",
+    "Brazilian real",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Mexico
+  // ---------------------------------------------------------------------------
+
+  "America/Mexico_City": [
+    "Mexico economy",
+    "Bank of Mexico",
+    "Mexico inflation",
+    "Mexican peso",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Japan
+  // ---------------------------------------------------------------------------
+
+  "Asia/Tokyo": [
+    "Japan economy",
+    "Bank of Japan",
+    "Japanese yen",
+    "Japan inflation",
+    "Japan stocks",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // South Korea
+  // ---------------------------------------------------------------------------
+
+  "Asia/Seoul": [
+    "South Korea economy",
+    "Bank of Korea",
+    "Korean won",
+    "South Korea exports",
+    "Korean stocks",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // China
+  // ---------------------------------------------------------------------------
+
+  "Asia/Shanghai": [
+    "China economy",
+    "People's Bank of China",
+    "Chinese yuan",
+    "China trade",
+    "China stocks",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Hong Kong
+  // ---------------------------------------------------------------------------
+
+  "Asia/Hong_Kong": [
+    "Hong Kong economy",
+    "Hong Kong stocks",
+    "China economy",
+    "Chinese yuan",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Taiwan
+  // ---------------------------------------------------------------------------
+
+  "Asia/Taipei": [
+    "Taiwan economy",
+    "Taiwan exports",
+    "Taiwan semiconductor",
+    "Taiwan stocks",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // India
+  // ---------------------------------------------------------------------------
+
+  "Asia/Kolkata": [
+    "India economy",
+    "Reserve Bank of India",
+    "Indian rupee",
+    "India inflation",
+    "India stocks",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Singapore
+  // ---------------------------------------------------------------------------
+
+  "Asia/Singapore": [
+    "Singapore economy",
+    "Monetary Authority of Singapore",
+    "Singapore dollar",
+    "Singapore stocks",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Australia
+  // ---------------------------------------------------------------------------
+
+  "Australia/Sydney": [
+    "Australia economy",
+    "Reserve Bank of Australia",
+    "Australian dollar",
+    "Australia inflation",
+    "Australia stocks",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // United Kingdom
+  // ---------------------------------------------------------------------------
+
+  "Europe/London": [
+    "UK economy",
+    "Bank of England",
+    "British pound",
+    "UK inflation",
+    "UK stocks",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Germany
+  // ---------------------------------------------------------------------------
+
+  "Europe/Berlin": [
+    "Germany economy",
+    "European Central Bank",
+    "Eurozone economy",
+    "euro",
+    "European stocks",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // France
+  // ---------------------------------------------------------------------------
+
+  "Europe/Paris": [
+    "France economy",
+    "European Central Bank",
+    "Eurozone economy",
+    "euro",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Spain
+  // ---------------------------------------------------------------------------
+
+  "Europe/Madrid": [
+    "Spain economy",
+    "European Central Bank",
+    "Eurozone economy",
+    "euro",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Netherlands
+  // ---------------------------------------------------------------------------
+
+  "Europe/Amsterdam": [
+    "Netherlands economy",
+    "European Central Bank",
+    "Eurozone economy",
+    "euro",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Switzerland
+  // ---------------------------------------------------------------------------
+
+  "Europe/Zurich": [
+    "Switzerland economy",
+    "Swiss National Bank",
+    "Swiss franc",
+    "Switzerland stocks",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Sweden
+  // ---------------------------------------------------------------------------
+
+  "Europe/Stockholm": [
+    "Sweden economy",
+    "Riksbank",
+    "Swedish krona",
+    "Sweden stocks",
+  ],
+
+  // ---------------------------------------------------------------------------
+  // South Africa
+  // ---------------------------------------------------------------------------
+
+  "Africa/Johannesburg": [
+    "South Africa economy",
+    "South African Reserve Bank",
+    "South African rand",
+    "South Africa stocks",
+  ],
+};
+
+// -----------------------------------------------------------------------------
+// CRYPTO CONTEXT
+// -----------------------------------------------------------------------------
+
+const CRYPTO_NEWS_TERMS: Record<string, string[]> = {
+  "BTC-USD": ["Bitcoin", "BTC", "crypto market", "cryptocurrency regulation"],
+
+  "ETH-USD": ["Ethereum", "ETH", "crypto market", "cryptocurrency regulation"],
+
+  "SOL-USD": ["Solana", "SOL", "crypto market", "cryptocurrency regulation"],
+
+  "XRP-USD": ["XRP", "Ripple", "crypto market", "cryptocurrency regulation"],
+
+  "BNB-USD": ["BNB", "Binance", "crypto market", "cryptocurrency regulation"],
+
+  "DOGE-USD": ["Dogecoin", "DOGE", "crypto market"],
+
+  "ADA-USD": ["Cardano", "ADA", "crypto market"],
+
+  "AVAX-USD": ["Avalanche", "AVAX", "crypto market"],
+
+  "DOT-USD": ["Polkadot", "DOT", "crypto market"],
+
+  "LINK-USD": ["Chainlink", "LINK", "crypto market"],
+};
+
+// -----------------------------------------------------------------------------
+// COMMODITY CONTEXT
+// -----------------------------------------------------------------------------
+
+const COMMODITY_NEWS_TERMS: Record<string, string[]> = {
+  // Gold
+  "GC=F": [
+    "gold",
+    "gold prices",
+    "precious metals",
+    "Federal Reserve",
+    "US dollar",
+    "interest rates",
+  ],
+
+  // Silver
+  "SI=F": [
+    "silver",
+    "silver prices",
+    "precious metals",
+    "US dollar",
+    "interest rates",
+  ],
+
+  // WTI
+  "CL=F": [
+    "crude oil",
+    "WTI",
+    "oil prices",
+    "OPEC",
+    "oil supply",
+    "oil demand",
+  ],
+
+  // Brent
+  "BZ=F": ["Brent crude", "oil prices", "OPEC", "oil supply", "oil demand"],
+
+  // Natural Gas
+  "NG=F": ["natural gas", "natural gas prices", "gas supply", "gas demand"],
+
+  // Copper
+  "HG=F": ["copper", "copper prices", "China demand", "industrial metals"],
+
+  // Platinum
+  "PL=F": ["platinum", "platinum prices", "precious metals"],
+
+  // Palladium
+  "PA=F": ["palladium", "palladium prices", "precious metals"],
+
+  // Corn
+  "ZC=F": ["corn", "corn prices", "grain market", "crop supply"],
+
+  // Wheat
+  "ZW=F": ["wheat", "wheat prices", "grain market", "crop supply"],
+
+  // Soybeans
+  "ZS=F": ["soybeans", "soybean prices", "grain market", "crop supply"],
+};
+
+// -----------------------------------------------------------------------------
+// CURRENCY CONTEXT
+// -----------------------------------------------------------------------------
+
+const CURRENCY_CONTEXT: Record<
+  string,
+  {
+    name: string;
+    terms: string[];
+  }
+> = {
+  USD: {
+    name: "US dollar",
+
+    terms: [
+      "Federal Reserve",
+      "US economy",
+      "US inflation",
+      "US interest rates",
+    ],
+  },
+
+  EUR: {
+    name: "euro",
+
+    terms: ["European Central Bank", "Eurozone economy", "Eurozone inflation"],
+  },
+
+  GBP: {
+    name: "British pound",
+
+    terms: ["Bank of England", "UK economy", "UK inflation"],
+  },
+
+  JPY: {
+    name: "Japanese yen",
+
+    terms: ["Bank of Japan", "Japan economy", "Japan inflation"],
+  },
+
+  KRW: {
+    name: "Korean won",
+
+    terms: ["Bank of Korea", "South Korea economy", "South Korea exports"],
+  },
+
+  CNY: {
+    name: "Chinese yuan",
+
+    terms: ["People's Bank of China", "China economy", "China trade"],
+  },
+
+  AUD: {
+    name: "Australian dollar",
+
+    terms: [
+      "Reserve Bank of Australia",
+      "Australia economy",
+      "Australia inflation",
+    ],
+  },
+
+  CAD: {
+    name: "Canadian dollar",
+
+    terms: ["Bank of Canada", "Canada economy", "Canada inflation"],
+  },
+
+  CHF: {
+    name: "Swiss franc",
+
+    terms: ["Swiss National Bank", "Switzerland economy"],
+  },
+
+  NZD: {
+    name: "New Zealand dollar",
+
+    terms: ["Reserve Bank of New Zealand", "New Zealand economy"],
+  },
+
+  SGD: {
+    name: "Singapore dollar",
+
+    terms: ["Monetary Authority of Singapore", "Singapore economy"],
+  },
+
+  HKD: {
+    name: "Hong Kong dollar",
+
+    terms: ["Hong Kong Monetary Authority", "Hong Kong economy"],
+  },
+
+  MXN: {
+    name: "Mexican peso",
+
+    terms: ["Bank of Mexico", "Mexico economy", "Mexico inflation"],
+  },
+
+  BRL: {
+    name: "Brazilian real",
+
+    terms: ["Brazil central bank", "Brazil economy", "Brazil inflation"],
+  },
+
+  INR: {
+    name: "Indian rupee",
+
+    terms: ["Reserve Bank of India", "India economy", "India inflation"],
+  },
+
+  ZAR: {
+    name: "South African rand",
+
+    terms: ["South African Reserve Bank", "South Africa economy"],
+  },
+};
 
 // -----------------------------------------------------------------------------
 // HELPERS
@@ -114,10 +574,7 @@ function sevenDaysAgo(): Date {
  * Normalize text so comparisons are less sensitive to punctuation,
  * capitalization and spacing.
  *
- * Example:
- *
  * "S&P 500" -> "s p 500"
- * "S&P 500 Index" -> "s p 500 index"
  */
 function normalizeText(value: string): string {
   return value
@@ -128,45 +585,6 @@ function normalizeText(value: string): string {
     .trim();
 }
 
-/**
- * Terms that strongly suggest the article is primarily about an investment
- * product rather than the underlying market index.
- *
- * We only use these as a rejection signal when they appear in the title.
- */
-const INVESTMENT_PRODUCT_TERMS = [
-  "etf",
-  "fund",
-  "trust",
-  "ucits",
-  "ishares",
-  "vanguard",
-  "invesco",
-  "direxion",
-  "proshares",
-  "wisdomtree",
-  "amundi",
-  "xtrackers",
-  "spdr",
-  "maxis",
-];
-
-/**
- * Some articles mention an index only because an ETF/fund tracks it.
- *
- * Those aren't useful as the main headline on the index's forum page.
- */
-function looksLikeInvestmentProductArticle(title: string): boolean {
-  const normalizedTitle = normalizeText(title);
-
-  return INVESTMENT_PRODUCT_TERMS.some((term) =>
-    normalizedTitle.includes(normalizeText(term)),
-  );
-}
-
-/**
- * Check whether the market query is actually present in a piece of text.
- */
 function containsMarketQuery(
   text: string | null | undefined,
   query: string,
@@ -185,76 +603,336 @@ function containsMarketQuery(
   return normalizedText.includes(normalizedQuery);
 }
 
+// -----------------------------------------------------------------------------
+// INVESTMENT PRODUCT FILTER
+// -----------------------------------------------------------------------------
+
 /**
- * Determine whether a Marketaux article is sufficiently related to this
- * particular market.
- *
- * For the small headline shown on /[asset], we'd rather return nothing than
- * show a weakly related article.
+ * Prevent ETF / fund articles from taking over an underlying
+ * index or commodity news feed.
  */
+const INVESTMENT_PRODUCT_TERMS = [
+  "etf",
+  "fund",
+  "trust",
+  "ucits",
+  "ishares",
+  "vanguard",
+  "invesco",
+  "direxion",
+  "proshares",
+  "wisdomtree",
+  "amundi",
+  "xtrackers",
+  "spdr",
+  "maxis",
+];
+
+function looksLikeInvestmentProductArticle(title: string): boolean {
+  const normalizedTitle = normalizeText(title);
+
+  return INVESTMENT_PRODUCT_TERMS.some((term) =>
+    normalizedTitle.includes(normalizeText(term)),
+  );
+}
+
+// -----------------------------------------------------------------------------
+// CURRENCY HELPERS
+// -----------------------------------------------------------------------------
+
+function getCurrencyPair(symbol: string): [string, string] | null {
+  /**
+   * Yahoo Finance format:
+   *
+   * EURUSD=X
+   * USDJPY=X
+   * GBPUSD=X
+   */
+  const match = symbol.match(/^([A-Z]{3})([A-Z]{3})=X$/);
+
+  if (!match) {
+    return null;
+  }
+
+  return [match[1], match[2]];
+}
+
+function getCurrencyNewsTerms(symbol: string): string[] {
+  const pair = getCurrencyPair(symbol);
+
+  if (!pair) {
+    return [];
+  }
+
+  const [base, quote] = pair;
+
+  const baseContext = CURRENCY_CONTEXT[base];
+  const quoteContext = CURRENCY_CONTEXT[quote];
+
+  const terms: string[] = [];
+
+  if (baseContext) {
+    terms.push(baseContext.name, ...baseContext.terms);
+  }
+
+  if (quoteContext) {
+    terms.push(quoteContext.name, ...quoteContext.terms);
+  }
+
+  terms.push(`${base}/${quote}`, "forex", "currency market");
+
+  return [...new Set(terms)];
+}
+
+// -----------------------------------------------------------------------------
+// ASSET TYPE
+// -----------------------------------------------------------------------------
+
+function normalizeNewsAssetType(assetType: string): NewsAssetType {
+  const normalized = assetType.toLowerCase();
+
+  if (normalized.includes("crypto")) {
+    return "crypto";
+  }
+
+  if (normalized.includes("currency") || normalized.includes("forex")) {
+    return "currency";
+  }
+
+  if (normalized.includes("commodity") || normalized.includes("commodities")) {
+    return "commodity";
+  }
+
+  return "index";
+}
+
+// -----------------------------------------------------------------------------
+// BUILD NEWS CONTEXT
+// -----------------------------------------------------------------------------
+
+function buildNewsContext({
+  symbol,
+  name,
+  assetType,
+  timezone,
+}: {
+  symbol: string;
+  name: string;
+  assetType: string;
+  timezone: string | null;
+}): NewsContext {
+  const normalizedAssetType = normalizeNewsAssetType(assetType);
+
+  const primaryQuery = name.trim();
+
+  switch (normalizedAssetType) {
+    // -------------------------------------------------------------------------
+    // CRYPTO
+    // -------------------------------------------------------------------------
+
+    case "crypto": {
+      const terms = CRYPTO_NEWS_TERMS[symbol] ?? [
+        primaryQuery,
+        "crypto market",
+        "cryptocurrency",
+        "digital assets",
+      ];
+
+      return {
+        assetType: "crypto",
+
+        primaryQuery,
+
+        searchTerms: [...new Set([primaryQuery, ...terms])],
+
+        macroTerms: [
+          "crypto market",
+          "cryptocurrency regulation",
+          "digital assets",
+        ],
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // CURRENCY
+    // -------------------------------------------------------------------------
+
+    case "currency": {
+      const terms = getCurrencyNewsTerms(symbol);
+
+      return {
+        assetType: "currency",
+
+        primaryQuery,
+
+        searchTerms: [...new Set([primaryQuery, ...terms])],
+
+        macroTerms: terms,
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // COMMODITY
+    // -------------------------------------------------------------------------
+
+    case "commodity": {
+      const terms = COMMODITY_NEWS_TERMS[symbol] ?? [
+        primaryQuery,
+        "commodities",
+        "commodity market",
+      ];
+
+      return {
+        assetType: "commodity",
+
+        primaryQuery,
+
+        searchTerms: [...new Set([primaryQuery, ...terms])],
+
+        macroTerms: terms,
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // INDEX
+    // -------------------------------------------------------------------------
+
+    default: {
+      const macroTerms = timezone ? (TIMEZONE_MACRO_TERMS[timezone] ?? []) : [];
+
+      return {
+        assetType: "index",
+
+        primaryQuery,
+
+        searchTerms: [...new Set([primaryQuery, ...macroTerms])],
+
+        macroTerms,
+      };
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// RELEVANCE
+// -----------------------------------------------------------------------------
+
+function calculateArticleRelevance(
+  article: MarketauxArticle,
+  context: NewsContext,
+): number {
+  if (!article.title) {
+    return 0;
+  }
+
+  if (looksLikeInvestmentProductArticle(article.title)) {
+    return 0;
+  }
+
+  let score = 0;
+
+  const title = article.title;
+
+  const description = article.description ?? article.snippet ?? "";
+
+  // ---------------------------------------------------------------------------
+  // 1. Direct asset mention
+  // ---------------------------------------------------------------------------
+
+  if (containsMarketQuery(title, context.primaryQuery)) {
+    score += 100;
+  } else if (containsMarketQuery(description, context.primaryQuery)) {
+    score += 25;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 2. Marketaux entity
+  // ---------------------------------------------------------------------------
+
+  for (const entity of article.entities ?? []) {
+    if (!entity.name) {
+      continue;
+    }
+
+    const normalizedEntity = normalizeText(entity.name);
+
+    const normalizedPrimary = normalizeText(context.primaryQuery);
+
+    const namesMatch =
+      normalizedEntity === normalizedPrimary ||
+      normalizedEntity.includes(normalizedPrimary) ||
+      normalizedPrimary.includes(normalizedEntity);
+
+    if (!namesMatch) {
+      continue;
+    }
+
+    score += Math.min(entity.match_score ?? 0, 50);
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. Related search terms
+  // ---------------------------------------------------------------------------
+
+  for (const term of context.searchTerms) {
+    if (normalizeText(term) === normalizeText(context.primaryQuery)) {
+      continue;
+    }
+
+    if (containsMarketQuery(title, term)) {
+      score += 20;
+
+      continue;
+    }
+
+    if (containsMarketQuery(description, term)) {
+      score += 5;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 4. Macro terms
+  // ---------------------------------------------------------------------------
+
+  for (const term of context.macroTerms) {
+    if (containsMarketQuery(title, term)) {
+      score += 10;
+    }
+  }
+
+  return score;
+}
+
 function isRelevantMarketArticle(
   article: MarketauxArticle,
-  newsQuery: string,
+  context: NewsContext,
 ): boolean {
   if (!article.title) {
     return false;
   }
 
-  // ---------------------------------------------------------------------------
-  // 1. Reject obvious ETF/fund/product headlines.
-  // ---------------------------------------------------------------------------
-
   if (looksLikeInvestmentProductArticle(article.title)) {
     return false;
   }
 
-  // ---------------------------------------------------------------------------
-  // 2. Strongest signal: the actual market/index appears in the title.
-  // ---------------------------------------------------------------------------
+  const score = calculateArticleRelevance(article, context);
 
-  if (containsMarketQuery(article.title, newsQuery)) {
-    return true;
+  switch (context.assetType) {
+    case "index":
+      return score >= 10;
+
+    case "currency":
+      return score >= 10;
+
+    case "crypto":
+      return score >= 15;
+
+    case "commodity":
+      return score >= 15;
+
+    default:
+      return score >= 15;
   }
-
-  // ---------------------------------------------------------------------------
-  // 3. Marketaux entity signal.
-  //
-  // If Marketaux extracted an entity whose name matches our query and gave it
-  // a meaningful match score, accept it.
-  // ---------------------------------------------------------------------------
-
-  const matchingEntity = article.entities?.find((entity) => {
-    if (!entity.name) {
-      return false;
-    }
-
-    const normalizedEntityName = normalizeText(entity.name);
-    const normalizedQuery = normalizeText(newsQuery);
-
-    const namesMatch =
-      normalizedEntityName === normalizedQuery ||
-      normalizedEntityName.includes(normalizedQuery) ||
-      normalizedQuery.includes(normalizedEntityName);
-
-    if (!namesMatch) {
-      return false;
-    }
-
-    return (entity.match_score ?? 0) >= 20;
-  });
-
-  if (matchingEntity) {
-    return true;
-  }
-
-  // ---------------------------------------------------------------------------
-  // 4. Description/snippet alone is intentionally NOT enough.
-  //
-  // Otherwise articles can sneak through simply because they briefly mention
-  // the index somewhere in the body.
-  // ---------------------------------------------------------------------------
-
-  return false;
 }
 
 // -----------------------------------------------------------------------------
@@ -262,7 +940,7 @@ function isRelevantMarketArticle(
 // -----------------------------------------------------------------------------
 
 async function fetchRelevantMarketNews(
-  newsQuery: string,
+  context: NewsContext,
 ): Promise<MarketauxArticle[]> {
   const apiKey = process.env.MARKETAUX_API_KEY;
 
@@ -274,17 +952,32 @@ async function fetchRelevantMarketNews(
 
   const publishedAfter = sevenDaysAgo().toISOString().slice(0, 19);
 
+  /**
+   * Limit how many terms we send.
+   *
+   * The first term is always the actual asset.
+   * Remaining terms provide broader context.
+   */
+  const searchTerms = context.searchTerms.slice(0, 6);
+
+  /**
+   * Marketaux OR search.
+   *
+   * Example:
+   *
+   * Nikkei 225 | Japan economy | Bank of Japan | Japanese yen
+   */
+  const searchQuery = searchTerms.join(" | ");
+
   const params = new URLSearchParams({
     api_token: apiKey,
 
-    search: newsQuery,
+    search: searchQuery,
 
     language: "en",
 
     published_after: publishedAfter,
 
-    // Fetch extra candidates because our own relevance filter will reject
-    // some of them.
     limit: String(MARKETAUX_CANDIDATE_LIMIT),
 
     group_similar: "true",
@@ -313,21 +1006,44 @@ async function fetchRelevantMarketNews(
 
     const candidates = json.data ?? [];
 
-    const relevantArticles = candidates.filter((article) =>
-      isRelevantMarketArticle(article, newsQuery),
-    );
+    const relevantArticles = candidates
+      .filter((article) => isRelevantMarketArticle(article, context))
+      .sort((a, b) => {
+        const scoreA = calculateArticleRelevance(a, context);
 
-    console.log(`MARKETAUX NEWS "${newsQuery}"`, {
+        const scoreB = calculateArticleRelevance(b, context);
+
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+
+        return (
+          new Date(b.published_at).getTime() -
+          new Date(a.published_at).getTime()
+        );
+      });
+
+    console.log(`MARKETAUX NEWS "${context.primaryQuery}"`, {
+      assetType: context.assetType,
+
+      searchQuery,
+
       candidates: candidates.length,
+
       relevant: relevantArticles.length,
 
       articles: relevantArticles.map((article) => ({
         title: article.title,
 
+        relevance: calculateArticleRelevance(article, context),
+
         entities: article.entities?.map((entity) => ({
           symbol: entity.symbol,
+
           name: entity.name,
+
           type: entity.type,
+
           matchScore: entity.match_score,
         })),
       })),
@@ -335,7 +1051,10 @@ async function fetchRelevantMarketNews(
 
     return relevantArticles;
   } catch (error) {
-    console.error(`Failed to fetch Marketaux news for "${newsQuery}":`, error);
+    console.error(
+      `Failed to fetch Marketaux news for "${context.primaryQuery}":`,
+      error,
+    );
 
     return [];
   }
@@ -357,6 +1076,10 @@ export async function syncMarketNews(
     select: {
       symbol: true,
       name: true,
+
+      assetType: true,
+      timezone: true,
+
       newsLastFetchedAt: true,
     },
   });
@@ -371,6 +1094,20 @@ export async function syncMarketNews(
     return [];
   }
 
+  const newsContext = buildNewsContext({
+    symbol: market.symbol,
+
+    name: market.name,
+
+    assetType: market.assetType,
+
+    timezone: market.timezone,
+  });
+
+  // ---------------------------------------------------------------------------
+  // CACHE
+  // ---------------------------------------------------------------------------
+
   if (market.newsLastFetchedAt) {
     const elapsed = Date.now() - new Date(market.newsLastFetchedAt).getTime();
 
@@ -382,16 +1119,18 @@ export async function syncMarketNews(
   let articles: MarketauxArticle[] = [];
 
   try {
-    articles = await fetchRelevantMarketNews(newsQuery);
+    articles = await fetchRelevantMarketNews(newsContext);
   } finally {
-    // Record the attempt even if:
-    //
-    // - Marketaux returned zero articles
-    // - our relevance filter rejected everything
-    // - Marketaux returned an error
-    //
-    // This prevents every page visit from consuming another API request.
-
+    /**
+     * Record the attempt even when:
+     *
+     * - Marketaux returns zero results
+     * - relevance filtering removes everything
+     * - Marketaux fails
+     *
+     * Otherwise every page refresh could consume
+     * another API request.
+     */
     try {
       await prisma.marketAsset.update({
         where: {
@@ -417,7 +1156,17 @@ export async function syncMarketNews(
 
   const savedNews: MarketNewsItem[] = [];
 
-  for (const article of articles) {
+  /**
+   * We don't need to save an unlimited amount from one sync.
+   *
+   * News page requests may ask for more than the market page.
+   */
+  const articlesToSave = articles.slice(
+    0,
+    Math.max(limit, MARKET_PAGE_NEWS_LIMIT),
+  );
+
+  for (const article of articlesToSave) {
     if (!article.title || !article.url || !article.published_at) {
       continue;
     }
@@ -433,16 +1182,20 @@ export async function syncMarketNews(
         where: {
           marketSymbol_url: {
             marketSymbol: symbol,
+
             url: article.url,
           },
         },
 
         update: {
           title: article.title,
+
           summary: cleanSummary(article),
+
           imageUrl: article.image_url ?? null,
 
           source: article.source || "Market News",
+
           sourceIcon: getSourceIcon(article.url),
 
           publishedAt,
@@ -452,13 +1205,17 @@ export async function syncMarketNews(
           marketSymbol: symbol,
 
           title: article.title,
+
           summary: cleanSummary(article),
+
           imageUrl: article.image_url ?? null,
 
           source: article.source || "Market News",
+
           sourceIcon: getSourceIcon(article.url),
 
           url: article.url,
+
           publishedAt,
         },
       });
@@ -476,30 +1233,51 @@ export async function syncMarketNews(
 // MARKET PAGE NEWS
 //
 // Used on:
-// /[asset]
 //
-// Only a few highly relevant headlines are needed.
+// /[symbol]
+//
+// Only the newest few articles are needed.
 // -----------------------------------------------------------------------------
+
+const getCachedLatestMarketNews = unstable_cache(
+  async (symbol: string): Promise<MarketNewsItem[]> => {
+    await syncMarketNews(symbol, MARKET_PAGE_NEWS_LIMIT);
+
+    return prisma.marketNews.findMany({
+      where: {
+        marketSymbol: symbol,
+
+        publishedAt: {
+          gte: sevenDaysAgo(),
+        },
+      },
+
+      orderBy: {
+        publishedAt: "desc",
+      },
+
+      take: MARKET_PAGE_NEWS_LIMIT,
+    });
+  },
+  ["latest-market-news"],
+  {
+    revalidate: 60 * 60, // 1 hour
+  },
+);
 
 export async function getLatestMarketNews(
   symbol: string,
 ): Promise<MarketNewsItem[]> {
-  await syncMarketNews(symbol);
-
-  return prisma.marketNews.findMany({
-    where: {
-      marketSymbol: symbol,
-
-      publishedAt: {
-        gte: sevenDaysAgo(),
-      },
-    },
-
-    orderBy: {
-      publishedAt: "desc",
-    },
-  });
+  return getCachedLatestMarketNews(symbol);
 }
+
+// -----------------------------------------------------------------------------
+// MARKET NEWS PAGE
+//
+// Used on:
+//
+// /[symbol]/news
+// -----------------------------------------------------------------------------
 
 export async function getMarketNews(
   symbol: string,
@@ -531,8 +1309,10 @@ export async function getMarketNews(
 //
 // /news
 //
-// Important:
-// This function DOES NOT call Marketaux.
+// IMPORTANT:
+//
+// This does NOT call Marketaux.
+//
 // It only reads news already cached in our database.
 // -----------------------------------------------------------------------------
 
@@ -554,6 +1334,16 @@ export async function getGlobalMarketNews(
         gte: sevenDaysAgo(),
       },
 
+      /**
+       * Keep the existing global market feed limited
+       * to regional market categories.
+       *
+       * Crypto / Currency / Commodities can still have
+       * their own /[symbol]/news pages.
+       *
+       * Remove this market.category filter later if you
+       * want /news to mix every asset class together.
+       */
       market: {
         category: {
           in: ["America", "APEC", "EMEA"],

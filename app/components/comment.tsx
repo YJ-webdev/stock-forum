@@ -27,10 +27,7 @@ import { ReplyItem } from "./reply-item";
 import { CommentEditInput } from "./comment-edit-input";
 
 import { toggleCommentLike } from "../actions/like";
-import {
-  PredictionDirection,
-  PredictionStatus,
-} from "@/generated/prisma/enums";
+import { PredictionDirection } from "@/generated/prisma/enums";
 import { useSearchParams } from "next/navigation";
 import { isDeletedPredictionContent } from "@/lib/utils/is-deleted-prediction-content";
 import { formatTimeAgo } from "@/lib/utils/format-time-ago";
@@ -68,7 +65,6 @@ interface MarketCommentsProps {
 
   prediction: {
     selectedVote: PredictionDirection | null;
-    voteLoading: boolean;
     isMarketOpen: boolean;
 
     userPoints: number;
@@ -89,24 +85,12 @@ interface MarketCommentsProps {
     showCountdown: boolean;
   } | null;
 
-  initialComments: MarketPageComments;
-
-  initialNextCursor: {
-    createdAt: Date;
-    id: string;
-  } | null;
-
-  initialTotalCount: number;
-
   currentSessionStartMs: number | null;
 }
 
 export function MarketComments({
   assetSymbol,
   prediction,
-  initialComments,
-  initialNextCursor,
-  initialTotalCount,
   currentSessionStartMs,
 }: MarketCommentsProps) {
   const user = useCurrentUser();
@@ -132,11 +116,16 @@ export function MarketComments({
   // Comments state
   // ---------------------------------------------------------------------------
 
-  const [comments, setComments] = useState<MarketPageComments>(initialComments);
+  const [comments, setComments] = useState<MarketPageComments>([]);
 
-  const [nextCursor, setNextCursor] = useState(initialNextCursor);
+  const [nextCursor, setNextCursor] = useState<{
+    createdAt: Date;
+    id: string;
+  } | null>(null);
 
-  const [totalCount, setTotalCount] = useState(initialTotalCount);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const [commentsLoading, setCommentsLoading] = useState(true);
 
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -253,14 +242,14 @@ export function MarketComments({
 
     const {
       selectedVote,
-      voteLoading,
+
       isMarketOpen,
       userPoints,
       betAmount,
       handleVote,
     } = prediction;
 
-    const buttonDisabled = voteLoading || isMarketOpen;
+    const buttonDisabled = isMarketOpen;
 
     if (buttonDisabled) {
       return;
@@ -302,10 +291,38 @@ export function MarketComments({
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    setComments(initialComments);
-    setNextCursor(initialNextCursor);
-    setTotalCount(initialTotalCount);
-  }, [initialComments, initialNextCursor, initialTotalCount]);
+    let cancelled = false;
+
+    async function loadInitialComments() {
+      setCommentsLoading(true);
+
+      try {
+        const result = await getMarketComments(assetSymbol);
+
+        if (cancelled) return;
+
+        setComments(result.comments);
+        setNextCursor(result.nextCursor);
+        setTotalCount(result.totalCount);
+      } catch (error) {
+        console.error("Failed to load comments:", error);
+
+        if (!cancelled) {
+          toast.error("Failed to load comments.");
+        }
+      } finally {
+        if (!cancelled) {
+          setCommentsLoading(false);
+        }
+      }
+    }
+
+    void loadInitialComments();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [assetSymbol]);
 
   // ---------------------------------------------------------------------------
   // RESET LOCAL PREDICTION DIRECTION
@@ -359,12 +376,10 @@ export function MarketComments({
 
   const maxBet = prediction ? Math.min(500, prediction.userPoints) : 0;
 
-  const buttonDisabled = prediction
-    ? prediction.voteLoading || prediction.isMarketOpen
-    : false;
+  const buttonDisabled = prediction ? prediction.isMarketOpen : false;
 
   const showPredictionInput = prediction
-    ? !prediction.voteLoading && !hasAlreadyVoted && !prediction.isMarketOpen
+    ? !hasAlreadyVoted && !prediction.isMarketOpen
     : false;
 
   // ---------------------------------------------------------------------------
@@ -401,7 +416,6 @@ export function MarketComments({
           userPoints={prediction.userPoints}
           maxBet={maxBet}
           currentUser={user}
-          voteLoading={prediction.voteLoading}
           isMarketOpen={prediction.isMarketOpen}
           buttonDisabled={buttonDisabled}
           submitVote={submitVote}
@@ -442,8 +456,12 @@ export function MarketComments({
       {/* --------------------------------------------------------------- */}
 
       <div>
-        {comments.length === 0 ? (
-          <div className="py-8 text-center text-sm text-zinc-500">
+        {commentsLoading ? (
+          <div className=" text-center text-sm text-zinc-400">
+            Loading comments...
+          </div>
+        ) : comments.length === 0 ? (
+          <div className=" text-center text-sm text-zinc-500">
             No comments yet.
           </div>
         ) : (

@@ -26,7 +26,6 @@ interface PredictionCommentInputProps {
     image?: string | null;
   } | null;
 
-  voteLoading: boolean;
   isMarketOpen: boolean;
   buttonDisabled: boolean;
 
@@ -45,7 +44,7 @@ export function PredictionCommentInput({
   userPoints,
   maxBet,
   currentUser,
-  voteLoading,
+
   isMarketOpen,
   buttonDisabled,
   submitVote,
@@ -333,13 +332,8 @@ export function PredictionCommentInput({
                         ? "fill-rose-700/50 dark:fill-rose-700"
                         : ""
                   }
-                />
-
-                {voteLoading
-                  ? "Loading..."
-                  : isMarketOpen
-                    ? "Voting closed"
-                    : "Vote"}
+                />{" "}
+                Vote
               </Button>
             </div>
           </div>

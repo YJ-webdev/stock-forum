@@ -17,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { NATIONALITIES } from "@/lib/data/nationalities";
 import { LANGUAGES } from "@/lib/data/languages";
 import { updateAccountPreferences } from "@/app/actions/update-account-preferences";
-import { useRouter } from "next/navigation";
+import { useSetCurrentUser } from "../context/user-context";
 
 interface AccountPanelProps {
   user: {
@@ -32,6 +32,7 @@ interface AccountPanelProps {
 }
 
 export function AccountPanel({ user, setOnAccount }: AccountPanelProps) {
+  const setCurrentUser = useSetCurrentUser();
   const initialNationality = user.nationality ?? "";
   const initialLanguage = user.language ?? "en";
 
@@ -40,8 +41,6 @@ export function AccountPanel({ user, setOnAccount }: AccountPanelProps) {
   const [savedNationality, setSavedNationality] = useState(initialNationality);
   const [savedLanguage, setSavedLanguage] = useState(initialLanguage);
   const [isPending, startTransition] = useTransition();
-
-  const router = useRouter();
 
   const hasChanges =
     nationality !== savedNationality || language !== savedLanguage;
@@ -67,8 +66,17 @@ export function AccountPanel({ user, setOnAccount }: AccountPanelProps) {
         setSavedNationality(updatedUser.nationality ?? "");
         setSavedLanguage(updatedUser.language);
 
+        setCurrentUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                nationality: updatedUser.nationality,
+                language: updatedUser.language,
+              }
+            : prev,
+        );
+
         toast.success("Account updated.");
-        router.refresh();
       } catch (error) {
         console.error(error);
 

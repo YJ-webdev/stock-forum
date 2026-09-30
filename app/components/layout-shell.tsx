@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 
 import { Navbar } from "./navbar";
-import PanelLeftMobile from "./panel-left-mobile";
 
 import {
   ResizableHandle,

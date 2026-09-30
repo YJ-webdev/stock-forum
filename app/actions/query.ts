@@ -106,27 +106,31 @@ export async function getPopularBoards(limit = 7): Promise<PopularBoard[]> {
 
   const nowMs = Date.now();
 
-  const sessionStartBySymbol = new Map<string, number>();
+  const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+  const last24HoursMs = nowMs - TWENTY_FOUR_HOURS_MS;
+
+  // ---------------------------------------------------------------------------
+  // NEW COMMENT BOUNDARY
+  //
+  // Session-based markets:
+  //   → comments since the current trading session started
+  //
+  // Markets without a trading session (crypto / currency / commodities):
+  //   → comments from the last 24 hours
+  // ---------------------------------------------------------------------------
+
+  const newCommentStartBySymbol = new Map<string, number>();
 
   for (const asset of popularAssets) {
     const { currentSessionStartMs } = getVotingWindow(asset.symbol, nowMs);
 
-    if (currentSessionStartMs) {
-      sessionStartBySymbol.set(asset.symbol, currentSessionStartMs);
-    }
+    newCommentStartBySymbol.set(
+      asset.symbol,
+      currentSessionStartMs ?? last24HoursMs,
+    );
   }
 
-  // No session boundaries available.
-  if (sessionStartBySymbol.size === 0) {
-    return popularAssets.map((asset) => ({
-      symbol: asset.symbol,
-      name: asset.name,
-      commentCount: asset._count.comments,
-      newCommentCount: 0,
-    }));
-  }
-
-  const earliestSessionStart = Math.min(...sessionStartBySymbol.values());
+  const earliestStart = Math.min(...newCommentStartBySymbol.values());
 
   const symbols = popularAssets.map((asset) => asset.symbol);
 
@@ -140,7 +144,7 @@ export async function getPopularBoards(limit = 7): Promise<PopularBoard[]> {
       moderatedAt: null,
 
       createdAt: {
-        gte: new Date(earliestSessionStart),
+        gte: new Date(earliestStart),
       },
 
       assets: {
@@ -183,9 +187,9 @@ export async function getPopularBoards(limit = 7): Promise<PopularBoard[]> {
     const createdAtMs = comment.createdAt.getTime();
 
     for (const { asset } of comment.assets) {
-      const sessionStart = sessionStartBySymbol.get(asset.symbol);
+      const newCommentStart = newCommentStartBySymbol.get(asset.symbol);
 
-      if (sessionStart !== undefined && createdAtMs >= sessionStart) {
+      if (newCommentStart !== undefined && createdAtMs >= newCommentStart) {
         newCommentCounts.set(
           asset.symbol,
           (newCommentCounts.get(asset.symbol) ?? 0) + 1,

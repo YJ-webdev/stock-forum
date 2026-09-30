@@ -1,7 +1,14 @@
-import { getMarketComments } from "@/app/actions/post";
-import { getLatestMarketNews } from "@/app/actions/news";
 import MarketPageClient from "./market-page-client";
-import { prisma } from "@/lib/prisma";
+
+import {
+  getMarketVote,
+  getMarketVoteStats,
+  type MarketVoteStats,
+  type VoteDirection,
+} from "@/app/actions/market-vote";
+
+import { getVotingWindow } from "@/lib/utils/get-voting-window";
+import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 
 interface PageProps {
   params: Promise<{
@@ -11,17 +18,41 @@ interface PageProps {
 
 export default async function Page({ params }: PageProps) {
   const { symbol } = await params;
-
   const decodedSymbol = decodeURIComponent(symbol);
 
-  const commentsPage = await getMarketComments(decodedSymbol);
-  const latestNews = await getLatestMarketNews(decodedSymbol);
+  const symbolMeta = ALL_MARKET_SYMBOLS.find(
+    (item) => item.symbol === decodedSymbol,
+  );
+
+  const canPredict = symbolMeta?.assetType === "index";
+
+  let initialVoteStats: MarketVoteStats | null = null;
+  let initialVote: VoteDirection | null = null;
+
+  if (canPredict) {
+    const votingWindow = getVotingWindow(decodedSymbol, Date.now());
+    const sessionDate = votingWindow.predictionFor;
+
+    if (sessionDate) {
+      [initialVoteStats, initialVote] = await Promise.all([
+        getMarketVoteStats({
+          symbol: decodedSymbol,
+          sessionDate,
+        }),
+
+        getMarketVote({
+          symbol: decodedSymbol,
+          sessionDate,
+        }),
+      ]);
+    }
+  }
 
   return (
     <MarketPageClient
       symbol={decodedSymbol}
-      commentsPage={commentsPage}
-      latestNews={latestNews}
+      initialVoteStats={initialVoteStats}
+      initialVote={initialVote}
     />
   );
 }

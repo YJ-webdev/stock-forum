@@ -21,6 +21,9 @@ export function VotingCountdown({
 }: VotingCountdownProps) {
   const { hours, minutes, seconds } = useCountdown(targetMs, onExpire);
 
+  const isExpired =
+    Number(hours) === 0 && Number(minutes) === 0 && Number(seconds) === 0;
+
   const shouldShowCountdown =
     !!targetMs &&
     !!type &&
@@ -44,13 +47,19 @@ export function VotingCountdown({
       sm:flex
     "
     >
-      <span>
-        {type === "VOTING_OPENS" ? "Voting opens in" : "Voting closes in"}
-      </span>
+      {isExpired && type === "VOTING_OPENS" ? (
+        <span>Voting is now open</span>
+      ) : (
+        <>
+          <span>
+            {type === "VOTING_OPENS" ? "Voting opens in" : "Voting closes in"}
+          </span>
 
-      <span className="tabular-nums">
-        {hours}:{minutes}:{seconds}
-      </span>
+          <span className="tabular-nums">
+            {hours}:{minutes}:{seconds}
+          </span>
+        </>
+      )}
     </div>
   );
 }

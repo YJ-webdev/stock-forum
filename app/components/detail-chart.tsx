@@ -335,6 +335,10 @@ export function DetailChart({
   // X GRID
   // --------------------------------------------------
 
+  // --------------------------------------------------
+  // X GRID
+  // --------------------------------------------------
+
   let xTicks: {
     label: string;
     x: number;
@@ -342,6 +346,13 @@ export function DetailChart({
 
   if (is1D) {
     const ONE_MINUTE = 60 * 1000;
+    const ONE_HOUR = 60 * ONE_MINUTE;
+
+    // Long 1D sessions such as crypto can span nearly 24 hours.
+    // Reduce the number of labels so they do not overlap.
+    const totalHours = fullTimeRange / ONE_HOUR;
+
+    const tickEveryHours = totalHours >= 20 ? 4 : totalHours >= 10 ? 2 : 1;
 
     const scanStart = Math.ceil(firstTimestamp / ONE_MINUTE) * ONE_MINUTE;
 
@@ -350,14 +361,13 @@ export function DetailChart({
       timestamp < lastTimestamp;
       timestamp += ONE_MINUTE
     ) {
-      const { minute } = getLocalTimeParts(timestamp);
+      const { hour, minute } = getLocalTimeParts(timestamp);
 
-      if (minute === 0) {
+      if (minute === 0 && hour % tickEveryHours === 0) {
         const distanceFromStart = timestamp - firstTimestamp;
-
         const distanceFromEnd = lastTimestamp - timestamp;
 
-        const EDGE_MARGIN = 15 * 60 * 1000;
+        const EDGE_MARGIN = 15 * ONE_MINUTE;
 
         if (distanceFromStart > EDGE_MARGIN && distanceFromEnd > EDGE_MARGIN) {
           xTicks.push({

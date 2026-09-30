@@ -64,14 +64,14 @@ export default function PanelLeftMobile({
       <div onClick={handlePanelClick} className="h-full w-full">
         <ScrollArea className="h-full">
           <div className="flex min-h-full flex-col pb-10">
-            <p className="mb-3.5 px-4 pt-4 text-xs font-light tracking-wider text-muted-foreground/50">
+            <p className="mb-3.5 px-4 pt-4 text-xs font-normal tracking-wider text-muted-foreground/50">
               Popular boards
             </p>
 
             <PopularBoards boards={popularBoards} />
 
             <div className="mt-3 p-4">
-              <p className="mb-2 text-xs font-light tracking-wider text-muted-foreground/50">
+              <p className="mb-2 text-xs font-normal tracking-wider text-muted-foreground/50">
                 Most liked comments
               </p>
 

@@ -32,14 +32,14 @@ export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
     >
       <ScrollArea className="min-h-0 flex-1">
         <div className="pb-10">
-          <p className="mb-3.5 px-4 pt-4 text-xs font-light tracking-wider text-muted-foreground/50 truncate">
+          <p className="mb-3.5 px-4 pt-4 text-xs font-normal tracking-wider text-muted-foreground/50 truncate">
             Popular boards
           </p>
 
           <PopularBoards boards={popularBoards} />
 
           <div className="mt-3 p-4">
-            <p className="mb-2 text-xs font-light tracking-wider text-muted-foreground/50 truncate">
+            <p className="mb-2 text-xs font-normal tracking-wider text-muted-foreground/50 truncate">
               Most liked comments
             </p>
 

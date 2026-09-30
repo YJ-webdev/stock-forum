@@ -1,6 +1,8 @@
-import { TZDate } from "@date-fns/tz";
+import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 import YahooFinance from "yahoo-finance2";
+
+import { TZDate } from "@date-fns/tz";
 
 import {
   ALL_MARKET_SYMBOLS,
@@ -11,6 +13,7 @@ import {
 export const dynamic = "force-dynamic";
 
 const yahoo = new YahooFinance();
+
 const PROVIDER_SYMBOLS: Record<string, string> = {
   TOPIX: "1306.T",
 };
@@ -27,6 +30,7 @@ const INTERVALS: Record<string, YahooInterval> = {
   "1D": "15m",
   "5D": "15m",
   "1M": "1d",
+  "3M": "1d",
   "6M": "1d",
   YTD: "1d",
   "1Y": "1d",
@@ -63,6 +67,9 @@ function getPeriod1(range: string): Date {
     case "1M":
       return new Date(now.setMonth(now.getMonth() - 1));
 
+    case "3M":
+      return new Date(now.setMonth(now.getMonth() - 3));
+
     case "6M":
       return new Date(now.setMonth(now.getMonth() - 6));
 
@@ -82,25 +89,153 @@ function getPeriod1(range: string): Date {
       return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   }
 }
+// -----------------------------------------------------------------------------
+// YAHOO CHART CACHE
+// -----------------------------------------------------------------------------
+
+type CachedYahooChartResult = {
+  chartResult: any;
+  fetchedAt: number;
+};
+
+async function fetchYahooChart(
+  symbol: string,
+  range: string,
+  interval: YahooInterval,
+): Promise<CachedYahooChartResult> {
+  const start = performance.now();
+
+  const chartResult = await yahoo.chart(symbol, {
+    period1: getPeriod1(range),
+    interval,
+    includePrePost: false,
+  });
+
+  console.log(
+    `[PERF] yahoo.chart SOURCE ${symbol} ${range}/${interval}: ${(
+      performance.now() - start
+    ).toFixed(0)}ms`,
+  );
+
+  return {
+    chartResult,
+    fetchedAt: Date.now(),
+  };
+}
+
+// 1D → 30 seconds
+const getYahooChart30Seconds = unstable_cache(
+  fetchYahooChart,
+  ["yahoo-chart-30-seconds-v1"],
+  {
+    revalidate: 30,
+  },
+);
+
+// 5D → 1 minute
+const getYahooChart1Minute = unstable_cache(
+  fetchYahooChart,
+  ["yahoo-chart-1-minute-v1"],
+  {
+    revalidate: 60,
+  },
+);
+
+// 1M / 3M / 6M / YTD / 1Y → 5 minutes
+const getYahooChart5Minutes = unstable_cache(
+  fetchYahooChart,
+  ["yahoo-chart-5-minutes-v1"],
+  {
+    revalidate: 5 * 60,
+  },
+);
+
+// 5Y / MAX → 30 minutes
+const getYahooChart30Minutes = unstable_cache(
+  fetchYahooChart,
+  ["yahoo-chart-30-minutes-v1"],
+  {
+    revalidate: 30 * 60,
+  },
+);
+
+function getCachedYahooChart(
+  symbol: string,
+  range: string,
+  interval: YahooInterval,
+): Promise<CachedYahooChartResult> {
+  switch (range) {
+    case "1D":
+      return getYahooChart30Seconds(symbol, range, interval);
+
+    case "5D":
+      return getYahooChart1Minute(symbol, range, interval);
+
+    case "1M":
+    case "3M":
+    case "6M":
+    case "YTD":
+    case "1Y":
+      return getYahooChart5Minutes(symbol, range, interval);
+
+    case "5Y":
+    case "MAX":
+      return getYahooChart30Minutes(symbol, range, interval);
+
+    default:
+      return getYahooChart1Minute(symbol, range, interval);
+  }
+}
+// -----------------------------------------------------------------------------
+// INTL FORMATTER CACHE
+// -----------------------------------------------------------------------------
+
+const exchangeDateFormatters = new Map<string, Intl.DateTimeFormat>();
+
+const exchangeWeekdayFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getExchangeDateFormatter(timezone: string): Intl.DateTimeFormat {
+  let formatter = exchangeDateFormatters.get(timezone);
+
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
+    exchangeDateFormatters.set(timezone, formatter);
+  }
+
+  return formatter;
+}
+
+function getExchangeWeekdayFormatter(timezone: string): Intl.DateTimeFormat {
+  let formatter = exchangeWeekdayFormatters.get(timezone);
+
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      weekday: "short",
+    });
+
+    exchangeWeekdayFormatters.set(timezone, formatter);
+  }
+
+  return formatter;
+}
 
 function getExchangeDate(date: Date, timezone?: string): string {
   if (!timezone) {
     return date.toISOString().slice(0, 10);
   }
 
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
+  return getExchangeDateFormatter(timezone).format(date);
 }
 
 function getExchangeWeekday(date: Date, timezone: string): number {
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    weekday: "short",
-  }).format(date);
+  const weekday = getExchangeWeekdayFormatter(timezone).format(date);
 
   const days: Record<string, number> = {
     Sun: 0,
@@ -585,6 +720,8 @@ function getMarketSession(market?: MarketSymbolItem): MarketSession {
 }
 
 export async function GET(request: Request) {
+  const totalStart = performance.now();
+
   const { searchParams } = new URL(request.url);
   const rawSymbol = searchParams.get("symbol") || "^GSPC";
   const range = searchParams.get("range") || "1D";
@@ -609,11 +746,21 @@ export async function GET(request: Request) {
       : INTERVALS[range] || "5m";
 
   try {
-    const chartResult = (await yahoo.chart(symbol, {
-      period1,
-      interval,
-      includePrePost: false,
-    })) as any;
+    const yahooStart = performance.now();
+    const requestStartedAt = Date.now();
+
+    const cachedYahoo = await getCachedYahooChart(symbol, range, interval);
+
+    const chartResult = cachedYahoo.chartResult;
+
+    const cacheStatus =
+      cachedYahoo.fetchedAt >= requestStartedAt - 5 ? "MISS" : "HIT";
+
+    console.log(
+      `[PERF] yahoo.chart ${symbol} ${range}/${interval}: ${(
+        performance.now() - yahooStart
+      ).toFixed(0)}ms (${cacheStatus})`,
+    );
 
     const rawQuotes = Array.isArray(chartResult?.quotes)
       ? chartResult.quotes
@@ -785,6 +932,12 @@ export async function GET(request: Request) {
       rangeStartPrice !== 0
         ? ((currentPrice - rangeStartPrice) / rangeStartPrice) * 100
         : 0;
+
+    console.log(
+      `[PERF] candles total ${symbol} ${range}/${interval}: ${(
+        performance.now() - totalStart
+      ).toFixed(0)}ms`,
+    );
 
     return NextResponse.json({
       points,

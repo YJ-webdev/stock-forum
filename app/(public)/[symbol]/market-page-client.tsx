@@ -18,17 +18,12 @@ import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { ALL_MARKET_SYMBOLS, AssetType } from "@/lib/data/market-symbols";
 
 import {
-  getMarketVote,
   getMarketVoteStats,
   type MarketVoteStats,
   type VoteDirection,
 } from "@/app/actions/market-vote";
 
-import {
-  createComment,
-  MarketCommentsPage,
-  type MarketPageComments,
-} from "@/app/actions/post";
+import { createComment, type MarketPageComments } from "@/app/actions/post";
 
 import type { GifResult } from "@/app/components/gif-picker";
 import type { JSONContent } from "@tiptap/react";
@@ -41,35 +36,34 @@ import { MarketComments } from "@/app/components/comment";
 import { usePointBalance } from "@/app/context/point-balance-context";
 import { countryCodeToFlag } from "@/lib/utils/nationality-flag";
 import MarketNews from "@/app/components/market-news";
-import { MarketNewsItem } from "@/app/actions/news";
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
 interface MarketPageClientProps {
   symbol: string;
-  commentsPage: MarketCommentsPage;
-  latestNews: MarketNewsItem[];
+  initialVoteStats: MarketVoteStats | null;
+  initialVote: VoteDirection | null;
 }
 
 export default function MarketPageClient({
   symbol,
-  commentsPage,
-  latestNews,
+  initialVoteStats,
+  initialVote,
 }: MarketPageClientProps) {
   const user = useCurrentUser();
 
-  const {
-    points: userPoints,
-    isLoading: pointsLoading,
-    setPoints: setUserPoints,
-  } = usePointBalance();
+  const { points: userPoints, setPoints: setUserPoints } = usePointBalance();
 
   const [betAmount, setBetAmount] = useState(50);
   const [showDetailChart, setShowDetailChart] = useState(false);
 
-  const [voteLoading, setVoteLoading] = useState(true);
-  const [selectedVote, setSelectedVote] = useState<VoteDirection | null>(null);
-  const [voteStats, setVoteStats] = useState<MarketVoteStats | null>(null);
+  const [selectedVote, setSelectedVote] = useState<VoteDirection | null>(
+    initialVote,
+  );
+
+  const [voteStats, setVoteStats] = useState<MarketVoteStats | null>(
+    initialVoteStats,
+  );
 
   const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
 
@@ -147,94 +141,12 @@ export default function MarketPageClient({
   // Non-prediction assets stop here and NEVER call getMarketVote().
   // ---------------------------------------------------------------------------
 
-  useEffect(() => {
-    if (!canPredict) {
-      setSelectedVote(null);
-      setVoteLoading(false);
-      return;
-    }
-
-    if (!selectedSymbol || predictionForMs === null) {
-      setSelectedVote(null);
-      setVoteLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadVote(sessionMs: number) {
-      setVoteLoading(true);
-
-      try {
-        const vote = await getMarketVote({
-          symbol: selectedSymbol,
-          sessionDate: new Date(sessionMs),
-        });
-
-        if (!cancelled) {
-          setSelectedVote(vote);
-        }
-      } catch {
-        if (!cancelled) {
-          setSelectedVote(null);
-        }
-      } finally {
-        if (!cancelled) {
-          setVoteLoading(false);
-        }
-      }
-    }
-
-    void loadVote(predictionForMs);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [canPredict, selectedSymbol, predictionForMs]);
-
   // ---------------------------------------------------------------------------
   // Load vote statistics
   //
   // IMPORTANT:
   // Crypto / currency / commodities do not make this request.
   // ---------------------------------------------------------------------------
-
-  useEffect(() => {
-    if (!canPredict) {
-      setVoteStats(null);
-      return;
-    }
-
-    if (!selectedSymbol || predictionForMs === null) {
-      setVoteStats(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadVoteStats(sessionMs: number) {
-      try {
-        const stats = await getMarketVoteStats({
-          symbol: selectedSymbol,
-          sessionDate: new Date(sessionMs),
-        });
-
-        if (!cancelled) {
-          setVoteStats(stats);
-        }
-      } catch {
-        if (!cancelled) {
-          setVoteStats(null);
-        }
-      }
-    }
-
-    void loadVoteStats(predictionForMs);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [canPredict, selectedSymbol, predictionForMs]);
 
   // ---------------------------------------------------------------------------
   // Submit prediction
@@ -467,7 +379,7 @@ export default function MarketPageClient({
       {/* News */}
 
       <div className="mx-4 flex w-full self-end gap-2">
-        <MarketNews symbol={selectedSymbol} news={latestNews} />
+        <MarketNews symbol={selectedSymbol} />
       </div>
 
       {/* Title */}
@@ -659,7 +571,7 @@ export default function MarketPageClient({
 
       {canPredict && (
         <div className="ibmPlexMono mx-4 mt-8">
-          {data && voteStats ? (
+          {voteStats ? (
             <div
               className="
                 flex flex-col gap-5
@@ -792,7 +704,7 @@ export default function MarketPageClient({
       {/* Discussion                                                      */}
       {/* --------------------------------------------------------------- */}
 
-      <div ref={discussionRef} className="mx-4 mt-10 mb-20">
+      <div ref={discussionRef} className="mx-4 mt-10">
         <MarketComments
           key={selectedSymbol}
           assetSymbol={selectedSymbol}
@@ -800,7 +712,6 @@ export default function MarketPageClient({
             canPredict
               ? {
                   selectedVote,
-                  voteLoading: voteLoading || isPending || pointsLoading,
                   isMarketOpen,
                   userPoints,
                   betAmount,
@@ -812,9 +723,6 @@ export default function MarketPageClient({
                 }
               : null
           }
-          initialComments={commentsPage.comments}
-          initialNextCursor={commentsPage.nextCursor}
-          initialTotalCount={commentsPage.totalCount}
           currentSessionStartMs={
             canPredict ? votingWindow.currentSessionStartMs : null
           }
