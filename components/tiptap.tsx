@@ -87,7 +87,7 @@ const Tiptap = ({ content, onChange }: TiptapProps) => {
 
   return (
     <div
-      className="relative flex-1"
+      className="relative flex-1 h-full"
       onClick={() => {
         if (!editor.isFocused) {
           editor.commands.focus();

@@ -238,7 +238,6 @@ export default function LayoutShell({
             className={`
     min-h-0
     flex-1
-    pt-14
 
     md:h-screen
     md:overflow-hidden
@@ -265,8 +264,8 @@ export default function LayoutShell({
                 min-w-0
                 overflow-hidden
                 xl:block
-                h-[calc(100vh-56px)]
-                mt-28
+                h-screen
+             
               "
             >
               <PanelLeft comments={comments} popularBoards={popularBoards} />
@@ -289,15 +288,16 @@ export default function LayoutShell({
     min-w-0
     min-h-0
     overflow-hidden
-    md:mt-28
+    md:mt-16
   "
                 >
                   <section
                     className="
-      h-full
+      h-screen
       w-full
       min-w-0
       min-h-0
+pb-14
 
       overflow-y-auto
       overflow-x-hidden
@@ -339,7 +339,7 @@ export default function LayoutShell({
                   defaultSize="30%"
                   minSize="0%"
                   className="
-    min-h-0
+    h-screen
     min-w-0
     overflow-hidden
 z-2
@@ -362,7 +362,7 @@ z-2
                     className="
       hidden
       h-[calc(100vh-56px)]
-      mt-28
+      mt-14
       min-h-0
       min-w-0
 

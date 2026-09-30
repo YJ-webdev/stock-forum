@@ -22,6 +22,7 @@ export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
     w-[320px]
     min-h-0
     shrink-0
+    pt-22
 
     overflow-hidden
 

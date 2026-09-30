@@ -2,22 +2,22 @@
 CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
 
 -- CreateEnum
-CREATE TYPE "TradeType" AS ENUM ('BUY', 'SELL');
-
--- CreateEnum
-CREATE TYPE "TradeStatus" AS ENUM ('OPEN', 'CLOSED');
-
--- CreateEnum
 CREATE TYPE "PredictionDirection" AS ENUM ('BULL', 'BEAR');
 
 -- CreateEnum
-CREATE TYPE "PredictionStatus" AS ENUM ('PENDING', 'WON', 'LOST', 'VOID');
+CREATE TYPE "PredictionStatus" AS ENUM ('PENDING', 'WON', 'LOST', 'DRAW', 'VOID');
 
 -- CreateEnum
 CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'MUTED', 'BANNED');
 
 -- CreateEnum
 CREATE TYPE "ModerationActionType" AS ENUM ('MUTE_USER', 'UNMUTE_USER', 'BAN_USER', 'UNBAN_USER', 'HIDE_COMMENT', 'RESTORE_COMMENT');
+
+-- CreateEnum
+CREATE TYPE "NotificationType" AS ENUM ('PREDICTION_WON', 'PREDICTION_LOST', 'PREDICTION_DRAW', 'PREDICTION_VOID', 'PREDICTION_PENDING', 'COMMENT_LIKED', 'REPLY_LIKED', 'COMMENT_REPLIED', 'REPLY_REPLIED');
+
+-- CreateEnum
+CREATE TYPE "PointTransactionType" AS ENUM ('BET', 'WIN_PAYOUT', 'DRAW_REFUND', 'VOID_REFUND');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -80,7 +80,6 @@ CREATE TABLE "Comment" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "editedAt" TIMESTAMP(3),
-    "deletedAt" TIMESTAMP(3),
     "withdrawnAt" TIMESTAMP(3),
     "moderatedAt" TIMESTAMP(3),
     "authorId" TEXT NOT NULL,
@@ -110,8 +109,8 @@ CREATE TABLE "Prediction" (
     "direction" "PredictionDirection" NOT NULL,
     "pointsBet" INTEGER NOT NULL,
     "referenceClose" DECIMAL(18,4) NOT NULL,
+    "settlementClose" DECIMAL(18,4),
     "sessionDate" TIMESTAMP(3) NOT NULL,
-    "closingPrice" DECIMAL(18,4),
     "status" "PredictionStatus" NOT NULL DEFAULT 'PENDING',
     "pointsChange" INTEGER,
     "nationality" TEXT,
@@ -133,8 +132,12 @@ CREATE TABLE "CommentAsset" (
 CREATE TABLE "Reply" (
     "id" TEXT NOT NULL,
     "content" TEXT NOT NULL,
+    "gifUrl" TEXT,
     "commentId" TEXT NOT NULL,
     "authorId" TEXT NOT NULL,
+    "parentId" TEXT,
+    "editedAt" TIMESTAMP(3),
+    "moderatedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -177,10 +180,28 @@ CREATE TABLE "MarketAsset" (
     "high" DECIMAL(18,4) NOT NULL DEFAULT 0.0,
     "low" DECIMAL(18,4) NOT NULL DEFAULT 0.0,
     "volume" DECIMAL(18,2) NOT NULL DEFAULT 0.0,
+    "newsLastFetchedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "MarketAsset_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MarketNews" (
+    "id" TEXT NOT NULL,
+    "marketSymbol" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "summary" TEXT,
+    "imageUrl" TEXT,
+    "source" TEXT NOT NULL,
+    "sourceIcon" TEXT,
+    "url" TEXT NOT NULL,
+    "publishedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "MarketNews_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -196,35 +217,6 @@ CREATE TABLE "AccountBalance" (
 );
 
 -- CreateTable
-CREATE TABLE "PortfolioPosition" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "symbol" TEXT NOT NULL,
-    "quantity" DECIMAL(18,8) NOT NULL DEFAULT 0.0,
-    "avgCost" DECIMAL(18,4) NOT NULL DEFAULT 0.0,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "PortfolioPosition_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Trade" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "symbol" TEXT NOT NULL,
-    "type" "TradeType" NOT NULL,
-    "status" "TradeStatus" NOT NULL DEFAULT 'OPEN',
-    "quantity" DECIMAL(18,8) NOT NULL,
-    "entryPrice" DECIMAL(18,4) NOT NULL,
-    "exitPrice" DECIMAL(18,4),
-    "pnl" DECIMAL(18,2),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "closedAt" TIMESTAMP(3),
-
-    CONSTRAINT "Trade_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Watchlist" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -232,6 +224,47 @@ CREATE TABLE "Watchlist" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Watchlist_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Notification" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "actorId" TEXT,
+    "type" "NotificationType" NOT NULL,
+    "title" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "predictionId" TEXT,
+    "commentId" TEXT,
+    "replyId" TEXT,
+    "eventKey" TEXT,
+    "readAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PointBalance" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "points" INTEGER NOT NULL DEFAULT 10000,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PointBalance_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PointTransaction" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "predictionId" TEXT NOT NULL,
+    "type" "PointTransactionType" NOT NULL,
+    "amount" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PointTransaction_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -254,9 +287,6 @@ CREATE UNIQUE INDEX "Comment_predictionId_key" ON "Comment"("predictionId");
 
 -- CreateIndex
 CREATE INDEX "Comment_authorId_createdAt_idx" ON "Comment"("authorId", "createdAt");
-
--- CreateIndex
-CREATE INDEX "Comment_deletedAt_idx" ON "Comment"("deletedAt");
 
 -- CreateIndex
 CREATE INDEX "Comment_withdrawnAt_idx" ON "Comment"("withdrawnAt");
@@ -298,7 +328,13 @@ CREATE INDEX "CommentAsset_assetSymbol_idx" ON "CommentAsset"("assetSymbol");
 CREATE INDEX "Reply_commentId_createdAt_idx" ON "Reply"("commentId", "createdAt");
 
 -- CreateIndex
+CREATE INDEX "Reply_parentId_createdAt_idx" ON "Reply"("parentId", "createdAt");
+
+-- CreateIndex
 CREATE INDEX "Reply_authorId_createdAt_idx" ON "Reply"("authorId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "Reply_moderatedAt_idx" ON "Reply"("moderatedAt");
 
 -- CreateIndex
 CREATE INDEX "CommentLike_commentId_idx" ON "CommentLike"("commentId");
@@ -316,16 +352,52 @@ CREATE UNIQUE INDEX "ReplyLike_userId_replyId_key" ON "ReplyLike"("userId", "rep
 CREATE UNIQUE INDEX "MarketAsset_symbol_key" ON "MarketAsset"("symbol");
 
 -- CreateIndex
+CREATE INDEX "MarketNews_marketSymbol_publishedAt_idx" ON "MarketNews"("marketSymbol", "publishedAt");
+
+-- CreateIndex
+CREATE INDEX "MarketNews_publishedAt_idx" ON "MarketNews"("publishedAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "MarketNews_marketSymbol_url_key" ON "MarketNews"("marketSymbol", "url");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "AccountBalance_userId_key" ON "AccountBalance"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PortfolioPosition_userId_symbol_key" ON "PortfolioPosition"("userId", "symbol");
-
--- CreateIndex
-CREATE INDEX "Trade_userId_status_idx" ON "Trade"("userId", "status");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Watchlist_userId_symbol_key" ON "Watchlist"("userId", "symbol");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Notification_eventKey_key" ON "Notification"("eventKey");
+
+-- CreateIndex
+CREATE INDEX "Notification_userId_createdAt_idx" ON "Notification"("userId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "Notification_userId_readAt_idx" ON "Notification"("userId", "readAt");
+
+-- CreateIndex
+CREATE INDEX "Notification_actorId_idx" ON "Notification"("actorId");
+
+-- CreateIndex
+CREATE INDEX "Notification_predictionId_idx" ON "Notification"("predictionId");
+
+-- CreateIndex
+CREATE INDEX "Notification_commentId_idx" ON "Notification"("commentId");
+
+-- CreateIndex
+CREATE INDEX "Notification_replyId_idx" ON "Notification"("replyId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PointBalance_userId_key" ON "PointBalance"("userId");
+
+-- CreateIndex
+CREATE INDEX "PointTransaction_userId_createdAt_idx" ON "PointTransaction"("userId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PointTransaction_predictionId_idx" ON "PointTransaction"("predictionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PointTransaction_predictionId_type_key" ON "PointTransaction"("predictionId", "type");
 
 -- AddForeignKey
 ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -367,6 +439,9 @@ ALTER TABLE "Reply" ADD CONSTRAINT "Reply_commentId_fkey" FOREIGN KEY ("commentI
 ALTER TABLE "Reply" ADD CONSTRAINT "Reply_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Reply" ADD CONSTRAINT "Reply_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Reply"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "CommentLike" ADD CONSTRAINT "CommentLike_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -379,22 +454,37 @@ ALTER TABLE "ReplyLike" ADD CONSTRAINT "ReplyLike_userId_fkey" FOREIGN KEY ("use
 ALTER TABLE "ReplyLike" ADD CONSTRAINT "ReplyLike_replyId_fkey" FOREIGN KEY ("replyId") REFERENCES "Reply"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "MarketNews" ADD CONSTRAINT "MarketNews_marketSymbol_fkey" FOREIGN KEY ("marketSymbol") REFERENCES "MarketAsset"("symbol") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "AccountBalance" ADD CONSTRAINT "AccountBalance_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "PortfolioPosition" ADD CONSTRAINT "PortfolioPosition_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "PortfolioPosition" ADD CONSTRAINT "PortfolioPosition_symbol_fkey" FOREIGN KEY ("symbol") REFERENCES "MarketAsset"("symbol") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Trade" ADD CONSTRAINT "Trade_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Trade" ADD CONSTRAINT "Trade_symbol_fkey" FOREIGN KEY ("symbol") REFERENCES "MarketAsset"("symbol") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Watchlist" ADD CONSTRAINT "Watchlist_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Watchlist" ADD CONSTRAINT "Watchlist_symbol_fkey" FOREIGN KEY ("symbol") REFERENCES "MarketAsset"("symbol") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_actorId_fkey" FOREIGN KEY ("actorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_predictionId_fkey" FOREIGN KEY ("predictionId") REFERENCES "Prediction"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_commentId_fkey" FOREIGN KEY ("commentId") REFERENCES "Comment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_replyId_fkey" FOREIGN KEY ("replyId") REFERENCES "Reply"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PointBalance" ADD CONSTRAINT "PointBalance_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PointTransaction" ADD CONSTRAINT "PointTransaction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PointTransaction" ADD CONSTRAINT "PointTransaction_predictionId_fkey" FOREIGN KEY ("predictionId") REFERENCES "Prediction"("id") ON DELETE CASCADE ON UPDATE CASCADE;
