@@ -288,7 +288,7 @@ export default function LayoutShell({
     min-w-0
     min-h-0
     overflow-hidden
-    md:mt-16
+    mt-16
   "
                 >
                   <section
