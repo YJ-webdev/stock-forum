@@ -1,6 +1,7 @@
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { MostLikedComments } from "./most-liked-comments";
 import { PopularBoards } from "./major-indices";
 
@@ -8,42 +9,42 @@ import type { MostLikedComment } from "../actions/post";
 import type { PopularBoard } from "../actions/query";
 
 interface PanelLeftProps {
-  isOpen: boolean;
   comments: MostLikedComment[];
   popularBoards: PopularBoard[];
 }
 
-export default function PanelLeft({
-  isOpen,
-  comments,
-  popularBoards,
-}: PanelLeftProps) {
+export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
   return (
     <aside
-      className={`
-        fixed top-0 left-0 z-40
-        hidden h-screen w-[320px]
-        border-r border-zinc-100
-        bg-white text-zinc-900
-        transform-gpu
-        transition-transform duration-300 ease-out
-        dark:border-zinc-800
-        dark:bg-zinc-900
-        dark:text-zinc-100
-        xl:block
+      className="
+    hidden
+    h-full
+    w-[320px]
+    min-h-0
+    shrink-0
 
-        ${isOpen ? "translate-x-0" : "-translate-x-full"}
-      `}
+    overflow-hidden
+
+    border-r
+    border-zinc-100
+
+    bg-white
+    text-zinc-900
+
+    xl:block
+
+    dark:border-zinc-800
+    dark:bg-zinc-900
+    dark:text-zinc-100
+  "
     >
-      <ScrollArea className="mt-10 h-full w-full pb-10">
-        <div className="flex min-h-screen flex-col">
-          <div className="mt-12">
-            <p className="mb-3.5 px-4 text-xs font-light tracking-wider text-muted-foreground/50">
-              Popular boards
-            </p>
+      <ScrollArea className="h-full w-full">
+        <div className="flex min-h-full flex-col pb-10">
+          <p className="mb-3.5 px-4 text-xs font-light tracking-wider text-muted-foreground/50">
+            Popular boards
+          </p>
 
-            <PopularBoards boards={popularBoards} />
-          </div>
+          <PopularBoards boards={popularBoards} />
 
           <div className="mt-3 p-4">
             <p className="mb-2 text-xs font-light tracking-wider text-muted-foreground/50">

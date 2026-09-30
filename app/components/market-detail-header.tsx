@@ -92,12 +92,6 @@ export function MarketDetailHeader({
     ? "text-emerald-600 dark:text-emerald-400"
     : "text-[#cf0000] dark:text-[#cf0000]";
 
-  console.log("HEADER PRICE:", {
-    rawPrice,
-    value,
-    displayPrice,
-  });
-
   return (
     <div className="px-4 flex items-center gap-3 min-w-0">
       <div className="flex flex-col min-w-0">

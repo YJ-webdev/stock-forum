@@ -123,7 +123,7 @@ export function Navbar({
           onNotification={onNotification}
         />
 
-        <div className="hidden items-center sm:flex">
+        <div className="hidden items-center xl:flex">
           <ModeToggle />
         </div>
       </div>
