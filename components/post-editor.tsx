@@ -402,7 +402,24 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
       </div>
 
       <div className="hide-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto">
-        <Tiptap key={editorKey} content={content} onChange={setContent} />
+        {isPending ? (
+          <div className="flex h-full items-center justify-center">
+            <div
+              className="
+          size-5
+          animate-spin
+          rounded-full
+          border-2
+          border-zinc-200
+          border-t-zinc-700
+          dark:border-zinc-700
+          dark:border-t-zinc-200
+        "
+            />
+          </div>
+        ) : (
+          <Tiptap key={editorKey} content={content} onChange={setContent} />
+        )}
       </div>
 
       <div className="ml-auto mb-4 mt-2 flex shrink-0 gap-2">

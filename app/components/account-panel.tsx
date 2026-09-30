@@ -112,97 +112,116 @@ export function AccountPanel({ user, setOnAccount }: AccountPanelProps) {
       <Separator />
 
       {/* CONTENT */}
-      <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto py-5">
-        {/* PROFILE */}
-        <div className="mb-7">
-          <p className="mb-3 text-[12px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            Profile
-          </p>
-
-          <div>
-            <p className="text-[15px] text-zinc-900 dark:text-zinc-100">
-              {user.name || "User"}
-            </p>
-
-            {user.email && (
-              <p className="mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-400">
-                {user.email}
+      <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto">
+        {isPending ? (
+          <div className="flex h-full items-center justify-center">
+            <div
+              className="
+          size-5
+          animate-spin
+          rounded-full
+          border-2
+          border-zinc-200
+          border-t-zinc-700
+          dark:border-zinc-700
+          dark:border-t-zinc-200
+        "
+            />
+          </div>
+        ) : (
+          <div className="py-5">
+            {/* PROFILE */}
+            <div className="mb-7">
+              <p className="mb-3 text-[12px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                Profile
               </p>
-            )}
+
+              <div>
+                <p className="text-[15px] text-zinc-900 dark:text-zinc-100">
+                  {user.name || "User"}
+                </p>
+
+                {user.email && (
+                  <p className="mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-400">
+                    {user.email}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* NATIONALITY */}
+            <div className="mb-6">
+              <div className="mb-2 flex items-center gap-2">
+                <Globe2 className="size-4 text-zinc-500 dark:text-zinc-400" />
+
+                <label className="text-[14px] font-medium text-zinc-800 dark:text-zinc-200">
+                  Nationality
+                </label>
+              </div>
+
+              <Select
+                value={nationality}
+                onValueChange={(value) => {
+                  if (value !== null) {
+                    setNationality(value);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full text-[14px]">
+                  <SelectValue placeholder="Select nationality" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {NATIONALITIES.map((country) => (
+                    <SelectItem key={country.value} value={country.value}>
+                      {country.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <p className="mt-2 text-[12px] leading-5 text-zinc-500 dark:text-zinc-400">
+                Used to show country-level market sentiment.
+              </p>
+            </div>
+
+            {/* LANGUAGE */}
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <Languages className="size-4 text-zinc-500 dark:text-zinc-400" />
+
+                <label className="text-[14px] font-medium text-zinc-800 dark:text-zinc-200">
+                  Language
+                </label>
+              </div>
+
+              <Select
+                value={language}
+                onValueChange={(value) => {
+                  if (value !== null) {
+                    setLanguage(value);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full text-[14px]">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {LANGUAGES.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <p className="mt-2 text-[12px] leading-5 text-zinc-500 dark:text-zinc-400">
+                Used for content and interface preferences.
+              </p>
+            </div>
           </div>
-        </div>
-
-        {/* NATIONALITY */}
-        <div className="mb-6">
-          <div className="mb-2 flex items-center gap-2">
-            <Globe2 className="size-4 text-zinc-500 dark:text-zinc-400" />
-
-            <label className="text-[14px] font-medium text-zinc-800 dark:text-zinc-200">
-              Nationality
-            </label>
-          </div>
-
-          <Select
-            value={nationality}
-            onValueChange={(value) => {
-              if (value !== null) {
-                setNationality(value);
-              }
-            }}
-          >
-            <SelectTrigger className="w-full text-[14px]">
-              <SelectValue placeholder="Select nationality" />
-            </SelectTrigger>
-
-            <SelectContent>
-              {NATIONALITIES.map((country) => (
-                <SelectItem key={country.value} value={country.value}>
-                  {country.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <p className="mt-2 text-[12px] leading-5 text-zinc-500 dark:text-zinc-400">
-            Used to show country-level market sentiment.
-          </p>
-        </div>
-
-        {/* LANGUAGE */}
-        <div>
-          <div className="mb-2 flex items-center gap-2">
-            <Languages className="size-4 text-zinc-500 dark:text-zinc-400" />
-
-            <label className="text-[14px] font-medium text-zinc-800 dark:text-zinc-200">
-              Language
-            </label>
-          </div>
-
-          <Select
-            value={language}
-            onValueChange={(value) => {
-              if (value !== null) {
-                setLanguage(value);
-              }
-            }}
-          >
-            <SelectTrigger className="w-full text-[14px]">
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-
-            <SelectContent>
-              {LANGUAGES.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <p className="mt-2 text-[12px] leading-5 text-zinc-500 dark:text-zinc-400">
-            Used for content and interface preferences.
-          </p>
-        </div>
+        )}
       </div>
 
       {/* FOOTER */}

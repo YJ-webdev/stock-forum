@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 
 import { Navbar } from "./navbar";
-import PanelLeft from "./panel-left";
 import PanelLeftMobile from "./panel-left-mobile";
 
 import {
@@ -18,7 +17,6 @@ import {
 
 import { Footer } from "./footer";
 import { BreadCrumbs } from "./breadcrumbs";
-import { LeaderBoard } from "./leader-board";
 
 import { UserProvider } from "../context/user-context";
 import { PointBalanceProvider } from "../context/point-balance-context";
@@ -35,7 +33,7 @@ import PanelLeftMobileStream from "./panel-left-mobile-stream";
 // -----------------------------------------------------------------------------
 
 const PanelLoading = () => (
-  <div className="flex min-h-40 items-center justify-center">
+  <div className="flex h-full w-full items-center justify-center">
     <div
       className="
         size-5
@@ -44,7 +42,6 @@ const PanelLoading = () => (
         border-2
         border-zinc-200
         border-t-zinc-700
-
         dark:border-zinc-700
         dark:border-t-zinc-200
       "
@@ -83,7 +80,6 @@ const NotificationPanel = dynamic(
 interface LayoutShellProps {
   user: User | null;
   children: React.ReactNode;
-
   sideDataPromise: Promise<LayoutSideData>;
 }
 
@@ -130,6 +126,32 @@ export default function LayoutShell({
   // ---------------------------------------------------------------------------
 
   const panelBRef = useRef<PanelImperativeHandle>(null);
+
+  // Main content has its own scroll container.
+  const mainScrollRef = useRef<HTMLElement>(null);
+
+  // ---------------------------------------------------------------------------
+  // Reset main scroll on page navigation
+  //
+  // Important:
+  // Only Section A is reset.
+  //
+  // Panel Left and Section B keep their own independent scroll positions.
+  //
+  // Query-only navigation such as:
+  //   ?comment=...
+  //   ?reply=...
+  //
+  // does NOT trigger this because pathname does not change.
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    mainScrollRef.current?.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "auto",
+    });
+  }, [pathname]);
 
   // ---------------------------------------------------------------------------
   // Left panel
@@ -275,9 +297,9 @@ export default function LayoutShell({
           {/* ---------------------------------------------------------------- */}
           {/* Initial layout loading                                           */}
           {/*                                                                  */}
-          {/* Navbar remains visible immediately.                              */}
-          {/* Everything below the 72px navbar is covered while the            */}
-          {/* resizable layout is being initialized.                           */}
+          {/* Navbar remains visible immediately.                             */}
+          {/* Everything below the 72px navbar is covered while the           */}
+          {/* resizable layout is being initialized.                          */}
           {/* ---------------------------------------------------------------- */}
 
           {!layoutReady && (
@@ -295,7 +317,6 @@ export default function LayoutShell({
                 justify-center
 
                 bg-white
-
                 dark:bg-zinc-900
               "
             >
@@ -316,7 +337,7 @@ export default function LayoutShell({
           )}
 
           {/* ---------------------------------------------------------------- */}
-          {/* Mobile / tablet left drawer                                      */}
+          {/* Mobile / tablet left drawer                                     */}
           {/* ---------------------------------------------------------------- */}
 
           <Suspense
@@ -324,15 +345,15 @@ export default function LayoutShell({
               isMobilePanelOpen ? (
                 <div
                   className="
-          fixed
-          top-18
-          right-0
-          bottom-0
-          left-0
-          z-40
-          bg-white
-          dark:bg-zinc-950
-        "
+                    fixed
+                    top-18
+                    right-0
+                    bottom-0
+                    left-0
+                    z-40
+                    bg-white
+                    dark:bg-zinc-950
+                  "
                 >
                   <SideDataLoading />
                 </div>
@@ -347,19 +368,19 @@ export default function LayoutShell({
           </Suspense>
 
           {/* ---------------------------------------------------------------- */}
-          {/* Page layout                                                      */}
+          {/* Page layout                                                     */}
           {/*                                                                  */}
-          {/* < md                                                             */}
-          {/*   Main = 100%                                                    */}
-          {/*   Section B = 0%                                                 */}
+          {/* < md                                                            */}
+          {/*   Main = 100%                                                   */}
+          {/*   Section B = 0%                                                */}
           {/*                                                                  */}
-          {/* md - xl                                                          */}
-          {/*   Main ~70%                                                      */}
-          {/*   Section B ~30%                                                 */}
+          {/* md - xl                                                         */}
+          {/*   Main ~70%                                                     */}
+          {/*   Section B ~30%                                                */}
           {/*                                                                  */}
-          {/* xl+                                                              */}
-          {/*   PanelLeft 320px                                                */}
-          {/*   + Main / Section B                                             */}
+          {/* xl+                                                             */}
+          {/*   PanelLeft 320px                                               */}
+          {/*   + Main / Section B                                            */}
           {/* ---------------------------------------------------------------- */}
 
           <div
@@ -388,14 +409,14 @@ export default function LayoutShell({
 
             <div
               className="
-    mt-18
-    hidden
-    h-[calc(100vh-72px)]
-    min-h-0
-    min-w-0
-    overflow-hidden
-    xl:block
-  "
+                mt-18
+                hidden
+                h-[calc(100vh-72px)]
+                min-h-0
+                min-w-0
+                overflow-hidden
+                xl:block
+              "
             >
               <Suspense fallback={<SideDataLoading />}>
                 <PanelLeftStream sideDataPromise={sideDataPromise} />
@@ -409,7 +430,7 @@ export default function LayoutShell({
             <div className="min-w-0 overflow-hidden">
               <ResizablePanelGroup orientation="horizontal" className="h-full">
                 {/* ---------------------------------------------------------- */}
-                {/* Main content                                               */}
+                {/* Main content / Section A                                   */}
                 {/* ---------------------------------------------------------- */}
 
                 <ResizablePanel
@@ -423,6 +444,7 @@ export default function LayoutShell({
                   "
                 >
                   <section
+                    ref={mainScrollRef}
                     className="
                       h-[calc(100vh-72px)]
                       w-full
@@ -462,7 +484,7 @@ export default function LayoutShell({
 
                 {/* ---------------------------------------------------------- */}
                 {/* Section B                                                  */}
-                {/*                                                                  */}
+                {/*                                                            */}
                 {/* Mobile: 0%                                                 */}
                 {/* md+: 30%                                                   */}
                 {/* ---------------------------------------------------------- */}
@@ -491,24 +513,24 @@ export default function LayoutShell({
 
                   <div
                     className="
-    mt-18
-    hidden
-    h-[calc(100vh-72px)]
-    min-h-0
-    min-w-0
+                      mt-18
+                      hidden
+                      h-[calc(100vh-72px)]
+                      min-h-0
+                      min-w-0
 
-    flex-col
-    gap-3
+                      flex-col
+                      gap-3
 
-    overflow-x-hidden
-    overflow-y-auto
+                      overflow-x-hidden
+                      overflow-y-auto
 
-    bg-white
+                      bg-white
 
-    md:flex
+                      md:flex
 
-    dark:bg-zinc-900
-  "
+                      dark:bg-zinc-900
+                    "
                   >
                     {/* Write */}
 

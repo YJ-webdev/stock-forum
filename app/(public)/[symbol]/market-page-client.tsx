@@ -57,6 +57,7 @@ export default function MarketPageClient({
   latestNews,
 }: MarketPageClientProps) {
   const user = useCurrentUser();
+
   const {
     points: userPoints,
     isLoading: pointsLoading,
@@ -65,15 +66,12 @@ export default function MarketPageClient({
 
   const [betAmount, setBetAmount] = useState(50);
   const [showDetailChart, setShowDetailChart] = useState(false);
+
   const [voteLoading, setVoteLoading] = useState(true);
-
-  const discussionRef = useRef<HTMLDivElement>(null);
-
-  const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
   const [selectedVote, setSelectedVote] = useState<VoteDirection | null>(null);
   const [voteStats, setVoteStats] = useState<MarketVoteStats | null>(null);
 
-  const [now] = useState(() => Date.now());
+  const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
 
   const [unavailableRanges, setUnavailableRanges] = useState<
     Record<string, Set<ChartRange>>
@@ -81,15 +79,39 @@ export default function MarketPageClient({
 
   const [isPending, startTransition] = useTransition();
 
+  const discussionRef = useRef<HTMLDivElement>(null);
+
+  const [now] = useState(() => Date.now());
+
   const selectedSymbol = symbol;
+
+  // ---------------------------------------------------------------------------
+  // Asset metadata
+  // ---------------------------------------------------------------------------
 
   const symbolMeta = ALL_MARKET_SYMBOLS.find(
     (item) => item.symbol === selectedSymbol,
   );
 
   const selectedName = symbolMeta?.name ?? selectedSymbol;
+
   const selectedDisplaySymbol = symbolMeta?.displaySymbol ?? selectedSymbol;
+
   const selectedAssetType = symbolMeta?.assetType ?? "index";
+
+  // ---------------------------------------------------------------------------
+  // Prediction capability
+  //
+  // Only regional market indices currently support Bull / Bear predictions.
+  //
+  // Crypto, currency, commodities, etc. remain discussion-only assets.
+  // ---------------------------------------------------------------------------
+
+  const canPredict = selectedAssetType === "index";
+
+  // ---------------------------------------------------------------------------
+  // Market quote
+  // ---------------------------------------------------------------------------
 
   const { data, error } = useMarketQuote(
     selectedSymbol,
@@ -104,16 +126,34 @@ export default function MarketPageClient({
   const isLoggedIn = !!user;
   const nationality = user?.nationality ?? null;
 
+  // ---------------------------------------------------------------------------
+  // Voting window
+  // ---------------------------------------------------------------------------
+
   const votingWindow = getVotingWindow(selectedSymbol, now);
 
-  const isMarketOpen = votingWindow.isMarketOpen;
-  const canVote = votingWindow.canVote;
+  const isMarketOpen = canPredict ? votingWindow.isMarketOpen : false;
 
-  // Use a primitive timestamp instead of Date as an effect dependency.
-  // getVotingWindow() creates a new Date object on every render.
-  const predictionForMs = votingWindow.predictionFor?.getTime() ?? null;
+  const canVote = canPredict ? votingWindow.canVote : false;
+
+  const predictionForMs = canPredict
+    ? (votingWindow.predictionFor?.getTime() ?? null)
+    : null;
+
+  // ---------------------------------------------------------------------------
+  // Load current user's vote
+  //
+  // IMPORTANT:
+  // Non-prediction assets stop here and NEVER call getMarketVote().
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
+    if (!canPredict) {
+      setSelectedVote(null);
+      setVoteLoading(false);
+      return;
+    }
+
     if (!selectedSymbol || predictionForMs === null) {
       setSelectedVote(null);
       setVoteLoading(false);
@@ -145,14 +185,26 @@ export default function MarketPageClient({
       }
     }
 
-    loadVote(predictionForMs);
+    void loadVote(predictionForMs);
 
     return () => {
       cancelled = true;
     };
-  }, [selectedSymbol, predictionForMs]);
+  }, [canPredict, selectedSymbol, predictionForMs]);
+
+  // ---------------------------------------------------------------------------
+  // Load vote statistics
+  //
+  // IMPORTANT:
+  // Crypto / currency / commodities do not make this request.
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
+    if (!canPredict) {
+      setVoteStats(null);
+      return;
+    }
+
     if (!selectedSymbol || predictionForMs === null) {
       setVoteStats(null);
       return;
@@ -177,20 +229,33 @@ export default function MarketPageClient({
       }
     }
 
-    loadVoteStats(predictionForMs);
+    void loadVoteStats(predictionForMs);
 
     return () => {
       cancelled = true;
     };
-  }, [selectedSymbol, predictionForMs]);
+  }, [canPredict, selectedSymbol, predictionForMs]);
+
+  // ---------------------------------------------------------------------------
+  // Submit prediction
+  // ---------------------------------------------------------------------------
 
   const handleVote = (
     direction: VoteDirection,
-    betAmount: number,
+    amount: number,
     comment: string,
     gif: GifResult | null,
     onSuccess?: (comment: MarketPageComments[number]) => void | Promise<void>,
   ) => {
+    // Extra client-side protection.
+    //
+    // Normally this function should never be reachable for a non-prediction
+    // asset because MarketComments hides the voting controls.
+    if (!canPredict) {
+      toast.error("Predictions are not available for this asset.");
+      return;
+    }
+
     if (!isLoggedIn) {
       toast.error("Log in to vote.");
       return;
@@ -218,6 +283,7 @@ export default function MarketPageClient({
           ? "Voting is closed while the market is open."
           : "Voting is currently unavailable.",
       );
+
       return;
     }
 
@@ -226,7 +292,7 @@ export default function MarketPageClient({
       return;
     }
 
-    if (betAmount < 50 || betAmount > 500 || betAmount > userPoints) {
+    if (amount < 50 || amount > 500 || amount > userPoints) {
       toast.error(
         `Bet amount must be between 50 and ${Math.min(
           500,
@@ -249,20 +315,22 @@ export default function MarketPageClient({
       return;
     }
 
-    // ------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // Optional comment / GIF
-    // ------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     let content: JSONContent | null = null;
 
     if (comment.trim() || gif) {
       content = {
         type: "doc",
+
         content: [
           ...(comment.trim()
             ? [
                 {
                   type: "paragraph",
+
                   content: [
                     {
                       type: "text",
@@ -277,6 +345,7 @@ export default function MarketPageClient({
             ? [
                 {
                   type: "image",
+
                   attrs: {
                     src: gif.src,
                     alt: gif.title,
@@ -299,7 +368,7 @@ export default function MarketPageClient({
 
           prediction: {
             direction,
-            pointsBet: betAmount,
+            pointsBet: amount,
             sessionDate,
           },
         });
@@ -321,8 +390,8 @@ export default function MarketPageClient({
 
         toast.success(
           direction === "BULL"
-            ? `Bullish prediction submitted with ${betAmount} pts.`
-            : `Bearish prediction submitted with ${betAmount} pts.`,
+            ? `Bullish prediction submitted with ${amount} pts.`
+            : `Bearish prediction submitted with ${amount} pts.`,
         );
       } catch (error) {
         // Roll back optimistic UI
@@ -337,8 +406,14 @@ export default function MarketPageClient({
     });
   };
 
+  // ---------------------------------------------------------------------------
+  // Chart range
+  // ---------------------------------------------------------------------------
+
   const handleRangeChange = async (range: SelectedRange) => {
-    if (range === activeRange) return;
+    if (range === activeRange) {
+      return;
+    }
 
     if (unavailableRanges[selectedSymbol]?.has(range as ChartRange)) {
       return;
@@ -371,24 +446,33 @@ export default function MarketPageClient({
     setActiveRange(range);
   };
 
-  useEffect(() => {
-    setBetAmount(50);
+  // ---------------------------------------------------------------------------
+  // Symbol change
+  // ---------------------------------------------------------------------------
 
+  useEffect(() => {
     window.scrollTo({
       top: 0,
       left: 0,
-      behavior: "smooth",
+      behavior: "auto",
     });
   }, [selectedSymbol]);
 
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
   return (
-    <div className="mx-auto mt-10 max-w-4xl">
+    <div className="mx-auto max-w-4xl">
       {/* News */}
-      <div className="flex gap-2 mx-4 w-full self-end">
+
+      <div className="mx-4 flex w-full self-end gap-2">
         <MarketNews symbol={selectedSymbol} news={latestNews} />
       </div>
+
       {/* Title */}
-      <div className="relative w-full space-y-2 px-4 mt-10">
+
+      <div className="relative mt-10 w-full space-y-2 px-4">
         <div className="mt-2 flex items-baseline justify-between gap-4">
           <h1 className="text-[44px] font-bold leading-none tracking-tight text-gray-500/50 dark:text-zinc-700">
             {selectedName}
@@ -397,6 +481,7 @@ export default function MarketPageClient({
       </div>
 
       {/* Market data */}
+
       {error ? (
         <div className="mt-5 md:mx-4">
           <div className="flex aspect-20/11 w-full items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -405,7 +490,8 @@ export default function MarketPageClient({
         </div>
       ) : data ? (
         <>
-          {/* Header + voting */}
+          {/* Header */}
+
           <div className="relative mt-4 mb-4 flex w-full items-start justify-between">
             <MarketDetailHeader
               rawPrice={data.rawPrice}
@@ -439,6 +525,7 @@ export default function MarketPageClient({
           </div>
 
           {/* Chart */}
+
           <div className="overflow-hidden">
             <AnimatePresence initial={false}>
               {showDetailChart && (
@@ -469,18 +556,22 @@ export default function MarketPageClient({
                       duration: 0.4,
                       ease: [0.4, 0, 0.2, 1],
                     },
+
                     scale: {
                       duration: 0.35,
                       ease: [0.4, 0, 0.2, 1],
                     },
+
                     x: {
                       duration: 0.35,
                       ease: [0.4, 0, 0.2, 1],
                     },
+
                     y: {
                       duration: 0.35,
                       ease: [0.4, 0, 0.2, 1],
                     },
+
                     opacity: {
                       duration: 0.3,
                     },
@@ -490,6 +581,7 @@ export default function MarketPageClient({
                   }}
                 >
                   {/* DetailChart + range selector */}
+
                   <div className="mx-4">
                     <DetailChart
                       history={data.history}
@@ -508,6 +600,7 @@ export default function MarketPageClient({
                     />
 
                     {/* Range selector */}
+
                     <div className="mt-4 mb-10 flex flex-wrap gap-2">
                       {RANGES.map((range) => {
                         const isUnavailable =
@@ -549,6 +642,7 @@ export default function MarketPageClient({
       ) : (
         <>
           {/* Header skeleton */}
+
           <div className="relative mt-4 w-full space-y-2 px-4 pb-2">
             <div className="mb-2 flex w-full flex-col gap-2">
               <Skeleton className="h-8 w-44 rounded-xl" />
@@ -558,155 +652,172 @@ export default function MarketPageClient({
         </>
       )}
 
-      {/* Market sentiment */}
-      <div className="ibmPlexMono mx-4 mt-8">
-        {data && voteStats ? (
-          <div
-            className="
-        flex flex-col gap-5
-        rounded-xl
-        bg-zinc-50
-        px-5 py-4
-        dark:bg-zinc-800/50
-        sm:flex-row sm:items-start sm:justify-between
-        border
-      "
-          >
-            {/* Voter nationalities */}
-            <div className="min-w-0">
-              <p className="text-[14px] font-medium">Voters</p>
+      {/* --------------------------------------------------------------- */}
+      {/* Market sentiment                                                */}
+      {/* Only prediction-enabled assets render this entire section.      */}
+      {/* --------------------------------------------------------------- */}
 
-              {voteStats.totalVotes > 0 ? (
-                <div
-                  className="
-              mt-2
-              grid grid-cols-2
-              gap-x-6 gap-y-1.5
-              text-[13px]
-              text-zinc-500
-              dark:text-zinc-400
-            "
-                >
-                  {voteStats.nationalities.map((country) => (
-                    <div
-                      key={country.nationality}
-                      className="flex items-center gap-2 whitespace-nowrap"
-                    >
-                      <span>
-                        {country.nationality === "OTHER"
-                          ? "🌐"
-                          : countryCodeToFlag(country.nationality)}
-                      </span>
-
-                      <span>
-                        {country.nationality === "OTHER"
-                          ? "Other"
-                          : country.nationality}
-                      </span>
-
-                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {country.percent}% ({country.votes})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-2 text-[13px] text-zinc-500 dark:text-zinc-400">
-                  No votes yet
-                </p>
-              )}
-            </div>
-
-            {/* Bull / Bear sentiment */}
+      {canPredict && (
+        <div className="ibmPlexMono mx-4 mt-8">
+          {data && voteStats ? (
             <div
               className="
-          w-full
-          border-t border-zinc-200
-          pt-4
-          dark:border-zinc-700
-          sm:w-1/2 sm:shrink-0
-          sm:border-t-0 sm:pt-0
-         
-        "
+                flex flex-col gap-5
+                rounded-xl
+                border
+                bg-zinc-50
+                px-5 py-4
+                dark:bg-zinc-800/50
+                sm:flex-row sm:items-start sm:justify-between
+              "
             >
-              <div className="flex items-center justify-between text-[14px] font-medium">
-                <span>
-                  {voteStats.totalVotes > 0
-                    ? voteStats.bullPercent >= voteStats.bearPercent
-                      ? "Bullish"
-                      : "Bearish"
-                    : "No sentiment"}
-                </span>
+              {/* Voter nationalities */}
 
-                <span>
-                  {voteStats.bullPercent}% / {voteStats.bearPercent}%
-                </span>
+              <div className="min-w-0">
+                <p className="text-[14px] font-medium">Voters</p>
+
+                {voteStats.totalVotes > 0 ? (
+                  <div
+                    className="
+                      mt-2
+                      grid grid-cols-2
+                      gap-x-6 gap-y-1.5
+                      text-[13px]
+                      text-zinc-500
+                      dark:text-zinc-400
+                    "
+                  >
+                    {voteStats.nationalities.map((country) => (
+                      <div
+                        key={country.nationality}
+                        className="flex items-center gap-2 whitespace-nowrap"
+                      >
+                        <span>
+                          {country.nationality === "OTHER"
+                            ? "🌐"
+                            : countryCodeToFlag(country.nationality)}
+                        </span>
+
+                        <span>
+                          {country.nationality === "OTHER"
+                            ? "Other"
+                            : country.nationality}
+                        </span>
+
+                        <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                          {country.percent}% ({country.votes})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-[13px] text-zinc-500 dark:text-zinc-400">
+                    No votes yet
+                  </p>
+                )}
               </div>
+
+              {/* Bull / Bear sentiment */}
 
               <div
                 className="
-            mt-2
-            flex w-full
-            overflow-hidden
-            whitespace-nowrap
-            text-[15px]
-            leading-none
-           
-         
-          "
+                  w-full
+                  border-t border-zinc-200
+                  pt-4
+                  dark:border-zinc-700
+                  sm:w-1/2 sm:shrink-0
+                  sm:border-t-0 sm:pt-0
+                "
               >
-                <div className="mt-2 flex h-5 w-full overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-600"
-                    style={{
-                      width: `${voteStats.bullPercent}%`,
-                    }}
-                  />
+                <div className="flex items-center justify-between text-[14px] font-medium">
+                  <span>
+                    {voteStats.totalVotes > 0
+                      ? voteStats.bullPercent >= voteStats.bearPercent
+                        ? "Bullish"
+                        : "Bearish"
+                      : "No sentiment"}
+                  </span>
 
-                  <div
-                    className="
-      h-full
-      bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)]
-      bg-size-[2.5px_2.5px]
-      text-zinc-300
-      dark:text-zinc-600
-    "
-                    style={{
-                      width: `${voteStats.bearPercent}%`,
-                    }}
-                  />
+                  <span>
+                    {voteStats.bullPercent}% / {voteStats.bearPercent}%
+                  </span>
                 </div>
-              </div>
 
-              <p className="mt-2 text-end text-[14px] font-medium">
-                {voteStats.totalVotes}{" "}
-                {voteStats.totalVotes === 1 ? "vote" : "votes"}
-              </p>
+                <div
+                  className="
+                    mt-2
+                    flex w-full
+                    overflow-hidden
+                    whitespace-nowrap
+                    text-[15px]
+                    leading-none
+                  "
+                >
+                  <div className="mt-2 flex h-5 w-full overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-600"
+                      style={{
+                        width: `${voteStats.bullPercent}%`,
+                      }}
+                    />
+
+                    <div
+                      className="
+                        h-full
+                        bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)]
+                        bg-size-[2.5px_2.5px]
+                        text-zinc-300
+                        dark:text-zinc-600
+                      "
+                      style={{
+                        width: `${voteStats.bearPercent}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <p className="mt-2 text-end text-[14px] font-medium">
+                  {voteStats.totalVotes}{" "}
+                  {voteStats.totalVotes === 1 ? "vote" : "votes"}
+                </p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <Skeleton className="h-30 w-full rounded-xl" />
-        )}
-      </div>
+          ) : (
+            <Skeleton className="h-30 w-full rounded-xl" />
+          )}
+        </div>
+      )}
+
+      {/* --------------------------------------------------------------- */}
+      {/* Discussion                                                      */}
+      {/* --------------------------------------------------------------- */}
 
       <div ref={discussionRef} className="mx-4 mt-10 mb-20">
         <MarketComments
           key={selectedSymbol}
           assetSymbol={selectedSymbol}
-          selectedVote={selectedVote}
-          voteLoading={voteLoading || isPending || pointsLoading}
-          isMarketOpen={isMarketOpen}
-          userPoints={userPoints}
-          betAmount={betAmount}
-          setBetAmount={setBetAmount}
-          handleVote={handleVote}
-          targetMs={votingWindow.targetMs}
-          countdownType={votingWindow.countdownType}
-          showCountdown={votingWindow.showCountdown}
+          prediction={
+            canPredict
+              ? {
+                  selectedVote,
+                  voteLoading: voteLoading || isPending || pointsLoading,
+                  isMarketOpen,
+                  userPoints,
+                  betAmount,
+                  setBetAmount,
+                  handleVote,
+                  targetMs: votingWindow.targetMs,
+                  countdownType: votingWindow.countdownType,
+                  showCountdown: votingWindow.showCountdown,
+                }
+              : null
+          }
           initialComments={commentsPage.comments}
           initialNextCursor={commentsPage.nextCursor}
           initialTotalCount={commentsPage.totalCount}
-          currentSessionStartMs={votingWindow.currentSessionStartMs}
+          currentSessionStartMs={
+            canPredict ? votingWindow.currentSessionStartMs : null
+          }
         />
       </div>
     </div>

@@ -13,6 +13,8 @@ import {
   X,
 } from "lucide-react";
 
+import { RiHeartFill } from "react-icons/ri";
+
 import {
   deleteAllSocialNotifications,
   deleteSocialNotification,
@@ -21,8 +23,6 @@ import {
   markNotificationAsRead,
   type MyNotification,
 } from "@/app/actions/notification";
-
-import { RiHeartFill } from "react-icons/ri";
 
 // -----------------------------------------------------------------------------
 // TYPES
@@ -33,12 +33,51 @@ interface NotificationPanelProps {
   setOnNotification: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+// -----------------------------------------------------------------------------
+// CONSTANTS
+// -----------------------------------------------------------------------------
+
 const SOCIAL_TYPES = new Set<MyNotification["type"]>([
   "COMMENT_LIKED",
   "REPLY_LIKED",
   "COMMENT_REPLIED",
   "REPLY_REPLIED",
 ]);
+
+// -----------------------------------------------------------------------------
+// CLIENT CACHE
+//
+// Keep notifications alive even when NotificationPanel unmounts.
+//
+// This means:
+//
+// First open:
+//   spinner -> server -> notifications
+//
+// Later opens:
+//   cached notifications immediately -> background refresh
+//
+// No loading flash when reopening the panel.
+// -----------------------------------------------------------------------------
+
+let notificationCache: MyNotification[] | null = null;
+
+// Prevent multiple simultaneous getNotifications() requests.
+let notificationRequest: Promise<MyNotification[]> | null = null;
+
+// -----------------------------------------------------------------------------
+// FETCH
+// -----------------------------------------------------------------------------
+
+function fetchNotifications() {
+  if (!notificationRequest) {
+    notificationRequest = getNotifications().finally(() => {
+      notificationRequest = null;
+    });
+  }
+
+  return notificationRequest;
+}
 
 // -----------------------------------------------------------------------------
 // NOTIFICATION PANEL
@@ -48,8 +87,16 @@ export function NotificationPanel({
   refreshKey,
   setOnNotification,
 }: NotificationPanelProps) {
-  const [notifications, setNotifications] = useState<MyNotification[]>([]);
-  const [loading, setLoading] = useState(true);
+  // ---------------------------------------------------------------------------
+  // STATE
+  // ---------------------------------------------------------------------------
+
+  const [notifications, setNotifications] = useState<MyNotification[]>(
+    () => notificationCache ?? [],
+  );
+
+  // Only show the full loader when we have absolutely no cached data.
+  const [loading, setLoading] = useState(notificationCache === null);
 
   const [isPending, startTransition] = useTransition();
 
@@ -57,18 +104,38 @@ export function NotificationPanel({
 
   // ---------------------------------------------------------------------------
   // LOAD
+  //
+  // Stale-while-revalidate:
+  //
+  // If cache exists:
+  //   render it immediately
+  //   refresh silently in background
+  //
+  // If cache does not exist:
+  //   show loader
+  //   fetch notifications
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadNotifications() {
-      try {
-        const result = await getNotifications();
+      const hasCache = notificationCache !== null;
 
-        if (!cancelled) {
-          setNotifications(result);
+      if (!hasCache) {
+        setLoading(true);
+      }
+
+      try {
+        const result = await fetchNotifications();
+
+        if (cancelled) {
+          return;
         }
+
+        notificationCache = result;
+
+        setNotifications(result);
       } catch (error) {
         console.error("Failed to load notifications:", error);
       } finally {
@@ -86,44 +153,69 @@ export function NotificationPanel({
   }, [refreshKey]);
 
   // ---------------------------------------------------------------------------
+  // UPDATE LOCAL + CACHE
+  // ---------------------------------------------------------------------------
+
+  const updateNotifications = (
+    updater: (current: MyNotification[]) => MyNotification[],
+  ) => {
+    setNotifications((current) => {
+      const next = updater(current);
+
+      notificationCache = next;
+
+      return next;
+    });
+  };
+
+  // ---------------------------------------------------------------------------
   // CLICK NOTIFICATION
+  //
+  // Important:
+  //
+  // Do not wait for the database before navigating.
+  //
+  // 1. Update UI immediately.
+  // 2. Navigate immediately.
+  // 3. Persist read state in background.
   // ---------------------------------------------------------------------------
 
   const handleNotificationClick = (notification: MyNotification) => {
     const href = getNotificationHref(notification);
 
-    // Optimistically mark as read.
     if (!notification.readAt) {
-      setNotifications((current) =>
+      const now = new Date();
+
+      updateNotifications((current) =>
         current.map((item) =>
           item.id === notification.id
             ? {
                 ...item,
-                readAt: new Date(),
+                readAt: now,
               }
             : item,
         ),
       );
 
-      startTransition(async () => {
-        try {
-          await markNotificationAsRead(notification.id);
-        } catch (error) {
-          console.error("Failed to mark notification as read:", error);
-
-          const result = await getNotifications();
-          setNotifications(result);
-        }
+      // Fire the server mutation without blocking navigation.
+      void markNotificationAsRead(notification.id).catch((error) => {
+        console.error("Failed to mark notification as read:", error);
       });
     }
 
     if (href) {
+      setOnNotification(false);
+
       router.push(href);
     }
   };
 
   // ---------------------------------------------------------------------------
   // MARK ALL READ
+  //
+  // Optimistic UI.
+  //
+  // No refetch after success.
   // ---------------------------------------------------------------------------
 
   const handleMarkAllRead = () => {
@@ -131,13 +223,15 @@ export function NotificationPanel({
       (notification) => !notification.readAt,
     );
 
-    if (!hasUnread) {
+    if (!hasUnread || isPending) {
       return;
     }
 
+    const previousNotifications = notifications;
+
     const now = new Date();
 
-    setNotifications((current) =>
+    updateNotifications((current) =>
       current.map((notification) => ({
         ...notification,
         readAt: notification.readAt ?? now,
@@ -150,21 +244,29 @@ export function NotificationPanel({
       } catch (error) {
         console.error("Failed to mark all notifications as read:", error);
 
-        const result = await getNotifications();
-        setNotifications(result);
+        notificationCache = previousNotifications;
+
+        setNotifications(previousNotifications);
       }
     });
   };
 
   // ---------------------------------------------------------------------------
   // DELETE ONE SOCIAL NOTIFICATION
+  //
+  // Optimistic removal.
+  //
+  // No refetch.
   // ---------------------------------------------------------------------------
 
   const handleDeleteNotification = (notificationId: string) => {
+    if (isPending) {
+      return;
+    }
+
     const previousNotifications = notifications;
 
-    // Optimistic removal.
-    setNotifications((current) =>
+    updateNotifications((current) =>
       current.filter((notification) => notification.id !== notificationId),
     );
 
@@ -174,7 +276,8 @@ export function NotificationPanel({
       } catch (error) {
         console.error("Failed to delete notification:", error);
 
-        // Restore if deletion failed.
+        notificationCache = previousNotifications;
+
         setNotifications(previousNotifications);
       }
     });
@@ -182,9 +285,17 @@ export function NotificationPanel({
 
   // ---------------------------------------------------------------------------
   // DELETE ALL SOCIAL NOTIFICATIONS
+  //
+  // Optimistic removal.
+  //
+  // No refetch.
   // ---------------------------------------------------------------------------
 
   const handleDeleteAllSocial = () => {
+    if (isPending) {
+      return;
+    }
+
     const hasSocialNotifications = notifications.some((notification) =>
       SOCIAL_TYPES.has(notification.type),
     );
@@ -195,8 +306,7 @@ export function NotificationPanel({
 
     const previousNotifications = notifications;
 
-    // Immediately remove social notifications from UI.
-    setNotifications((current) =>
+    updateNotifications((current) =>
       current.filter((notification) => !SOCIAL_TYPES.has(notification.type)),
     );
 
@@ -206,26 +316,38 @@ export function NotificationPanel({
       } catch (error) {
         console.error("Failed to delete social notifications:", error);
 
+        notificationCache = previousNotifications;
+
         setNotifications(previousNotifications);
       }
     });
   };
 
   // ---------------------------------------------------------------------------
-  // RENDER
+  // DERIVED STATE
   // ---------------------------------------------------------------------------
 
   const hasSocialNotifications = notifications.some((notification) =>
     SOCIAL_TYPES.has(notification.type),
   );
 
+  const hasUnreadNotifications = notifications.some(
+    (notification) => !notification.readAt,
+  );
+
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
+
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
+    <div className="flex h-full min-h-0 flex-col">
+      {/* ------------------------------------------------------------------- */}
+      {/* HEADER                                                              */}
+      {/* ------------------------------------------------------------------- */}
 
       <div
         className="
-          flex items-center justify-between
+          flex shrink-0 items-center justify-between
           border-b border-zinc-200
           px-4 py-3
           dark:border-zinc-800
@@ -240,24 +362,26 @@ export function NotificationPanel({
         <div className="flex items-center gap-3">
           {/* Mark all read */}
 
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={handleMarkAllRead}
-            className="
-              flex cursor-pointer items-center gap-1.5
-              text-xs text-zinc-500
-              transition-colors
-              hover:text-zinc-900
-              disabled:cursor-default
-              disabled:opacity-50
-              dark:text-zinc-400
-              dark:hover:text-zinc-100
-            "
-          >
-            <CheckCheck className="h-3.5 w-3.5" />
-            Mark all read
-          </button>
+          {hasUnreadNotifications && (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={handleMarkAllRead}
+              className="
+                flex cursor-pointer items-center gap-1.5
+                text-xs text-zinc-500
+                transition-colors
+                hover:text-zinc-900
+                disabled:cursor-default
+                disabled:opacity-50
+                dark:text-zinc-400
+                dark:hover:text-zinc-100
+              "
+            >
+              <CheckCheck className="h-3.5 w-3.5" />
+              Mark all read
+            </button>
+          )}
 
           {/* Clear social notifications */}
 
@@ -304,13 +428,13 @@ export function NotificationPanel({
         </div>
       </div>
 
-      {/* Content */}
-
-      {/* Content */}
+      {/* ------------------------------------------------------------------- */}
+      {/* CONTENT                                                             */}
+      {/* ------------------------------------------------------------------- */}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {loading ? (
-          <NotificationSkeleton />
+          <NotificationLoader />
         ) : notifications.length === 0 ? (
           <EmptyNotifications />
         ) : (
@@ -324,6 +448,29 @@ export function NotificationPanel({
           ))
         )}
       </div>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// LOADER
+// -----------------------------------------------------------------------------
+
+function NotificationLoader() {
+  return (
+    <div className="flex h-full min-h-0 items-center justify-center">
+      <div
+        className="
+          size-5
+          animate-spin
+          rounded-full
+          border-2
+          border-zinc-200
+          border-t-zinc-700
+          dark:border-zinc-700
+          dark:border-t-zinc-200
+        "
+      />
     </div>
   );
 }
@@ -463,10 +610,9 @@ function NotificationItem({
           type="button"
           aria-label="Delete notification"
           title="Delete notification"
-          disabled={false}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
 
             onDelete();
           }}
@@ -674,67 +820,6 @@ function EmptyNotifications() {
       >
         New activity and prediction results will appear here.
       </p>
-    </div>
-  );
-}
-
-// -----------------------------------------------------------------------------
-// SKELETON
-// -----------------------------------------------------------------------------
-
-function NotificationSkeleton() {
-  return (
-    <div className="space-y-1 p-4">
-      {[1, 2, 3].map((item) => (
-        <div key={item} className="flex gap-3 py-3">
-          <div
-            className="
-              h-5 w-5 shrink-0
-              animate-pulse rounded-full
-              bg-zinc-200
-              dark:bg-zinc-800
-            "
-          />
-
-          <div className="flex-1 space-y-2">
-            <div
-              className="
-                h-3 w-28
-                animate-pulse rounded
-                bg-zinc-200
-                dark:bg-zinc-800
-              "
-            />
-
-            <div
-              className="
-                h-3 w-full
-                animate-pulse rounded
-                bg-zinc-200
-                dark:bg-zinc-800
-              "
-            />
-
-            <div
-              className="
-                h-3 w-3/4
-                animate-pulse rounded
-                bg-zinc-200
-                dark:bg-zinc-800
-              "
-            />
-
-            <div
-              className="
-                h-3 w-16
-                animate-pulse rounded
-                bg-zinc-200
-                dark:bg-zinc-800
-              "
-            />
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
