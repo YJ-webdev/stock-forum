@@ -2,6 +2,13 @@
 
 import { prisma } from "@/lib/prisma";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
+import type { JSONContent } from "@tiptap/react";
+
+import { getTopBetters } from "./leaderboard";
+
+// -----------------------------------------------------------------------------
+// Types
+// -----------------------------------------------------------------------------
 
 export interface PopularBoard {
   symbol: string;
@@ -10,13 +17,76 @@ export interface PopularBoard {
   newCommentCount: number;
 }
 
-export async function getPopularBoards(limit = 7) {
+export interface MostLikedComment {
+  id: string;
+  content: JSONContent;
+
+  createdAt: Date;
+  updatedAt: Date;
+
+  author: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    nationality: string | null;
+  };
+
+  assets: {
+    asset: {
+      name: string;
+      symbol: string;
+      displaySymbol: string | null;
+    };
+  }[];
+
+  _count: {
+    likes: number;
+    replies: number;
+  };
+}
+
+export interface PanelLeftData {
+  comments: MostLikedComment[];
+  popularBoards: PopularBoard[];
+}
+
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+
+function hasTextContent(content: JSONContent): boolean {
+  if (content.type === "text") {
+    return Boolean(content.text?.trim());
+  }
+
+  if (!content.content) {
+    return false;
+  }
+
+  return content.content.some(hasTextContent);
+}
+
+function isDeletedCommentContent(content: JSONContent): boolean {
+  const text =
+    content.content
+      ?.flatMap((node) => node.content ?? [])
+      .map((node) => node.text ?? "")
+      .join("")
+      .trim() ?? "";
+
+  return text === "Comment deleted by user";
+}
+
+// -----------------------------------------------------------------------------
+// Popular boards
+// -----------------------------------------------------------------------------
+
+export async function getPopularBoards(limit = 7): Promise<PopularBoard[]> {
   const assets = await prisma.marketAsset.findMany({
     select: {
       symbol: true,
       name: true,
 
-      // 전체 누적 comment 수
       _count: {
         select: {
           comments: true,
@@ -25,53 +95,261 @@ export async function getPopularBoards(limit = 7) {
     },
   });
 
-  // 전체 누적 comment가 많은 board 순
+  // Only 48 markets, so sorting this in memory is cheap.
   const popularAssets = assets
     .sort((a, b) => b._count.comments - a._count.comments)
     .slice(0, limit);
 
+  if (popularAssets.length === 0) {
+    return [];
+  }
+
   const nowMs = Date.now();
 
-  const boards = await Promise.all(
-    popularAssets.map(async (asset) => {
-      const { currentSessionStartMs } = getVotingWindow(asset.symbol, nowMs);
+  const sessionStartBySymbol = new Map<string, number>();
 
-      let newCommentCount = 0;
+  for (const asset of popularAssets) {
+    const { currentSessionStartMs } = getVotingWindow(asset.symbol, nowMs);
 
-      // 현재 voting session에 작성된 comment만 계산
-      if (currentSessionStartMs) {
-        newCommentCount = await prisma.comment.count({
-          where: {
-            assets: {
-              some: {
-                asset: {
-                  symbol: asset.symbol,
-                },
-              },
+    if (currentSessionStartMs) {
+      sessionStartBySymbol.set(asset.symbol, currentSessionStartMs);
+    }
+  }
+
+  // No session boundaries available.
+  if (sessionStartBySymbol.size === 0) {
+    return popularAssets.map((asset) => ({
+      symbol: asset.symbol,
+      name: asset.name,
+      commentCount: asset._count.comments,
+      newCommentCount: 0,
+    }));
+  }
+
+  const earliestSessionStart = Math.min(...sessionStartBySymbol.values());
+
+  const symbols = popularAssets.map((asset) => asset.symbol);
+
+  // ---------------------------------------------------------------------------
+  // One query for recent comments across all selected boards.
+  // ---------------------------------------------------------------------------
+
+  const recentComments = await prisma.comment.findMany({
+    where: {
+      withdrawnAt: null,
+      moderatedAt: null,
+
+      createdAt: {
+        gte: new Date(earliestSessionStart),
+      },
+
+      assets: {
+        some: {
+          asset: {
+            symbol: {
+              in: symbols,
             },
-
-            createdAt: {
-              gte: new Date(currentSessionStartMs),
-            },
-
-            withdrawnAt: null,
-            moderatedAt: null,
           },
-        });
+        },
+      },
+    },
+
+    select: {
+      createdAt: true,
+
+      assets: {
+        where: {
+          asset: {
+            symbol: {
+              in: symbols,
+            },
+          },
+        },
+
+        select: {
+          asset: {
+            select: {
+              symbol: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const newCommentCounts = new Map<string, number>();
+
+  for (const comment of recentComments) {
+    const createdAtMs = comment.createdAt.getTime();
+
+    for (const { asset } of comment.assets) {
+      const sessionStart = sessionStartBySymbol.get(asset.symbol);
+
+      if (sessionStart !== undefined && createdAtMs >= sessionStart) {
+        newCommentCounts.set(
+          asset.symbol,
+          (newCommentCounts.get(asset.symbol) ?? 0) + 1,
+        );
       }
+    }
+  }
 
-      return {
-        symbol: asset.symbol,
-        name: asset.name,
+  return popularAssets.map((asset) => ({
+    symbol: asset.symbol,
+    name: asset.name,
 
-        // Popular Boards 순위 기준
-        commentCount: asset._count.comments,
+    commentCount: asset._count.comments,
 
-        // UI의 "New X"
-        newCommentCount,
-      };
-    }),
-  );
-
-  return boards;
+    newCommentCount: newCommentCounts.get(asset.symbol) ?? 0,
+  }));
 }
+
+// -----------------------------------------------------------------------------
+// Most liked comments
+// -----------------------------------------------------------------------------
+
+export async function getMostLikedComments(
+  limit = 5,
+): Promise<MostLikedComment[]> {
+  if (limit <= 0) {
+    return [];
+  }
+
+  const comments = await prisma.comment.findMany({
+    where: {
+      withdrawnAt: null,
+      moderatedAt: null,
+
+      author: {
+        status: "ACTIVE",
+      },
+    },
+
+    select: {
+      id: true,
+      content: true,
+
+      createdAt: true,
+      updatedAt: true,
+
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          nationality: true,
+        },
+      },
+
+      assets: {
+        select: {
+          asset: {
+            select: {
+              name: true,
+              symbol: true,
+              displaySymbol: true,
+            },
+          },
+        },
+      },
+
+      _count: {
+        select: {
+          likes: true,
+          replies: true,
+        },
+      },
+    },
+
+    orderBy: [
+      {
+        likes: {
+          _count: "desc",
+        },
+      },
+      {
+        createdAt: "desc",
+      },
+    ],
+
+    // We still need extras because TipTap JSON
+    // content is filtered in JS below.
+    take: Math.max(limit * 3, limit),
+  });
+
+  const result: MostLikedComment[] = [];
+
+  for (const comment of comments) {
+    const content = comment.content as JSONContent;
+
+    if (!hasTextContent(content) || isDeletedCommentContent(content)) {
+      continue;
+    }
+
+    result.push({
+      ...comment,
+      content,
+    });
+
+    // Stop immediately once we have enough.
+    if (result.length === limit) {
+      break;
+    }
+  }
+
+  return result;
+}
+
+// -----------------------------------------------------------------------------
+// LEFT PANEL
+//
+// Important:
+// The client calls ONE server action instead of calling
+// getPopularBoards() and getMostLikedComments() separately.
+// Both database jobs also run concurrently.
+// -----------------------------------------------------------------------------
+
+export async function getPanelLeftData(
+  commentLimit = 3,
+  boardLimit = 7,
+): Promise<PanelLeftData> {
+  console.time("PANEL_LEFT_TOTAL");
+
+  console.time("MOST_LIKED");
+  const commentsPromise = getMostLikedComments(commentLimit).finally(() => {
+    console.timeEnd("MOST_LIKED");
+  });
+
+  console.time("POPULAR_BOARDS");
+  const boardsPromise = getPopularBoards(boardLimit).finally(() => {
+    console.timeEnd("POPULAR_BOARDS");
+  });
+
+  const [comments, popularBoards] = await Promise.all([
+    commentsPromise,
+    boardsPromise,
+  ]);
+
+  console.timeEnd("PANEL_LEFT_TOTAL");
+
+  return {
+    comments,
+    popularBoards,
+  };
+}
+
+export async function getLayoutSideData() {
+  const [comments, popularBoards, traders] = await Promise.all([
+    getMostLikedComments(3),
+    getPopularBoards(7),
+    getTopBetters(5),
+  ]);
+
+  return {
+    comments,
+    popularBoards,
+    traders,
+  };
+}
+
+export type LayoutSideData = Awaited<ReturnType<typeof getLayoutSideData>>;

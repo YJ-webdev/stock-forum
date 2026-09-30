@@ -220,7 +220,7 @@ export function NotificationPanel({
   );
 
   return (
-    <div className="flex h-full flex-col pt-4">
+    <div className="flex h-full flex-col">
       {/* Header */}
 
       <div

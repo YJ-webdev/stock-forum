@@ -382,7 +382,7 @@ export default function MarketPageClient({
   }, [selectedSymbol]);
 
   return (
-    <div className="mx-auto mt-13 max-w-4xl">
+    <div className="mx-auto mt-10 max-w-4xl">
       {/* News */}
       <div className="flex gap-2 mx-4 w-full self-end">
         <MarketNews symbol={selectedSymbol} news={latestNews} />

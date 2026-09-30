@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 import type { PanelImperativeHandle } from "react-resizable-panels";
@@ -16,36 +17,91 @@ import {
 } from "@/components/ui/resizable";
 
 import { Footer } from "./footer";
-import { PostEditor } from "@/components/post-editor";
-import { AccountPanel } from "./account-panel";
-import { NotificationPanel } from "./notification-panel";
 import { BreadCrumbs } from "./breadcrumbs";
 import { LeaderBoard } from "./leader-board";
 
 import { UserProvider } from "../context/user-context";
 import { PointBalanceProvider } from "../context/point-balance-context";
 
-import type { MostLikedComment } from "../actions/post";
-import type { PopularBoard } from "../actions/query";
-import type { LeaderboardUser } from "../actions/leaderboard";
 import type { User } from "@/types/user";
+import { LayoutSideData } from "../actions/query";
+import { SideDataLoading } from "./side-data-loading";
+import PanelLeftStream from "./panel-left-stream";
+import { LeaderBoardStream } from "./leader-board-stream";
+import PanelLeftMobileStream from "./panel-left-mobile-stream";
+
+// -----------------------------------------------------------------------------
+// Lazy-loaded Section B components
+// -----------------------------------------------------------------------------
+
+const PanelLoading = () => (
+  <div className="flex min-h-40 items-center justify-center">
+    <div
+      className="
+        size-5
+        animate-spin
+        rounded-full
+        border-2
+        border-zinc-200
+        border-t-zinc-700
+
+        dark:border-zinc-700
+        dark:border-t-zinc-200
+      "
+    />
+  </div>
+);
+
+const PostEditor = dynamic(
+  () => import("@/components/post-editor").then((mod) => mod.PostEditor),
+  {
+    ssr: false,
+    loading: PanelLoading,
+  },
+);
+
+const AccountPanel = dynamic(
+  () => import("./account-panel").then((mod) => mod.AccountPanel),
+  {
+    ssr: false,
+    loading: PanelLoading,
+  },
+);
+
+const NotificationPanel = dynamic(
+  () => import("./notification-panel").then((mod) => mod.NotificationPanel),
+  {
+    ssr: false,
+    loading: PanelLoading,
+  },
+);
+
+// -----------------------------------------------------------------------------
+// Types
+// -----------------------------------------------------------------------------
 
 interface LayoutShellProps {
   user: User | null;
   children: React.ReactNode;
-  comments: MostLikedComment[];
-  popularBoards: PopularBoard[];
-  traders: LeaderboardUser[];
+
+  sideDataPromise: Promise<LayoutSideData>;
 }
+
+// -----------------------------------------------------------------------------
+// LayoutShell
+// -----------------------------------------------------------------------------
 
 export default function LayoutShell({
   user,
   children,
-  comments,
-  popularBoards,
-  traders,
+  sideDataPromise,
 }: LayoutShellProps) {
+  // ---------------------------------------------------------------------------
+  // Layout
+  // ---------------------------------------------------------------------------
+
   const [layoutReady, setLayoutReady] = useState(false);
+
   // ---------------------------------------------------------------------------
   // Left panels
   // ---------------------------------------------------------------------------
@@ -80,14 +136,11 @@ export default function LayoutShell({
   // ---------------------------------------------------------------------------
 
   const handleToggleLeftPanel = () => {
-    // Desktop
     if (window.innerWidth >= 1280) {
       setIsDesktopPanelOpen((prev) => !prev);
       return;
     }
 
-    // Mobile / Tablet
-    // Close any open user menu first.
     setOnWrite(false);
     setOnAccount(false);
     setOnNotification(false);
@@ -99,32 +152,30 @@ export default function LayoutShell({
   // Section B responsive size
   //
   // Mobile:
-  //   Section B = 0%
   //   Main = 100%
+  //   Section B = 0%
   //
   // Tablet / Desktop:
+  //   Main = 70%
   //   Section B = 30%
-  //
-  // matchMedia only fires when crossing the md breakpoint.
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
     const media = window.matchMedia("(min-width: 768px)");
 
     const updateSectionB = () => {
-      if (media.matches) {
-        panelBRef.current?.resize("30%");
-      } else {
-        panelBRef.current?.resize("0%");
-      }
+      panelBRef.current?.resize(media.matches ? "30%" : "0%");
     };
 
-    // 먼저 올바른 panel 크기 적용
+    // Apply correct panel size first.
     updateSectionB();
 
-    // layout 계산이 실제 화면에 반영된 후 공개
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
+    // Wait until react-resizable-panels has applied
+    // the initial layout before revealing the page.
+    let frame2 = 0;
+
+    const frame1 = requestAnimationFrame(() => {
+      frame2 = requestAnimationFrame(() => {
         setLayoutReady(true);
       });
     });
@@ -132,6 +183,12 @@ export default function LayoutShell({
     media.addEventListener("change", updateSectionB);
 
     return () => {
+      cancelAnimationFrame(frame1);
+
+      if (frame2) {
+        cancelAnimationFrame(frame2);
+      }
+
       media.removeEventListener("change", updateSectionB);
     };
   }, []);
@@ -141,8 +198,7 @@ export default function LayoutShell({
   // ---------------------------------------------------------------------------
 
   const resetPanelB = () => {
-    // On mobile Section B must stay at 0%.
-    // Mobile uses the full-width overlay instead.
+    // Mobile uses the full-width overlay.
     if (window.innerWidth >= 768) {
       panelBRef.current?.resize("30%");
     }
@@ -195,14 +251,14 @@ export default function LayoutShell({
       <PointBalanceProvider>
         <div
           className="
-    relative
-    flex
-    min-h-screen
-    flex-col
+            relative
+            flex
+            min-h-screen
+            flex-col
 
-    md:h-screen
-    md:overflow-hidden
-  "
+            md:h-screen
+            md:overflow-hidden
+          "
         >
           {/* ---------------------------------------------------------------- */}
           {/* Navbar                                                           */}
@@ -217,49 +273,78 @@ export default function LayoutShell({
           />
 
           {/* ---------------------------------------------------------------- */}
-          {/* Mobile / tablet left drawer                                      */}
+          {/* Initial layout loading                                           */}
+          {/*                                                                  */}
+          {/* Navbar remains visible immediately.                              */}
+          {/* Everything below the 72px navbar is covered while the            */}
+          {/* resizable layout is being initialized.                           */}
           {/* ---------------------------------------------------------------- */}
 
           {!layoutReady && (
             <div
               className="
-      fixed
-      top-18
-      right-0
-      bottom-0
-      left-0
-      z-50
+                fixed
+                top-18
+                right-0
+                bottom-0
+                left-0
+                z-50
 
-      flex
-      items-center
-      justify-center
+                flex
+                items-center
+                justify-center
 
-      bg-white
-      dark:bg-zinc-900
-    "
+                bg-white
+
+                dark:bg-zinc-900
+              "
             >
               <div
                 className="
-        size-6
-        animate-spin
-        rounded-full
-        border-2
-        border-zinc-200
-        border-t-zinc-700
+                  size-6
+                  animate-spin
+                  rounded-full
+                  border-2
+                  border-zinc-200
+                  border-t-zinc-700
 
-        dark:border-zinc-700
-        dark:border-t-zinc-200
-      "
+                  dark:border-zinc-700
+                  dark:border-t-zinc-200
+                "
               />
             </div>
           )}
 
-          <PanelLeftMobile
-            isOpen={isMobilePanelOpen}
-            setIsOpen={setIsMobilePanelOpen}
-            comments={comments}
-            popularBoards={popularBoards}
-          />
+          {/* ---------------------------------------------------------------- */}
+          {/* Mobile / tablet left drawer                                      */}
+          {/* ---------------------------------------------------------------- */}
+
+          <Suspense
+            fallback={
+              isMobilePanelOpen ? (
+                <div
+                  className="
+          fixed
+          top-18
+          right-0
+          bottom-0
+          left-0
+          z-40
+          bg-white
+          dark:bg-zinc-950
+        "
+                >
+                  <SideDataLoading />
+                </div>
+              ) : null
+            }
+          >
+            <PanelLeftMobileStream
+              sideDataPromise={sideDataPromise}
+              isOpen={isMobilePanelOpen}
+              setIsOpen={setIsMobilePanelOpen}
+            />
+          </Suspense>
 
           {/* ---------------------------------------------------------------- */}
           {/* Page layout                                                      */}
@@ -274,28 +359,28 @@ export default function LayoutShell({
           {/*                                                                  */}
           {/* xl+                                                              */}
           {/*   PanelLeft 320px                                                */}
-          {/*   + Main/Section B                                               */}
+          {/*   + Main / Section B                                             */}
           {/* ---------------------------------------------------------------- */}
 
           <div
             className={`
-    min-h-0
-    flex-1
+              min-h-0
+              flex-1
 
-    md:h-screen
-    md:overflow-hidden
+              md:h-screen
+              md:overflow-hidden
 
-    xl:grid
-    xl:transition-[grid-template-columns]
-    xl:duration-300
-    xl:ease-out
+              xl:grid
+              xl:transition-[grid-template-columns]
+              xl:duration-300
+              xl:ease-out
 
-    ${
-      isDesktopPanelOpen
-        ? "xl:grid-cols-[320px_minmax(0,1fr)]"
-        : "xl:grid-cols-[0px_minmax(0,1fr)]"
-    }
-  `}
+              ${
+                isDesktopPanelOpen
+                  ? "xl:grid-cols-[320px_minmax(0,1fr)]"
+                  : "xl:grid-cols-[0px_minmax(0,1fr)]"
+              }
+            `}
           >
             {/* -------------------------------------------------------------- */}
             {/* Desktop left panel                                             */}
@@ -303,15 +388,18 @@ export default function LayoutShell({
 
             <div
               className="
-                hidden
-                min-w-0
-                overflow-hidden
-                xl:block
-                h-screen
-             
-              "
+    mt-18
+    hidden
+    h-[calc(100vh-72px)]
+    min-h-0
+    min-w-0
+    overflow-hidden
+    xl:block
+  "
             >
-              <PanelLeft comments={comments} popularBoards={popularBoards} />
+              <Suspense fallback={<SideDataLoading />}>
+                <PanelLeftStream sideDataPromise={sideDataPromise} />
+              </Suspense>
             </div>
 
             {/* -------------------------------------------------------------- */}
@@ -328,26 +416,27 @@ export default function LayoutShell({
                   defaultSize="70%"
                   minSize="30%"
                   className="
-    min-w-0
-    min-h-0
-    overflow-hidden
-    mt-16
-  "
+                    mt-18
+                    min-h-0
+                    min-w-0
+                    overflow-hidden
+                  "
                 >
                   <section
                     className="
-      h-screen
-      w-full
-      min-w-0
-      min-h-0
-pb-14
+                      h-[calc(100vh-72px)]
+                      w-full
+                      min-h-0
+                      min-w-0
 
-      overflow-y-auto
-      overflow-x-hidden
+                      overflow-x-hidden
+                      overflow-y-auto
 
-      bg-white
-      dark:bg-zinc-900
-    "
+                      bg-white
+                      pb-14
+
+                      dark:bg-zinc-900
+                    "
                   >
                     <div className="min-h-full">
                       {pathname !== "/" && <BreadCrumbs />}
@@ -366,6 +455,7 @@ pb-14
                     hidden
                     w-0
                     border-gray-50
+
                     md:flex
                   "
                 />
@@ -382,45 +472,43 @@ pb-14
                   defaultSize="30%"
                   minSize="0%"
                   className="
-    h-screen
-    min-w-0
-    overflow-hidden
-    z-2
+                    z-2
+                    h-screen
+                    min-w-0
+                    overflow-hidden
 
-    border-l
-    border-gray-100
-    bg-white
+                    border-l
+                    border-gray-100
+                    bg-white
 
-    dark:border-zinc-800
-    dark:bg-zinc-900
-  "
+                    dark:border-zinc-800
+                    dark:bg-zinc-900
+                  "
                 >
                   {/* -------------------------------------------------------- */}
-                  {/* Section B content                                        */}
-                  {/*                                                          */}
-                  {/* hidden on mobile                                         */}
+                  {/* Desktop / tablet Section B                               */}
                   {/* -------------------------------------------------------- */}
 
                   <div
                     className="
-      hidden
-      h-[calc(100vh-56px)]
-      mt-14
-      min-h-0
-      min-w-0
+    mt-18
+    hidden
+    h-[calc(100vh-72px)]
+    min-h-0
+    min-w-0
 
-      flex-col
-      gap-3
+    flex-col
+    gap-3
 
-      overflow-x-hidden
-      overflow-y-auto
+    overflow-x-hidden
+    overflow-y-auto
 
-      bg-white
+    bg-white
 
-      md:flex
+    md:flex
 
-      dark:bg-zinc-900
-    "
+    dark:bg-zinc-900
+  "
                   >
                     {/* Write */}
 
@@ -444,23 +532,9 @@ pb-14
                     {/* Default Section B */}
 
                     {!onWrite && !onAccount && !onNotification && (
-                      <>
-                        <div className="mx-4 mt-8">
-                          <p
-                            className="
-                              truncate
-                              text-xs
-                              font-light
-                              tracking-wider
-                              text-muted-foreground/50
-                            "
-                          >
-                            Leaderboard
-                          </p>
-                        </div>
-
-                        <LeaderBoard traders={traders} />
-                      </>
+                      <Suspense fallback={<SideDataLoading />}>
+                        <LeaderBoardStream sideDataPromise={sideDataPromise} />
+                      </Suspense>
                     )}
                   </div>
                 </ResizablePanel>
@@ -471,15 +545,14 @@ pb-14
           {/* ---------------------------------------------------------------- */}
           {/* Mobile Section B overlay                                         */}
           {/*                                                                  */}
-          {/* On mobile Section B itself stays at 0%.                          */}
-          {/* Write / Account / Notification uses this full-width overlay.     */}
+          {/* Mobile uses its own full-width panel instead of ResizablePanel.  */}
           {/* ---------------------------------------------------------------- */}
 
           {mobilePanelOpen && (
             <div
               className="
                 fixed
-                top-14
+                top-18
                 right-0
                 bottom-0
                 left-0

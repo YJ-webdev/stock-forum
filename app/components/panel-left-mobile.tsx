@@ -3,16 +3,17 @@
 import React from "react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ModeToggle } from "./mode-toggle";
+
 import { MostLikedComments } from "./most-liked-comments";
 import { PopularBoards } from "./major-indices";
 
-import type { MostLikedComment } from "../actions/post";
-import type { PopularBoard } from "../actions/query";
+import type { MostLikedComment, PopularBoard } from "../actions/query";
 
 interface PanelLeftMobileProps {
   isOpen: boolean;
+
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+
   comments: MostLikedComment[];
   popularBoards: PopularBoard[];
 }
@@ -23,9 +24,11 @@ export default function PanelLeftMobile({
   comments,
   popularBoards,
 }: PanelLeftMobileProps) {
-  const handlePanelClick = (event: React.MouseEvent<HTMLElement>) => {
+  const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
 
+    // Mobile only:
+    // close drawer after clicking a link/button.
     if (target.closest("button, a")) {
       setIsOpen(false);
     }
@@ -33,44 +36,56 @@ export default function PanelLeftMobile({
 
   return (
     <aside
-      onClick={handlePanelClick}
       className={`
-        fixed top-0 left-0 z-40
-        h-screen w-full
-        bg-white text-zinc-900
-        transform-gpu
-        transition-transform duration-300 ease-out
-        dark:bg-zinc-900
-        dark:text-zinc-100
-        sm:w-[320px]
+        fixed
+        top-18
+        left-0
+        z-40
+
+        h-[calc(100vh-72px)]
+        w-full
+
+        border-r
+        border-zinc-100
+        bg-white
+
+        transition-transform
+        duration-300
+        ease-out
+
+        dark:border-zinc-800
+        dark:bg-zinc-950
+
         xl:hidden
 
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
       `}
     >
-      <ScrollArea className="mt-10 h-full w-full pb-10">
-        <div className="flex min-h-screen flex-col">
-          <div className="mt-12">
-            <p className="mb-3.5 px-4 text-xs font-light tracking-wider text-muted-foreground/50">
+      <div onClick={handlePanelClick} className="h-full w-full">
+        <ScrollArea className="h-full">
+          <div className="flex min-h-full flex-col pb-10">
+            <p className="mb-3.5 px-4 pt-4 text-xs font-light tracking-wider text-muted-foreground/50">
               Popular boards
             </p>
 
             <PopularBoards boards={popularBoards} />
-          </div>
 
-          <div className="mt-3 p-4">
-            <p className="mb-2 text-xs font-light tracking-wider text-muted-foreground/50">
-              Most liked comments
-            </p>
+            <div className="mt-3 p-4">
+              <p className="mb-2 text-xs font-light tracking-wider text-muted-foreground/50">
+                Most liked comments
+              </p>
 
-            <MostLikedComments comments={comments} />
+              {comments.length > 0 ? (
+                <MostLikedComments comments={comments} />
+              ) : (
+                <p className="py-4 text-center text-sm text-muted-foreground/50">
+                  No comments yet.
+                </p>
+              )}
+            </div>
           </div>
-
-          <div className="mt-auto self-end p-4">
-            <ModeToggle />
-          </div>
-        </div>
-      </ScrollArea>
+        </ScrollArea>
+      </div>
     </aside>
   );
 }

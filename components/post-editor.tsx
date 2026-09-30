@@ -247,7 +247,7 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
   };
 
   return (
-    <div className="mt-4 flex h-full min-h-0 w-full space-y-2 flex-col px-4">
+    <div className="flex h-full min-h-0 w-full space-y-2 flex-col px-4">
       <div
         ref={topicRef}
         className="relative flex flex-wrap gap-4 items-center mt-4 shrink-0 mb-5"

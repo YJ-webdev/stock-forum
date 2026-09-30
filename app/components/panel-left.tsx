@@ -5,8 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { MostLikedComments } from "./most-liked-comments";
 import { PopularBoards } from "./major-indices";
 
-import type { MostLikedComment } from "../actions/post";
-import type { PopularBoard } from "../actions/query";
+import type { MostLikedComment, PopularBoard } from "../actions/query";
 
 interface PanelLeftProps {
   comments: MostLikedComment[];
@@ -15,33 +14,25 @@ interface PanelLeftProps {
 
 export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
   return (
-    <aside
+    <div
       className="
-    hidden
-    h-full
-    w-[320px]
-    min-h-0
-    shrink-0
-    pt-22
+      flex
+      h-full
+      w-full
+      flex-col
 
-    overflow-hidden
+      border-r
+      border-zinc-100
 
-    border-r
-    border-zinc-100
+      bg-white
 
-    bg-white
-    text-zinc-900
-
-    xl:block
-
-    dark:border-zinc-800
-    dark:bg-zinc-900
-    dark:text-zinc-100
-  "
+      dark:border-zinc-800
+      dark:bg-zinc-950
+    "
     >
-      <ScrollArea className="h-full w-full">
-        <div className="flex min-h-full flex-col pb-10">
-          <p className="mb-3.5 px-4 text-xs font-light tracking-wider text-muted-foreground/50">
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="pb-10">
+          <p className="mb-3.5 px-4 pt-4 text-xs font-light tracking-wider text-muted-foreground/50">
             Popular boards
           </p>
 
@@ -52,10 +43,16 @@ export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
               Most liked comments
             </p>
 
-            <MostLikedComments comments={comments} />
+            {comments.length > 0 ? (
+              <MostLikedComments comments={comments} />
+            ) : (
+              <p className="py-4 text-center text-sm text-muted-foreground/50">
+                No comments yet.
+              </p>
+            )}
           </div>
         </div>
       </ScrollArea>
-    </aside>
+    </div>
   );
 }

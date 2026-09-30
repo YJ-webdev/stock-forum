@@ -101,29 +101,21 @@ export async function createComment({
   assetSymbols,
   prediction = null,
 }: CreateCommentInput) {
+  // ---------------------------------------------------------------------------
+  // AUTH
+  // ---------------------------------------------------------------------------
+
   const session = await auth();
 
   if (!session?.user?.id) {
     throw new Error("You must be logged in.");
   }
 
-  const user = await prisma.user.findUnique({
-    where: {
-      id: session.user.id,
-    },
+  const userId = session.user.id;
 
-    select: {
-      nationality: true,
-    },
-  });
-
-  if (!user) {
-    throw new Error("Log in to comment.");
-  }
-
-  if (prediction && !user.nationality) {
-    throw new Error("Please set your nationality before voting.");
-  }
+  // ---------------------------------------------------------------------------
+  // SELECTED MARKETS
+  // ---------------------------------------------------------------------------
 
   const uniqueSymbols = [...new Set(assetSymbols)];
 
@@ -140,6 +132,10 @@ export async function createComment({
   if (selectedMarkets.length === 0) {
     throw new Error("No valid boards selected.");
   }
+
+  // ---------------------------------------------------------------------------
+  // PREDICTION VALIDATION
+  // ---------------------------------------------------------------------------
 
   if (prediction && selectedMarkets.length !== 1) {
     throw new Error("A prediction must belong to exactly one market.");
@@ -162,6 +158,10 @@ export async function createComment({
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // CONTENT
+  // ---------------------------------------------------------------------------
+
   const hasContent =
     content !== null &&
     Array.isArray(content.content) &&
@@ -174,6 +174,42 @@ export async function createComment({
   const plainContent = hasContent
     ? (JSON.parse(JSON.stringify(content)) as Prisma.InputJsonValue)
     : null;
+
+  // ---------------------------------------------------------------------------
+  // PREDICTION NATIONALITY
+  //
+  // Only predictions need nationality.
+  //
+  // We intentionally read nationality directly from the database here instead
+  // of trusting the client or JWT value. This guarantees that the Prediction
+  // stores the user's current nationality at the moment the vote is submitted.
+  //
+  // Normal comments do not perform this DB query.
+  // ---------------------------------------------------------------------------
+
+  let predictionNationality: string | null = null;
+
+  if (prediction) {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+
+      select: {
+        nationality: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error("User not found.");
+    }
+
+    if (!user.nationality) {
+      throw new Error("Please set your nationality before voting.");
+    }
+
+    predictionNationality = user.nationality;
+  }
 
   // ---------------------------------------------------------------------------
   // REFERENCE CLOSE
@@ -204,6 +240,10 @@ export async function createComment({
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // ENSURE MARKET ASSETS EXIST
+  // ---------------------------------------------------------------------------
+
   await Promise.all(
     selectedMarkets.map((market) =>
       prisma.marketAsset.upsert({
@@ -231,8 +271,18 @@ export async function createComment({
     ),
   );
 
+  // ---------------------------------------------------------------------------
+  // TRANSACTION
+  // ---------------------------------------------------------------------------
+
   const result = await prisma.$transaction(async (tx) => {
-    let createdPrediction: { id: string } | null = null;
+    let createdPrediction: {
+      id: string;
+    } | null = null;
+
+    // -----------------------------------------------------------------------
+    // PREDICTION
+    // -----------------------------------------------------------------------
 
     if (prediction) {
       const market = selectedMarkets[0];
@@ -241,31 +291,47 @@ export async function createComment({
         throw new Error("Could not determine the previous market close.");
       }
 
+      if (!predictionNationality) {
+        throw new Error("Please set your nationality before voting.");
+      }
+
+      // ---------------------------------------------------------------------
+      // ENSURE POINT BALANCE EXISTS
+      // ---------------------------------------------------------------------
+
       await tx.pointBalance.upsert({
         where: {
-          userId: session.user.id,
+          userId,
         },
 
         update: {},
 
         create: {
-          userId: session.user.id,
+          userId,
           points: 10000,
         },
       });
 
+      // ---------------------------------------------------------------------
+      // CREATE PREDICTION
+      // ---------------------------------------------------------------------
+
       createdPrediction = await tx.prediction.create({
         data: {
-          userId: session.user.id,
+          userId,
           symbol: market.symbol,
 
           direction: prediction.direction,
+
           pointsBet: prediction.pointsBet,
 
           referenceClose,
+
           sessionDate: prediction.sessionDate,
 
-          nationality: user.nationality!,
+          // Snapshot of the user's current
+          // nationality at vote time.
+          nationality: predictionNationality,
         },
 
         select: {
@@ -273,7 +339,7 @@ export async function createComment({
         },
       });
 
-      // -----------------------------------------------------------------------
+      // ---------------------------------------------------------------------
       // DEDUCT BET
       //
       // updateMany + points >= pointsBet ensures the balance cannot go
@@ -282,11 +348,11 @@ export async function createComment({
       //
       // Because this happens in the same transaction as Prediction creation,
       // failure here rolls back the Prediction as well.
-      // -----------------------------------------------------------------------
+      // ---------------------------------------------------------------------
 
       const deducted = await tx.pointBalance.updateMany({
         where: {
-          userId: session.user.id,
+          userId,
 
           points: {
             gte: prediction.pointsBet,
@@ -304,9 +370,14 @@ export async function createComment({
         throw new Error("You do not have enough points.");
       }
 
+      // ---------------------------------------------------------------------
+      // POINT TRANSACTION
+      // ---------------------------------------------------------------------
+
       await tx.pointTransaction.create({
         data: {
-          userId: session.user.id,
+          userId,
+
           predictionId: createdPrediction.id,
 
           type: "BET",
@@ -316,7 +387,13 @@ export async function createComment({
       });
     }
 
-    let createdComment: { id: string } | null = null;
+    // -----------------------------------------------------------------------
+    // COMMENT
+    // -----------------------------------------------------------------------
+
+    let createdComment: {
+      id: string;
+    } | null = null;
 
     if (hasContent || createdPrediction) {
       const commentContent: Prisma.InputJsonValue = plainContent ?? {
@@ -327,7 +404,8 @@ export async function createComment({
       createdComment = await tx.comment.create({
         data: {
           content: commentContent,
-          authorId: session.user.id,
+
+          authorId: userId,
 
           predictionId: createdPrediction?.id ?? null,
 
@@ -348,10 +426,14 @@ export async function createComment({
       });
     }
 
+    // -----------------------------------------------------------------------
+    // UPDATED POINT BALANCE
+    // -----------------------------------------------------------------------
+
     const pointBalance = prediction
       ? await tx.pointBalance.findUnique({
           where: {
-            userId: session.user.id,
+            userId,
           },
 
           select: {
@@ -362,14 +444,26 @@ export async function createComment({
 
     return {
       success: true,
+
       commentId: createdComment?.id ?? null,
+
       predictionId: createdPrediction?.id ?? null,
+
       points: pointBalance?.points ?? null,
     };
   });
+
+  // ---------------------------------------------------------------------------
+  // CREATED COMMENT
+  // ---------------------------------------------------------------------------
+
   const createdComment = result.commentId
-    ? await getCommentById(result.commentId, session.user.id)
+    ? await getCommentById(result.commentId, userId)
     : null;
+
+  // ---------------------------------------------------------------------------
+  // RESULT
+  // ---------------------------------------------------------------------------
 
   return {
     ...result,
@@ -687,123 +781,6 @@ export async function editComment({
     content,
     editedAt,
   };
-}
-
-export interface MostLikedComment {
-  id: string;
-  content: JSONContent;
-
-  createdAt: Date;
-  updatedAt: Date;
-
-  author: {
-    id: string;
-    name: string | null;
-    image: string | null;
-    nationality: string | null;
-  };
-
-  assets: {
-    asset: {
-      name: string;
-      symbol: string;
-      displaySymbol: string | null;
-    };
-  }[];
-
-  _count: {
-    likes: number;
-    replies: number;
-  };
-}
-
-function hasTextContent(content: JSONContent): boolean {
-  if (content.type === "text") {
-    return Boolean(content.text?.trim());
-  }
-
-  if (!content.content) {
-    return false;
-  }
-
-  return content.content.some(hasTextContent);
-}
-
-export async function getMostLikedComments(
-  limit = 5,
-): Promise<MostLikedComment[]> {
-  const comments = await prisma.comment.findMany({
-    where: {
-      withdrawnAt: null,
-      moderatedAt: null,
-
-      author: {
-        status: "ACTIVE",
-      },
-    },
-
-    select: {
-      id: true,
-      content: true,
-
-      createdAt: true,
-      updatedAt: true,
-
-      author: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          nationality: true,
-        },
-      },
-
-      assets: {
-        select: {
-          asset: {
-            select: {
-              name: true,
-              symbol: true,
-              displaySymbol: true,
-            },
-          },
-        },
-      },
-
-      _count: {
-        select: {
-          likes: true,
-          replies: true,
-        },
-      },
-    },
-
-    orderBy: [
-      {
-        likes: {
-          _count: "desc",
-        },
-      },
-      {
-        createdAt: "desc",
-      },
-    ],
-
-    // Fetch extras because some comments may be filtered out below.
-    take: Math.max(limit * 3, limit),
-  });
-
-  return comments
-    .filter((comment) => {
-      const content = comment.content as JSONContent;
-
-      return hasTextContent(content) && !isDeletedCommentContent(content);
-    })
-    .slice(0, limit)
-    .map((comment) => ({
-      ...comment,
-      content: comment.content as JSONContent,
-    }));
 }
 
 export async function hideComment(commentId: string, reason?: string) {
@@ -1379,17 +1356,6 @@ export async function restoreReply(replyId: string) {
     success: true,
     action: "RESTORED" as const,
   };
-}
-
-function isDeletedCommentContent(content: JSONContent): boolean {
-  const text =
-    content.content
-      ?.flatMap((node) => node.content ?? [])
-      .map((node) => node.text ?? "")
-      .join("")
-      .trim() ?? "";
-
-  return text === "Comment deleted by user";
 }
 
 export async function getCommentReplies(commentId: string) {
