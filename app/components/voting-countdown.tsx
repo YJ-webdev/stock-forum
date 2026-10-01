@@ -47,8 +47,10 @@ export function VotingCountdown({
       sm:flex
     "
     >
-      {isExpired && type === "VOTING_OPENS" ? (
-        <span>Voting is now open</span>
+      {isExpired ? (
+        <span>
+          {type === "VOTING_OPENS" ? "Voting is now open" : "Voting closed"}
+        </span>
       ) : (
         <>
           <span>
