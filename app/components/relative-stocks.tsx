@@ -155,12 +155,12 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
 
               {/* Vote */}
               <th className="w-[25%] px-3 py-3.5 text-right md:w-[17%] md:px-4 md:py-3">
-                Vote
+                Statistic
               </th>
 
               {/* Action */}
               <th className="w-[11%] py-3.5 pr-3 md:w-[8%] md:py-3">
-                <span className="sr-only md:not-sr-only">Action</span>
+                <span className="sr-only md:not-sr-only">Vote</span>
               </th>
             </tr>
           </thead>
