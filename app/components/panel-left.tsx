@@ -6,6 +6,7 @@ import { MostLikedComments } from "./most-liked-comments";
 import { PopularBoards } from "./major-indices";
 
 import type { MostLikedComment, PopularBoard } from "../actions/query";
+import { Footer } from "./footer";
 
 interface PanelLeftProps {
   comments: MostLikedComment[];
@@ -20,6 +21,7 @@ export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
       h-full
       w-full
       flex-col
+      pb-2
 
       border-r
       border-zinc-100
@@ -31,7 +33,7 @@ export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
     "
     >
       <ScrollArea className="min-h-0 flex-1">
-        <div className="pb-10">
+        <div className="">
           <p className="mb-3.5 px-4 pt-4 text-xs font-normal tracking-wider text-muted-foreground/50 truncate">
             Popular boards
           </p>

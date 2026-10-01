@@ -486,7 +486,7 @@ export default function LayoutShell({
                       min-w-0
 
                       flex-col
-                      gap-3
+                    
 
                       overflow-x-hidden
                       overflow-y-auto
@@ -524,6 +524,7 @@ export default function LayoutShell({
                         <LeaderBoardStream sideDataPromise={sideDataPromise} />
                       </Suspense>
                     )}
+                    <Footer />
                   </div>
                 </ResizablePanel>
               </ResizablePanelGroup>
@@ -578,6 +579,7 @@ export default function LayoutShell({
                   setOnNotification={setOnNotification}
                 />
               )}
+              <Footer />
             </div>
           )}
 
@@ -585,7 +587,7 @@ export default function LayoutShell({
           {/* Footer                                                           */}
           {/* ---------------------------------------------------------------- */}
 
-          <Footer />
+          {/* <Footer /> */}
         </div>
       </PointBalanceProvider>
     </UserProvider>

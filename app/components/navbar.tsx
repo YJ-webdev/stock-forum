@@ -291,19 +291,6 @@ export default function UserMenu({
 
         <DropdownMenuContent align="end" className="z-60 mt-1 w-56">
           <DropdownMenuGroup>
-            {user.role === "ADMIN" && (
-              <DropdownMenuItem
-                onClick={() => router.push("/admin")}
-                className="
-              h-11 cursor-pointer
-              text-[15px]
-            "
-              >
-                <ShieldCogCorner className="mr-2 size-4.5" strokeWidth={1.5} />
-                Admin
-              </DropdownMenuItem>
-            )}
-
             <DropdownMenuItem
               onClick={onWrite}
               className="
@@ -336,6 +323,20 @@ export default function UserMenu({
               <Settings className="mr-2 size-4.5" strokeWidth={1.5} />
               Settings
             </DropdownMenuItem>
+
+            {user.role === "ADMIN" && (
+              <DropdownMenuItem
+                onClick={() => router.push("/admin")}
+                className="
+                
+              h-11 cursor-pointer
+              text-[15px]
+            "
+              >
+                <ShieldCogCorner className="mr-2 size-4.5" strokeWidth={1.5} />
+                Admin
+              </DropdownMenuItem>
+            )}
 
             <DropdownMenuItem
               onClick={toggleTheme}

@@ -247,10 +247,10 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full space-y-2 flex-col px-4">
+    <div className="flex h-full min-h-0 w-full space-y-2 flex-col px-4 pt-2">
       <div
         ref={topicRef}
-        className="relative flex flex-wrap gap-4 items-center mt-4 shrink-0 mb-5"
+        className="relative flex flex-wrap gap-4 items-center mt-4 shrink-0 mb-4"
       >
         {selectedAssets.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
@@ -422,7 +422,7 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
         )}
       </div>
 
-      <div className="ml-auto mb-4 mt-2 flex shrink-0 gap-2">
+      <div className="ml-auto pb-4 flex shrink-0 gap-2">
         <Button
           type="button"
           variant="outline"

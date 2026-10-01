@@ -341,120 +341,113 @@ export function NotificationPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* ------------------------------------------------------------------- */}
-      {/* HEADER                                                              */}
-      {/* ------------------------------------------------------------------- */}
+      {loading ? (
+        <NotificationLoader />
+      ) : (
+        <>
+          {/* ------------------------------------------------------------------- */}
+          {/* HEADER                                                              */}
+          {/* ------------------------------------------------------------------- */}
 
-      <div
-        className="
-          flex shrink-0 items-center justify-between
-          border-b border-zinc-200
-          px-4 py-3
-          dark:border-zinc-800
-        "
-      >
-        <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4" />
-
-          <span className="text-sm font-semibold">Notifications</span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Mark all read */}
-
-          {hasUnreadNotifications && (
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={handleMarkAllRead}
-              className="
-                flex cursor-pointer items-center gap-1.5
-                text-xs text-zinc-500
-                transition-colors
-                hover:text-zinc-900
-                disabled:cursor-default
-                disabled:opacity-50
-                dark:text-zinc-400
-                dark:hover:text-zinc-100
-              "
-            >
-              <CheckCheck className="h-3.5 w-3.5" />
-              Mark all read
-            </button>
-          )}
-
-          {/* Clear social notifications */}
-
-          {hasSocialNotifications && (
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={handleDeleteAllSocial}
-              className="
-                flex cursor-pointer items-center gap-1.5
-                text-xs text-zinc-500
-                transition-colors
-                hover:text-rose-600
-                disabled:cursor-default
-                disabled:opacity-50
-                dark:text-zinc-400
-                dark:hover:text-rose-400
-              "
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Clear
-            </button>
-          )}
-
-          {/* Close */}
-
-          <button
-            type="button"
-            onClick={() => setOnNotification(false)}
-            aria-label="Close notifications"
-            title="Close notifications"
+          <div
             className="
-              flex size-8
-              cursor-pointer
-              items-center justify-center
-              rounded-md
-              transition-colors
-              hover:bg-zinc-100
-              dark:hover:bg-zinc-800
-            "
+            flex shrink-0 items-center justify-between
+            px-4 py-3
+           
+          "
           >
-            <X className="size-4" />
-          </button>
-        </div>
-      </div>
+            <div className="flex items-center gap-3 ml-auto">
+              {/* Mark all read */}
 
-      {/* ------------------------------------------------------------------- */}
-      {/* CONTENT                                                             */}
-      {/* ------------------------------------------------------------------- */}
+              {hasUnreadNotifications && (
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={handleMarkAllRead}
+                  className="
+                  flex cursor-pointer items-center gap-1.5
+                  text-xs text-zinc-500
+                  transition-colors
+                  hover:text-zinc-900
+                  disabled:cursor-default
+                  disabled:opacity-50
+                  dark:text-zinc-400
+                  dark:hover:text-zinc-100
+                "
+                >
+                  <CheckCheck className="h-3.5 w-3.5" />
+                  Mark all read
+                </button>
+              )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {loading ? (
-          <NotificationLoader />
-        ) : notifications.length === 0 ? (
-          <EmptyNotifications />
-        ) : (
-          notifications.map((notification) => (
-            <NotificationItem
-              key={notification.id}
-              notification={notification}
-              onClick={() => handleNotificationClick(notification)}
-              onDelete={() => handleDeleteNotification(notification.id)}
-            />
-          ))
-        )}
-      </div>
+              {/* Clear social notifications */}
+
+              {hasSocialNotifications && (
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={handleDeleteAllSocial}
+                  className="
+                  flex cursor-pointer items-center gap-1.5
+                  text-xs text-zinc-500
+                  transition-colors
+                  hover:text-rose-600
+                  disabled:cursor-default
+                  disabled:opacity-50
+                  dark:text-zinc-400
+                  dark:hover:text-rose-400
+                "
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Clear
+                </button>
+              )}
+
+              {/* Close */}
+
+              <button
+                type="button"
+                onClick={() => setOnNotification(false)}
+                aria-label="Close notifications"
+                title="Close notifications"
+                className="
+                flex size-8
+                cursor-pointer
+                items-center justify-center
+                rounded-md
+                transition-colors
+                hover:bg-zinc-100
+                dark:hover:bg-zinc-800
+              "
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* ------------------------------------------------------------------- */}
+          {/* CONTENT                                                             */}
+          {/* ------------------------------------------------------------------- */}
+
+          <div className="min-h-0 flex-1 overflow-y-auto pb-10">
+            {notifications.length === 0 ? (
+              <EmptyNotifications />
+            ) : (
+              notifications.map((notification) => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onClick={() => handleNotificationClick(notification)}
+                  onDelete={() => handleDeleteNotification(notification.id)}
+                />
+              ))
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
-
-// -----------------------------------------------------------------------------
-// LOADER
-// -----------------------------------------------------------------------------
 
 function NotificationLoader() {
   return (
@@ -474,10 +467,6 @@ function NotificationLoader() {
     </div>
   );
 }
-
-// -----------------------------------------------------------------------------
-// ITEM
-// -----------------------------------------------------------------------------
 
 function NotificationItem({
   notification,
@@ -603,8 +592,6 @@ function NotificationItem({
         </div>
       </button>
 
-      {/* Delete social notification */}
-
       {isSocial && (
         <button
           type="button"
@@ -639,10 +626,6 @@ function NotificationItem({
   );
 }
 
-// -----------------------------------------------------------------------------
-// NOTIFICATION PREVIEW
-// -----------------------------------------------------------------------------
-
 function getNotificationPreview(notification: MyNotification): string | null {
   switch (notification.type) {
     case "COMMENT_LIKED":
@@ -658,23 +641,17 @@ function getNotificationPreview(notification: MyNotification): string | null {
   }
 }
 
-// -----------------------------------------------------------------------------
-// CONTENT -> TEXT
-// -----------------------------------------------------------------------------
-
 function getContentText(content: unknown): string | null {
   if (!content) {
     return null;
   }
 
-  // Reply content may simply be a string.
   if (typeof content === "string") {
     const value = content.trim();
 
     return value || null;
   }
 
-  // TipTap JSON.
   if (typeof content === "object") {
     const text = extractTextFromTipTap(content);
 
@@ -705,10 +682,6 @@ function extractTextFromTipTap(value: unknown): string {
 
   return node.content.map((child) => extractTextFromTipTap(child)).join(" ");
 }
-
-// -----------------------------------------------------------------------------
-// NAVIGATION
-// -----------------------------------------------------------------------------
 
 function getNotificationHref(notification: MyNotification): string | null {
   switch (notification.type) {
@@ -757,10 +730,6 @@ function getNotificationHref(notification: MyNotification): string | null {
   }
 }
 
-// -----------------------------------------------------------------------------
-// ICON
-// -----------------------------------------------------------------------------
-
 function NotificationIcon({ type }: { type: MyNotification["type"] }) {
   switch (type) {
     case "PREDICTION_WON":
@@ -783,10 +752,6 @@ function NotificationIcon({ type }: { type: MyNotification["type"] }) {
   }
 }
 
-// -----------------------------------------------------------------------------
-// EMPTY
-// -----------------------------------------------------------------------------
-
 function EmptyNotifications() {
   return (
     <div
@@ -797,6 +762,7 @@ function EmptyNotifications() {
         justify-center
         px-6
         text-center
+      
       "
     >
       <Bell
@@ -823,10 +789,6 @@ function EmptyNotifications() {
     </div>
   );
 }
-
-// -----------------------------------------------------------------------------
-// TIME
-// -----------------------------------------------------------------------------
 
 function formatNotificationTime(date: Date) {
   const value = new Date(date);

@@ -147,7 +147,7 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
               </th>
 
               {/* 24h % */}
-              <th className="hidden py-3 text-right md:table-cell md:w-[11%]">
+              <th className="hidden py-3 text-right md:table-cell md:w-[11%] truncate">
                 24h %
               </th>
 

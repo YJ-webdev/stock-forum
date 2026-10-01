@@ -215,46 +215,28 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col p-4">
+    <div className="flex h-full min-h-0 w-full flex-col p-4 pt-3!">
       {/* HEADER */}
-      <div className="shrink-0 pb-5">
+      <div className="shrink-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <UserRound className="size-4 text-zinc-500 dark:text-zinc-400" />
-
-            <h2 className="text-[16px] font-medium text-zinc-900 dark:text-zinc-100">
-              Account
-            </h2>
-          </div>
-
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={() => setOnAccount(false)}
-            className="size-8"
+            className="size-8 ml-auto"
             aria-label="Close account"
           >
             <X className="size-4" />
           </Button>
         </div>
-
-        <p className="mt-1 text-[13px] text-zinc-500 dark:text-zinc-400">
-          Manage your profile and regional preferences.
-        </p>
       </div>
-
-      <Separator />
 
       {/* CONTENT */}
       <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto">
-        <div className="py-5">
+        <div className="">
           {/* PROFILE */}
-          <div className="mb-7">
-            <p className="mb-4 text-[12px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-              Profile
-            </p>
-
+          <div className="">
             <div className="flex items-center gap-4">
               {/* AVATAR */}
               <div className="shrink-0">
@@ -330,7 +312,6 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
                   onClick={handleAvatarClick}
                   disabled={isPending}
                   className="
-                    mt-2
                     w-full
                     cursor-pointer
                     text-center
@@ -465,12 +446,12 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
       </div>
 
       {/* FOOTER */}
-      <div className="shrink-0 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+      <div className="shrink-0 border-zinc-200 dark:border-zinc-800 ml-auto mt-auto ">
         <Button
           type="button"
           onClick={handleSave}
           disabled={!hasChanges || isPending}
-          className="w-full text-[14px]"
+          className="px-5 py-4 text-[15px]"
         >
           {isPending ? (
             <span className="flex items-center gap-2">
