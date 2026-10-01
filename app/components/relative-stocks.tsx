@@ -137,7 +137,7 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
               </th>
 
               {/* Price */}
-              <th className="w-[25%] py-3.5 text-center md:w-[13%] md:py-3">
+              <th className="w-[25%] py-3.5 text-right md:w-[13%] md:py-3">
                 Today
               </th>
 

@@ -59,6 +59,7 @@ export type MarketAssetMinAggregateOutputType = {
   high: runtime.Decimal | null
   low: runtime.Decimal | null
   volume: runtime.Decimal | null
+  aiBriefEnabled: boolean | null
   newsLastFetchedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -79,6 +80,7 @@ export type MarketAssetMaxAggregateOutputType = {
   high: runtime.Decimal | null
   low: runtime.Decimal | null
   volume: runtime.Decimal | null
+  aiBriefEnabled: boolean | null
   newsLastFetchedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -99,6 +101,7 @@ export type MarketAssetCountAggregateOutputType = {
   high: number
   low: number
   volume: number
+  aiBriefEnabled: number
   newsLastFetchedAt: number
   createdAt: number
   updatedAt: number
@@ -139,6 +142,7 @@ export type MarketAssetMinAggregateInputType = {
   high?: true
   low?: true
   volume?: true
+  aiBriefEnabled?: true
   newsLastFetchedAt?: true
   createdAt?: true
   updatedAt?: true
@@ -159,6 +163,7 @@ export type MarketAssetMaxAggregateInputType = {
   high?: true
   low?: true
   volume?: true
+  aiBriefEnabled?: true
   newsLastFetchedAt?: true
   createdAt?: true
   updatedAt?: true
@@ -179,6 +184,7 @@ export type MarketAssetCountAggregateInputType = {
   high?: true
   low?: true
   volume?: true
+  aiBriefEnabled?: true
   newsLastFetchedAt?: true
   createdAt?: true
   updatedAt?: true
@@ -286,6 +292,7 @@ export type MarketAssetGroupByOutputType = {
   high: runtime.Decimal
   low: runtime.Decimal
   volume: runtime.Decimal
+  aiBriefEnabled: boolean
   newsLastFetchedAt: Date | null
   createdAt: Date
   updatedAt: Date
@@ -329,6 +336,7 @@ export type MarketAssetWhereInput = {
   high?: Prisma.DecimalFilter<"MarketAsset"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFilter<"MarketAsset"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFilter<"MarketAsset"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFilter<"MarketAsset"> | boolean
   newsLastFetchedAt?: Prisma.DateTimeNullableFilter<"MarketAsset"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"MarketAsset"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MarketAsset"> | Date | string
@@ -336,6 +344,7 @@ export type MarketAssetWhereInput = {
   comments?: Prisma.CommentAssetListRelationFilter
   predictions?: Prisma.PredictionListRelationFilter
   news?: Prisma.MarketNewsListRelationFilter
+  aiBrief?: Prisma.XOR<Prisma.MarketAiBriefNullableScalarRelationFilter, Prisma.MarketAiBriefWhereInput> | null
 }
 
 export type MarketAssetOrderByWithRelationInput = {
@@ -353,6 +362,7 @@ export type MarketAssetOrderByWithRelationInput = {
   high?: Prisma.SortOrder
   low?: Prisma.SortOrder
   volume?: Prisma.SortOrder
+  aiBriefEnabled?: Prisma.SortOrder
   newsLastFetchedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -360,6 +370,7 @@ export type MarketAssetOrderByWithRelationInput = {
   comments?: Prisma.CommentAssetOrderByRelationAggregateInput
   predictions?: Prisma.PredictionOrderByRelationAggregateInput
   news?: Prisma.MarketNewsOrderByRelationAggregateInput
+  aiBrief?: Prisma.MarketAiBriefOrderByWithRelationInput
 }
 
 export type MarketAssetWhereUniqueInput = Prisma.AtLeast<{
@@ -380,6 +391,7 @@ export type MarketAssetWhereUniqueInput = Prisma.AtLeast<{
   high?: Prisma.DecimalFilter<"MarketAsset"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFilter<"MarketAsset"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFilter<"MarketAsset"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFilter<"MarketAsset"> | boolean
   newsLastFetchedAt?: Prisma.DateTimeNullableFilter<"MarketAsset"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"MarketAsset"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MarketAsset"> | Date | string
@@ -387,6 +399,7 @@ export type MarketAssetWhereUniqueInput = Prisma.AtLeast<{
   comments?: Prisma.CommentAssetListRelationFilter
   predictions?: Prisma.PredictionListRelationFilter
   news?: Prisma.MarketNewsListRelationFilter
+  aiBrief?: Prisma.XOR<Prisma.MarketAiBriefNullableScalarRelationFilter, Prisma.MarketAiBriefWhereInput> | null
 }, "id" | "symbol">
 
 export type MarketAssetOrderByWithAggregationInput = {
@@ -404,6 +417,7 @@ export type MarketAssetOrderByWithAggregationInput = {
   high?: Prisma.SortOrder
   low?: Prisma.SortOrder
   volume?: Prisma.SortOrder
+  aiBriefEnabled?: Prisma.SortOrder
   newsLastFetchedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -432,6 +446,7 @@ export type MarketAssetScalarWhereWithAggregatesInput = {
   high?: Prisma.DecimalWithAggregatesFilter<"MarketAsset"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalWithAggregatesFilter<"MarketAsset"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalWithAggregatesFilter<"MarketAsset"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolWithAggregatesFilter<"MarketAsset"> | boolean
   newsLastFetchedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"MarketAsset"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"MarketAsset"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"MarketAsset"> | Date | string
@@ -452,6 +467,7 @@ export type MarketAssetCreateInput = {
   high?: runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -459,6 +475,7 @@ export type MarketAssetCreateInput = {
   comments?: Prisma.CommentAssetCreateNestedManyWithoutAssetInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutAssetInput
   news?: Prisma.MarketNewsCreateNestedManyWithoutMarketInput
+  aiBrief?: Prisma.MarketAiBriefCreateNestedOneWithoutMarketInput
 }
 
 export type MarketAssetUncheckedCreateInput = {
@@ -476,6 +493,7 @@ export type MarketAssetUncheckedCreateInput = {
   high?: runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -483,6 +501,7 @@ export type MarketAssetUncheckedCreateInput = {
   comments?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutAssetInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutAssetInput
   news?: Prisma.MarketNewsUncheckedCreateNestedManyWithoutMarketInput
+  aiBrief?: Prisma.MarketAiBriefUncheckedCreateNestedOneWithoutMarketInput
 }
 
 export type MarketAssetUpdateInput = {
@@ -500,6 +519,7 @@ export type MarketAssetUpdateInput = {
   high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -507,6 +527,7 @@ export type MarketAssetUpdateInput = {
   comments?: Prisma.CommentAssetUpdateManyWithoutAssetNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutAssetNestedInput
   news?: Prisma.MarketNewsUpdateManyWithoutMarketNestedInput
+  aiBrief?: Prisma.MarketAiBriefUpdateOneWithoutMarketNestedInput
 }
 
 export type MarketAssetUncheckedUpdateInput = {
@@ -524,6 +545,7 @@ export type MarketAssetUncheckedUpdateInput = {
   high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -531,6 +553,7 @@ export type MarketAssetUncheckedUpdateInput = {
   comments?: Prisma.CommentAssetUncheckedUpdateManyWithoutAssetNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutAssetNestedInput
   news?: Prisma.MarketNewsUncheckedUpdateManyWithoutMarketNestedInput
+  aiBrief?: Prisma.MarketAiBriefUncheckedUpdateOneWithoutMarketNestedInput
 }
 
 export type MarketAssetCreateManyInput = {
@@ -548,6 +571,7 @@ export type MarketAssetCreateManyInput = {
   high?: runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -568,6 +592,7 @@ export type MarketAssetUpdateManyMutationInput = {
   high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -588,6 +613,7 @@ export type MarketAssetUncheckedUpdateManyInput = {
   high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -613,6 +639,7 @@ export type MarketAssetCountOrderByAggregateInput = {
   high?: Prisma.SortOrder
   low?: Prisma.SortOrder
   volume?: Prisma.SortOrder
+  aiBriefEnabled?: Prisma.SortOrder
   newsLastFetchedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -642,6 +669,7 @@ export type MarketAssetMaxOrderByAggregateInput = {
   high?: Prisma.SortOrder
   low?: Prisma.SortOrder
   volume?: Prisma.SortOrder
+  aiBriefEnabled?: Prisma.SortOrder
   newsLastFetchedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -662,6 +690,7 @@ export type MarketAssetMinOrderByAggregateInput = {
   high?: Prisma.SortOrder
   low?: Prisma.SortOrder
   volume?: Prisma.SortOrder
+  aiBriefEnabled?: Prisma.SortOrder
   newsLastFetchedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -702,6 +731,24 @@ export type MarketAssetUpdateOneRequiredWithoutCommentsNestedInput = {
   upsert?: Prisma.MarketAssetUpsertWithoutCommentsInput
   connect?: Prisma.MarketAssetWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.MarketAssetUpdateToOneWithWhereWithoutCommentsInput, Prisma.MarketAssetUpdateWithoutCommentsInput>, Prisma.MarketAssetUncheckedUpdateWithoutCommentsInput>
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
+}
+
+export type MarketAssetCreateNestedOneWithoutAiBriefInput = {
+  create?: Prisma.XOR<Prisma.MarketAssetCreateWithoutAiBriefInput, Prisma.MarketAssetUncheckedCreateWithoutAiBriefInput>
+  connectOrCreate?: Prisma.MarketAssetCreateOrConnectWithoutAiBriefInput
+  connect?: Prisma.MarketAssetWhereUniqueInput
+}
+
+export type MarketAssetUpdateOneRequiredWithoutAiBriefNestedInput = {
+  create?: Prisma.XOR<Prisma.MarketAssetCreateWithoutAiBriefInput, Prisma.MarketAssetUncheckedCreateWithoutAiBriefInput>
+  connectOrCreate?: Prisma.MarketAssetCreateOrConnectWithoutAiBriefInput
+  upsert?: Prisma.MarketAssetUpsertWithoutAiBriefInput
+  connect?: Prisma.MarketAssetWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MarketAssetUpdateToOneWithWhereWithoutAiBriefInput, Prisma.MarketAssetUpdateWithoutAiBriefInput>, Prisma.MarketAssetUncheckedUpdateWithoutAiBriefInput>
 }
 
 export type MarketAssetCreateNestedOneWithoutNewsInput = {
@@ -747,12 +794,14 @@ export type MarketAssetCreateWithoutPredictionsInput = {
   high?: runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   watchlistItems?: Prisma.WatchlistCreateNestedManyWithoutAssetInput
   comments?: Prisma.CommentAssetCreateNestedManyWithoutAssetInput
   news?: Prisma.MarketNewsCreateNestedManyWithoutMarketInput
+  aiBrief?: Prisma.MarketAiBriefCreateNestedOneWithoutMarketInput
 }
 
 export type MarketAssetUncheckedCreateWithoutPredictionsInput = {
@@ -770,12 +819,14 @@ export type MarketAssetUncheckedCreateWithoutPredictionsInput = {
   high?: runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   watchlistItems?: Prisma.WatchlistUncheckedCreateNestedManyWithoutAssetInput
   comments?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutAssetInput
   news?: Prisma.MarketNewsUncheckedCreateNestedManyWithoutMarketInput
+  aiBrief?: Prisma.MarketAiBriefUncheckedCreateNestedOneWithoutMarketInput
 }
 
 export type MarketAssetCreateOrConnectWithoutPredictionsInput = {
@@ -809,12 +860,14 @@ export type MarketAssetUpdateWithoutPredictionsInput = {
   high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   watchlistItems?: Prisma.WatchlistUpdateManyWithoutAssetNestedInput
   comments?: Prisma.CommentAssetUpdateManyWithoutAssetNestedInput
   news?: Prisma.MarketNewsUpdateManyWithoutMarketNestedInput
+  aiBrief?: Prisma.MarketAiBriefUpdateOneWithoutMarketNestedInput
 }
 
 export type MarketAssetUncheckedUpdateWithoutPredictionsInput = {
@@ -832,12 +885,14 @@ export type MarketAssetUncheckedUpdateWithoutPredictionsInput = {
   high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   watchlistItems?: Prisma.WatchlistUncheckedUpdateManyWithoutAssetNestedInput
   comments?: Prisma.CommentAssetUncheckedUpdateManyWithoutAssetNestedInput
   news?: Prisma.MarketNewsUncheckedUpdateManyWithoutMarketNestedInput
+  aiBrief?: Prisma.MarketAiBriefUncheckedUpdateOneWithoutMarketNestedInput
 }
 
 export type MarketAssetCreateWithoutCommentsInput = {
@@ -855,12 +910,14 @@ export type MarketAssetCreateWithoutCommentsInput = {
   high?: runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   watchlistItems?: Prisma.WatchlistCreateNestedManyWithoutAssetInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutAssetInput
   news?: Prisma.MarketNewsCreateNestedManyWithoutMarketInput
+  aiBrief?: Prisma.MarketAiBriefCreateNestedOneWithoutMarketInput
 }
 
 export type MarketAssetUncheckedCreateWithoutCommentsInput = {
@@ -878,12 +935,14 @@ export type MarketAssetUncheckedCreateWithoutCommentsInput = {
   high?: runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   watchlistItems?: Prisma.WatchlistUncheckedCreateNestedManyWithoutAssetInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutAssetInput
   news?: Prisma.MarketNewsUncheckedCreateNestedManyWithoutMarketInput
+  aiBrief?: Prisma.MarketAiBriefUncheckedCreateNestedOneWithoutMarketInput
 }
 
 export type MarketAssetCreateOrConnectWithoutCommentsInput = {
@@ -917,12 +976,14 @@ export type MarketAssetUpdateWithoutCommentsInput = {
   high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   watchlistItems?: Prisma.WatchlistUpdateManyWithoutAssetNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutAssetNestedInput
   news?: Prisma.MarketNewsUpdateManyWithoutMarketNestedInput
+  aiBrief?: Prisma.MarketAiBriefUpdateOneWithoutMarketNestedInput
 }
 
 export type MarketAssetUncheckedUpdateWithoutCommentsInput = {
@@ -940,10 +1001,128 @@ export type MarketAssetUncheckedUpdateWithoutCommentsInput = {
   high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   watchlistItems?: Prisma.WatchlistUncheckedUpdateManyWithoutAssetNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutAssetNestedInput
+  news?: Prisma.MarketNewsUncheckedUpdateManyWithoutMarketNestedInput
+  aiBrief?: Prisma.MarketAiBriefUncheckedUpdateOneWithoutMarketNestedInput
+}
+
+export type MarketAssetCreateWithoutAiBriefInput = {
+  id?: string
+  symbol: string
+  displaySymbol?: string | null
+  name: string
+  category: string
+  assetType?: string
+  timezone?: string
+  logoUrl?: string | null
+  lastPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  change?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  changePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  high?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  low?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
+  newsLastFetchedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  watchlistItems?: Prisma.WatchlistCreateNestedManyWithoutAssetInput
+  comments?: Prisma.CommentAssetCreateNestedManyWithoutAssetInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutAssetInput
+  news?: Prisma.MarketNewsCreateNestedManyWithoutMarketInput
+}
+
+export type MarketAssetUncheckedCreateWithoutAiBriefInput = {
+  id?: string
+  symbol: string
+  displaySymbol?: string | null
+  name: string
+  category: string
+  assetType?: string
+  timezone?: string
+  logoUrl?: string | null
+  lastPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  change?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  changePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  high?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  low?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
+  newsLastFetchedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  watchlistItems?: Prisma.WatchlistUncheckedCreateNestedManyWithoutAssetInput
+  comments?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutAssetInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutAssetInput
+  news?: Prisma.MarketNewsUncheckedCreateNestedManyWithoutMarketInput
+}
+
+export type MarketAssetCreateOrConnectWithoutAiBriefInput = {
+  where: Prisma.MarketAssetWhereUniqueInput
+  create: Prisma.XOR<Prisma.MarketAssetCreateWithoutAiBriefInput, Prisma.MarketAssetUncheckedCreateWithoutAiBriefInput>
+}
+
+export type MarketAssetUpsertWithoutAiBriefInput = {
+  update: Prisma.XOR<Prisma.MarketAssetUpdateWithoutAiBriefInput, Prisma.MarketAssetUncheckedUpdateWithoutAiBriefInput>
+  create: Prisma.XOR<Prisma.MarketAssetCreateWithoutAiBriefInput, Prisma.MarketAssetUncheckedCreateWithoutAiBriefInput>
+  where?: Prisma.MarketAssetWhereInput
+}
+
+export type MarketAssetUpdateToOneWithWhereWithoutAiBriefInput = {
+  where?: Prisma.MarketAssetWhereInput
+  data: Prisma.XOR<Prisma.MarketAssetUpdateWithoutAiBriefInput, Prisma.MarketAssetUncheckedUpdateWithoutAiBriefInput>
+}
+
+export type MarketAssetUpdateWithoutAiBriefInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  displaySymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  assetType?: Prisma.StringFieldUpdateOperationsInput | string
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  change?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  changePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  watchlistItems?: Prisma.WatchlistUpdateManyWithoutAssetNestedInput
+  comments?: Prisma.CommentAssetUpdateManyWithoutAssetNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutAssetNestedInput
+  news?: Prisma.MarketNewsUpdateManyWithoutMarketNestedInput
+}
+
+export type MarketAssetUncheckedUpdateWithoutAiBriefInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  displaySymbol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  assetType?: Prisma.StringFieldUpdateOperationsInput | string
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  change?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  changePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  watchlistItems?: Prisma.WatchlistUncheckedUpdateManyWithoutAssetNestedInput
+  comments?: Prisma.CommentAssetUncheckedUpdateManyWithoutAssetNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutAssetNestedInput
   news?: Prisma.MarketNewsUncheckedUpdateManyWithoutMarketNestedInput
 }
@@ -963,12 +1142,14 @@ export type MarketAssetCreateWithoutNewsInput = {
   high?: runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   watchlistItems?: Prisma.WatchlistCreateNestedManyWithoutAssetInput
   comments?: Prisma.CommentAssetCreateNestedManyWithoutAssetInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutAssetInput
+  aiBrief?: Prisma.MarketAiBriefCreateNestedOneWithoutMarketInput
 }
 
 export type MarketAssetUncheckedCreateWithoutNewsInput = {
@@ -986,12 +1167,14 @@ export type MarketAssetUncheckedCreateWithoutNewsInput = {
   high?: runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   watchlistItems?: Prisma.WatchlistUncheckedCreateNestedManyWithoutAssetInput
   comments?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutAssetInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutAssetInput
+  aiBrief?: Prisma.MarketAiBriefUncheckedCreateNestedOneWithoutMarketInput
 }
 
 export type MarketAssetCreateOrConnectWithoutNewsInput = {
@@ -1025,12 +1208,14 @@ export type MarketAssetUpdateWithoutNewsInput = {
   high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   watchlistItems?: Prisma.WatchlistUpdateManyWithoutAssetNestedInput
   comments?: Prisma.CommentAssetUpdateManyWithoutAssetNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutAssetNestedInput
+  aiBrief?: Prisma.MarketAiBriefUpdateOneWithoutMarketNestedInput
 }
 
 export type MarketAssetUncheckedUpdateWithoutNewsInput = {
@@ -1048,12 +1233,14 @@ export type MarketAssetUncheckedUpdateWithoutNewsInput = {
   high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   watchlistItems?: Prisma.WatchlistUncheckedUpdateManyWithoutAssetNestedInput
   comments?: Prisma.CommentAssetUncheckedUpdateManyWithoutAssetNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutAssetNestedInput
+  aiBrief?: Prisma.MarketAiBriefUncheckedUpdateOneWithoutMarketNestedInput
 }
 
 export type MarketAssetCreateWithoutWatchlistItemsInput = {
@@ -1071,12 +1258,14 @@ export type MarketAssetCreateWithoutWatchlistItemsInput = {
   high?: runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   comments?: Prisma.CommentAssetCreateNestedManyWithoutAssetInput
   predictions?: Prisma.PredictionCreateNestedManyWithoutAssetInput
   news?: Prisma.MarketNewsCreateNestedManyWithoutMarketInput
+  aiBrief?: Prisma.MarketAiBriefCreateNestedOneWithoutMarketInput
 }
 
 export type MarketAssetUncheckedCreateWithoutWatchlistItemsInput = {
@@ -1094,12 +1283,14 @@ export type MarketAssetUncheckedCreateWithoutWatchlistItemsInput = {
   high?: runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   comments?: Prisma.CommentAssetUncheckedCreateNestedManyWithoutAssetInput
   predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutAssetInput
   news?: Prisma.MarketNewsUncheckedCreateNestedManyWithoutMarketInput
+  aiBrief?: Prisma.MarketAiBriefUncheckedCreateNestedOneWithoutMarketInput
 }
 
 export type MarketAssetCreateOrConnectWithoutWatchlistItemsInput = {
@@ -1133,12 +1324,14 @@ export type MarketAssetUpdateWithoutWatchlistItemsInput = {
   high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   comments?: Prisma.CommentAssetUpdateManyWithoutAssetNestedInput
   predictions?: Prisma.PredictionUpdateManyWithoutAssetNestedInput
   news?: Prisma.MarketNewsUpdateManyWithoutMarketNestedInput
+  aiBrief?: Prisma.MarketAiBriefUpdateOneWithoutMarketNestedInput
 }
 
 export type MarketAssetUncheckedUpdateWithoutWatchlistItemsInput = {
@@ -1156,12 +1349,14 @@ export type MarketAssetUncheckedUpdateWithoutWatchlistItemsInput = {
   high?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   low?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   volume?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  aiBriefEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   newsLastFetchedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   comments?: Prisma.CommentAssetUncheckedUpdateManyWithoutAssetNestedInput
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutAssetNestedInput
   news?: Prisma.MarketNewsUncheckedUpdateManyWithoutMarketNestedInput
+  aiBrief?: Prisma.MarketAiBriefUncheckedUpdateOneWithoutMarketNestedInput
 }
 
 
@@ -1237,6 +1432,7 @@ export type MarketAssetSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   high?: boolean
   low?: boolean
   volume?: boolean
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1244,6 +1440,7 @@ export type MarketAssetSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   comments?: boolean | Prisma.MarketAsset$commentsArgs<ExtArgs>
   predictions?: boolean | Prisma.MarketAsset$predictionsArgs<ExtArgs>
   news?: boolean | Prisma.MarketAsset$newsArgs<ExtArgs>
+  aiBrief?: boolean | Prisma.MarketAsset$aiBriefArgs<ExtArgs>
   _count?: boolean | Prisma.MarketAssetCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["marketAsset"]>
 
@@ -1262,6 +1459,7 @@ export type MarketAssetSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   high?: boolean
   low?: boolean
   volume?: boolean
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1282,6 +1480,7 @@ export type MarketAssetSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   high?: boolean
   low?: boolean
   volume?: boolean
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1302,17 +1501,19 @@ export type MarketAssetSelectScalar = {
   high?: boolean
   low?: boolean
   volume?: boolean
+  aiBriefEnabled?: boolean
   newsLastFetchedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type MarketAssetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "symbol" | "displaySymbol" | "name" | "category" | "assetType" | "timezone" | "logoUrl" | "lastPrice" | "change" | "changePercent" | "high" | "low" | "volume" | "newsLastFetchedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["marketAsset"]>
+export type MarketAssetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "symbol" | "displaySymbol" | "name" | "category" | "assetType" | "timezone" | "logoUrl" | "lastPrice" | "change" | "changePercent" | "high" | "low" | "volume" | "aiBriefEnabled" | "newsLastFetchedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["marketAsset"]>
 export type MarketAssetInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   watchlistItems?: boolean | Prisma.MarketAsset$watchlistItemsArgs<ExtArgs>
   comments?: boolean | Prisma.MarketAsset$commentsArgs<ExtArgs>
   predictions?: boolean | Prisma.MarketAsset$predictionsArgs<ExtArgs>
   news?: boolean | Prisma.MarketAsset$newsArgs<ExtArgs>
+  aiBrief?: boolean | Prisma.MarketAsset$aiBriefArgs<ExtArgs>
   _count?: boolean | Prisma.MarketAssetCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type MarketAssetIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1325,6 +1526,7 @@ export type $MarketAssetPayload<ExtArgs extends runtime.Types.Extensions.Interna
     comments: Prisma.$CommentAssetPayload<ExtArgs>[]
     predictions: Prisma.$PredictionPayload<ExtArgs>[]
     news: Prisma.$MarketNewsPayload<ExtArgs>[]
+    aiBrief: Prisma.$MarketAiBriefPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1341,6 +1543,7 @@ export type $MarketAssetPayload<ExtArgs extends runtime.Types.Extensions.Interna
     high: runtime.Decimal
     low: runtime.Decimal
     volume: runtime.Decimal
+    aiBriefEnabled: boolean
     newsLastFetchedAt: Date | null
     createdAt: Date
     updatedAt: Date
@@ -1742,6 +1945,7 @@ export interface Prisma__MarketAssetClient<T, Null = never, ExtArgs extends runt
   comments<T extends Prisma.MarketAsset$commentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketAsset$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CommentAssetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   predictions<T extends Prisma.MarketAsset$predictionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketAsset$predictionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PredictionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   news<T extends Prisma.MarketAsset$newsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketAsset$newsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MarketNewsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  aiBrief<T extends Prisma.MarketAsset$aiBriefArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketAsset$aiBriefArgs<ExtArgs>>): Prisma.Prisma__MarketAiBriefClient<runtime.Types.Result.GetResult<Prisma.$MarketAiBriefPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1785,6 +1989,7 @@ export interface MarketAssetFieldRefs {
   readonly high: Prisma.FieldRef<"MarketAsset", 'Decimal'>
   readonly low: Prisma.FieldRef<"MarketAsset", 'Decimal'>
   readonly volume: Prisma.FieldRef<"MarketAsset", 'Decimal'>
+  readonly aiBriefEnabled: Prisma.FieldRef<"MarketAsset", 'Boolean'>
   readonly newsLastFetchedAt: Prisma.FieldRef<"MarketAsset", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"MarketAsset", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"MarketAsset", 'DateTime'>
@@ -2274,6 +2479,25 @@ export type MarketAsset$newsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.MarketNewsScalarFieldEnum | Prisma.MarketNewsScalarFieldEnum[]
+}
+
+/**
+ * MarketAsset.aiBrief
+ */
+export type MarketAsset$aiBriefArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MarketAiBrief
+   */
+  select?: Prisma.MarketAiBriefSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MarketAiBrief
+   */
+  omit?: Prisma.MarketAiBriefOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MarketAiBriefInclude<ExtArgs> | null
+  where?: Prisma.MarketAiBriefWhereInput
 }
 
 /**

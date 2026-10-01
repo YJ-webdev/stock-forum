@@ -997,8 +997,6 @@ async function fetchRelevantMarketNews(
         return [];
       }
 
-      console.error(`Marketaux news failed (${response.status}):`, errorText);
-
       return [];
     }
 
@@ -1022,32 +1020,6 @@ async function fetchRelevantMarketNews(
           new Date(a.published_at).getTime()
         );
       });
-
-    console.log(`MARKETAUX NEWS "${context.primaryQuery}"`, {
-      assetType: context.assetType,
-
-      searchQuery,
-
-      candidates: candidates.length,
-
-      relevant: relevantArticles.length,
-
-      articles: relevantArticles.map((article) => ({
-        title: article.title,
-
-        relevance: calculateArticleRelevance(article, context),
-
-        entities: article.entities?.map((entity) => ({
-          symbol: entity.symbol,
-
-          name: entity.name,
-
-          type: entity.type,
-
-          matchScore: entity.match_score,
-        })),
-      })),
-    });
 
     return relevantArticles;
   } catch (error) {
@@ -1346,7 +1318,7 @@ export async function getGlobalMarketNews(
        */
       market: {
         category: {
-          in: ["America", "ASIA", "EMEA"],
+          in: ["America", "Asia", "Europe"],
         },
       },
     },

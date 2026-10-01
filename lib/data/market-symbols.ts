@@ -1,4 +1,10 @@
-export type MarketRegion = "America" | "ASIA" | "EMEA" | "Global" | "Africa";
+export type MarketRegion =
+  | "America"
+  | "Asia"
+  | "Europe"
+  | "Middle_East"
+  | "Global"
+  | "Africa";
 
 export type AssetType =
   | "index"
@@ -103,7 +109,7 @@ export const TRADING_HOURS: Record<MarketSchedule, TradingHours> = {
   },
 
   // ---------------------------------------------------------------------------
-  // ASIA
+  // Asia
   // ---------------------------------------------------------------------------
 
   JP_EQUITY: {
@@ -161,7 +167,7 @@ export const TRADING_HOURS: Record<MarketSchedule, TradingHours> = {
   },
 
   // ---------------------------------------------------------------------------
-  // EMEA
+  // Europe
   // ---------------------------------------------------------------------------
 
   EU_EQUITY: {
@@ -320,16 +326,16 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
   ],
 
   // ===========================================================================
-  // ASIA
+  // Asia
   // ===========================================================================
 
-  ASIA: [
+  Asia: [
     {
       name: "Nikkei 225",
       symbol: "^N225",
       displaySymbol: "N225",
       country: "JP",
-      region: "ASIA",
+      region: "Asia",
       assetType: "index",
       timezone: "Asia/Tokyo",
       marketSchedule: "JP_EQUITY",
@@ -340,7 +346,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "TOPIX",
       displaySymbol: "TOPIX",
       country: "JP",
-      region: "ASIA",
+      region: "Asia",
       assetType: "index",
       providerSymbol: "1306.T",
       isProxy: true,
@@ -353,7 +359,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "000001.SS",
       displaySymbol: "SSEC",
       country: "CN",
-      region: "ASIA",
+      region: "Asia",
       assetType: "index",
       timezone: "Asia/Shanghai",
       marketSchedule: "CN_EQUITY",
@@ -364,7 +370,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "000300.SS",
       displaySymbol: "CSI300",
       country: "CN",
-      region: "ASIA",
+      region: "Asia",
       assetType: "index",
       timezone: "Asia/Shanghai",
       marketSchedule: "CN_EQUITY",
@@ -375,7 +381,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^HSI",
       displaySymbol: "HSI",
       country: "HK",
-      region: "ASIA",
+      region: "Asia",
       assetType: "index",
       timezone: "Asia/Hong_Kong",
       marketSchedule: "HK_EQUITY",
@@ -386,7 +392,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^NSEI",
       displaySymbol: "NIFTY",
       country: "IN",
-      region: "ASIA",
+      region: "Asia",
       assetType: "index",
       timezone: "Asia/Kolkata",
       marketSchedule: "IN_EQUITY",
@@ -397,7 +403,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^TWII",
       displaySymbol: "TAIEX",
       country: "TW",
-      region: "ASIA",
+      region: "Asia",
       assetType: "index",
       timezone: "Asia/Taipei",
       marketSchedule: "TW_EQUITY",
@@ -408,7 +414,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^KS11",
       displaySymbol: "KOSPI",
       country: "KR",
-      region: "ASIA",
+      region: "Asia",
       assetType: "index",
       timezone: "Asia/Seoul",
       marketSchedule: "KR_EQUITY",
@@ -419,7 +425,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
     //   symbol: "^KQ11",
     //   displaySymbol: "KOSDAQ",
     //   country: "KR",
-    //   region: "ASIA",
+    //   region: "Asia",
     //   assetType: "index",
     //   timezone: "Asia/Seoul",
     //   marketSchedule: "KR_EQUITY",
@@ -430,7 +436,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^AXJO",
       displaySymbol: "ASX200",
       country: "AU",
-      region: "ASIA",
+      region: "Asia",
       assetType: "index",
       timezone: "Australia/Sydney",
       marketSchedule: "AU_EQUITY",
@@ -441,7 +447,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^STI",
       displaySymbol: "STI",
       country: "SG",
-      region: "ASIA",
+      region: "Asia",
       assetType: "index",
       timezone: "Asia/Singapore",
       marketSchedule: "SG_EQUITY",
@@ -452,7 +458,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^JKSE",
       displaySymbol: "JCI",
       country: "ID",
-      region: "ASIA",
+      region: "Asia",
       assetType: "index",
       timezone: "Asia/Jakarta",
       marketSchedule: "ID_EQUITY",
@@ -463,7 +469,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
     //   symbol: "399001.SZ",
     //   displaySymbol: "SZSE",
     //   country: "CN",
-    //   region: "ASIA",
+    //   region: "Asia",
     //   assetType: "index",
     //   timezone: "Asia/Shanghai",
     //   marketSchedule: "CN_EQUITY",
@@ -471,16 +477,16 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
   ],
 
   // ===========================================================================
-  // EMEA
+  // Europe
   // ===========================================================================
 
-  EMEA: [
+  Europe: [
     {
       name: "EURO STOXX 50",
       symbol: "^STOXX50E",
       displaySymbol: "SX5E",
       country: "EU",
-      region: "EMEA",
+      region: "Europe",
       assetType: "index",
       timezone: "Europe/Berlin",
       marketSchedule: "EU_EQUITY",
@@ -490,7 +496,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^GDAXI",
       displaySymbol: "DAX",
       country: "DE",
-      region: "EMEA",
+      region: "Europe",
       assetType: "index",
       timezone: "Europe/Berlin",
       marketSchedule: "DE_EQUITY",
@@ -501,7 +507,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^FTSE",
       displaySymbol: "UK100",
       country: "GB",
-      region: "EMEA",
+      region: "Europe",
       assetType: "index",
       timezone: "Europe/London",
       marketSchedule: "GB_EQUITY",
@@ -512,7 +518,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^FCHI",
       displaySymbol: "FCHI",
       country: "FR",
-      region: "EMEA",
+      region: "Europe",
       assetType: "index",
       timezone: "Europe/Paris",
       marketSchedule: "FR_EQUITY",
@@ -523,7 +529,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "FTSEMIB.MI",
       displaySymbol: "FTSE MIB",
       country: "IT",
-      region: "EMEA",
+      region: "Europe",
       assetType: "index",
       timezone: "Europe/Rome",
       marketSchedule: "IT_EQUITY",
@@ -534,7 +540,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^SSMI",
       displaySymbol: "SMI",
       country: "CH",
-      region: "EMEA",
+      region: "Europe",
       assetType: "index",
       timezone: "Europe/Zurich",
       marketSchedule: "CH_EQUITY",
@@ -545,7 +551,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^IBEX",
       displaySymbol: "IBEX35",
       country: "ES",
-      region: "EMEA",
+      region: "Europe",
       assetType: "index",
       timezone: "Europe/Madrid",
       marketSchedule: "ES_EQUITY",
@@ -556,7 +562,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^AEX",
       displaySymbol: "AEX",
       country: "NL",
-      region: "EMEA",
+      region: "Europe",
       assetType: "index",
       timezone: "Europe/Amsterdam",
       marketSchedule: "NL_EQUITY",
@@ -567,45 +573,38 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^OMX",
       displaySymbol: "OMXS30",
       country: "SE",
-      region: "EMEA",
+      region: "Europe",
       assetType: "index",
       timezone: "Europe/Stockholm",
       marketSchedule: "SE_EQUITY",
     },
+  ],
 
-    // {
-    //   name: "Tadawul All Share Index",
-    //   symbol: "^TASI.SR",
-    //   displaySymbol: "TASI",
-    //   country: "SA",
-    //   region: "EMEA",
-    //   assetType: "index",
-    //   timezone: "Asia/Riyadh",
-    //   marketSchedule: "SA_EQUITY",
-    // },
+  Middle_East: [
+    {
+      name: "Tadawul All Share Index",
+      symbol: "^TASI.SR",
+      displaySymbol: "TASI",
+      country: "SA",
+      region: "Middle_East",
+      assetType: "index",
+      timezone: "Asia/Riyadh",
+      marketSchedule: "SA_EQUITY",
+    },
+  ],
+
+  Africa: [
     {
       name: "South Africa Top 40",
       symbol: "^JN0U.JO",
       displaySymbol: "SA40",
       country: "ZA",
-      region: "EMEA",
+      region: "Africa",
       assetType: "index",
       timezone: "Africa/Johannesburg",
       marketSchedule: "ZA_EQUITY",
     },
   ],
-  // AFRICA: [
-  //   {
-  //     name: "South Africa Top 40",
-  //     symbol: "^JN0U.JO",
-  //     displaySymbol: "SA40",
-  //     country: "ZA",
-  //     region: "Africa",
-  //     assetType: "index",
-  //     timezone: "Africa/Johannesburg",
-  //     marketSchedule: "ZA_EQUITY",
-  //   },
-  // ],
 };
 
 // -----------------------------------------------------------------------------

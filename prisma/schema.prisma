@@ -294,11 +294,33 @@ model MarketAsset {
   watchlistItems Watchlist[]
   comments       CommentAsset[]
   predictions    Prediction[]
-   news MarketNews[]
+  news           MarketNews[]
 
- newsLastFetchedAt DateTime?
+  aiBriefEnabled Boolean        @default(false)
+  aiBrief        MarketAiBrief?
+
+  newsLastFetchedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model MarketAiBrief {
+  id String @id @default(cuid())
+
+  marketSymbol String      @unique
+  market       MarketAsset @relation(fields: [marketSymbol],references: [symbol],onDelete: Cascade)
+
+  content String
+  sources Json?
+
+  lastCheckedAt DateTime?
+  publishedAt   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([publishedAt])
 }
 
 model MarketNews {

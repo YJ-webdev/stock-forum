@@ -7,13 +7,13 @@ import { ArrowUpRight } from "lucide-react";
 
 import type { GlobalMarketNewsItem } from "@/app/actions/news";
 
-type Region = "All" | "America" | "ASIA" | "EMEA";
+type Region = "All" | "America" | "Asia" | "Europe" | "Middle_East" | "Africa";
 
 interface NewsPageClientProps {
   initialNews: GlobalMarketNewsItem[];
 }
 
-const REGIONS: Region[] = ["All", "America", "ASIA", "EMEA"];
+const REGIONS: Region[] = ["All", "America", "Asia", "Middle_East", "Europe"];
 
 export default function NewsPageClient({ initialNews }: NewsPageClientProps) {
   const [region, setRegion] = useState<Region>("All");

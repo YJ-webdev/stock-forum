@@ -63,6 +63,7 @@ export const ModelName = {
   CommentLike: 'CommentLike',
   ReplyLike: 'ReplyLike',
   MarketAsset: 'MarketAsset',
+  MarketAiBrief: 'MarketAiBrief',
   MarketNews: 'MarketNews',
   AccountBalance: 'AccountBalance',
   Watchlist: 'Watchlist',
@@ -249,12 +250,27 @@ export const MarketAssetScalarFieldEnum = {
   high: 'high',
   low: 'low',
   volume: 'volume',
+  aiBriefEnabled: 'aiBriefEnabled',
   newsLastFetchedAt: 'newsLastFetchedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type MarketAssetScalarFieldEnum = (typeof MarketAssetScalarFieldEnum)[keyof typeof MarketAssetScalarFieldEnum]
+
+
+export const MarketAiBriefScalarFieldEnum = {
+  id: 'id',
+  marketSymbol: 'marketSymbol',
+  content: 'content',
+  sources: 'sources',
+  lastCheckedAt: 'lastCheckedAt',
+  publishedAt: 'publishedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MarketAiBriefScalarFieldEnum = (typeof MarketAiBriefScalarFieldEnum)[keyof typeof MarketAiBriefScalarFieldEnum]
 
 
 export const MarketNewsScalarFieldEnum = {
@@ -350,6 +366,14 @@ export const JsonNullValueInput = {
 } as const
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {

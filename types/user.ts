@@ -5,4 +5,5 @@ export interface User {
   image?: string | null;
   nationality?: string | null;
   language?: string | null;
+  role: string;
 }

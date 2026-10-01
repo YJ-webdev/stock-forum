@@ -38,12 +38,13 @@ export default async function AdminLayout({
             Logged in as{" "}
             <strong className="text-foreground">{session.user.email}</strong>
           </span>
-          <Link
+          <a
             href="/"
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to Dashboard
-          </Link>
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to Dashboard
+          </a>
         </div>
       </header>
 

@@ -27,10 +27,6 @@ import PanelLeftStream from "./panel-left-stream";
 import { LeaderBoardStream } from "./leader-board-stream";
 import PanelLeftMobileStream from "./panel-left-mobile-stream";
 
-// -----------------------------------------------------------------------------
-// Lazy-loaded Section B components
-// -----------------------------------------------------------------------------
-
 const PanelLoading = () => (
   <div className="flex h-full w-full items-center justify-center">
     <div
@@ -72,41 +68,21 @@ const NotificationPanel = dynamic(
   },
 );
 
-// -----------------------------------------------------------------------------
-// Types
-// -----------------------------------------------------------------------------
-
 interface LayoutShellProps {
   user: User | null;
   children: React.ReactNode;
   sideDataPromise: Promise<LayoutSideData>;
 }
 
-// -----------------------------------------------------------------------------
-// LayoutShell
-// -----------------------------------------------------------------------------
-
 export default function LayoutShell({
   user,
   children,
   sideDataPromise,
 }: LayoutShellProps) {
-  // ---------------------------------------------------------------------------
-  // Layout
-  // ---------------------------------------------------------------------------
-
   const [layoutReady, setLayoutReady] = useState(false);
-
-  // ---------------------------------------------------------------------------
-  // Left panels
-  // ---------------------------------------------------------------------------
 
   const [isDesktopPanelOpen, setIsDesktopPanelOpen] = useState(true);
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
-
-  // ---------------------------------------------------------------------------
-  // Section B
-  // ---------------------------------------------------------------------------
 
   const [onWrite, setOnWrite] = useState(false);
   const [onAccount, setOnAccount] = useState(false);
@@ -114,15 +90,7 @@ export default function LayoutShell({
 
   const [notificationRefreshKey, setNotificationRefreshKey] = useState(0);
 
-  // ---------------------------------------------------------------------------
-  // Navigation
-  // ---------------------------------------------------------------------------
-
   const pathname = usePathname();
-
-  // ---------------------------------------------------------------------------
-  // Refs
-  // ---------------------------------------------------------------------------
 
   const panelBRef = useRef<PanelImperativeHandle>(null);
 

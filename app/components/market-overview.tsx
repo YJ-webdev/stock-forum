@@ -279,7 +279,7 @@ export default function MarketOverview() {
                     : "bg-transparent text-zinc-500 dark:text-zinc-300 border-transparent hover:text-zinc-500 hover:border-zinc-200 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 hover:bg-zinc-100 dark:hover:text-zinc-300"
                 }`}
               >
-                {category}
+                {category.replaceAll("_", " ")}
               </button>
             );
           })}

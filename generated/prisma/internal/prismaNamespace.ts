@@ -409,6 +409,7 @@ export const ModelName = {
   CommentLike: 'CommentLike',
   ReplyLike: 'ReplyLike',
   MarketAsset: 'MarketAsset',
+  MarketAiBrief: 'MarketAiBrief',
   MarketNews: 'MarketNews',
   AccountBalance: 'AccountBalance',
   Watchlist: 'Watchlist',
@@ -430,7 +431,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "moderationAction" | "prediction" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "marketNews" | "accountBalance" | "watchlist" | "notification" | "pointBalance" | "pointTransaction"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "moderationAction" | "prediction" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "marketAiBrief" | "marketNews" | "accountBalance" | "watchlist" | "notification" | "pointBalance" | "pointTransaction"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1322,6 +1323,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MarketAiBrief: {
+      payload: Prisma.$MarketAiBriefPayload<ExtArgs>
+      fields: Prisma.MarketAiBriefFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MarketAiBriefFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAiBriefPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MarketAiBriefFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAiBriefPayload>
+        }
+        findFirst: {
+          args: Prisma.MarketAiBriefFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAiBriefPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MarketAiBriefFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAiBriefPayload>
+        }
+        findMany: {
+          args: Prisma.MarketAiBriefFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAiBriefPayload>[]
+        }
+        create: {
+          args: Prisma.MarketAiBriefCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAiBriefPayload>
+        }
+        createMany: {
+          args: Prisma.MarketAiBriefCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MarketAiBriefCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAiBriefPayload>[]
+        }
+        delete: {
+          args: Prisma.MarketAiBriefDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAiBriefPayload>
+        }
+        update: {
+          args: Prisma.MarketAiBriefUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAiBriefPayload>
+        }
+        deleteMany: {
+          args: Prisma.MarketAiBriefDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MarketAiBriefUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MarketAiBriefUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAiBriefPayload>[]
+        }
+        upsert: {
+          args: Prisma.MarketAiBriefUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarketAiBriefPayload>
+        }
+        aggregate: {
+          args: Prisma.MarketAiBriefAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMarketAiBrief>
+        }
+        groupBy: {
+          args: Prisma.MarketAiBriefGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MarketAiBriefGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MarketAiBriefCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MarketAiBriefCountAggregateOutputType> | number
+        }
+      }
+    }
     MarketNews: {
       payload: Prisma.$MarketNewsPayload<ExtArgs>
       fields: Prisma.MarketNewsFieldRefs
@@ -1967,12 +2042,27 @@ export const MarketAssetScalarFieldEnum = {
   high: 'high',
   low: 'low',
   volume: 'volume',
+  aiBriefEnabled: 'aiBriefEnabled',
   newsLastFetchedAt: 'newsLastFetchedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type MarketAssetScalarFieldEnum = (typeof MarketAssetScalarFieldEnum)[keyof typeof MarketAssetScalarFieldEnum]
+
+
+export const MarketAiBriefScalarFieldEnum = {
+  id: 'id',
+  marketSymbol: 'marketSymbol',
+  content: 'content',
+  sources: 'sources',
+  lastCheckedAt: 'lastCheckedAt',
+  publishedAt: 'publishedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MarketAiBriefScalarFieldEnum = (typeof MarketAiBriefScalarFieldEnum)[keyof typeof MarketAiBriefScalarFieldEnum]
 
 
 export const MarketNewsScalarFieldEnum = {
@@ -2068,6 +2158,14 @@ export const JsonNullValueInput = {
 } as const
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {
@@ -2238,6 +2336,13 @@ export type EnumPredictionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
  * Reference to a field of type 'PredictionStatus[]'
  */
 export type ListEnumPredictionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -2445,6 +2550,7 @@ export type GlobalOmitConfig = {
   commentLike?: Prisma.CommentLikeOmit
   replyLike?: Prisma.ReplyLikeOmit
   marketAsset?: Prisma.MarketAssetOmit
+  marketAiBrief?: Prisma.MarketAiBriefOmit
   marketNews?: Prisma.MarketNewsOmit
   accountBalance?: Prisma.AccountBalanceOmit
   watchlist?: Prisma.WatchlistOmit

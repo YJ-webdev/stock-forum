@@ -21,6 +21,7 @@ import {
   SquarePen,
   TextAlignJustify as MenuButton,
   Settings,
+  ShieldCogCorner,
 } from "lucide-react";
 
 import { TbUser } from "react-icons/tb";
@@ -38,16 +39,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// -----------------------------------------------------------------------------
-// TYPES
-// -----------------------------------------------------------------------------
-
-interface User {
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-}
-
 interface HeaderProps {
   onTogglePanel: () => void;
   onWrite: () => void;
@@ -63,10 +54,6 @@ interface UserMenuProps {
   onAccount: () => void;
   onNotification: () => void;
 }
-
-// -----------------------------------------------------------------------------
-// HEADER
-// -----------------------------------------------------------------------------
 
 export function Navbar({
   onTogglePanel,
@@ -86,8 +73,6 @@ export function Navbar({
         dark:border-zinc-800 dark:bg-zinc-900
       "
     >
-      {/* Left: Sidebar Toggle */}
-
       <button
         type="button"
         onClick={onTogglePanel}
@@ -102,13 +87,9 @@ export function Navbar({
         <MenuButton className="h-5 w-5 text-foreground" strokeWidth={1.5} />
       </button>
 
-      {/* Center: Search */}
-
       <div className="mx-auto max-w-xl flex-1">
         <SearchInput />
       </div>
-
-      {/* Right */}
 
       <div className="mx-4 flex shrink-0 items-center">
         <UserMenu
@@ -129,10 +110,6 @@ export function Navbar({
   );
 }
 
-// -----------------------------------------------------------------------------
-// USER MENU
-// -----------------------------------------------------------------------------
-
 export default function UserMenu({
   onSignOut,
   onLoginClick,
@@ -147,10 +124,6 @@ export default function UserMenu({
 
   const { setTheme, theme } = useTheme();
   const router = useRouter();
-
-  // ---------------------------------------------------------------------------
-  // CHECK UNREAD NOTIFICATIONS
-  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     if (!user) {
@@ -186,10 +159,6 @@ export default function UserMenu({
     };
   }, [user]);
 
-  // ---------------------------------------------------------------------------
-  // NOT LOGGED IN
-  // ---------------------------------------------------------------------------
-
   if (!user) {
     return (
       <Button
@@ -210,10 +179,6 @@ export default function UserMenu({
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // USER INITIALS
-  // ---------------------------------------------------------------------------
-
   const initials = user.name
     ? user.name
         .split(" ")
@@ -223,10 +188,6 @@ export default function UserMenu({
         .slice(0, 2)
     : user.email?.slice(0, 2).toUpperCase() || "U";
 
-  // ---------------------------------------------------------------------------
-  // SIGN OUT
-  // ---------------------------------------------------------------------------
-
   const handleSignOutClick = () => {
     startTransition(async () => {
       await onSignOut?.();
@@ -234,19 +195,11 @@ export default function UserMenu({
     });
   };
 
-  // ---------------------------------------------------------------------------
-  // THEME
-  // ---------------------------------------------------------------------------
-
   const toggleTheme = (e: React.MouseEvent) => {
     e.preventDefault();
 
     setTheme(theme === "dark" ? "light" : "dark");
   };
-
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
 
   return (
     <>
@@ -262,10 +215,6 @@ export default function UserMenu({
           aria-label="User menu"
         >
           <div className="flex items-center gap-2">
-            {/* ---------------------------------------------------------------
-                SMALL SCREEN AVATAR
-            ---------------------------------------------------------------- */}
-
             <div className="flex items-center justify-center sm:hidden">
               <Avatar className="h-12 w-12">
                 {user.image && (
@@ -297,10 +246,6 @@ export default function UserMenu({
               </Avatar>
             </div>
 
-            {/* ---------------------------------------------------------------
-                DESKTOP GREETING
-            ---------------------------------------------------------------- */}
-
             <p
               className="
                 relative hidden
@@ -313,13 +258,6 @@ export default function UserMenu({
               "
             >
               {`Hi, ${user.name || user.email || "User"}`}
-
-              {/* -------------------------------------------------------------
-                  UNREAD NOTIFICATION BELL
-
-                  pointerdown must be stopped because DropdownMenuTrigger
-                  responds before the normal click event.
-              -------------------------------------------------------------- */}
 
               {hasUnread && (
                 <Bell
@@ -351,12 +289,21 @@ export default function UserMenu({
           </div>
         </DropdownMenuTrigger>
 
-        {/* -------------------------------------------------------------------
-            DROPDOWN
-        -------------------------------------------------------------------- */}
-
         <DropdownMenuContent align="end" className="z-60 mt-1 w-56">
           <DropdownMenuGroup>
+            {user.role === "ADMIN" && (
+              <DropdownMenuItem
+                onClick={() => router.push("/admin")}
+                className="
+              h-11 cursor-pointer
+              text-[15px]
+            "
+              >
+                <ShieldCogCorner className="mr-2 size-4.5" strokeWidth={1.5} />
+                Admin
+              </DropdownMenuItem>
+            )}
+
             <DropdownMenuItem
               onClick={onWrite}
               className="
@@ -417,8 +364,6 @@ export default function UserMenu({
           </DropdownMenuGroup>
 
           <DropdownMenuSeparator />
-
-          {/* Sign Out */}
 
           <DropdownMenuItem
             onClick={(e) => {

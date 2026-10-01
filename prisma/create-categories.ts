@@ -16,8 +16,8 @@
 //         slug: "ASIA",
 //       },
 //       {
-//         name: "EMEA",
-//         slug: "emea",
+//         name: "Europe",
+//         slug: "Europe",
 //       },
 //       {
 //         name: "Crypto",
