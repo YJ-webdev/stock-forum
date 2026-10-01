@@ -12,8 +12,8 @@
 //         slug: "america",
 //       },
 //       {
-//         name: "APEC",
-//         slug: "apec",
+//         name: "ASIA",
+//         slug: "ASIA",
 //       },
 //       {
 //         name: "EMEA",

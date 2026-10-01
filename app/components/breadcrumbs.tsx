@@ -13,7 +13,7 @@ export const BreadCrumbs = () => {
   const segments = pathname.split("/").filter(Boolean);
 
   // ---------------------------------------------------------------------------
-  // Market symbol
+  // Market
   // ---------------------------------------------------------------------------
 
   const rawRouteSymbol = segments[0] ?? null;
@@ -31,7 +31,9 @@ export const BreadCrumbs = () => {
       )
     : null;
 
-  const routeDisplaySymbol = matchedMarketItem?.displaySymbol ?? routeSymbol;
+  // Use full market name for breadcrumb label
+  // e.g. ^NDX -> Nasdaq 100
+  const routeDisplayName = matchedMarketItem?.name ?? routeSymbol;
 
   // ---------------------------------------------------------------------------
   // Breadcrumb items
@@ -42,14 +44,14 @@ export const BreadCrumbs = () => {
     href?: string;
   }[] = [];
 
-  if (routeSymbol && routeDisplaySymbol) {
+  if (routeSymbol && routeDisplayName) {
     const marketHref = `/${encodeURIComponent(
       matchedMarketItem?.symbol ?? routeSymbol,
     )}`;
 
     // Market
     items.push({
-      label: routeDisplaySymbol,
+      label: routeDisplayName,
 
       // Only clickable when we're inside a child page
       href: segments.length > 1 ? marketHref : undefined,
@@ -99,15 +101,15 @@ export const BreadCrumbs = () => {
   return (
     <div
       className={`
-    sticky top-0 z-20
-    flex w-full items-center justify-between
-    border-zinc-100
-    bg-white
-    px-4 py-3
-    dark:border-zinc-800
-    dark:bg-zinc-900
-    ${isScrolled ? "border-b" : ""}
-  `}
+        sticky top-0 z-20
+        flex w-full items-center justify-between
+        border-zinc-100
+        bg-white
+        px-4 py-3
+        dark:border-zinc-800
+        dark:bg-zinc-900
+        ${isScrolled ? "border-b" : ""}
+      `}
     >
       <div className="flex items-center gap-2 text-sm font-medium text-zinc-500 dark:text-zinc-300">
         {/* Home */}

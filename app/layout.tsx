@@ -75,7 +75,7 @@ export default function RootLayout({
         <SessionProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="light"
+            defaultTheme="dark"
             enableSystem
             disableTransitionOnChange
           >
@@ -83,7 +83,7 @@ export default function RootLayout({
 
             <Toaster
               position="bottom-center"
-              theme="system"
+              theme="dark"
               toastOptions={{
                 classNames: {
                   toast: " border-none! px-5! py-4! text-[15px]!",

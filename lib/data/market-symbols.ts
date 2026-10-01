@@ -1,4 +1,4 @@
-export type MarketRegion = "America" | "APEC" | "EMEA" | "Global" | "Africa";
+export type MarketRegion = "America" | "ASIA" | "EMEA" | "Global" | "Africa";
 
 export type AssetType =
   | "index"
@@ -103,7 +103,7 @@ export const TRADING_HOURS: Record<MarketSchedule, TradingHours> = {
   },
 
   // ---------------------------------------------------------------------------
-  // APEC
+  // ASIA
   // ---------------------------------------------------------------------------
 
   JP_EQUITY: {
@@ -320,16 +320,16 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
   ],
 
   // ===========================================================================
-  // APEC
+  // ASIA
   // ===========================================================================
 
-  APEC: [
+  ASIA: [
     {
       name: "Nikkei 225",
       symbol: "^N225",
       displaySymbol: "N225",
       country: "JP",
-      region: "APEC",
+      region: "ASIA",
       assetType: "index",
       timezone: "Asia/Tokyo",
       marketSchedule: "JP_EQUITY",
@@ -340,7 +340,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "TOPIX",
       displaySymbol: "TOPIX",
       country: "JP",
-      region: "APEC",
+      region: "ASIA",
       assetType: "index",
       providerSymbol: "1306.T",
       isProxy: true,
@@ -353,7 +353,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "000001.SS",
       displaySymbol: "SSEC",
       country: "CN",
-      region: "APEC",
+      region: "ASIA",
       assetType: "index",
       timezone: "Asia/Shanghai",
       marketSchedule: "CN_EQUITY",
@@ -364,7 +364,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "000300.SS",
       displaySymbol: "CSI300",
       country: "CN",
-      region: "APEC",
+      region: "ASIA",
       assetType: "index",
       timezone: "Asia/Shanghai",
       marketSchedule: "CN_EQUITY",
@@ -375,7 +375,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^HSI",
       displaySymbol: "HSI",
       country: "HK",
-      region: "APEC",
+      region: "ASIA",
       assetType: "index",
       timezone: "Asia/Hong_Kong",
       marketSchedule: "HK_EQUITY",
@@ -386,7 +386,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^NSEI",
       displaySymbol: "NIFTY",
       country: "IN",
-      region: "APEC",
+      region: "ASIA",
       assetType: "index",
       timezone: "Asia/Kolkata",
       marketSchedule: "IN_EQUITY",
@@ -397,7 +397,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^TWII",
       displaySymbol: "TAIEX",
       country: "TW",
-      region: "APEC",
+      region: "ASIA",
       assetType: "index",
       timezone: "Asia/Taipei",
       marketSchedule: "TW_EQUITY",
@@ -408,7 +408,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^KS11",
       displaySymbol: "KOSPI",
       country: "KR",
-      region: "APEC",
+      region: "ASIA",
       assetType: "index",
       timezone: "Asia/Seoul",
       marketSchedule: "KR_EQUITY",
@@ -419,7 +419,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
     //   symbol: "^KQ11",
     //   displaySymbol: "KOSDAQ",
     //   country: "KR",
-    //   region: "APEC",
+    //   region: "ASIA",
     //   assetType: "index",
     //   timezone: "Asia/Seoul",
     //   marketSchedule: "KR_EQUITY",
@@ -430,7 +430,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^AXJO",
       displaySymbol: "ASX200",
       country: "AU",
-      region: "APEC",
+      region: "ASIA",
       assetType: "index",
       timezone: "Australia/Sydney",
       marketSchedule: "AU_EQUITY",
@@ -441,7 +441,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^STI",
       displaySymbol: "STI",
       country: "SG",
-      region: "APEC",
+      region: "ASIA",
       assetType: "index",
       timezone: "Asia/Singapore",
       marketSchedule: "SG_EQUITY",
@@ -452,7 +452,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       symbol: "^JKSE",
       displaySymbol: "JCI",
       country: "ID",
-      region: "APEC",
+      region: "ASIA",
       assetType: "index",
       timezone: "Asia/Jakarta",
       marketSchedule: "ID_EQUITY",
@@ -463,7 +463,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
     //   symbol: "399001.SZ",
     //   displaySymbol: "SZSE",
     //   country: "CN",
-    //   region: "APEC",
+    //   region: "ASIA",
     //   assetType: "index",
     //   timezone: "Asia/Shanghai",
     //   marketSchedule: "CN_EQUITY",

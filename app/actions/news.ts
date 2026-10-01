@@ -1346,7 +1346,7 @@ export async function getGlobalMarketNews(
        */
       market: {
         category: {
-          in: ["America", "APEC", "EMEA"],
+          in: ["America", "ASIA", "EMEA"],
         },
       },
     },
