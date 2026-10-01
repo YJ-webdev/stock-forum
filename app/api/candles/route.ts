@@ -1,7 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 import YahooFinance from "yahoo-finance2";
-
 import { TZDate } from "@date-fns/tz";
 
 import {
@@ -89,6 +88,7 @@ function getPeriod1(range: string): Date {
       return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   }
 }
+
 // -----------------------------------------------------------------------------
 // YAHOO CHART CACHE
 // -----------------------------------------------------------------------------
@@ -186,6 +186,7 @@ function getCachedYahooChart(
       return getYahooChart1Minute(symbol, range, interval);
   }
 }
+
 // -----------------------------------------------------------------------------
 // INTL FORMATTER CACHE
 // -----------------------------------------------------------------------------
@@ -351,81 +352,6 @@ function getLatestTradingSession(quotes: any[], timezone?: string): any[] {
 // DETECT INTRADAY BREAK
 // -----------------------------------------------------------------------------
 
-// function detectTradingBreak(
-//   quotes: any[],
-//   interval: YahooInterval,
-// ): {
-//   lunchStartMs: number | null;
-//   lunchEndMs: number | null;
-// } {
-//   /*
-//    * Only intraday candles can tell us about an
-//    * intraday trading break.
-//    */
-//   if (interval === "1d" || interval === "1wk") {
-//     return {
-//       lunchStartMs: null,
-//       lunchEndMs: null,
-//     };
-//   }
-
-//   const timestamps = quotes
-//     .filter((quote) => quote?.date)
-//     .map((quote) => new Date(quote.date).getTime())
-//     .filter(Number.isFinite)
-//     .sort((a, b) => a - b);
-
-//   if (timestamps.length < 2) {
-//     return {
-//       lunchStartMs: null,
-//       lunchEndMs: null,
-//     };
-//   }
-
-//   const expectedInterval = INTERVAL_MS[interval];
-
-//   /*
-//    * Require a gap of at least 3 normal candle intervals.
-//    *
-//    * Example with 15m candles:
-//    *
-//    * 15m = normal
-//    * 30m = possibly missing candle
-//    * 45m+ = meaningful session gap
-//    */
-//   const minimumGap = expectedInterval * 3;
-
-//   let largestGap = 0;
-//   let lunchStartMs: number | null = null;
-//   let lunchEndMs: number | null = null;
-
-//   for (let index = 1; index < timestamps.length; index++) {
-//     const previous = timestamps[index - 1];
-
-//     const current = timestamps[index];
-
-//     const gap = current - previous;
-
-//     if (gap >= minimumGap && gap > largestGap) {
-//       largestGap = gap;
-
-//       /*
-//        * previous = last candle before break
-//        *
-//        * Its candle covers one interval, therefore the
-//        * actual gap begins one candle interval later.
-//        */
-//       lunchStartMs = previous + expectedInterval;
-
-//       lunchEndMs = current;
-//     }
-//   }
-
-//   return {
-//     lunchStartMs,
-//     lunchEndMs,
-//   };
-// }
 function detectTradingBreak(
   quotes: any[],
   interval: YahooInterval,
@@ -558,11 +484,13 @@ function getRegularMarketSession(
 
     return {
       isClosed: true,
+
       marketOpenMs: getTimestampForMarketTime(
         nextDate,
         schedule.open,
         timezone,
       ),
+
       marketCloseMs: null,
     };
   }
@@ -598,7 +526,9 @@ function getRegularMarketSession(
 
   return {
     isClosed: true,
+
     marketOpenMs: getTimestampForMarketTime(nextDate, schedule.open, timezone),
+
     marketCloseMs: todayCloseMs,
   };
 }
@@ -613,14 +543,14 @@ function getForexSession(now = new Date()): MarketSession {
    */
 
   const timezone = "America/New_York";
+
   const nowMs = now.getTime();
   const today = getExchangeDate(now, timezone);
   const weekday = getExchangeWeekday(now, timezone);
+
   const today1700 = getTimestampForMarketTime(today, "17:00", timezone);
 
-  /*
-   * Saturday.
-   */
+  // Saturday
   if (weekday === 6) {
     const sunday = addCalendarDays(today, 1);
 
@@ -633,9 +563,7 @@ function getForexSession(now = new Date()): MarketSession {
     };
   }
 
-  /*
-   * Sunday before 17:00.
-   */
+  // Sunday before 17:00
   if (weekday === 0 && nowMs < today1700) {
     return {
       isClosed: true,
@@ -644,9 +572,7 @@ function getForexSession(now = new Date()): MarketSession {
     };
   }
 
-  /*
-   * Friday at/after 17:00.
-   */
+  // Friday at/after 17:00
   if (weekday === 5 && nowMs >= today1700) {
     const sunday = addCalendarDays(today, 2);
 
@@ -723,11 +649,14 @@ export async function GET(request: Request) {
   const totalStart = performance.now();
 
   const { searchParams } = new URL(request.url);
+
   const rawSymbol = searchParams.get("symbol") || "^GSPC";
   const range = searchParams.get("range") || "1D";
+
   const symbol = PROVIDER_SYMBOLS[rawSymbol] || rawSymbol;
-  const period1 = getPeriod1(range);
+
   const requestedInterval = searchParams.get("interval");
+
   const allowedIntervals = new Set<YahooInterval>([
     "1m",
     "2m",
@@ -747,9 +676,13 @@ export async function GET(request: Request) {
 
   try {
     const yahooStart = performance.now();
+
     const requestStartedAt = Date.now();
 
-    const cachedYahoo = await getCachedYahooChart(symbol, range, interval);
+    const [cachedYahoo, quote] = await Promise.all([
+      getCachedYahooChart(symbol, range, interval),
+      yahoo.quote(symbol),
+    ]);
 
     const chartResult = cachedYahoo.chartResult;
 
@@ -795,6 +728,24 @@ export async function GET(request: Request) {
       sessionQuotes = getLatestTradingSession(rawQuotes, exchangeTimezone);
     }
 
+    /*
+     * Determine previous close once and reuse it
+     * everywhere below, including early returns.
+     *
+     * For 1D, prefer the final valid candle before
+     * the latest trading session.
+     */
+    const previousClose =
+      typeof quote.regularMarketPreviousClose === "number"
+        ? quote.regularMarketPreviousClose
+        : typeof meta.chartPreviousClose === "number"
+          ? meta.chartPreviousClose
+          : typeof meta.previousClose === "number"
+            ? meta.previousClose
+            : typeof meta.regularMarketPrice === "number"
+              ? meta.regularMarketPrice
+              : 0;
+
     let lunchStartMs: number | null = null;
     let lunchEndMs: number | null = null;
 
@@ -811,11 +762,7 @@ export async function GET(request: Request) {
 
         currentPrice: meta.regularMarketPrice ?? 0,
 
-        previousClose:
-          meta.chartPreviousClose ??
-          meta.previousClose ??
-          meta.regularMarketPrice ??
-          0,
+        previousClose,
 
         dailyChangePercent: 0,
         rangeChangePercent: 0,
@@ -880,11 +827,7 @@ export async function GET(request: Request) {
 
         currentPrice: meta.regularMarketPrice ?? 0,
 
-        previousClose:
-          meta.chartPreviousClose ??
-          meta.previousClose ??
-          meta.regularMarketPrice ??
-          0,
+        previousClose,
 
         dailyChangePercent: 0,
         rangeChangePercent: 0,
@@ -910,16 +853,11 @@ export async function GET(request: Request) {
     }
 
     const currentPrice =
-      typeof meta.regularMarketPrice === "number"
-        ? meta.regularMarketPrice
-        : (points[points.length - 1]?.price ?? 0);
-
-    const previousClose =
-      typeof meta.chartPreviousClose === "number"
-        ? meta.chartPreviousClose
-        : typeof meta.previousClose === "number"
-          ? meta.previousClose
-          : currentPrice;
+      typeof quote.regularMarketPrice === "number"
+        ? quote.regularMarketPrice
+        : typeof meta.regularMarketPrice === "number"
+          ? meta.regularMarketPrice
+          : (points[points.length - 1]?.price ?? 0);
 
     const rangeStartPrice = points[0]?.price ?? previousClose;
 

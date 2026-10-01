@@ -129,18 +129,21 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
           <thead>
             <tr className="border-b border-zinc-200 text-[11px] uppercase tracking-wider text-zinc-400 dark:border-zinc-700/50 dark:text-zinc-500 md:text-xs">
               {/* Asset */}
-              <th className="w-[37%] py-3.5 pl-4 text-left md:w-[17%] md:py-3">
-                Asset
-              </th>
+              <th className="w-[25%] py-3 pl-4 text-left md:w-[16%]">Asset</th>
 
               {/* Trend */}
-              <th className="hidden py-3 text-center md:table-cell md:w-[17%]">
+              <th className="hidden py-3 px-0 text-center md:table-cell md:w-[13%]">
                 Trend
               </th>
 
               {/* Price */}
-              <th className="w-[27%] py-3.5 pr-2 text-right md:w-[16%] md:py-3 md:pr-0">
-                Price
+              <th className="w-[25%] py-3.5 text-center md:w-[13%] md:py-3">
+                Today
+              </th>
+
+              {/* Prev Close */}
+              <th className="hidden py-3.5 pr-2 text-right md:table-cell md:w-[13%] md:py-3 md:pr-0">
+                Prev
               </th>
 
               {/* 24h % */}
@@ -149,18 +152,18 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
               </th>
 
               {/* Change */}
-              <th className="hidden py-3 text-right md:table-cell md:w-[14%]">
+              <th className="hidden py-3 text-right md:table-cell md:w-[11%]">
                 Change
               </th>
 
-              {/* Vote */}
-              <th className="w-[25%] px-3 py-3.5 text-right md:w-[17%] md:px-4 md:py-3">
+              {/* Statistic */}
+              <th className="w-[30%] pl-4 pr-2 py-3.5 md:text-right md:w-[14%] text-center md:px-4 md:py-3">
                 Statistic
               </th>
 
-              {/* Action */}
-              <th className="w-[11%] py-3.5 pr-3 md:w-[8%] md:py-3">
-                <span className="sr-only md:not-sr-only">Vote</span>
+              {/* Vote */}
+              <th className="w-[15%] py-3 pr-4 md:w-[6%] md:py-3 text-right">
+                <span className="">Vote</span>
               </th>
             </tr>
           </thead>
@@ -294,6 +297,11 @@ function RelativeStockRow({
         </Numeric>
       </td>
 
+      {/* Prev Close */}
+      <td className="hidden  md:table-cell w-[27%] whitespace-nowrap py-3 text-right font-medium text-zinc-500 dark:text-zinc-400 md:w-[16%] md:py-3 md:pr-0">
+        <Numeric>{quote?.previousClose ?? "-"}</Numeric>
+      </td>
+
       {/* 24h % */}
       <td
         className={`
@@ -321,7 +329,7 @@ function RelativeStockRow({
       </td>
 
       {/* Vote */}
-      <td className="w-[25%] px-3 py-3 md:w-[17%] md:px-4 md:py-3.5">
+      <td className="w-[25%] pl-4 pr-4 py-3 md:w-[17%] md:pl-4 md:mr-0 md:py-3.5">
         <div
           title={
             hasVotes
@@ -369,7 +377,7 @@ function RelativeStockRow({
       </td>
 
       {/* Action */}
-      <td className="w-[11%] py-3 pr-3 text-center md:w-[8%] md:px-2 md:py-3.5">
+      <td className="w-[11%] py-3 pr-3 text-center md:w-[8%] md:px-2 md:py-3.5 md:pr-4">
         <div
           title={
             hasVoted
@@ -378,11 +386,11 @@ function RelativeStockRow({
                 ? "Voting is open"
                 : "Voting is closed"
           }
-          className="relative mx-auto w-fit"
+          className="relative mx-auto item-center w-fit"
         >
           <MdOutlineHowToVote
             className={`
-        h-5 w-5
+        h-5 w-5 self-center
         transition-colors
 
         ${
