@@ -45,19 +45,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   callbacks: {
     async jwt({ token, user }) {
-      // -----------------------------------------------------------------------
-      // Only load DB user when the JWT is initially created.
-      //
-      // On later session checks, `user` is normally undefined and the values
-      // already stored inside the JWT are reused.
-      // -----------------------------------------------------------------------
-
+      // Initial login: make sure we have the user id.
       if (user?.id) {
+        token.sub = user.id;
+      }
+
+      // Always refresh the current user from the database.
+      if (token.sub) {
         const dbUser = await prisma.user.findUnique({
           where: {
-            id: user.id,
+            id: token.sub,
           },
           select: {
+            name: true,
+            email: true,
+            image: true,
             role: true,
             status: true,
             nationality: true,
@@ -66,6 +68,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
 
         if (dbUser) {
+          token.name = dbUser.name;
+          token.email = dbUser.email;
+          token.picture = dbUser.image;
+
           token.role = dbUser.role;
           token.status = dbUser.status;
           token.nationality = dbUser.nationality ?? "";
@@ -79,6 +85,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub ?? "";
+
+        session.user.name = typeof token.name === "string" ? token.name : "";
+
+        session.user.email = typeof token.email === "string" ? token.email : "";
+
+        session.user.image =
+          typeof token.picture === "string" ? token.picture : "";
 
         session.user.role = token.role ?? "USER";
         session.user.status = token.status ?? "ACTIVE";

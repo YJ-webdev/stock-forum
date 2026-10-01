@@ -916,7 +916,7 @@ function CommentItem({
                 Comment deleted by user
               </p>
             ) : (
-              <div className="mt-0.5 flex items-baseline gap-1 lowercase">
+              <div className="mt-0.5 flex items-baseline gap-1">
                 <CommentContent content={comment.content} />
 
                 {comment.editedAt && (

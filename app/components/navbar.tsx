@@ -10,6 +10,8 @@ import { handleSignOut } from "../actions/auth";
 import { hasUnreadNotifications } from "../actions/notification";
 import SearchInput from "./search-input";
 
+import { useCurrentUser } from "../context/user-context";
+
 import {
   Bell,
   BellIcon,
@@ -47,8 +49,6 @@ interface User {
 }
 
 interface HeaderProps {
-  user?: User | null;
-
   onTogglePanel: () => void;
   onWrite: () => void;
   onAccount: () => void;
@@ -56,8 +56,6 @@ interface HeaderProps {
 }
 
 interface UserMenuProps {
-  user?: User | null;
-
   onSignOut?: () => Promise<void>;
   onLoginClick?: () => void;
 
@@ -71,7 +69,6 @@ interface UserMenuProps {
 // -----------------------------------------------------------------------------
 
 export function Navbar({
-  user,
   onTogglePanel,
   onWrite,
   onAccount,
@@ -115,7 +112,6 @@ export function Navbar({
 
       <div className="mx-4 flex shrink-0 items-center">
         <UserMenu
-          user={user}
           onSignOut={handleSignOut}
           onLoginClick={() => setIsLoginOpen(true)}
           onWrite={onWrite}
@@ -138,13 +134,14 @@ export function Navbar({
 // -----------------------------------------------------------------------------
 
 export default function UserMenu({
-  user,
   onSignOut,
   onLoginClick,
   onWrite,
   onAccount,
   onNotification,
 }: UserMenuProps) {
+  const user = useCurrentUser();
+
   const [isPending, startTransition] = useTransition();
   const [hasUnread, setHasUnread] = useState(false);
 

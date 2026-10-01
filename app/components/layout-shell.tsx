@@ -286,7 +286,6 @@ export default function LayoutShell({
           {/* ---------------------------------------------------------------- */}
 
           <Navbar
-            user={user}
             onTogglePanel={handleToggleLeftPanel}
             onWrite={handleWrite}
             onAccount={handleAccount}
@@ -538,7 +537,7 @@ export default function LayoutShell({
                     {/* Account */}
 
                     {user && onAccount && !onWrite && (
-                      <AccountPanel user={user} setOnAccount={setOnAccount} />
+                      <AccountPanel setOnAccount={setOnAccount} />
                     )}
 
                     {/* Notifications */}
@@ -601,9 +600,8 @@ export default function LayoutShell({
               {/* Account */}
 
               {user && onAccount && !onWrite && (
-                <AccountPanel user={user} setOnAccount={setOnAccount} />
+                <AccountPanel setOnAccount={setOnAccount} />
               )}
-
               {/* Notifications */}
 
               {user && onNotification && (
