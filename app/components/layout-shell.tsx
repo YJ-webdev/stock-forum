@@ -95,23 +95,7 @@ export default function LayoutShell({
 
   const panelBRef = useRef<PanelImperativeHandle>(null);
 
-  // Main content has its own scroll container.
   const mainScrollRef = useRef<HTMLElement>(null);
-
-  // ---------------------------------------------------------------------------
-  // Reset main scroll on page navigation
-  //
-  // Important:
-  // Only Section A is reset.
-  //
-  // Panel Left and Section B keep their own independent scroll positions.
-  //
-  // Query-only navigation such as:
-  //   ?comment=...
-  //   ?reply=...
-  //
-  // does NOT trigger this because pathname does not change.
-  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     mainScrollRef.current?.scrollTo({
@@ -120,10 +104,6 @@ export default function LayoutShell({
       behavior: "auto",
     });
   }, [pathname]);
-
-  // ---------------------------------------------------------------------------
-  // Left panel
-  // ---------------------------------------------------------------------------
 
   const handleToggleLeftPanel = () => {
     if (window.innerWidth >= 1280) {
@@ -138,18 +118,6 @@ export default function LayoutShell({
     setIsMobilePanelOpen((prev) => !prev);
   };
 
-  // ---------------------------------------------------------------------------
-  // Section B responsive size
-  //
-  // Mobile:
-  //   Main = 100%
-  //   Section B = 0%
-  //
-  // Tablet / Desktop:
-  //   Main = 70%
-  //   Section B = 30%
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
     const media = window.matchMedia("(min-width: 768px)");
 
@@ -157,11 +125,8 @@ export default function LayoutShell({
       panelBRef.current?.resize(media.matches ? "30%" : "0%");
     };
 
-    // Apply correct panel size first.
     updateSectionB();
 
-    // Wait until react-resizable-panels has applied
-    // the initial layout before revealing the page.
     let frame2 = 0;
 
     const frame1 = requestAnimationFrame(() => {
@@ -183,12 +148,7 @@ export default function LayoutShell({
     };
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // Section B helpers
-  // ---------------------------------------------------------------------------
-
   const resetPanelB = () => {
-    // Mobile uses the full-width overlay.
     if (window.innerWidth >= 768) {
       panelBRef.current?.resize("30%");
     }
@@ -226,15 +186,7 @@ export default function LayoutShell({
     setNotificationRefreshKey((prev) => prev + 1);
   };
 
-  // ---------------------------------------------------------------------------
-  // Mobile Section B overlay
-  // ---------------------------------------------------------------------------
-
   const mobilePanelOpen = !!user && (onWrite || onAccount || onNotification);
-
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
 
   return (
     <UserProvider user={user}>
@@ -251,24 +203,12 @@ export default function LayoutShell({
             md:overflow-hidden
           "
         >
-          {/* ---------------------------------------------------------------- */}
-          {/* Navbar                                                           */}
-          {/* ---------------------------------------------------------------- */}
-
           <Navbar
             onTogglePanel={handleToggleLeftPanel}
             onWrite={handleWrite}
             onAccount={handleAccount}
             onNotification={handleNotification}
           />
-
-          {/* ---------------------------------------------------------------- */}
-          {/* Initial layout loading                                           */}
-          {/*                                                                  */}
-          {/* Navbar remains visible immediately.                             */}
-          {/* Everything below the 72px navbar is covered while the           */}
-          {/* resizable layout is being initialized.                          */}
-          {/* ---------------------------------------------------------------- */}
 
           {!layoutReady && (
             <div
@@ -304,10 +244,6 @@ export default function LayoutShell({
             </div>
           )}
 
-          {/* ---------------------------------------------------------------- */}
-          {/* Mobile / tablet left drawer                                     */}
-          {/* ---------------------------------------------------------------- */}
-
           <Suspense
             fallback={
               isMobilePanelOpen ? (
@@ -335,22 +271,6 @@ export default function LayoutShell({
             />
           </Suspense>
 
-          {/* ---------------------------------------------------------------- */}
-          {/* Page layout                                                     */}
-          {/*                                                                  */}
-          {/* < md                                                            */}
-          {/*   Main = 100%                                                   */}
-          {/*   Section B = 0%                                                */}
-          {/*                                                                  */}
-          {/* md - xl                                                         */}
-          {/*   Main ~70%                                                     */}
-          {/*   Section B ~30%                                                */}
-          {/*                                                                  */}
-          {/* xl+                                                             */}
-          {/*   PanelLeft 320px                                               */}
-          {/*   + Main / Section B                                            */}
-          {/* ---------------------------------------------------------------- */}
-
           <div
             className={`
               min-h-0
@@ -371,10 +291,6 @@ export default function LayoutShell({
               }
             `}
           >
-            {/* -------------------------------------------------------------- */}
-            {/* Desktop left panel                                             */}
-            {/* -------------------------------------------------------------- */}
-
             <div
               className="
                 mt-18
@@ -391,16 +307,8 @@ export default function LayoutShell({
               </Suspense>
             </div>
 
-            {/* -------------------------------------------------------------- */}
-            {/* Main + Section B                                               */}
-            {/* -------------------------------------------------------------- */}
-
             <div className="min-w-0 overflow-hidden">
               <ResizablePanelGroup orientation="horizontal" className="h-full">
-                {/* ---------------------------------------------------------- */}
-                {/* Main content / Section A                                   */}
-                {/* ---------------------------------------------------------- */}
-
                 <ResizablePanel
                   defaultSize="70%"
                   minSize="30%"
@@ -436,10 +344,6 @@ export default function LayoutShell({
                   </section>
                 </ResizablePanel>
 
-                {/* ---------------------------------------------------------- */}
-                {/* Resize handle                                              */}
-                {/* ---------------------------------------------------------- */}
-
                 <ResizableHandle
                   className="
                     hidden
@@ -449,13 +353,6 @@ export default function LayoutShell({
                     md:flex
                   "
                 />
-
-                {/* ---------------------------------------------------------- */}
-                {/* Section B                                                  */}
-                {/*                                                            */}
-                {/* Mobile: 0%                                                 */}
-                {/* md+: 30%                                                   */}
-                {/* ---------------------------------------------------------- */}
 
                 <ResizablePanel
                   panelRef={panelBRef}
@@ -475,10 +372,6 @@ export default function LayoutShell({
                     dark:bg-zinc-900
                   "
                 >
-                  {/* -------------------------------------------------------- */}
-                  {/* Desktop / tablet Section B                               */}
-                  {/* -------------------------------------------------------- */}
-
                   <div
                     className="
                       mt-18
@@ -500,17 +393,11 @@ export default function LayoutShell({
                       dark:bg-zinc-900
                     "
                   >
-                    {/* Write */}
-
                     {user && onWrite && <PostEditor setOnWrite={setOnWrite} />}
-
-                    {/* Account */}
 
                     {user && onAccount && !onWrite && (
                       <AccountPanel setOnAccount={setOnAccount} />
                     )}
-
-                    {/* Notifications */}
 
                     {user && onNotification && (
                       <NotificationPanel
@@ -518,8 +405,6 @@ export default function LayoutShell({
                         setOnNotification={setOnNotification}
                       />
                     )}
-
-                    {/* Default Section B */}
 
                     {!onWrite && !onAccount && !onNotification && (
                       <Suspense fallback={<SideDataLoading />}>
@@ -532,12 +417,6 @@ export default function LayoutShell({
               </ResizablePanelGroup>
             </div>
           </div>
-
-          {/* ---------------------------------------------------------------- */}
-          {/* Mobile Section B overlay                                         */}
-          {/*                                                                  */}
-          {/* Mobile uses its own full-width panel instead of ResizablePanel.  */}
-          {/* ---------------------------------------------------------------- */}
 
           {mobilePanelOpen && (
             <div

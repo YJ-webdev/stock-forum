@@ -11,7 +11,6 @@ import {
 import "@/app/globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "./components/theme-provider";
-import { SessionProvider } from "@/components/providers/session-provider";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -72,28 +71,26 @@ export default function RootLayout({
       <body
         className={`${redHatDisplay.variable} min-h-full flex flex-col bg-background text-foreground`}
       >
-        <SessionProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <TooltipProvider>{children}</TooltipProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TooltipProvider>{children}</TooltipProvider>
 
-            <Toaster
-              position="bottom-center"
-              theme="dark"
-              toastOptions={{
-                classNames: {
-                  toast: " border-none! px-5! py-4! text-[15px]!",
-                  title: "text-[15px]! font-medium! ",
-                  description: "text-sm! ",
-                },
-              }}
-            />
-          </ThemeProvider>
-        </SessionProvider>
+          <Toaster
+            position="bottom-center"
+            theme="dark"
+            toastOptions={{
+              classNames: {
+                toast: " border-none! px-5! py-4! text-[15px]!",
+                title: "text-[15px]! font-medium! ",
+                description: "text-sm! ",
+              },
+            }}
+          />
+        </ThemeProvider>
       </body>
     </html>
   );
