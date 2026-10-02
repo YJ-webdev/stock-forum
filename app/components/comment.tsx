@@ -435,7 +435,7 @@ export function MarketComments({
          * 2. Non-prediction asset:
          *    - crypto
          *    - currency
-         *    - commodities
+         *    - commodity
          *    - etc.
          *
          * For case #2, all prediction-related values are neutral.

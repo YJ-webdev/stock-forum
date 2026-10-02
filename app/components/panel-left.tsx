@@ -6,7 +6,6 @@ import { MostLikedComments } from "./most-liked-comments";
 import { PopularBoards } from "./major-indices";
 
 import type { MostLikedComment, PopularBoard } from "../actions/query";
-import { Footer } from "./footer";
 
 interface PanelLeftProps {
   comments: MostLikedComment[];

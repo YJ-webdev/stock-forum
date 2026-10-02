@@ -55,8 +55,8 @@ const NAV_ITEMS = [
     label: "Currency",
   },
   {
-    key: "commodities",
-    label: "Commodities",
+    key: "commodity",
+    label: "commodity",
   },
 ] as const;
 

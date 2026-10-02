@@ -1,9 +1,11 @@
 export function Numeric({
   children,
   className,
+  decimals = 2,
 }: {
   children: React.ReactNode;
   className?: string;
+  decimals?: number;
 }) {
   const formatNumber = (value: React.ReactNode) => {
     if (value === null || value === undefined || value === "") {
@@ -17,8 +19,8 @@ export function Numeric({
     }
 
     return num.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     });
   };
 

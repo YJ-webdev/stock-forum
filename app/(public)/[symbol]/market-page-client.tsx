@@ -98,7 +98,7 @@ export default function MarketPageClient({
   //
   // Only regional market indices currently support Bull / Bear predictions.
   //
-  // Crypto, currency, commodities, etc. remain discussion-only assets.
+  // Crypto, currency, commodity, etc. remain discussion-only assets.
   // ---------------------------------------------------------------------------
 
   const canPredict = selectedAssetType === "index";
@@ -145,7 +145,7 @@ export default function MarketPageClient({
   // Load vote statistics
   //
   // IMPORTANT:
-  // Crypto / currency / commodities do not make this request.
+  // Crypto / currency / commodity do not make this request.
   // ---------------------------------------------------------------------------
 
   // ---------------------------------------------------------------------------

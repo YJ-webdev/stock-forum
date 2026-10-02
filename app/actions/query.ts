@@ -115,7 +115,7 @@ export async function getPopularBoards(limit = 7): Promise<PopularBoard[]> {
   // Session-based markets:
   //   → comments since the current trading session started
   //
-  // Markets without a trading session (crypto / currency / commodities):
+  // Markets without a trading session (crypto / currency / commodity):
   //   → comments from the last 24 hours
   // ---------------------------------------------------------------------------
 

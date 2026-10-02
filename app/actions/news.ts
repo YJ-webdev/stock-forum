@@ -699,7 +699,7 @@ function normalizeNewsAssetType(assetType: string): NewsAssetType {
     return "currency";
   }
 
-  if (normalized.includes("commodity") || normalized.includes("commodities")) {
+  if (normalized.includes("commodity") || normalized.includes("commodity")) {
     return "commodity";
   }
 
@@ -778,7 +778,7 @@ function buildNewsContext({
     case "commodity": {
       const terms = COMMODITY_NEWS_TERMS[symbol] ?? [
         primaryQuery,
-        "commodities",
+        "commodity",
         "commodity market",
       ];
 
@@ -1310,7 +1310,7 @@ export async function getGlobalMarketNews(
        * Keep the existing global market feed limited
        * to regional market categories.
        *
-       * Crypto / Currency / Commodities can still have
+       * Crypto / Currency / commodity can still have
        * their own /[symbol]/news pages.
        *
        * Remove this market.category filter later if you

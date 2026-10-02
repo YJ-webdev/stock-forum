@@ -6,12 +6,7 @@ export type MarketRegion =
   | "Global"
   | "Africa";
 
-export type AssetType =
-  | "index"
-  | "stock"
-  | "crypto"
-  | "currency"
-  | "commodities";
+export type AssetType = "index" | "stock" | "crypto" | "currency" | "commodity";
 
 // -----------------------------------------------------------------------------
 // MARKET SCHEDULE
@@ -786,18 +781,18 @@ export const CURRENCY_SYMBOLS: MarketSymbolItem[] = [
 
 // -----------------------------------------------------------------------------
 
-// Commodities also have their own sessions and maintenance breaks.
+// commodity also have their own sessions and maintenance breaks.
 // We'll handle those separately.
 // -----------------------------------------------------------------------------
 
-export const COMMODITIES_SYMBOLS: MarketSymbolItem[] = [
+export const commodity_SYMBOLS: MarketSymbolItem[] = [
   {
     name: "Crude Oil Futures",
     symbol: "CL=F",
     displaySymbol: "OIL",
     country: "GLOBAL",
     region: "Global",
-    assetType: "commodities",
+    assetType: "commodity",
     timezone: "America/New_York",
   },
 
@@ -807,7 +802,7 @@ export const COMMODITIES_SYMBOLS: MarketSymbolItem[] = [
     displaySymbol: "GOLD",
     country: "GLOBAL",
     region: "Global",
-    assetType: "commodities",
+    assetType: "commodity",
     timezone: "America/New_York",
   },
 
@@ -817,7 +812,7 @@ export const COMMODITIES_SYMBOLS: MarketSymbolItem[] = [
     displaySymbol: "SILVER",
     country: "GLOBAL",
     region: "Global",
-    assetType: "commodities",
+    assetType: "commodity",
     timezone: "America/New_York",
   },
 
@@ -827,7 +822,7 @@ export const COMMODITIES_SYMBOLS: MarketSymbolItem[] = [
     displaySymbol: "GAS",
     country: "GLOBAL",
     region: "Global",
-    assetType: "commodities",
+    assetType: "commodity",
     timezone: "America/New_York",
   },
 ];
@@ -840,5 +835,5 @@ export const ALL_MARKET_SYMBOLS: MarketSymbolItem[] = [
   ...Object.values(MARKET_SYMBOLS).flat(),
   ...CRYPTO_SYMBOLS,
   ...CURRENCY_SYMBOLS,
-  ...COMMODITIES_SYMBOLS,
+  ...commodity_SYMBOLS,
 ];

@@ -5,5 +5,7 @@
   "tailwindcss.lint.invalidScreen": "ignore",
   "tailwindcss.lint.invalidVariant": "ignore",
   "tailwindcss.lint.invalidConfigPath": "ignore",
-  "tailwindcss.lint.cssConflict": "ignore"
+  "tailwindcss.lint.cssConflict": "ignore",
+
+  "editor.snippetSuggestions": "top"
 }

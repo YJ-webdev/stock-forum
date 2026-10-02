@@ -629,7 +629,7 @@ function getMarketSession(market?: MarketSymbolItem): MarketSession {
      * Until we add that properly, don't pretend
      * GLOBAL has stock-market hours.
      */
-    case "commodities":
+    case "commodity":
       return {
         isClosed: false,
         marketOpenMs: null,
