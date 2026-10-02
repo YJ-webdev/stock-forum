@@ -132,7 +132,7 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
                 className={
                   showVotingColumns
                     ? "w-[25%] py-3 pl-4 text-left md:w-[calc(94%/7)]"
-                    : "w-1/4 py-3 text-left md:w-auto pl-4"
+                    : "w-[25%] py-3 pl-4 text-left md:w-[20%]"
                 }
               >
                 Asset
@@ -141,8 +141,8 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
               <th
                 className={
                   showVotingColumns
-                    ? "hidden px-0 py-3 text-center md:table-cell md:w-[calc(94%/7)]"
-                    : "hidden px-0 py-3 text-center md:table-cell md:w-auto"
+                    ? "hidden pl-2 text-center md:table-cell"
+                    : "hidden text-center md:table-cell md:w-[15%]"
                 }
               >
                 Trend
@@ -151,8 +151,8 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
               <th
                 className={
                   showVotingColumns
-                    ? "w-[25%] py-3.5 text-right md:w-[calc(94%/7)] md:py-3"
-                    : "w-1/4 py-3.5 text-right md:w-auto md:py-3"
+                    ? "w-[25%] pr-2 text-right md:w-[calc(94%/7)]"
+                    : "w-[25%] text-right md:w-[15%]"
                 }
               >
                 Today
@@ -162,7 +162,7 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
                 className={
                   showVotingColumns
                     ? "hidden py-3.5 pr-2 text-right md:table-cell md:w-[calc(94%/7)] md:py-3 md:pr-0"
-                    : "w-1/4 py-3.5 text-right md:w-auto md:py-3"
+                    : "w-[25%] py-3.5 text-right md:w-[17%] md:py-3"
                 }
               >
                 Prev
@@ -172,7 +172,7 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
                 className={
                   showVotingColumns
                     ? "hidden truncate py-3 text-right md:table-cell md:w-[calc(94%/7)]"
-                    : "hidden truncate py-3 text-right md:table-cell md:w-auto"
+                    : "hidden truncate py-3 text-right md:table-cell md:w-[16.5%]"
                 }
               >
                 24h %
@@ -182,7 +182,7 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
                 className={
                   showVotingColumns
                     ? "hidden py-3 text-right md:table-cell md:w-[calc(94%/7)]"
-                    : "w-1/4 py-3 pr-4 text-right md:w-auto"
+                    : "w-[25%] py-3 pr-4 text-right md:w-[16.5%]"
                 }
               >
                 Change
@@ -190,9 +190,7 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
 
               {showVotingColumns && (
                 <>
-                  <th className="w-[30%] py-3.5 pl-4 pr-2 text-center md:w-[calc(94%/7)] md:px-4 md:py-3 md:text-right">
-                    Statistic
-                  </th>
+                  <th className="w-[30%] pl-2 md:w-[calc(94%/7)]">Statistic</th>
 
                   <th className="w-[15%] py-3 pr-4 text-right md:w-[6%]">
                     Vote
@@ -294,14 +292,13 @@ function RelativeStockRow({
         dark:text-zinc-100
         dark:hover:bg-zinc-900
         md:text-[15px]
-       
       "
     >
       <td
         className={
           showVotingColumns
-            ? "w-[37%] overflow-hidden py-3 leading-snug md:w-[calc(94%/7)] md:py-2.5"
-            : "w-1/4 overflow-hidden py-3 leading-snug md:w-auto md:py-2.5"
+            ? "w-[37%] overflow-hidden py-3 leading-snug md:w-[calc(94%/7)]"
+            : "w-[37%] overflow-hidden py-3 leading-snug md:w-[20%]"
         }
       >
         <div className="ml-4 min-w-0">
@@ -318,8 +315,8 @@ function RelativeStockRow({
       <td
         className={
           showVotingColumns
-            ? "hidden overflow-hidden py-2.5 align-middle md:table-cell md:w-[calc(94%/7)]"
-            : "hidden overflow-hidden py-2.5 align-middle md:table-cell md:w-auto"
+            ? "hidden w-fit overflow-hidden align-middle md:table-cell"
+            : "hidden overflow-hidden align-middle md:table-cell md:w-[15%]"
         }
       >
         <div className="flex w-full justify-center overflow-hidden">
@@ -335,8 +332,8 @@ function RelativeStockRow({
       <td
         className={
           showVotingColumns
-            ? "w-[27%] whitespace-nowrap py-3 pr-2 text-right font-medium dark:font-normal md:w-[calc(94%/7)] md:py-3 md:pr-0"
-            : "w-1/4 whitespace-nowrap py-3 text-right font-medium dark:font-normal md:w-auto md:py-3"
+            ? "w-[27%] whitespace-nowrap pr-2 text-right font-medium dark:font-normal"
+            : "w-[37%] whitespace-nowrap text-right font-medium dark:font-normal md:w-[15%]"
         }
       >
         <Numeric decimals={currencyDecimals}>{quote?.value ?? "-"}</Numeric>
@@ -357,7 +354,7 @@ function RelativeStockRow({
         className={
           showVotingColumns
             ? "hidden whitespace-nowrap py-3 text-right font-medium text-zinc-500 dark:text-zinc-400 md:table-cell md:w-[calc(94%/7)] md:pr-0"
-            : "w-1/4 whitespace-nowrap py-3 text-right font-medium text-zinc-500 dark:text-zinc-400 md:w-auto"
+            : "w-[37%] whitespace-nowrap py-3 text-right font-medium text-zinc-500 dark:text-zinc-400 md:w-[17%]"
         }
       >
         <Numeric>{quote?.previousClose ?? "-"}</Numeric>
@@ -369,7 +366,7 @@ function RelativeStockRow({
           text-right font-medium
           dark:font-semibold
           md:table-cell
-          ${showVotingColumns ? "md:w-[calc(94%/7)]" : "md:w-auto"}
+          ${showVotingColumns ? "md:w-[37%]" : "md:w-[16.5%]"}
           ${priceColor}
         `}
       >
@@ -383,8 +380,8 @@ function RelativeStockRow({
           dark:font-semibold
           ${
             showVotingColumns
-              ? "hidden md:table-cell md:w-[calc(94%/7)]"
-              : "w-1/4 pr-4 md:w-auto"
+              ? "hidden md:table-cell md:w-[37%]"
+              : "w-1/6 pr-4 md:w-[16.5%]"
           }
           ${priceColor}
         `}
@@ -394,7 +391,7 @@ function RelativeStockRow({
 
       {showVotingColumns && (
         <>
-          <td className="w-[25%] py-3 pl-4 pr-4 md:w-[calc(94%/7)] md:py-3.5 md:pl-4">
+          <td className="w-[37%] pl-5 pr-3 md:w-[20%]">
             <div
               title={
                 hasVotes
@@ -404,11 +401,10 @@ function RelativeStockRow({
                   : "No votes yet"
               }
               className="
-                flex h-2.5 w-full
+                flex h-3 w-full
                 overflow-hidden
                 bg-zinc-200
                 dark:bg-zinc-700
-                md:h-2
               "
             >
               {hasVotes && (
@@ -439,7 +435,7 @@ function RelativeStockRow({
             </div>
           </td>
 
-          <td className="w-[11%] py-3 pr-3 text-center md:w-[6%] md:px-2 md:py-3.5 md:pr-4">
+          <td className="w-[5%] justify-center text-center md:w-[6%]">
             <div
               title={
                 hasVoted

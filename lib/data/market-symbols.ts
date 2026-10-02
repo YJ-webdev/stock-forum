@@ -785,7 +785,7 @@ export const CURRENCY_SYMBOLS: MarketSymbolItem[] = [
 // We'll handle those separately.
 // -----------------------------------------------------------------------------
 
-export const commodity_SYMBOLS: MarketSymbolItem[] = [
+export const COMMODITY_SYMBOLS: MarketSymbolItem[] = [
   {
     name: "Crude Oil Futures",
     symbol: "CL=F",
@@ -835,5 +835,5 @@ export const ALL_MARKET_SYMBOLS: MarketSymbolItem[] = [
   ...Object.values(MARKET_SYMBOLS).flat(),
   ...CRYPTO_SYMBOLS,
   ...CURRENCY_SYMBOLS,
-  ...commodity_SYMBOLS,
+  ...COMMODITY_SYMBOLS,
 ];

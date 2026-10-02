@@ -46,7 +46,7 @@ export default function SearchInput() {
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px]"
+          className="fixed inset-0 z-40  backdrop-blur-[1px]"
           onClick={() => {
             setIsOpen(false);
             inputRef.current?.blur();
@@ -104,17 +104,18 @@ export default function SearchInput() {
           <div
             className="
               absolute left-1/2 top-full
-              mt-3
+              mt-2
               w-[min(72rem,calc(100vw-2rem))]
               -translate-x-1/2
               overflow-hidden
               rounded-xl
-              border border-zinc-200
+              
               bg-white
-              py-4
+              pt-2
+              pb-4
               shadow-2xl
-              dark:border-zinc-700
-              dark:bg-zinc-900
+              
+              dark:bg-zinc-800
             "
             onClick={(e) => e.stopPropagation()}
           >
