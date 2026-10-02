@@ -455,7 +455,7 @@ export function MarketComments({
       {/* COMMENTS                                                        */}
       {/* --------------------------------------------------------------- */}
 
-      <div className="pt-2 space-y-6">
+      <div className="pt-2 space-y-8">
         {commentsLoading ? (
           <div className=" text-center text-sm text-zinc-400 pt-4">
             Loading comments...
@@ -482,7 +482,7 @@ export function MarketComments({
               index > 0 && previousIsCurrentSession && !isCurrentSession;
 
             return (
-              <div key={comment.id} className="pb-2 dark:bg-zinc-800">
+              <div key={comment.id} className=" dark:bg-zinc-900">
                 {showSessionBoundary && (
                   <div className="my-7 h-px bg-zinc-200 dark:bg-zinc-800" />
                 )}
