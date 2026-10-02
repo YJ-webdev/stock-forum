@@ -223,26 +223,31 @@ export default function SearchInput({
         {isOpen && (
           <div
             className="
-              fixed
-              left-4 right-4
-              top-18
-              z-40
-              overflow-hidden
-              rounded-xl
-              bg-white
-              py-4
+    fixed
+    left-0
+    right-0
+    top-18
+    bottom-0
+    z-40
+    overflow-hidden
+    bg-zinc-100
+    pt-3
 
-              dark:bg-zinc-800
+    dark:bg-zinc-800
 
-              md:absolute
-              md:left-1/2
-              md:right-auto
-              md:top-full
-              md:mt-3
-              md:w-[min(72rem,calc(100vw-2rem))]
-              md:-translate-x-1/2
-              md:shadow-2xl
-            "
+    md:absolute
+    md:left-1/2
+    md:right-auto
+    md:top-full
+    md:bottom-auto
+    md:mt-3
+    md:w-[min(72rem,calc(100vw-2rem))]
+    md:-translate-x-1/2
+    md:rounded-xl
+    md:py-4
+    md:shadow-2xl
+    md:bg-white
+  "
             onClick={(e) => e.stopPropagation()}
           >
             <MarketOverview

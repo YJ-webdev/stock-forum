@@ -143,7 +143,7 @@ export function RelativeStocks({
     <div className="flex max-h-[calc(100vh-230px)] w-full flex-col overflow-y-auto">
       <div className="w-full border-zinc-200 bg-zinc-100 dark:border-zinc-800/50 dark:bg-zinc-800 md:rounded-lg md:border md:bg-white md:shadow-sm">
         <table className="w-full table-fixed">
-          <thead className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-800 md:bg-white">
+          <thead className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-800 md:bg-white ">
             <tr className="border-b border-zinc-200 text-[11px] uppercase tracking-wider text-zinc-400 dark:border-zinc-700/50 dark:text-zinc-500 md:text-xs">
               <th
                 className={

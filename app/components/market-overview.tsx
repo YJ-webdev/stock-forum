@@ -222,7 +222,7 @@ export default function MarketOverview({
     : (MARKET_CATEGORIES[activeTab] ?? []);
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
+    <div className="mx-auto w-full max-w-6xl bg-zinc-100 md:bg-white dark:bg-zinc-800">
       <div className="flex flex-col gap-3 md:mx-4">
         <div className="flex flex-wrap justify-start gap-2 px-2 md:space-x-0 md:px-0">
           {categories.map((category) => {
@@ -240,13 +240,11 @@ export default function MarketOverview({
                 onKeyDown={handleCategoryKeyDown}
                 className={`
                   cursor-pointer rounded-full
-                  px-2 py-1.75
+                  px-2 py-1 md:py-1.75
                   text-sm font-medium uppercase
                   transition-all
                   md:px-4
-                  border
-                  border-white
-                  dark:border-transparent
+                  
                   ${
                     isActive
                       ? `
