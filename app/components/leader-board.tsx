@@ -24,7 +24,7 @@ function getInitials(name: string) {
 export function LeaderBoard({ traders }: LeaderBoardProps) {
   return (
     <div className="flex w-full flex-col">
-      <p className="mb-3.5 px-4 pt-4 text-xs font-normal tracking-wider text-muted-foreground/50 truncate">
+      <p className="mb-2 px-4 pt-4 text-xs font-normal tracking-wider text-muted-foreground/50 truncate">
         Leaderboard
       </p>
 

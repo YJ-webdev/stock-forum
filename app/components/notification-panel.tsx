@@ -204,8 +204,6 @@ export function NotificationPanel({
     }
 
     if (href) {
-      setOnNotification(false);
-
       router.push(href);
     }
   };
@@ -356,6 +354,9 @@ export function NotificationPanel({
            
           "
           >
+            <p className="-mt-1 text-xs font-normal tracking-wider text-muted-foreground/50">
+              Notifications
+            </p>
             <div className="flex items-center gap-3 ml-auto">
               {/* Mark all read */}
 

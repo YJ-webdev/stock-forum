@@ -82,6 +82,7 @@ export default function RootLayout({
           <Toaster
             position="bottom-center"
             theme="dark"
+            duration={5000}
             toastOptions={{
               classNames: {
                 toast: " border-none! px-5! py-4! text-[15px]!",
