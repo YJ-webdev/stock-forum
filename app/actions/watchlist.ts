@@ -1,0 +1,52 @@
+"use server";
+
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+
+export async function addMarketsToWatchlist(symbols: string[]) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized.");
+  }
+
+  const uniqueSymbols = [...new Set(symbols)];
+
+  if (uniqueSymbols.length === 0) {
+    return {
+      addedCount: 0,
+    };
+  }
+
+  // Only allow symbols that actually exist in MarketAsset.
+  const assets = await prisma.marketAsset.findMany({
+    where: {
+      symbol: {
+        in: uniqueSymbols,
+      },
+    },
+    select: {
+      symbol: true,
+    },
+  });
+
+  const validSymbols = assets.map((asset) => asset.symbol);
+
+  if (validSymbols.length === 0) {
+    return {
+      addedCount: 0,
+    };
+  }
+
+  const result = await prisma.watchlist.createMany({
+    data: validSymbols.map((symbol) => ({
+      userId: session.user.id,
+      symbol,
+    })),
+    skipDuplicates: true,
+  });
+
+  return {
+    addedCount: result.count,
+  };
+}
