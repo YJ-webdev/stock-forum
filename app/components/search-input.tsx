@@ -1,60 +1,183 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 
 import { KbdMarkup } from "./kbd-markup";
 import { SearchSparkIcon } from "./search-sparkle-icon";
 import MarketOverview from "./market-overview";
 
-export default function SearchInput() {
+interface SearchInputProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export default function SearchInput({
+  isOpen,
+  onOpenChange,
+}: SearchInputProps) {
+  const router = useRouter();
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [input, setInput] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [mounted, setMounted] = useState(false);
 
-  const handleSearch = async () => {
-    if (input.trim().length > 0) {
-      console.log("handleSearch:", input);
-    }
+  const [searchResultSymbols, setSearchResultSymbols] = useState<string[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+
+  const resetSearchNavigation = () => {
+    setSearchQuery("");
+    setSelectedIndex(-1);
+    setSearchResultSymbols([]);
+  };
+
+  const handleOpen = () => {
+    resetSearchNavigation();
+
+    onOpenChange(true);
+
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+  };
+
+  const handleClose = () => {
+    resetSearchNavigation();
+
+    onOpenChange(false);
+    inputRef.current?.blur();
+  };
+
+  const handleAssetSelected = () => {
+    setInput("");
+    setSearchQuery("");
+    setSelectedIndex(-1);
+    setSearchResultSymbols([]);
+
+    onOpenChange(false);
+    inputRef.current?.blur();
   };
 
   const handleContainerClick = () => {
-    setIsOpen(true);
-    inputRef.current?.focus();
+    handleOpen();
   };
 
-  useEffect(() => {
-    if (!isOpen) {
+  const handleNavigate = (symbol: string) => {
+    handleAssetSelected();
+
+    router.push(`/${encodeURIComponent(symbol)}`, {
+      scroll: true,
+    });
+  };
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+
+    setInput(value);
+    setSearchQuery(value);
+    setSelectedIndex(-1);
+  };
+
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+
+      const firstCategory = document.querySelector<HTMLButtonElement>(
+        '[data-market-category="true"]',
+      );
+
+      firstCategory?.focus();
+
       return;
     }
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsOpen(false);
+    if (event.key === "Enter") {
+      event.preventDefault();
+
+      if (searchResultSymbols.length === 0) {
+        return;
+      }
+
+      const targetIndex = selectedIndex >= 0 ? selectedIndex : 0;
+      const symbol = searchResultSymbols[targetIndex];
+
+      if (symbol) {
+        handleNavigate(symbol);
+      }
+    }
+  };
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      const isSearchShortcut =
+        event.key.toLowerCase() === "k" && (event.ctrlKey || event.metaKey);
+
+      if (isSearchShortcut) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        setSearchQuery("");
+        setSelectedIndex(-1);
+        setSearchResultSymbols([]);
+
+        onOpenChange(true);
+
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+        });
+
+        return;
+      }
+
+      if (event.key === "Escape" && isOpen) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        setSearchQuery("");
+        setSelectedIndex(-1);
+        setSearchResultSymbols([]);
+
+        onOpenChange(false);
         inputRef.current?.blur();
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleGlobalKeyDown, {
+      capture: true,
+    });
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleGlobalKeyDown, {
+        capture: true,
+      });
     };
-  }, [isOpen]);
+  }, [isOpen, onOpenChange]);
 
   return (
     <>
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40  backdrop-blur-[1px]"
-          onClick={() => {
-            setIsOpen(false);
-            inputRef.current?.blur();
-          }}
-        />
-      )}
+      {mounted &&
+        isOpen &&
+        createPortal(
+          <div
+            className="
+              fixed inset-0
+              z-20
+              bg-transparent
+              backdrop-blur-[1px]
+            "
+            onClick={handleClose}
+          />,
+          document.body,
+        )}
 
-      <div className="relative z-50 w-full">
+      <div className="relative z-40 w-full">
         <div
           className="
             flex h-12 w-full
@@ -70,6 +193,7 @@ export default function SearchInput() {
 
           <input
             ref={inputRef}
+            id="market-search-input"
             type="text"
             value={input}
             placeholder="Search..."
@@ -86,13 +210,9 @@ export default function SearchInput() {
               lg:w-2xl
             "
             maxLength={30}
-            onChange={(e) => setInput(e.target.value)}
-            onFocus={() => setIsOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSearch();
-              }
-            }}
+            onChange={handleInputChange}
+            onFocus={() => onOpenChange(true)}
+            onKeyDown={handleInputKeyDown}
           />
 
           <div className="ml-2 hidden shrink-0 items-center lg:flex">
@@ -103,23 +223,34 @@ export default function SearchInput() {
         {isOpen && (
           <div
             className="
-              absolute left-1/2 top-full
-              mt-2
-              w-[min(72rem,calc(100vw-2rem))]
-              -translate-x-1/2
+              fixed
+              left-4 right-4
+              top-18
+              z-40
               overflow-hidden
               rounded-xl
-              
               bg-white
-              pt-2
-              pb-4
-              shadow-2xl
-              
+              py-4
+
               dark:bg-zinc-800
+
+              md:absolute
+              md:left-1/2
+              md:right-auto
+              md:top-full
+              md:mt-3
+              md:w-[min(72rem,calc(100vw-2rem))]
+              md:-translate-x-1/2
+              md:shadow-2xl
             "
             onClick={(e) => e.stopPropagation()}
           >
-            <MarketOverview />
+            <MarketOverview
+              query={searchQuery}
+              selectedIndex={selectedIndex}
+              onSearchResultsChange={setSearchResultSymbols}
+              onNavigate={handleAssetSelected}
+            />
           </div>
         )}
       </div>

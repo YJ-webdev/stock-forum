@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MdOutlineHowToVote } from "react-icons/md";
 
@@ -19,20 +19,20 @@ import { Numeric } from "./numeric";
 
 interface RelativeStocksProps {
   items: MarketSymbolItem[];
-
   setActiveRange: React.Dispatch<React.SetStateAction<SelectedRange>>;
+  selectedIndex?: number;
+  onNavigate?: () => void;
 }
 
 interface RelativeStockRowProps {
   item: MarketSymbolItem;
-
   setActiveRange: React.Dispatch<React.SetStateAction<SelectedRange>>;
-
   voteStats: MarketVoteListStats | undefined;
-
   canVote: boolean;
-
   showVotingColumns: boolean;
+  isSelected: boolean;
+  rowRef?: React.RefObject<HTMLTableRowElement | null>;
+  onNavigate?: () => void;
 }
 
 function isVotingAsset(item: MarketSymbolItem) {
@@ -43,10 +43,17 @@ function isVotingAsset(item: MarketSymbolItem) {
   );
 }
 
-export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
+export function RelativeStocks({
+  items,
+  setActiveRange,
+  selectedIndex = -1,
+  onNavigate,
+}: RelativeStocksProps) {
   const [now] = useState(() => Date.now());
 
   const [voteStats, setVoteStats] = useState<MarketVoteListStatsMap>({});
+
+  const selectedRowRef = useRef<HTMLTableRowElement | null>(null);
 
   const showVotingColumns = items.some(isVotingAsset);
 
@@ -122,11 +129,21 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [votingSessionKey, showVotingColumns]);
 
+  useEffect(() => {
+    if (selectedIndex < 0) {
+      return;
+    }
+
+    selectedRowRef.current?.scrollIntoView({
+      block: "nearest",
+    });
+  }, [selectedIndex]);
+
   return (
-    <div className="flex w-full flex-col">
-      <div className="w-full border-zinc-200 bg-zinc-100 dark:border-zinc-800/50 dark:bg-zinc-800/50 md:rounded-lg md:border md:bg-white md:shadow-sm">
+    <div className="flex max-h-[calc(100vh-230px)] w-full flex-col overflow-y-auto">
+      <div className="w-full border-zinc-200 bg-zinc-100 dark:border-zinc-800/50 dark:bg-zinc-800 md:rounded-lg md:border md:bg-white md:shadow-sm">
         <table className="w-full table-fixed">
-          <thead>
+          <thead className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-800 md:bg-white">
             <tr className="border-b border-zinc-200 text-[11px] uppercase tracking-wider text-zinc-400 dark:border-zinc-700/50 dark:text-zinc-500 md:text-xs">
               <th
                 className={
@@ -201,10 +218,12 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
           </thead>
 
           <tbody className="font-medium">
-            {items.map((item) => {
+            {items.map((item, index) => {
               const status = showVotingColumns
                 ? votingStatuses.find((status) => status.symbol === item.symbol)
                 : undefined;
+
+              const isSelected = selectedIndex === index;
 
               return (
                 <RelativeStockRow
@@ -216,6 +235,9 @@ export function RelativeStocks({ items, setActiveRange }: RelativeStocksProps) {
                   }
                   canVote={status?.canVote ?? false}
                   showVotingColumns={showVotingColumns}
+                  isSelected={isSelected}
+                  rowRef={isSelected ? selectedRowRef : undefined}
+                  onNavigate={onNavigate}
                 />
               );
             })}
@@ -232,6 +254,9 @@ function RelativeStockRow({
   voteStats,
   canVote,
   showVotingColumns,
+  isSelected,
+  rowRef,
+  onNavigate,
 }: RelativeStockRowProps) {
   const router = useRouter();
 
@@ -254,9 +279,66 @@ function RelativeStockRow({
   const handleRowClick = () => {
     setActiveRange("1D");
 
+    onNavigate?.();
+
     router.push(href, {
       scroll: true,
     });
+  };
+
+  const handleRowKeyDown = (
+    event: React.KeyboardEvent<HTMLTableRowElement>,
+  ) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+
+      handleRowClick();
+
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+
+      const rows = Array.from(
+        document.querySelectorAll<HTMLTableRowElement>(
+          '[data-market-row="true"]',
+        ),
+      );
+
+      const currentIndex = rows.indexOf(event.currentTarget);
+      const nextRow = rows[currentIndex + 1];
+
+      nextRow?.focus();
+
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+
+      const rows = Array.from(
+        document.querySelectorAll<HTMLTableRowElement>(
+          '[data-market-row="true"]',
+        ),
+      );
+
+      const currentIndex = rows.indexOf(event.currentTarget);
+
+      if (currentIndex === 0) {
+        const activeCategory = document.querySelector<HTMLButtonElement>(
+          '[data-active-category="true"]',
+        );
+
+        activeCategory?.focus();
+
+        return;
+      }
+
+      const previousRow = rows[currentIndex - 1];
+
+      previousRow?.focus();
+    }
   };
 
   const hasVotes = showVotingColumns && (voteStats?.totalVotes ?? 0) > 0;
@@ -280,19 +362,27 @@ function RelativeStockRow({
 
   return (
     <tr
+      ref={rowRef}
+      tabIndex={0}
+      data-market-row="true"
       onClick={handleRowClick}
-      className="
+      onKeyDown={handleRowKeyDown}
+      className={`
         border-b border-zinc-200/80
         text-[14px] text-zinc-800
         transition-colors
         last:border-b-0
         hover:cursor-pointer
         hover:bg-zinc-100/60
+        focus:bg-zinc-100
+        focus:outline-none
         dark:border-zinc-700/50
         dark:text-zinc-100
-        dark:hover:bg-zinc-900
+        dark:hover:bg-zinc-700/20
+        dark:focus:bg-zinc-700/60
         md:text-[15px]
-      "
+        ${isSelected ? "bg-zinc-100 dark:bg-zinc-700/60" : ""}
+      `}
     >
       <td
         className={

@@ -7,7 +7,7 @@ export default async function Home() {
       <main className="relative flex w-full flex-1 flex-col items-start ">
         <div className="w-full pt-4"></div>
         {/* <UserPreferenceMarket /> */}
-        <MarketOverview />
+        {/* <MarketOverview /> */}
       </main>
     </div>
   );

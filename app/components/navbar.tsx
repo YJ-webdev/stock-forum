@@ -62,17 +62,31 @@ export function Navbar({
   onNotification,
 }: HeaderProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
     <nav
       className="
-        fixed top-0 right-0 left-0 z-50
+        fixed top-0 right-0 left-0 z-30
         flex h-18.5 items-center justify-between
         border-b border-gray-100
         bg-white
         dark:border-zinc-800 dark:bg-zinc-900
       "
     >
+      {isSearchOpen && (
+        <button
+          type="button"
+          aria-label="Close search"
+          className="
+            absolute inset-0 z-10
+            cursor-default
+            backdrop-blur-[1px]
+          "
+          onClick={() => setIsSearchOpen(false)}
+        />
+      )}
+
       <button
         type="button"
         onClick={onTogglePanel}
@@ -87,8 +101,8 @@ export function Navbar({
         <MenuButton className="h-5 w-5 text-foreground" strokeWidth={1.5} />
       </button>
 
-      <div className="mx-auto max-w-xl flex-1">
-        <SearchInput />
+      <div className="relative z-20 mx-auto max-w-xl flex-1">
+        <SearchInput isOpen={isSearchOpen} onOpenChange={setIsSearchOpen} />
       </div>
 
       <div className="mx-4 flex shrink-0 items-center">
