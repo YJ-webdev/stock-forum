@@ -26,6 +26,7 @@ import { SideDataLoading } from "./side-data-loading";
 import PanelLeftStream from "./panel-left-stream";
 import { LeaderBoardStream } from "./leader-board-stream";
 import PanelLeftMobileStream from "./panel-left-mobile-stream";
+import { OnboardingCard } from "./onboarding-card";
 
 const PanelLoading = () => (
   <div className="flex h-full w-full items-center justify-center">
@@ -238,6 +239,7 @@ export default function LayoutShell({
   return (
     <UserProvider user={user}>
       <PointBalanceProvider>
+        <OnboardingCard />
         <div
           className="
             relative
@@ -562,16 +564,11 @@ export default function LayoutShell({
                 dark:bg-zinc-900
               "
             >
-              {/* Write */}
-
               {user && onWrite && <PostEditor setOnWrite={setOnWrite} />}
-
-              {/* Account */}
 
               {user && onAccount && !onWrite && (
                 <AccountPanel setOnAccount={setOnAccount} />
               )}
-              {/* Notifications */}
 
               {user && onNotification && (
                 <NotificationPanel
@@ -582,12 +579,6 @@ export default function LayoutShell({
               <Footer />
             </div>
           )}
-
-          {/* ---------------------------------------------------------------- */}
-          {/* Footer                                                           */}
-          {/* ---------------------------------------------------------------- */}
-
-          {/* <Footer /> */}
         </div>
       </PointBalanceProvider>
     </UserProvider>

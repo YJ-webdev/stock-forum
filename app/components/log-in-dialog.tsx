@@ -17,7 +17,8 @@ interface LoginDialogProps {
 }
 
 export const LoginDialog = ({ isOpen, setIsOpen }: LoginDialogProps) => {
-  const siteName = process.env.SITE_NAME || "Stock Forum";
+  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Stock Forum";
+
   return (
     <div>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>

@@ -389,7 +389,11 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
               }}
             >
               <SelectTrigger className="w-full text-[14px]">
-                <SelectValue placeholder="Select nationality" />
+                <SelectValue>
+                  {NATIONALITIES.find(
+                    (country) => country.value === nationality,
+                  )?.label ?? "Select your nationality"}
+                </SelectValue>
               </SelectTrigger>
 
               <SelectContent>
@@ -426,7 +430,10 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
               }}
             >
               <SelectTrigger className="w-full text-[14px]">
-                <SelectValue placeholder="Select language" />
+                <SelectValue>
+                  {LANGUAGES.find((item) => item.value === language)?.label ??
+                    "Select your language"}
+                </SelectValue>
               </SelectTrigger>
 
               <SelectContent>
