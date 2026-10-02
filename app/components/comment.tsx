@@ -455,13 +455,13 @@ export function MarketComments({
       {/* COMMENTS                                                        */}
       {/* --------------------------------------------------------------- */}
 
-      <div>
+      <div className="pt-2">
         {commentsLoading ? (
-          <div className=" text-center text-sm text-zinc-400">
+          <div className=" text-center text-sm text-zinc-400 pt-4">
             Loading comments...
           </div>
         ) : comments.length === 0 ? (
-          <div className=" text-center text-sm text-zinc-500">
+          <div className=" text-center text-sm text-zinc-500 pt-4">
             No comments yet.
           </div>
         ) : (
@@ -482,7 +482,7 @@ export function MarketComments({
               index > 0 && previousIsCurrentSession && !isCurrentSession;
 
             return (
-              <div key={comment.id}>
+              <div key={comment.id} className="pb-2">
                 {showSessionBoundary && (
                   <div className="my-7 h-px bg-zinc-200 dark:bg-zinc-800" />
                 )}
@@ -609,6 +609,11 @@ function CommentItem({
 
       setReplies(result);
       setRepliesLoaded(true);
+
+      onUpdate(comment.id, (current) => ({
+        ...current,
+        replyCount: result.length,
+      }));
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to load replies.",
@@ -616,7 +621,7 @@ function CommentItem({
     } finally {
       setRepliesLoading(false);
     }
-  }, [comment.id, repliesLoading]);
+  }, [comment.id, repliesLoading, onUpdate]);
 
   const toggleReplies = async () => {
     if (!showReplies && !repliesLoaded) {

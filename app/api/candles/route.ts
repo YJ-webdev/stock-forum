@@ -329,21 +329,44 @@ function getLatestTradingSession(quotes: any[], timezone?: string): any[] {
     return [];
   }
 
-  const validQuotes = quotes.filter((quote) => quote?.date);
+  // Only real candles should be allowed to determine
+  // what the latest available trading session is.
+  //
+  // This is important after weekends / holidays / exchange closures,
+  // because Yahoo may return timestamped entries without a valid close.
+  const validQuotes = quotes.filter(
+    (quote) =>
+      quote?.date &&
+      quote?.close != null &&
+      Number.isFinite(Number(quote.close)),
+  );
 
   if (validQuotes.length === 0) {
     return [];
   }
 
-  const latestQuote = validQuotes[validQuotes.length - 1];
+  // Do not assume Yahoo's array ordering.
+  // Find the newest actual candle explicitly.
+  const latestQuote = validQuotes.reduce((latest, quote) => {
+    const latestMs = new Date(latest.date).getTime();
+    const quoteMs = new Date(quote.date).getTime();
+
+    return quoteMs > latestMs ? quote : latest;
+  });
 
   const latestTradingDate = getExchangeDate(
     new Date(latestQuote.date),
     timezone,
   );
 
-  return validQuotes.filter(
+  // Return all quotes belonging to that actual trading session.
+  //
+  // We intentionally filter from the original array instead of validQuotes
+  // so null candles inside a real session remain available to
+  // detectTradingBreak().
+  return quotes.filter(
     (quote) =>
+      quote?.date &&
       getExchangeDate(new Date(quote.date), timezone) === latestTradingDate,
   );
 }

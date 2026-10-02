@@ -7,6 +7,8 @@ import {
   type VoteDirection,
 } from "@/app/actions/market-vote";
 
+import { isMarketInWatchlist } from "@/app/actions/watchlist";
+
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 
@@ -18,6 +20,7 @@ interface PageProps {
 
 export default async function Page({ params }: PageProps) {
   const { symbol } = await params;
+
   const decodedSymbol = decodeURIComponent(symbol);
 
   const symbolMeta = ALL_MARKET_SYMBOLS.find(
@@ -28,6 +31,8 @@ export default async function Page({ params }: PageProps) {
 
   let initialVoteStats: MarketVoteStats | null = null;
   let initialVote: VoteDirection | null = null;
+
+  const initialIsFavorite = await isMarketInWatchlist(decodedSymbol);
 
   if (canPredict) {
     const votingWindow = getVotingWindow(decodedSymbol, Date.now());
@@ -53,6 +58,7 @@ export default async function Page({ params }: PageProps) {
       symbol={decodedSymbol}
       initialVoteStats={initialVoteStats}
       initialVote={initialVote}
+      initialIsFavorite={initialIsFavorite}
     />
   );
 }

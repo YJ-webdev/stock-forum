@@ -335,7 +335,7 @@ export default function UserMenu({
               "
             >
               <Settings className="mr-2 size-4.5" strokeWidth={1.5} />
-              Settings
+              Account settings
             </DropdownMenuItem>
 
             {user.role === "ADMIN" && (

@@ -37,6 +37,7 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
   const [editorKey, setEditorKey] = useState(0);
   const [assetQuery, setAssetQuery] = useState("");
   const [assetSelectorOpen, setAssetSelectorOpen] = useState(false);
+  const [highlightedAssetIndex, setHighlightedAssetIndex] = useState(-1);
   const [selectedAssets, setSelectedAssets] = useState<MarketSymbolItem[]>([]);
   const [recentAssetSymbols, setRecentAssetSymbols] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
@@ -148,7 +149,7 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
       }
 
       if (prev.length >= MAX_SELECTED_ASSETS) {
-        toast.error("You can select one index board.");
+        toast.error("You can select only one index board.");
         return prev;
       }
 
@@ -246,6 +247,10 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
     });
   };
 
+  useEffect(() => {
+    setHighlightedAssetIndex(-1);
+  }, [assetQuery]);
+
   return (
     <div className="flex h-full min-h-0 w-full space-y-2 flex-col px-4 pt-2">
       <div
@@ -293,18 +298,66 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
               setAssetQuery(e.target.value);
               setAssetSelectorOpen(true);
             }}
+            onKeyDown={(e) => {
+              if (!assetSelectorOpen || visibleAssets.length === 0) {
+                return;
+              }
+
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+
+                setHighlightedAssetIndex((prev) =>
+                  prev < visibleAssets.length - 1 ? prev + 1 : 0,
+                );
+
+                return;
+              }
+
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+
+                setHighlightedAssetIndex((prev) =>
+                  prev > 0 ? prev - 1 : visibleAssets.length - 1,
+                );
+
+                return;
+              }
+
+              if (e.key === "Enter") {
+                e.preventDefault();
+
+                const asset =
+                  visibleAssets[
+                    highlightedAssetIndex >= 0 ? highlightedAssetIndex : 0
+                  ];
+
+                if (asset) {
+                  toggleAsset(asset);
+                  setHighlightedAssetIndex(-1);
+                }
+
+                return;
+              }
+
+              if (e.key === "Escape") {
+                e.preventDefault();
+
+                setAssetSelectorOpen(false);
+                setHighlightedAssetIndex(-1);
+              }
+            }}
             placeholder="Search assets..."
             autoComplete="off"
             className="
-            placeholder:text-gray-500/50 
-            dark:placeholder:text-zinc-700
-            text-zinc-800
-            dark:text-zinc-300
-               w-full
-              bg-transparent
-              text-[15px]
-              outline-none
-            "
+    placeholder:text-gray-500/50
+    dark:placeholder:text-zinc-700
+    text-zinc-800
+    dark:text-zinc-300
+    w-full
+    bg-transparent
+    text-[15px]
+    outline-none
+  "
           />
         </div>
 
@@ -328,6 +381,8 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
                     asset={currentAsset}
                     selected={isAssetSelected(currentAsset)}
                     onClick={() => toggleAsset(currentAsset)}
+                    onMouseEnter={() => setHighlightedAssetIndex(0)}
+                    highlighted={highlightedAssetIndex === 0}
                   />
                 )}
 
@@ -350,14 +405,22 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
                 {recentAssets
                   .filter((asset) => asset.symbol !== currentAsset?.symbol)
                   .slice(0, MAX_RECENT_ASSETS)
-                  .map((asset) => (
-                    <AssetOption
-                      key={asset.symbol}
-                      asset={asset}
-                      selected={isAssetSelected(asset)}
-                      onClick={() => toggleAsset(asset)}
-                    />
-                  ))}
+                  .map((asset, index) => {
+                    const optionIndex = index + 1;
+
+                    return (
+                      <AssetOption
+                        key={asset.symbol}
+                        asset={asset}
+                        selected={isAssetSelected(asset)}
+                        onClick={() => toggleAsset(asset)}
+                        onMouseEnter={() =>
+                          setHighlightedAssetIndex(optionIndex)
+                        }
+                        highlighted={highlightedAssetIndex === optionIndex}
+                      />
+                    );
+                  })}
 
                 {visibleAssets.length === 0 && (
                   <div
@@ -376,12 +439,17 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
             {assetQuery.trim() && (
               <>
                 {searchResults.length > 0 ? (
-                  searchResults.map((asset) => (
+                  searchResults.map((asset, index) => (
                     <AssetOption
                       key={asset.symbol}
                       asset={asset}
                       selected={isAssetSelected(asset)}
-                      onClick={() => toggleAsset(asset)}
+                      highlighted={highlightedAssetIndex === index}
+                      onMouseEnter={() => setHighlightedAssetIndex(index)}
+                      onClick={() => {
+                        toggleAsset(asset);
+                        setHighlightedAssetIndex(-1);
+                      }}
                     />
                   ))
                 ) : (
@@ -449,16 +517,21 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
 function AssetOption({
   asset,
   selected,
+  highlighted,
   onClick,
+  onMouseEnter,
 }: {
   asset: MarketSymbolItem;
   selected: boolean;
+  highlighted: boolean;
   onClick: () => void;
+  onMouseEnter?: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
       title={asset.name}
       className={`
         flex w-full
@@ -470,7 +543,7 @@ function AssetOption({
         transition-colors
 
         ${
-          selected
+          selected || highlighted
             ? "bg-zinc-100 dark:bg-zinc-800"
             : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
         }

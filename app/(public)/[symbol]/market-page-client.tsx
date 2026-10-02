@@ -2,6 +2,15 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, useTransition } from "react";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 import { toast } from "sonner";
 
 import {
@@ -37,18 +46,23 @@ import { usePointBalance } from "@/app/context/point-balance-context";
 import { countryCodeToFlag } from "@/lib/utils/nationality-flag";
 import MarketNews from "@/app/components/market-news";
 
+import { EllipsisVertical, Heart, HeartOff, Plus } from "lucide-react";
+import { toggleMarketWatchlist } from "@/app/actions/watchlist";
+
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
 interface MarketPageClientProps {
   symbol: string;
   initialVoteStats: MarketVoteStats | null;
   initialVote: VoteDirection | null;
+  initialIsFavorite: boolean;
 }
 
 export default function MarketPageClient({
   symbol,
   initialVoteStats,
   initialVote,
+  initialIsFavorite,
 }: MarketPageClientProps) {
   const user = useCurrentUser();
 
@@ -56,6 +70,7 @@ export default function MarketPageClient({
 
   const [betAmount, setBetAmount] = useState(50);
   const [showDetailChart, setShowDetailChart] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
 
   const [selectedVote, setSelectedVote] = useState<VoteDirection | null>(
     initialVote,
@@ -66,46 +81,24 @@ export default function MarketPageClient({
   );
 
   const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
-
   const [unavailableRanges, setUnavailableRanges] = useState<
     Record<string, Set<ChartRange>>
   >({});
 
   const [isPending, startTransition] = useTransition();
-
   const discussionRef = useRef<HTMLDivElement>(null);
-
   const [now] = useState(() => Date.now());
-
   const selectedSymbol = symbol;
-
-  // ---------------------------------------------------------------------------
-  // Asset metadata
-  // ---------------------------------------------------------------------------
 
   const symbolMeta = ALL_MARKET_SYMBOLS.find(
     (item) => item.symbol === selectedSymbol,
   );
 
   const selectedName = symbolMeta?.name ?? selectedSymbol;
-
   const selectedDisplaySymbol = symbolMeta?.displaySymbol ?? selectedSymbol;
-
   const selectedAssetType = symbolMeta?.assetType ?? "index";
 
-  // ---------------------------------------------------------------------------
-  // Prediction capability
-  //
-  // Only regional market indices currently support Bull / Bear predictions.
-  //
-  // Crypto, currency, commodity, etc. remain discussion-only assets.
-  // ---------------------------------------------------------------------------
-
   const canPredict = selectedAssetType === "index";
-
-  // ---------------------------------------------------------------------------
-  // Market quote
-  // ---------------------------------------------------------------------------
 
   const { data, error } = useMarketQuote(
     selectedSymbol,
@@ -120,37 +113,48 @@ export default function MarketPageClient({
   const isLoggedIn = !!user;
   const nationality = user?.nationality ?? null;
 
-  // ---------------------------------------------------------------------------
-  // Voting window
-  // ---------------------------------------------------------------------------
-
   const votingWindow = getVotingWindow(selectedSymbol, now);
-
   const isMarketOpen = canPredict ? votingWindow.isMarketOpen : false;
-
   const canVote = canPredict ? votingWindow.canVote : false;
 
   const predictionForMs = canPredict
     ? (votingWindow.predictionFor?.getTime() ?? null)
     : null;
 
-  // ---------------------------------------------------------------------------
-  // Load current user's vote
-  //
-  // IMPORTANT:
-  // Non-prediction assets stop here and NEVER call getMarketVote().
-  // ---------------------------------------------------------------------------
+  const [isFavoritePending, startFavoriteTransition] = useTransition();
 
-  // ---------------------------------------------------------------------------
-  // Load vote statistics
-  //
-  // IMPORTANT:
-  // Crypto / currency / commodity do not make this request.
-  // ---------------------------------------------------------------------------
+  const handleToggleFavorite = () => {
+    if (!isLoggedIn) {
+      toast.error("Log in to manage your favorites.");
+      return;
+    }
 
-  // ---------------------------------------------------------------------------
-  // Submit prediction
-  // ---------------------------------------------------------------------------
+    if (isFavoritePending) {
+      return;
+    }
+
+    startFavoriteTransition(async () => {
+      try {
+        const result = await toggleMarketWatchlist(selectedSymbol);
+
+        setIsFavorite(result.isFavorite);
+
+        toast.success(
+          result.isFavorite
+            ? `${selectedName} added to your favorites.`
+            : `${selectedName} removed from your favorites.`,
+        );
+      } catch (error) {
+        console.error("Failed to update favorites:", error);
+
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to update favorites.",
+        );
+      }
+    });
+  };
 
   const handleVote = (
     direction: VoteDirection,
@@ -318,10 +322,6 @@ export default function MarketPageClient({
     });
   };
 
-  // ---------------------------------------------------------------------------
-  // Chart range
-  // ---------------------------------------------------------------------------
-
   const handleRangeChange = async (range: SelectedRange) => {
     if (range === activeRange) {
       return;
@@ -358,10 +358,6 @@ export default function MarketPageClient({
     setActiveRange(range);
   };
 
-  // ---------------------------------------------------------------------------
-  // Symbol change
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
     window.scrollTo({
       top: 0,
@@ -369,10 +365,6 @@ export default function MarketPageClient({
       behavior: "auto",
     });
   }, [selectedSymbol]);
-
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -383,19 +375,49 @@ export default function MarketPageClient({
       </div>
 
       {/* Title */}
-
-      <div className="relative mt-10 w-full space-y-2 px-4">
-        <div className="mt-2 flex items-baseline justify-between gap-4">
-          <h1 className="text-[44px] font-bold leading-none tracking-tight text-gray-500/50 dark:text-zinc-700">
+      <div className="relative mt-5 w-full space-y-2 px-4">
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-[44px] mt-8 font-bold leading-none tracking-tight text-gray-500/50 dark:text-zinc-700">
             {selectedName}
           </h1>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <EllipsisVertical
+                className="h-5 w-5 cursor-pointer text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-300"
+                strokeWidth={1.5}
+              />
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-fit min-w-0">
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  disabled={isFavoritePending}
+                  onClick={handleToggleFavorite}
+                  className="cursor-pointer whitespace-nowrap tracking-wide"
+                >
+                  {isFavorite ? (
+                    <HeartOff className="h-4 w-4" strokeWidth={1.5} />
+                  ) : (
+                    <Heart className="h-4 w-4" strokeWidth={1.5} />
+                  )}
+
+                  {isFavoritePending
+                    ? "Updating..."
+                    : isFavorite
+                      ? "Remove from my favorites"
+                      : "Add to my favorites"}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       {/* Market data */}
 
       {error ? (
-        <div className="mt-5 md:mx-4">
+        <div className="mt-4 md:mx-4">
           <div className="flex aspect-20/11 w-full items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
             <span className="text-xs text-zinc-400">{error}</span>
           </div>
@@ -404,7 +426,7 @@ export default function MarketPageClient({
         <>
           {/* Header */}
 
-          <div className="relative mt-4 mb-4 flex w-full items-start justify-between">
+          <div className="relative mt-3 mb-4 flex w-full items-start justify-between">
             <MarketDetailHeader
               rawPrice={data.rawPrice}
               change={data.change}
@@ -570,7 +592,7 @@ export default function MarketPageClient({
       {/* --------------------------------------------------------------- */}
 
       {canPredict && (
-        <div className="ibmPlexMono mx-4 mt-8">
+        <div className="ibmPlexMono mx-4 mt-7">
           {voteStats ? (
             <div
               className="
@@ -704,7 +726,7 @@ export default function MarketPageClient({
       {/* Discussion                                                      */}
       {/* --------------------------------------------------------------- */}
 
-      <div ref={discussionRef} className="mx-4 mt-10">
+      <div ref={discussionRef} className="mx-4 mt-8">
         <MarketComments
           key={selectedSymbol}
           assetSymbol={selectedSymbol}

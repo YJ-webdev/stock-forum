@@ -16,23 +16,34 @@ export function CommentContent({ content }: { content: JSONContent }) {
     >
       {content.content?.map((node, index) => {
         // ---------------------------------------------------------------------
-        // TEXT
+        // PARAGRAPH
         // ---------------------------------------------------------------------
 
         if (node.type === "paragraph") {
-          const text =
-            node.content?.map((child) => child.text ?? "").join("") ?? "";
-
-          if (!text) {
+          if (!node.content?.length) {
             return null;
           }
 
           return (
-            <p key={index} className="min-w-0">
-              {text}
+            <p key={index} className="min-w-0 whitespace-pre-wrap">
+              {node.content.map((child, childIndex) => {
+                if (child.type === "hardBreak") {
+                  return <br key={childIndex} />;
+                }
+
+                if (child.type === "text") {
+                  return child.text ?? "";
+                }
+
+                return null;
+              })}
             </p>
           );
         }
+
+        // ---------------------------------------------------------------------
+        // IMAGE / GIF
+        // ---------------------------------------------------------------------
 
         if (node.type === "image" && node.attrs?.src) {
           const src = String(node.attrs.src);
@@ -46,10 +57,10 @@ export function CommentContent({ content }: { content: JSONContent }) {
               className="
                 block
                 h-auto
-                rounded-xl
-                object-contain
                 max-h-64
                 max-w-56
+                rounded-xl
+                object-contain
               "
             />
           );
