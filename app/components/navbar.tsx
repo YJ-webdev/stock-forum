@@ -223,8 +223,8 @@ export default function UserMenu({
             flex cursor-pointer items-center gap-2
             rounded-full
             transition
-            hover:bg-zinc-100
-            dark:hover:bg-zinc-800
+            
+            
           "
           aria-label="User menu"
         >
@@ -303,7 +303,10 @@ export default function UserMenu({
           </div>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end" className="z-60 mt-1 w-56">
+        <DropdownMenuContent
+          align="end"
+          className="z-60 mt-1 w-56 dark:bg-zinc-800"
+        >
           <DropdownMenuGroup>
             <DropdownMenuItem
               onClick={onWrite}
