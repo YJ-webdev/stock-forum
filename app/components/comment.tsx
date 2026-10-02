@@ -455,7 +455,7 @@ export function MarketComments({
       {/* COMMENTS                                                        */}
       {/* --------------------------------------------------------------- */}
 
-      <div className="pt-2">
+      <div className="pt-2 space-y-6">
         {commentsLoading ? (
           <div className=" text-center text-sm text-zinc-400 pt-4">
             Loading comments...
@@ -482,7 +482,7 @@ export function MarketComments({
               index > 0 && previousIsCurrentSession && !isCurrentSession;
 
             return (
-              <div key={comment.id} className="pb-2">
+              <div key={comment.id} className="pb-2 dark:bg-zinc-800">
                 {showSessionBoundary && (
                   <div className="my-7 h-px bg-zinc-200 dark:bg-zinc-800" />
                 )}
@@ -821,7 +821,7 @@ function CommentItem({
       ref={commentRef}
       id={`comment-${comment.id}`}
       className={`
-    relative mb-6 scroll-mt-24
+    relative scroll-mt-24
     rounded-xl
     transition-colors duration-700
 
