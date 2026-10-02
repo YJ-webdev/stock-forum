@@ -7,7 +7,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { toast } from "sonner";
 
-import { deleteReply, hideReply, restoreReply } from "@/app/actions/post";
+import {
+  deleteReply,
+  hideReply,
+  reportReply,
+  restoreReply,
+} from "@/app/actions/post";
 
 import { ContentActionsMenu } from "./content-actions-menu";
 import { ReplyEditInput } from "./reply-edit-input";
@@ -47,6 +52,7 @@ export function ReplyItem({
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isModerating, setIsModerating] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
   const [showReplyInput, setShowReplyInput] = useState(false);
 
   const [childrenCollapsed, setChildrenCollapsed] = useState(true);
@@ -182,6 +188,28 @@ export function ReplyItem({
     });
   };
 
+  const handleReportReply = async () => {
+    if (isReporting) return;
+
+    try {
+      setIsReporting(true);
+
+      const result = await reportReply(reply.id);
+
+      if (result.success) {
+        toast.success("Reply reported.", {
+          description: "Thank you. An administrator will review it.",
+        });
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to report reply.",
+      );
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
   useEffect(() => {
     if (containsTargetReply) {
       setChildrenCollapsed(false);
@@ -290,10 +318,12 @@ export function ReplyItem({
               isModerated={Boolean(reply.moderatedAt)}
               isDeleting={isDeleting}
               isModerating={isModerating}
+              isReporting={isReporting}
               onEdit={() => setIsEditing(true)}
               onDelete={handleDelete}
               onHide={handleHide}
               onRestore={handleRestore}
+              onReport={handleReportReply}
             />
           </div>
 

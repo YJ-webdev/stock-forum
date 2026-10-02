@@ -1440,3 +1440,139 @@ export async function getCommentReplies(commentId: string) {
     };
   });
 }
+
+export async function reportComment(commentId: string) {
+  const comment = await prisma.comment.findUnique({
+    where: {
+      id: commentId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found.");
+  }
+
+  const eventKeyPrefix = `comment-report:${commentId}:`;
+
+  const existingReport = await prisma.notification.findFirst({
+    where: {
+      eventKey: {
+        startsWith: eventKeyPrefix,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (existingReport) {
+    throw new Error("This comment has already been reported. Thank you.");
+  }
+
+  const admins = await prisma.user.findMany({
+    where: {
+      role: "ADMIN",
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (admins.length === 0) {
+    throw new Error("No administrator is available.");
+  }
+
+  await prisma.notification.createMany({
+    data: admins.map((admin) => ({
+      userId: admin.id,
+
+      actorId: null,
+
+      type: "COMMENT_REPORTED",
+
+      title: "Comment reported",
+      message: "A comment has been reported for review.",
+
+      commentId,
+
+      eventKey: `${eventKeyPrefix}${admin.id}`,
+    })),
+  });
+
+  return {
+    success: true,
+  };
+}
+
+export async function reportReply(replyId: string) {
+  const reply = await prisma.reply.findUnique({
+    where: {
+      id: replyId,
+    },
+    select: {
+      id: true,
+      commentId: true,
+    },
+  });
+
+  if (!reply) {
+    throw new Error("Reply not found.");
+  }
+
+  const eventKeyPrefix = `reply-report:${replyId}:`;
+
+  const existingReport = await prisma.notification.findFirst({
+    where: {
+      eventKey: {
+        startsWith: eventKeyPrefix,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (existingReport) {
+    throw new Error("This reply has already been reported.");
+  }
+
+  const admins = await prisma.user.findMany({
+    where: {
+      role: "ADMIN",
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (admins.length === 0) {
+    throw new Error("No administrator is available.");
+  }
+
+  await prisma.notification.createMany({
+    data: admins.map((admin) => ({
+      userId: admin.id,
+
+      // Guest reports have no actor.
+      actorId: null,
+
+      type: "REPLY_REPORTED",
+
+      title: "Reply reported",
+      message: "A reply has been reported for review.",
+
+      // Useful for navigating directly to the thread.
+      commentId: reply.commentId,
+      replyId,
+
+      eventKey: `${eventKeyPrefix}${admin.id}`,
+    })),
+  });
+
+  return {
+    success: true,
+  };
+}

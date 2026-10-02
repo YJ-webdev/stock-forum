@@ -698,18 +698,42 @@ function getNotificationHref(notification: MyNotification): string | null {
       )}?comment=${encodeURIComponent(notification.commentId)}`;
     }
 
+    case "COMMENT_REPORTED": {
+      const symbol = notification.comment?.assets[0]?.asset.symbol;
+
+      if (!symbol || !notification.commentId) {
+        return null;
+      }
+
+      return `/${encodeURIComponent(symbol)}?comment=${encodeURIComponent(
+        notification.commentId,
+      )}&from=report`;
+    }
+
     case "REPLY_LIKED":
     case "COMMENT_REPLIED":
     case "REPLY_REPLIED": {
       const symbol = notification.reply?.comment.assets[0]?.asset.symbol;
 
-      if (!symbol || !notification.replyId) {
+      if (!symbol || !notification.commentId || !notification.replyId) {
         return null;
       }
 
-      return `/${encodeURIComponent(
-        symbol,
-      )}?reply=${encodeURIComponent(notification.replyId)}`;
+      return `/${encodeURIComponent(symbol)}?comment=${encodeURIComponent(
+        notification.commentId,
+      )}&reply=${encodeURIComponent(notification.replyId)}`;
+    }
+
+    case "REPLY_REPORTED": {
+      const symbol = notification.reply?.comment.assets[0]?.asset.symbol;
+
+      if (!symbol || !notification.commentId || !notification.replyId) {
+        return null;
+      }
+
+      return `/${encodeURIComponent(symbol)}?comment=${encodeURIComponent(
+        notification.commentId,
+      )}&reply=${encodeURIComponent(notification.replyId)}&from=report`;
     }
 
     case "PREDICTION_WON":

@@ -386,6 +386,9 @@ enum NotificationType {
 
   COMMENT_REPLIED
   REPLY_REPLIED
+
+    COMMENT_REPORTED
+  REPLY_REPORTED
 }
 
 model Notification {

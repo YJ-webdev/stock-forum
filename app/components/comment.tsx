@@ -12,6 +12,7 @@ import {
   getMarketComments,
   hideComment,
   MarketPageComments,
+  reportComment,
   restoreComment,
 } from "@/app/actions/post";
 
@@ -102,7 +103,7 @@ export function MarketComments({
   const from = searchParams.get("from");
 
   const highlightTargetComment =
-    from === "most-liked" && Boolean(targetCommentId);
+    (from === "most-liked" || from === "report") && Boolean(targetCommentId);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -584,6 +585,7 @@ function CommentItem({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isModerating, setIsModerating] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
 
   const isAdmin = currentUser?.role === "ADMIN";
   const isAuthor = currentUser?.id === comment.author.id;
@@ -816,6 +818,28 @@ function CommentItem({
     });
   };
 
+  const handleReportComment = async () => {
+    if (isReporting) return;
+
+    try {
+      setIsReporting(true);
+
+      const result = await reportComment(comment.id);
+
+      if (result.success) {
+        toast.success("Comment reported.", {
+          description: "Thank you. An administrator will review it.",
+        });
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to report comment.",
+      );
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
   return (
     <div
       ref={commentRef}
@@ -877,11 +901,13 @@ function CommentItem({
                 isAuthor={isAuthor}
                 isModerated={Boolean(comment.moderatedAt)}
                 isDeleting={isDeleting}
+                isReporting={isReporting}
                 isModerating={isModerating}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onHide={handleHideComment}
                 onRestore={handleRestoreComment}
+                onReport={handleReportComment}
                 hoverGroup="comment"
               />
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Flag,
   MoreVertical,
   Pencil,
   ShieldCheck,
@@ -22,11 +23,13 @@ interface ContentActionsMenuProps {
 
   isDeleting?: boolean;
   isModerating?: boolean;
+  isReporting?: boolean;
 
   onEdit?: () => void;
   onDelete?: () => void | Promise<void>;
   onHide?: () => void | Promise<void>;
   onRestore?: () => void | Promise<void>;
+  onReport?: () => void | Promise<void>;
   hoverGroup?: "comment" | "reply";
 }
 
@@ -37,12 +40,14 @@ export function ContentActionsMenu({
 
   isDeleting = false,
   isModerating = false,
+  isReporting = false,
   hoverGroup = "reply",
 
   onEdit,
   onDelete,
   onHide,
   onRestore,
+  onReport,
 }: ContentActionsMenuProps) {
   return (
     <DropdownMenu>
@@ -64,7 +69,7 @@ export function ContentActionsMenu({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end">
-        {isAuthor && (
+        {isAuthor ? (
           <>
             <DropdownMenuItem onClick={onEdit}>
               <Pencil className="mr-2 size-4" />
@@ -81,6 +86,16 @@ export function ContentActionsMenu({
               {isDeleting ? "Deleting..." : "Delete"}
             </DropdownMenuItem>
           </>
+        ) : (
+          <DropdownMenuItem
+            disabled={isReporting}
+            onClick={onReport}
+            className="text-red-600 focus:text-red-600"
+          >
+            <Flag className="mr-2 size-4 focus:text-red-600 " />
+
+            {isReporting ? "Reporting..." : "Report"}
+          </DropdownMenuItem>
         )}
 
         {isAdmin && !isModerated && onHide && (
