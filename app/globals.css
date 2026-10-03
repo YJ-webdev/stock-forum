@@ -206,6 +206,10 @@
   font-variant-numeric: tabular-nums lining-nums;
 }
 
+.redhat {
+  font-family: var(--font-red-hat-display), sans-serif;
+}
+
 .jakarta {
   font-family: var(--font-jakarta), sans-serif;
 }

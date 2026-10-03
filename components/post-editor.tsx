@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { JSONContent } from "@tiptap/react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 import Tiptap from "./tiptap";
@@ -254,8 +254,33 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
   return (
     <div className="flex h-full min-h-0 w-full space-y-2 flex-col px-4 pt-2">
       <div
+        className="
+            flex shrink-0 items-center justify-between
+            pt-1
+           
+          "
+      >
+        <p className="text-xs -translate-y-1 font-normal tracking-wider text-muted-foreground/50">
+          Write your thoughts
+        </p>
+        <div className="shrink-0">
+          <div className="flex items-center justify-between">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setOnWrite(false)}
+              className="size-8 ml-auto"
+              aria-label="Close account"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+      <div
         ref={topicRef}
-        className="relative flex flex-wrap gap-4 items-center mt-4 shrink-0 mb-4"
+        className="relative flex flex-wrap gap-4 items-center shrink-0 mb-4"
       >
         {selectedAssets.length > 0 && (
           <div className="flex flex-wrap gap-1.5">

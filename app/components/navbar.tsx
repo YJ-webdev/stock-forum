@@ -22,6 +22,7 @@ import {
   TextAlignJustify as MenuButton,
   Settings,
   ShieldCogCorner,
+  HeartIcon,
 } from "lucide-react";
 
 import { TbUser } from "react-icons/tb";
@@ -44,6 +45,7 @@ interface HeaderProps {
   onWrite: () => void;
   onAccount: () => void;
   onNotification: () => void;
+  onFavotites: () => void;
 }
 
 interface UserMenuProps {
@@ -53,6 +55,7 @@ interface UserMenuProps {
   onWrite: () => void;
   onAccount: () => void;
   onNotification: () => void;
+  onFavotites: () => void;
 }
 
 export function Navbar({
@@ -60,6 +63,7 @@ export function Navbar({
   onWrite,
   onAccount,
   onNotification,
+  onFavotites,
 }: HeaderProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -112,6 +116,7 @@ export function Navbar({
           onWrite={onWrite}
           onAccount={onAccount}
           onNotification={onNotification}
+          onFavotites={onFavotites}
         />
 
         <div className="hidden items-center xl:flex">
@@ -130,6 +135,7 @@ export default function UserMenu({
   onWrite,
   onAccount,
   onNotification,
+  onFavotites,
 }: UserMenuProps) {
   const user = useCurrentUser();
 
@@ -320,6 +326,17 @@ export default function UserMenu({
             </DropdownMenuItem>
 
             <DropdownMenuItem
+              onClick={onFavotites}
+              className="
+                h-11 cursor-pointer
+                text-[15px]
+              "
+            >
+              <HeartIcon className="mr-2 size-4.5" strokeWidth={1.5} />
+              Favorite markets
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
               onClick={onNotification}
               className="
                 h-11 cursor-pointer
@@ -338,7 +355,7 @@ export default function UserMenu({
               "
             >
               <Settings className="mr-2 size-4.5" strokeWidth={1.5} />
-              Account settings
+              Settings
             </DropdownMenuItem>
 
             {user.role === "ADMIN" && (

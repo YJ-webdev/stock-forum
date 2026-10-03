@@ -354,7 +354,7 @@ export function NotificationPanel({
            
           "
           >
-            <p className="-mt-1 text-xs font-normal tracking-wider text-muted-foreground/50">
+            <p className="-mt-2 text-xs font-normal tracking-wider text-muted-foreground/50">
               Notifications
             </p>
             <div className="flex items-center gap-3 ml-auto">
@@ -430,7 +430,7 @@ export function NotificationPanel({
           {/* CONTENT                                                             */}
           {/* ------------------------------------------------------------------- */}
 
-          <div className="min-h-0 flex-1 overflow-y-auto pb-10">
+          <div className="min-h-0 flex-1 -translate-y-2 overflow-y-auto pb-10">
             {notifications.length === 0 ? (
               <EmptyNotifications />
             ) : (

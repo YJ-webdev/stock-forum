@@ -27,6 +27,7 @@ import PanelLeftStream from "./panel-left-stream";
 import { LeaderBoardStream } from "./leader-board-stream";
 import PanelLeftMobileStream from "./panel-left-mobile-stream";
 import { OnboardingCard } from "./onboarding-card";
+import { FavoritePanel } from "./favorite-panel";
 
 const PanelLoading = () => (
   <div className="flex h-full w-full items-center justify-center">
@@ -88,6 +89,7 @@ export default function LayoutShell({
   const [onWrite, setOnWrite] = useState(false);
   const [onAccount, setOnAccount] = useState(false);
   const [onNotification, setOnNotification] = useState(false);
+  const [onFavotites, setOnFavotites] = useState(false);
 
   const [notificationRefreshKey, setNotificationRefreshKey] = useState(0);
 
@@ -162,6 +164,7 @@ export default function LayoutShell({
     setOnWrite(true);
     setOnAccount(false);
     setOnNotification(false);
+    setOnFavotites(false);
   };
 
   const handleAccount = () => {
@@ -172,6 +175,7 @@ export default function LayoutShell({
     setOnWrite(false);
     setOnAccount(true);
     setOnNotification(false);
+    setOnFavotites(false);
   };
 
   const handleNotification = () => {
@@ -182,8 +186,20 @@ export default function LayoutShell({
     setOnWrite(false);
     setOnAccount(false);
     setOnNotification(true);
+    setOnFavotites(false);
 
     setNotificationRefreshKey((prev) => prev + 1);
+  };
+
+  const handleFavotites = () => {
+    setIsMobilePanelOpen(false);
+
+    resetPanelB();
+
+    setOnWrite(false);
+    setOnAccount(false);
+    setOnNotification(false);
+    setOnFavotites(true);
   };
 
   const mobilePanelOpen = !!user && (onWrite || onAccount || onNotification);
@@ -208,6 +224,7 @@ export default function LayoutShell({
             onWrite={handleWrite}
             onAccount={handleAccount}
             onNotification={handleNotification}
+            onFavotites={handleFavotites}
           />
 
           {!layoutReady && (
@@ -405,12 +422,20 @@ export default function LayoutShell({
                         setOnNotification={setOnNotification}
                       />
                     )}
-
-                    {!onWrite && !onAccount && !onNotification && (
-                      <Suspense fallback={<SideDataLoading />}>
-                        <LeaderBoardStream sideDataPromise={sideDataPromise} />
-                      </Suspense>
+                    {user && onFavotites && (
+                      <FavoritePanel setOnFavotites={setOnFavotites} />
                     )}
+
+                    {!onWrite &&
+                      !onAccount &&
+                      !onNotification &&
+                      !onFavotites && (
+                        <Suspense fallback={<SideDataLoading />}>
+                          <LeaderBoardStream
+                            sideDataPromise={sideDataPromise}
+                          />
+                        </Suspense>
+                      )}
                     <Footer />
                   </div>
                 </ResizablePanel>
@@ -445,7 +470,7 @@ export default function LayoutShell({
             >
               {user && onWrite && <PostEditor setOnWrite={setOnWrite} />}
 
-              {user && onAccount && !onWrite && (
+              {user && onAccount && (
                 <AccountPanel setOnAccount={setOnAccount} />
               )}
 
@@ -455,6 +480,11 @@ export default function LayoutShell({
                   setOnNotification={setOnNotification}
                 />
               )}
+
+              {user && onFavotites && (
+                <FavoritePanel setOnFavotites={setOnFavotites} />
+              )}
+
               <Footer />
             </div>
           )}

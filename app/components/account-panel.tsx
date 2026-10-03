@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, useEffect, useRef, useState, useTransition } from "react";
-import { Camera, Globe2, Languages, UserRound, X } from "lucide-react";
+import { Camera, Globe2, Languages, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -215,20 +215,25 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col p-4 pt-3!">
-      {/* HEADER */}
-      <div className="shrink-0">
-        <div className="flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => setOnAccount(false)}
-            className="size-8 ml-auto"
-            aria-label="Close account"
-          >
-            <X className="size-4" />
-          </Button>
+    <div className="flex h-full min-h-0 w-full flex-col p-4 pt-3">
+      <div className="flex justify-between">
+        {/* HEADER */}
+        <p className="mt-1 text-xs font-normal tracking-wider text-muted-foreground/50">
+          Settings
+        </p>
+        <div className="shrink-0">
+          <div className="flex items-center justify-between">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setOnAccount(false)}
+              className="size-8 ml-auto"
+              aria-label="Close account"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -62,9 +62,9 @@ export default function RootLayout({
         figtree.variable,
         "font-sans",
         robotoMono.variable,
+        ibmPlexMono.variable,
         redHatDisplay.variable,
         jakartaSans.variable,
-        ibmPlexMono.variable,
       )}
       suppressHydrationWarning
     >
