@@ -1939,6 +1939,7 @@ export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFi
 export const CommentScalarFieldEnum = {
   id: 'id',
   content: 'content',
+  visibility: 'visibility',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   editedAt: 'editedAt',
@@ -1995,6 +1996,7 @@ export const ReplyScalarFieldEnum = {
   id: 'id',
   content: 'content',
   gifUrl: 'gifUrl',
+  visibility: 'visibility',
   commentId: 'commentId',
   authorId: 'authorId',
   parentId: 'parentId',
@@ -2280,6 +2282,20 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'ContentVisibility'
+ */
+export type EnumContentVisibilityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContentVisibility'>
+    
+
+
+/**
+ * Reference to a field of type 'ContentVisibility[]'
+ */
+export type ListEnumContentVisibilityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContentVisibility[]'>
     
 
 

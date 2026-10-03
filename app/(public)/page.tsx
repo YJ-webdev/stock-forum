@@ -1,11 +1,20 @@
+"use client";
+
 import { UserPreferenceMarket } from "../components/user-preference-market";
 import { VoteSentiment } from "../components/vote-sentiment";
+import { useCurrentUser } from "../context/user-context";
 
-export default async function Home() {
+export default function Home() {
+  const user = useCurrentUser();
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="flex flex-col items-center font-sans">
-      <main className="relative flex w-full flex-1 flex-col items-start ">
-        <div className="w-full pt-4 space-y-4">
+      <main className="relative flex w-full flex-1 flex-col items-start">
+        <div className="w-full space-y-4 pt-4">
           <UserPreferenceMarket />
           <VoteSentiment />
         </div>

@@ -220,6 +220,13 @@ export type JsonFilterBase<$PrismaModel = never> = {
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
 }
 
+export type EnumContentVisibilityFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContentVisibility | Prisma.EnumContentVisibilityFieldRefInput<$PrismaModel>
+  in?: $Enums.ContentVisibility[] | Prisma.ListEnumContentVisibilityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ContentVisibility[] | Prisma.ListEnumContentVisibilityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumContentVisibilityFilter<$PrismaModel> | $Enums.ContentVisibility
+}
+
 export type JsonWithAggregatesFilter<$PrismaModel = never> =
 | Prisma.PatchUndefined<
     Prisma.Either<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
@@ -245,6 +252,16 @@ export type JsonWithAggregatesFilterBase<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedJsonFilter<$PrismaModel>
   _max?: Prisma.NestedJsonFilter<$PrismaModel>
+}
+
+export type EnumContentVisibilityWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContentVisibility | Prisma.EnumContentVisibilityFieldRefInput<$PrismaModel>
+  in?: $Enums.ContentVisibility[] | Prisma.ListEnumContentVisibilityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ContentVisibility[] | Prisma.ListEnumContentVisibilityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumContentVisibilityWithAggregatesFilter<$PrismaModel> | $Enums.ContentVisibility
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumContentVisibilityFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumContentVisibilityFilter<$PrismaModel>
 }
 
 export type EnumModerationActionTypeFilter<$PrismaModel = never> = {
@@ -672,6 +689,13 @@ export type NestedFloatNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedFloatNullableFilter<$PrismaModel> | number | null
 }
 
+export type NestedEnumContentVisibilityFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContentVisibility | Prisma.EnumContentVisibilityFieldRefInput<$PrismaModel>
+  in?: $Enums.ContentVisibility[] | Prisma.ListEnumContentVisibilityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ContentVisibility[] | Prisma.ListEnumContentVisibilityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumContentVisibilityFilter<$PrismaModel> | $Enums.ContentVisibility
+}
+
 export type NestedJsonFilter<$PrismaModel = never> =
 | Prisma.PatchUndefined<
     Prisma.Either<Required<NestedJsonFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>,
@@ -694,6 +718,16 @@ export type NestedJsonFilterBase<$PrismaModel = never> = {
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   gte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
+}
+
+export type NestedEnumContentVisibilityWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContentVisibility | Prisma.EnumContentVisibilityFieldRefInput<$PrismaModel>
+  in?: $Enums.ContentVisibility[] | Prisma.ListEnumContentVisibilityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ContentVisibility[] | Prisma.ListEnumContentVisibilityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumContentVisibilityWithAggregatesFilter<$PrismaModel> | $Enums.ContentVisibility
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumContentVisibilityFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumContentVisibilityFilter<$PrismaModel>
 }
 
 export type NestedEnumModerationActionTypeFilter<$PrismaModel = never> = {

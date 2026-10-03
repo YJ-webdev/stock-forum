@@ -13,6 +13,8 @@ import {
 
 import { hasEditorContent } from "@/lib/utils/tiptap-utils";
 import { getReferenceClose } from "@/lib/market/yahoo";
+import { moderateContent } from "@/lib/moderation/moderate-content";
+import { getContentText } from "@/lib/moderation/get-content-text";
 
 type PredictionInput = {
   direction: "BULL" | "BEAR";
@@ -176,6 +178,30 @@ export async function createComment({
     : null;
 
   // ---------------------------------------------------------------------------
+  // AUTO MODERATION
+  //
+  // Nothing is automatically deleted.
+  //
+  // PUBLIC:
+  // - visible to everyone
+  //
+  // PRIVATE:
+  // - visible to the author
+  // - visible to admins
+  // - hidden from everyone else
+  //
+  // The author receives the created comment normally regardless of visibility.
+  // ---------------------------------------------------------------------------
+
+  const moderationText = hasContent ? getContentText(content) : "";
+
+  const moderationResult = moderateContent(moderationText);
+
+  const commentVisibility = moderationResult.shouldBePrivate
+    ? "PRIVATE"
+    : "PUBLIC";
+
+  // ---------------------------------------------------------------------------
   // PREDICTION NATIONALITY
   //
   // Only predictions need nationality.
@@ -280,9 +306,9 @@ export async function createComment({
       id: string;
     } | null = null;
 
-    // -----------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // PREDICTION
-    // -----------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     if (prediction) {
       const market = selectedMarkets[0];
@@ -295,9 +321,9 @@ export async function createComment({
         throw new Error("Please set your nationality before voting.");
       }
 
-      // ---------------------------------------------------------------------
+      // -----------------------------------------------------------------------
       // ENSURE POINT BALANCE EXISTS
-      // ---------------------------------------------------------------------
+      // -----------------------------------------------------------------------
 
       await tx.pointBalance.upsert({
         where: {
@@ -312,9 +338,9 @@ export async function createComment({
         },
       });
 
-      // ---------------------------------------------------------------------
+      // -----------------------------------------------------------------------
       // CREATE PREDICTION
-      // ---------------------------------------------------------------------
+      // -----------------------------------------------------------------------
 
       createdPrediction = await tx.prediction.create({
         data: {
@@ -339,7 +365,7 @@ export async function createComment({
         },
       });
 
-      // ---------------------------------------------------------------------
+      // -----------------------------------------------------------------------
       // DEDUCT BET
       //
       // updateMany + points >= pointsBet ensures the balance cannot go
@@ -348,7 +374,7 @@ export async function createComment({
       //
       // Because this happens in the same transaction as Prediction creation,
       // failure here rolls back the Prediction as well.
-      // ---------------------------------------------------------------------
+      // -----------------------------------------------------------------------
 
       const deducted = await tx.pointBalance.updateMany({
         where: {
@@ -370,9 +396,9 @@ export async function createComment({
         throw new Error("You do not have enough points.");
       }
 
-      // ---------------------------------------------------------------------
+      // -----------------------------------------------------------------------
       // POINT TRANSACTION
-      // ---------------------------------------------------------------------
+      // -----------------------------------------------------------------------
 
       await tx.pointTransaction.create({
         data: {
@@ -387,9 +413,9 @@ export async function createComment({
       });
     }
 
-    // -----------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // COMMENT
-    // -----------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     let createdComment: {
       id: string;
@@ -409,6 +435,12 @@ export async function createComment({
 
           predictionId: createdPrediction?.id ?? null,
 
+          // -------------------------------------------------------------------
+          // AUTO MODERATION VISIBILITY
+          // -------------------------------------------------------------------
+
+          visibility: commentVisibility,
+
           assets: {
             create: selectedMarkets.map((market) => ({
               asset: {
@@ -426,9 +458,9 @@ export async function createComment({
       });
     }
 
-    // -----------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // UPDATED POINT BALANCE
-    // -----------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     const pointBalance = prediction
       ? await tx.pointBalance.findUnique({
@@ -455,6 +487,10 @@ export async function createComment({
 
   // ---------------------------------------------------------------------------
   // CREATED COMMENT
+  //
+  // IMPORTANT:
+  // A PRIVATE comment is still returned to its author normally.
+  // The author should not see a different posting experience.
   // ---------------------------------------------------------------------------
 
   const createdComment = result.commentId
@@ -467,6 +503,7 @@ export async function createComment({
 
   return {
     ...result,
+
     comment: createdComment,
   };
 }
@@ -481,7 +518,71 @@ export async function getMarketComments(
   } | null,
 ) {
   const session = await auth();
-  const userId = session?.user?.id;
+
+  const userId = session?.user?.id ?? null;
+  const isAdmin = session?.user?.role === "ADMIN";
+
+  // ---------------------------------------------------------------------------
+  // VISIBILITY
+  //
+  // ADMIN
+  // - all PUBLIC comments
+  // - all PRIVATE comments
+  //
+  // LOGGED-IN USER
+  // - all PUBLIC comments
+  // - their own PRIVATE comments
+  //
+  // GUEST
+  // - PUBLIC comments only
+  // ---------------------------------------------------------------------------
+
+  const commentVisibilityWhere = isAdmin
+    ? {}
+    : userId
+      ? {
+          OR: [
+            {
+              visibility: "PUBLIC" as const,
+            },
+            {
+              visibility: "PRIVATE" as const,
+              authorId: userId,
+            },
+          ],
+        }
+      : {
+          visibility: "PUBLIC" as const,
+        };
+
+  // ---------------------------------------------------------------------------
+  // REPLY VISIBILITY
+  //
+  // Used for reply counts so PRIVATE replies do not leak through
+  // "{n} replies" to users who cannot see them.
+  // ---------------------------------------------------------------------------
+
+  const replyVisibilityWhere = isAdmin
+    ? {}
+    : userId
+      ? {
+          OR: [
+            {
+              visibility: "PUBLIC" as const,
+            },
+            {
+              visibility: "PRIVATE" as const,
+              authorId: userId,
+            },
+          ],
+        }
+      : {
+          visibility: "PUBLIC" as const,
+        };
+
+  // ---------------------------------------------------------------------------
+  // BASE WHERE
+  // ---------------------------------------------------------------------------
 
   const baseWhere = {
     assets: {
@@ -489,7 +590,13 @@ export async function getMarketComments(
         assetSymbol,
       },
     },
+
+    ...commentVisibilityWhere,
   };
+
+  // ---------------------------------------------------------------------------
+  // QUERY
+  // ---------------------------------------------------------------------------
 
   const [comments, totalCount] = await Promise.all([
     prisma.comment.findMany({
@@ -498,17 +605,22 @@ export async function getMarketComments(
 
         ...(cursor
           ? {
-              OR: [
+              AND: [
                 {
-                  createdAt: {
-                    lt: cursor.createdAt,
-                  },
-                },
-                {
-                  createdAt: cursor.createdAt,
-                  id: {
-                    lt: cursor.id,
-                  },
+                  OR: [
+                    {
+                      createdAt: {
+                        lt: cursor.createdAt,
+                      },
+                    },
+                    {
+                      createdAt: cursor.createdAt,
+
+                      id: {
+                        lt: cursor.id,
+                      },
+                    },
+                  ],
                 },
               ],
             }
@@ -554,36 +666,65 @@ export async function getMarketComments(
           },
         },
 
+        // ---------------------------------------------------------------------
+        // CURRENT USER'S LIKE
+        // ---------------------------------------------------------------------
+
         likes: userId
           ? {
               where: {
                 userId,
               },
+
               select: {
                 id: true,
               },
             }
           : false,
 
+        // ---------------------------------------------------------------------
+        // COUNTS
+        // ---------------------------------------------------------------------
+
         _count: {
           select: {
             likes: true,
-            replies: true,
+
+            replies: {
+              where: replyVisibilityWhere,
+            },
           },
         },
       },
     }),
+
+    // -------------------------------------------------------------------------
+    // TOTAL COUNT
+    //
+    // IMPORTANT:
+    // Uses the same visibility rules as the actual comment query.
+    //
+    // This prevents PRIVATE comments from leaking through the total count.
+    // -------------------------------------------------------------------------
 
     prisma.comment.count({
       where: baseWhere,
     }),
   ]);
 
+  // ---------------------------------------------------------------------------
+  // PAGINATION
+  // ---------------------------------------------------------------------------
+
   const hasMore = comments.length > MARKET_COMMENTS_PAGE_SIZE;
 
   const page = hasMore
     ? comments.slice(0, MARKET_COMMENTS_PAGE_SIZE)
     : comments;
+
+  // ---------------------------------------------------------------------------
+  // NORMALIZE
+  // ---------------------------------------------------------------------------
 
   const normalizedComments = page.map((comment) => {
     const { _count, likes, ...rest } = comment;
@@ -600,6 +741,10 @@ export async function getMarketComments(
     };
   });
 
+  // ---------------------------------------------------------------------------
+  // NEXT CURSOR
+  // ---------------------------------------------------------------------------
+
   const lastComment = normalizedComments.at(-1);
 
   const nextCursor =
@@ -609,6 +754,10 @@ export async function getMarketComments(
           id: lastComment.id,
         }
       : null;
+
+  // ---------------------------------------------------------------------------
+  // RESULT
+  // ---------------------------------------------------------------------------
 
   return {
     comments: normalizedComments,
@@ -936,6 +1085,28 @@ export async function createReply({
   }
 
   // ---------------------------------------------------------------------------
+  // AUTO MODERATION
+  //
+  // Nothing is automatically deleted.
+  //
+  // PUBLIC:
+  // - visible to everyone
+  //
+  // PRIVATE:
+  // - visible to the author
+  // - visible to admins
+  // - hidden from everyone else
+  //
+  // The author receives the created reply normally regardless of visibility.
+  // ---------------------------------------------------------------------------
+
+  const moderationResult = moderateContent(trimmedContent);
+
+  const replyVisibility = moderationResult.shouldBePrivate
+    ? "PRIVATE"
+    : "PUBLIC";
+
+  // ---------------------------------------------------------------------------
   // COMMENT
   // ---------------------------------------------------------------------------
 
@@ -1012,6 +1183,12 @@ export async function createReply({
       authorId: userId,
 
       parentId,
+
+      // -----------------------------------------------------------------------
+      // AUTO MODERATION VISIBILITY
+      // -----------------------------------------------------------------------
+
+      visibility: replyVisibility,
     },
 
     select: {
@@ -1049,65 +1226,88 @@ export async function createReply({
 
   // ---------------------------------------------------------------------------
   // NOTIFICATION
+  //
+  // IMPORTANT:
+  //
+  // A PRIVATE reply must NOT send a normal social notification.
+  //
+  // Otherwise another user could receive:
+  //
+  //   "Someone replied to your comment."
+  //
+  // even though that reply is PRIVATE and should not be visible to them.
+  //
+  // The author still receives the created reply normally above.
   // ---------------------------------------------------------------------------
 
-  if (parentReply) {
-    // -------------------------------------------------------------------------
-    // REPLIED TO ANOTHER REPLY
-    // -------------------------------------------------------------------------
+  if (replyVisibility === "PUBLIC") {
+    if (parentReply) {
+      // -----------------------------------------------------------------------
+      // REPLIED TO ANOTHER REPLY
+      // -----------------------------------------------------------------------
 
-    if (parentReply.authorId !== userId) {
-      await prisma.notification.create({
-        data: {
-          // Recipient = author of the reply being replied to.
-          userId: parentReply.authorId,
+      if (parentReply.authorId !== userId) {
+        await prisma.notification.create({
+          data: {
+            // Recipient = author of the reply being replied to.
+            userId: parentReply.authorId,
 
-          // Actor = current user who created the new reply.
-          actorId: userId,
+            // Actor = current user who created the new reply.
+            actorId: userId,
 
-          type: "REPLY_REPLIED",
+            type: "REPLY_REPLIED",
 
-          title: "New reply",
-          message: `${session.user.name ?? "Someone"} replied to your reply.`,
+            title: "New reply",
+            message: `${session.user.name ?? "Someone"} replied to your reply.`,
 
-          // IMPORTANT:
-          // Store the NEW reply, not the parent reply.
-          // This lets the notification navigate directly to the response.
-          replyId: reply.id,
+            // IMPORTANT:
+            // Store the NEW reply, not the parent reply.
+            // This lets the notification navigate directly to the response.
+            replyId: reply.id,
 
-          eventKey: `reply-replied:${reply.id}`,
-        },
-      });
-    }
-  } else {
-    // -------------------------------------------------------------------------
-    // REPLIED DIRECTLY TO COMMENT
-    // -------------------------------------------------------------------------
+            eventKey: `reply-replied:${reply.id}`,
+          },
+        });
+      }
+    } else {
+      // -----------------------------------------------------------------------
+      // REPLIED DIRECTLY TO COMMENT
+      // -----------------------------------------------------------------------
 
-    if (comment.authorId !== userId) {
-      await prisma.notification.create({
-        data: {
-          // Recipient = author of the original comment.
-          userId: comment.authorId,
+      if (comment.authorId !== userId) {
+        await prisma.notification.create({
+          data: {
+            // Recipient = author of the original comment.
+            userId: comment.authorId,
 
-          // Actor = current user who created the reply.
-          actorId: userId,
+            // Actor = current user who created the reply.
+            actorId: userId,
 
-          type: "COMMENT_REPLIED",
+            type: "COMMENT_REPLIED",
 
-          title: "New reply",
-          message: `${session.user.name ?? "Someone"} replied to your comment.`,
+            title: "New reply",
+            message: `${session.user.name ?? "Someone"} replied to your comment.`,
 
-          // IMPORTANT:
-          // Store the NEW reply here too.
-          // We can get its original comment through reply.commentId.
-          replyId: reply.id,
+            // IMPORTANT:
+            // Store the NEW reply here too.
+            // We can get its original comment through reply.commentId.
+            replyId: reply.id,
 
-          eventKey: `comment-replied:${reply.id}`,
-        },
-      });
+            eventKey: `comment-replied:${reply.id}`,
+          },
+        });
+      }
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // RESULT
+  //
+  // PUBLIC and PRIVATE replies are returned identically.
+  //
+  // Therefore the author does not get a different posting experience when
+  // automatic moderation makes the reply PRIVATE.
+  // ---------------------------------------------------------------------------
 
   return {
     success: true,
@@ -1360,11 +1560,52 @@ export async function restoreReply(replyId: string) {
 
 export async function getCommentReplies(commentId: string) {
   const session = await auth();
-  const userId = session?.user?.id;
+
+  const userId = session?.user?.id ?? null;
+  const isAdmin = session?.user?.role === "ADMIN";
+
+  // ---------------------------------------------------------------------------
+  // VISIBILITY
+  //
+  // ADMIN
+  // - PUBLIC
+  // - PRIVATE
+  //
+  // LOGGED-IN USER
+  // - all PUBLIC replies
+  // - their own PRIVATE replies
+  //
+  // GUEST
+  // - PUBLIC replies only
+  // ---------------------------------------------------------------------------
+
+  const visibilityWhere = isAdmin
+    ? {}
+    : userId
+      ? {
+          OR: [
+            {
+              visibility: "PUBLIC" as const,
+            },
+            {
+              visibility: "PRIVATE" as const,
+              authorId: userId,
+            },
+          ],
+        }
+      : {
+          visibility: "PUBLIC" as const,
+        };
+
+  // ---------------------------------------------------------------------------
+  // REPLIES
+  // ---------------------------------------------------------------------------
 
   const replies = await prisma.reply.findMany({
     where: {
       commentId,
+
+      ...visibilityWhere,
     },
 
     orderBy: {
@@ -1404,6 +1645,7 @@ export async function getCommentReplies(commentId: string) {
             where: {
               userId,
             },
+
             select: {
               id: true,
             },
@@ -1417,7 +1659,26 @@ export async function getCommentReplies(commentId: string) {
       _count: {
         select: {
           likes: true,
-          replies: true,
+
+          replies: {
+            where: isAdmin
+              ? {}
+              : userId
+                ? {
+                    OR: [
+                      {
+                        visibility: "PUBLIC",
+                      },
+                      {
+                        visibility: "PRIVATE",
+                        authorId: userId,
+                      },
+                    ],
+                  }
+                : {
+                    visibility: "PUBLIC",
+                  },
+          },
         },
       },
     },

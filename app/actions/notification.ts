@@ -69,22 +69,33 @@ export async function hasUnreadNotifications() {
 
 export async function getNotifications() {
   const session = await auth();
+  const userId = session?.user?.id;
 
-  if (!session?.user?.id) {
+  if (!userId) {
     return [];
   }
 
+  // Delete all notifications older than 30 days, including unread ones.
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  await prisma.notification.deleteMany({
+    where: {
+      userId,
+      createdAt: {
+        lt: cutoff,
+      },
+    },
+  });
+
   return prisma.notification.findMany({
     where: {
-      userId: session.user.id,
+      userId,
     },
 
     orderBy: {
       createdAt: "desc",
     },
 
-    // Keep initial payload small.
-    // Add cursor pagination later if more history is needed.
     take: 30,
 
     select: {
@@ -95,18 +106,13 @@ export async function getNotifications() {
       readAt: true,
       createdAt: true,
 
-      // -----------------------------------------------------------------------
       // COMMENT
-      // -----------------------------------------------------------------------
-
       commentId: true,
 
       comment: {
         select: {
           content: true,
 
-          // A comment currently belongs to one selected board for navigation.
-          // Even if the schema allows multiple assets, we only need one here.
           assets: {
             take: 1,
 
@@ -121,10 +127,7 @@ export async function getNotifications() {
         },
       },
 
-      // -----------------------------------------------------------------------
       // REPLY
-      // -----------------------------------------------------------------------
-
       replyId: true,
 
       reply: {
@@ -149,12 +152,7 @@ export async function getNotifications() {
         },
       },
 
-      // -----------------------------------------------------------------------
       // PREDICTION
-      //
-      // Notification navigation only needs the market symbol.
-      // -----------------------------------------------------------------------
-
       prediction: {
         select: {
           symbol: true,
@@ -163,6 +161,14 @@ export async function getNotifications() {
     },
   });
 }
+
+// -----------------------------------------------------------------------------
+// CLIENT TYPE
+// -----------------------------------------------------------------------------
+
+export type NotificationItem = Awaited<
+  ReturnType<typeof getNotifications>
+>[number];
 
 // -----------------------------------------------------------------------------
 // CLIENT TYPE

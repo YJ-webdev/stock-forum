@@ -40,6 +40,12 @@ enum ModerationActionType {
   RESTORE_COMMENT
 }
 
+enum ContentVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -114,6 +120,8 @@ model VerificationToken {
 model Comment {
   id      String @id @default(cuid())
   content Json
+    visibility ContentVisibility @default(PUBLIC)
+
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -214,6 +222,8 @@ model Reply {
 
   content String
   gifUrl  String?
+    visibility ContentVisibility @default(PUBLIC)
+
 
   // Comment this reply belongs to
   commentId String

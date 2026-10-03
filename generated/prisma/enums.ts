@@ -57,6 +57,14 @@ export const ModerationActionType = {
 export type ModerationActionType = (typeof ModerationActionType)[keyof typeof ModerationActionType]
 
 
+export const ContentVisibility = {
+  PUBLIC: 'PUBLIC',
+  PRIVATE: 'PRIVATE'
+} as const
+
+export type ContentVisibility = (typeof ContentVisibility)[keyof typeof ContentVisibility]
+
+
 export const NotificationType = {
   PREDICTION_WON: 'PREDICTION_WON',
   PREDICTION_LOST: 'PREDICTION_LOST',

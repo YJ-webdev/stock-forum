@@ -147,6 +147,7 @@ export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFi
 export const CommentScalarFieldEnum = {
   id: 'id',
   content: 'content',
+  visibility: 'visibility',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   editedAt: 'editedAt',
@@ -203,6 +204,7 @@ export const ReplyScalarFieldEnum = {
   id: 'id',
   content: 'content',
   gifUrl: 'gifUrl',
+  visibility: 'visibility',
   commentId: 'commentId',
   authorId: 'authorId',
   parentId: 'parentId',
