@@ -406,7 +406,7 @@ export function BullBearVoteCard({
         </Numeric>
 
         <p
-          className={`jakarta min-h-5 px-3 text-sm font-semibold tabular-nums ${changeColor}`}
+          className={`jakarta min-h-5 px-3 text-sm font-medium tabular-nums ${changeColor}`}
         >
           {data ? `${data.change} (${data.percent})` : "—"}
         </p>

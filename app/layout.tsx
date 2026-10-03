@@ -1,18 +1,9 @@
 import type { Metadata } from "next";
 import {
-  Geist,
-  Geist_Mono,
   Figtree,
-  Open_Sans,
-  Google_Sans,
-  Roboto,
-  Roboto_Mono,
   Red_Hat_Display,
   Plus_Jakarta_Sans,
   IBM_Plex_Mono,
-  Work_Sans,
-  Josefin_Sans,
-  Jost,
   Outfit,
 } from "next/font/google";
 import "@/app/globals.css";
@@ -21,39 +12,9 @@ import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-const josefinSans = Josefin_Sans({
-  subsets: ["latin"],
-  variable: "--font-josefin-sans",
-});
-
-const jost = Jost({
-  subsets: ["latin"],
-  variable: "--font-jost",
-});
-
 const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-outfit",
-});
-
-const workSans = Work_Sans({
-  subsets: ["latin"],
-  variable: "--font-work-sans",
-});
-
-const googleSans = Google_Sans({
-  subsets: ["latin"],
-  variable: "--font-google-sans",
-});
-
-const openSans = Open_Sans({
-  subsets: ["latin"],
-  variable: "--font-open-sans",
-});
-
-const roboto = Roboto({
-  subsets: ["latin"],
-  variable: "--font-roboto",
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -62,11 +23,6 @@ const ibmPlexMono = IBM_Plex_Mono({
   variable: "--font-ibm-plex-mono",
 });
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const redHatDisplay = Red_Hat_Display({
   subsets: ["latin"],
@@ -77,11 +33,6 @@ const redHatDisplay = Red_Hat_Display({
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
-});
-
-const robotoMono = Roboto_Mono({
-  variable: "--font-roboto-mono",
-  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {

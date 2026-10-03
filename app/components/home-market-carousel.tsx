@@ -196,7 +196,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
             <div
               key={market.symbol}
               data-carousel-card
-              className="w-44 shrink-0"
+              className="w-46 shrink-0"
             >
               <BullBearVoteCard
                 market={market}
