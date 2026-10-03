@@ -201,11 +201,6 @@
   --roboto-mono: var(--font-roboto-mono);
 }
 
-.numeric {
-  font-family: var(--font-red-hat-display), sans-serif;
-  font-variant-numeric: tabular-nums lining-nums;
-}
-
 .redhat {
   font-family: var(--font-red-hat-display), sans-serif;
 }
@@ -214,8 +209,21 @@
   font-family: var(--font-jakarta), sans-serif;
 }
 
+.outfit {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+}
+
+.roboto {
+  font-family: var(--font-roboto), sans-serif;
+}
+
 .ibmPlexMono {
   font-family: var(--font-ibm-plex-mono), monospace;
+}
+
+.numeric {
+  font-family: var(--font-red-hat-display), sans-serif;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 /* --------------------------------

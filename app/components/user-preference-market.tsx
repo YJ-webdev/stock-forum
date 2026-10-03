@@ -31,9 +31,7 @@ export const UserPreferenceMarket = () => {
           <Plus className="h-4 w-4" strokeWidth={1.75} />
         </div>
 
-        <span className="text-[15px] font-medium">
-          Add your favorite markets
-        </span>
+        <span className="text-[15px] font-medium">Add your watchlist</span>
 
         <span className="text-xs text-muted-foreground/60">
           Customize your market overview

@@ -32,7 +32,7 @@ export default async function Page({ params }: PageProps) {
   let initialVoteStats: MarketVoteStats | null = null;
   let initialVote: VoteDirection | null = null;
 
-  const initialIsFavorite = await isMarketInWatchlist(decodedSymbol);
+  const initialIsWatchlist = await isMarketInWatchlist(decodedSymbol);
 
   if (canPredict) {
     const votingWindow = getVotingWindow(decodedSymbol, Date.now());
@@ -58,7 +58,7 @@ export default async function Page({ params }: PageProps) {
       symbol={decodedSymbol}
       initialVoteStats={initialVoteStats}
       initialVote={initialVote}
-      initialIsFavorite={initialIsFavorite}
+      initialIsWatchlist={initialIsWatchlist}
     />
   );
 }

@@ -185,7 +185,7 @@ export function TrendSparkline({
 
   const strokeColorClass = isPositive
     ? "text-[#047857] dark:text-[#059669]"
-    : "text-[#cf0000]";
+    : "text-[#cf0000] dark:text-[#ff1414]";
 
   const lastPoint = coords[coords.length - 1];
 
@@ -260,7 +260,7 @@ export function TrendSparkline({
         d={prePathD}
         fill="none"
         stroke="currentColor"
-        strokeWidth="0.9"
+        strokeWidth="1.25"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -274,7 +274,7 @@ export function TrendSparkline({
           d={postPathD}
           fill="none"
           stroke="currentColor"
-          strokeWidth="0.9"
+          strokeWidth="1.25"
           strokeLinecap="round"
           strokeLinejoin="round"
         />

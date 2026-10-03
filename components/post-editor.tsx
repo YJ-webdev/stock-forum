@@ -249,7 +249,7 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
           "
       >
         <p className="text-xs -translate-y-1 font-normal tracking-wider text-muted-foreground/50">
-          Write your thoughts
+          Write a comment
         </p>
         <div className="shrink-0">
           <div className="flex items-center justify-between">

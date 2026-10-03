@@ -3,6 +3,10 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
+
+const DEFAULT_HOME_MARKETS = ["^GSPC", "^NDX", "^DJI", "^RUT", "^KS11"];
+
 export async function addMarketsToWatchlist(symbols: string[]) {
   const session = await auth();
 
@@ -91,7 +95,7 @@ export async function toggleMarketWatchlist(symbol: string) {
 
   if (removed.count > 0) {
     return {
-      isFavorite: false,
+      isWatchlist: false,
     };
   }
 
@@ -103,6 +107,55 @@ export async function toggleMarketWatchlist(symbol: string) {
   });
 
   return {
-    isFavorite: true,
+    isWatchlist: true,
   };
+}
+
+export async function getHomeMarkets() {
+  const session = await auth();
+
+  const watchlist = session?.user?.id
+    ? await prisma.watchlist.findMany({
+        where: {
+          userId: session.user.id,
+        },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        select: {
+          symbol: true,
+        },
+      })
+    : [];
+
+  const watchlistSymbols = new Set(watchlist.map((item) => item.symbol));
+
+  const candidateSymbols = [
+    ...watchlist.map((item) => item.symbol),
+    ...DEFAULT_HOME_MARKETS,
+  ];
+
+  const selectedSymbols = new Set<string>();
+
+  const result: {
+    market: (typeof ALL_MARKET_SYMBOLS)[number];
+    initialIsWatchlist: boolean;
+  }[] = [];
+
+  for (const symbol of candidateSymbols) {
+    if (selectedSymbols.has(symbol)) continue;
+
+    const market = ALL_MARKET_SYMBOLS.find((item) => item.symbol === symbol);
+
+    if (!market) continue;
+
+    selectedSymbols.add(symbol);
+
+    result.push({
+      market,
+      initialIsWatchlist: watchlistSymbols.has(symbol),
+    });
+
+    if (result.length === 20) break;
+  }
+
+  return result;
 }

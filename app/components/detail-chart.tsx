@@ -576,7 +576,7 @@ export function DetailChart({
             className={
               hoveredPoint.percentChange >= 0
                 ? "text-emerald-700 dark:text-emerald-500"
-                : "text-[#cf0000]"
+                : "text-[#ff1414]"
             }
           >
             ({hoveredPoint.percentChange >= 0 ? "+" : ""}

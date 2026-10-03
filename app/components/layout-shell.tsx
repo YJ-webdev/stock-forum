@@ -27,7 +27,7 @@ import PanelLeftStream from "./panel-left-stream";
 import { LeaderBoardStream } from "./leader-board-stream";
 import PanelLeftMobileStream from "./panel-left-mobile-stream";
 import { OnboardingCard } from "./onboarding-card";
-import { FavoritePanel } from "./favorite-panel";
+import { WatchlistPanel } from "./watchlist-panel";
 
 const PanelLoading = () => (
   <div className="flex h-full w-full items-center justify-center">
@@ -423,7 +423,7 @@ export default function LayoutShell({
                       />
                     )}
                     {user && onFavotites && (
-                      <FavoritePanel setOnFavotites={setOnFavotites} />
+                      <WatchlistPanel setOnFavotites={setOnFavotites} />
                     )}
 
                     {!onWrite &&
@@ -482,7 +482,7 @@ export default function LayoutShell({
               )}
 
               {user && onFavotites && (
-                <FavoritePanel setOnFavotites={setOnFavotites} />
+                <WatchlistPanel setOnFavotites={setOnFavotites} />
               )}
 
               <Footer />

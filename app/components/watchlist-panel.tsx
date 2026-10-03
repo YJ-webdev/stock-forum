@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import React from "react";
 
-export const FavoritePanel = ({
+export const WatchlistPanel = ({
   setOnFavotites,
 }: {
   setOnFavotites: React.Dispatch<React.SetStateAction<boolean>>;
@@ -17,7 +17,7 @@ export const FavoritePanel = ({
           "
       >
         <p className="text-xs -translate-y-1 font-normal tracking-wider text-muted-foreground/50">
-          Favorite markets
+          Watchlist
         </p>
         <div className="shrink-0">
           <div className="flex items-center justify-between">

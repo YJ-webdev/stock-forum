@@ -3,16 +3,58 @@ import {
   Geist,
   Geist_Mono,
   Figtree,
+  Open_Sans,
+  Google_Sans,
+  Roboto,
   Roboto_Mono,
   Red_Hat_Display,
   Plus_Jakarta_Sans,
   IBM_Plex_Mono,
+  Work_Sans,
+  Josefin_Sans,
+  Jost,
+  Outfit,
 } from "next/font/google";
 import "@/app/globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
+const josefinSans = Josefin_Sans({
+  subsets: ["latin"],
+  variable: "--font-josefin-sans",
+});
+
+const jost = Jost({
+  subsets: ["latin"],
+  variable: "--font-jost",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+});
+
+const workSans = Work_Sans({
+  subsets: ["latin"],
+  variable: "--font-work-sans",
+});
+
+const googleSans = Google_Sans({
+  subsets: ["latin"],
+  variable: "--font-google-sans",
+});
+
+const openSans = Open_Sans({
+  subsets: ["latin"],
+  variable: "--font-open-sans",
+});
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  variable: "--font-roboto",
+});
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -57,11 +99,9 @@ export default function RootLayout({
       lang="en"
       className={cn(
         "h-full antialiased",
-        geistSans.variable,
-        geistMono.variable,
+        outfit.variable,
         figtree.variable,
         "font-sans",
-        robotoMono.variable,
         ibmPlexMono.variable,
         redHatDisplay.variable,
         jakartaSans.variable,

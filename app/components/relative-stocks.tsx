@@ -272,7 +272,7 @@ function RelativeStockRow({
 
   const priceColor = quote?.isPositive
     ? "text-emerald-700 dark:text-emerald-600"
-    : "text-[#cf0000] dark:text-[#cf0000]";
+    : "text-[#cf0000] dark:text-[#ff1414]";
 
   const href = `/${encodeURIComponent(item.symbol)}`;
 

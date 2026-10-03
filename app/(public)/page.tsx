@@ -1,22 +1,20 @@
-"use client";
-
-import { BullBearVoteCard } from "../components/bull-bear-vote-card";
-import { UserPreferenceMarket } from "../components/user-preference-market";
+import { getHomeMarkets } from "../actions/watchlist";
+import { HomeMarketCarousel } from "../components/home-market-carousel";
 import { VoteSentiment } from "../components/vote-sentiment";
-import { useCurrentUser } from "../context/user-context";
 
-export default function Home() {
-  const user = useCurrentUser();
+export default async function Home() {
+  const markets = await getHomeMarkets();
 
   return (
-    <div className="flex flex-col items-center font-sans">
-      <main className="relative flex w-full flex-1 flex-col items-start">
-        <div className="w-full px-4 space-y-4 pt-4">
+    <div className="flex min-w-0 flex-col items-center font-sans">
+      <main className="relative flex w-full min-w-0 flex-1 flex-col items-start">
+        <div className="w-full min-w-0 space-y-4 px-4 pt-4">
           <p className="mb-3 text-xs font-normal tracking-wider text-muted-foreground/50">
-            My markets
+            Watchlist
           </p>
-          {/* {user && <UserPreferenceMarket />} */}
-          <BullBearVoteCard />
+
+          <HomeMarketCarousel markets={markets} />
+
           <VoteSentiment />
         </div>
       </main>

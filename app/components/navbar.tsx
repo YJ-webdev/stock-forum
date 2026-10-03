@@ -333,7 +333,7 @@ export default function UserMenu({
               "
             >
               <HeartIcon className="mr-2 size-4.5" strokeWidth={1.5} />
-              Favorite markets
+              Watchlist
             </DropdownMenuItem>
 
             <DropdownMenuItem

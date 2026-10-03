@@ -55,14 +55,14 @@ interface MarketPageClientProps {
   symbol: string;
   initialVoteStats: MarketVoteStats | null;
   initialVote: VoteDirection | null;
-  initialIsFavorite: boolean;
+  initialIsWatchlist: boolean;
 }
 
 export default function MarketPageClient({
   symbol,
   initialVoteStats,
   initialVote,
-  initialIsFavorite,
+  initialIsWatchlist,
 }: MarketPageClientProps) {
   const user = useCurrentUser();
 
@@ -70,7 +70,7 @@ export default function MarketPageClient({
 
   const [betAmount, setBetAmount] = useState(50);
   const [showDetailChart, setShowDetailChart] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
+  const [isWatchlist, setIsWatchlist] = useState(initialIsWatchlist);
 
   const [selectedVote, setSelectedVote] = useState<VoteDirection | null>(
     initialVote,
@@ -117,45 +117,41 @@ export default function MarketPageClient({
   const isMarketOpen = canPredict ? votingWindow.isMarketOpen : false;
   const canVote = canPredict ? votingWindow.canVote : false;
 
-  const predictionForMs = canPredict
-    ? (votingWindow.predictionFor?.getTime() ?? null)
-    : null;
+  const [isWatchlistPending, startWatchlistTransition] = useTransition();
 
-  const [isFavoritePending, startFavoriteTransition] = useTransition();
-
-  const handleToggleFavorite = () => {
+  const handleToggleWatchlist = () => {
     if (!isLoggedIn) {
-      toast.error("Log in to manage your favorites.");
+      toast.error("Log in to manage your watchlist.");
       return;
     }
 
-    if (isFavoritePending) {
+    if (isWatchlistPending) {
       return;
     }
 
-    const previousIsFavorite = isFavorite;
-    const nextIsFavorite = !previousIsFavorite;
+    const previousIsWatchlist = isWatchlist;
+    const nextIsWatchlist = !previousIsWatchlist;
 
-    setIsFavorite(nextIsFavorite);
+    setIsWatchlist(nextIsWatchlist);
 
     const toastId = toast.success(
-      nextIsFavorite
-        ? `${selectedName} added to your favorites.`
-        : `${selectedName} removed from your favorites.`,
+      nextIsWatchlist
+        ? `${selectedName} added to your watchlist.`
+        : `${selectedName} removed from your watchlist.`,
     );
 
-    startFavoriteTransition(async () => {
+    startWatchlistTransition(async () => {
       try {
         const result = await toggleMarketWatchlist(selectedSymbol);
 
-        setIsFavorite(result.isFavorite);
+        setIsWatchlist(result.isWatchlist);
       } catch (error) {
-        setIsFavorite(previousIsFavorite);
+        setIsWatchlist(previousIsWatchlist);
 
         toast.error(
           error instanceof Error
             ? error.message
-            : "Failed to update favorites.",
+            : "Failed to update watchlist.",
           {
             id: toastId,
           },
@@ -400,21 +396,21 @@ export default function MarketPageClient({
             <DropdownMenuContent align="end" className="w-fit min-w-0">
               <DropdownMenuGroup>
                 <DropdownMenuItem
-                  disabled={isFavoritePending}
-                  onClick={handleToggleFavorite}
+                  disabled={isWatchlistPending}
+                  onClick={handleToggleWatchlist}
                   className="cursor-pointer whitespace-nowrap tracking-wide"
                 >
-                  {isFavorite ? (
+                  {isWatchlist ? (
                     <HeartOff className="h-4 w-4" strokeWidth={1.5} />
                   ) : (
                     <Heart className="h-4 w-4" strokeWidth={1.5} />
                   )}
 
-                  {isFavoritePending
+                  {isWatchlistPending
                     ? "Updating..."
-                    : isFavorite
-                      ? "Remove from my favorites"
-                      : "Add to my favorites"}
+                    : isWatchlist
+                      ? "Remove from my watchlist"
+                      : "Add to my watchlist"}
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
