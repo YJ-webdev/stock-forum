@@ -116,17 +116,19 @@ export function BullBearVoteCard() {
             </button>
 
             <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-              <DropdownMenuTrigger>
-                <button
-                  type="button"
-                  aria-label="Market options"
-                  className="cursor-pointer text-zinc-500 hover:text-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:text-zinc-300"
-                >
-                  <EllipsisVertical
-                    className="-mr-1 h-4 w-5 fill-zinc-800 dark:fill-zinc-300"
-                    strokeWidth={1.75}
+              <DropdownMenuTrigger
+                render={
+                  <button
+                    type="button"
+                    aria-label="Market options"
+                    className="cursor-pointer text-zinc-500 hover:text-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:text-zinc-300"
                   />
-                </button>
+                }
+              >
+                <EllipsisVertical
+                  className="-mr-1 h-4 w-5 fill-zinc-800 dark:fill-zinc-300"
+                  strokeWidth={1.75}
+                />
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end" className="min-w-52">

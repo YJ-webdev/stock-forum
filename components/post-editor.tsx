@@ -139,25 +139,13 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
   const MAX_SELECTED_ASSETS = 1;
 
   const toggleAsset = (asset: MarketSymbolItem) => {
-    setSelectedAssets((prev) => {
-      const alreadySelected = prev.some(
-        (selected) => selected.symbol === asset.symbol,
-      );
-
-      if (alreadySelected) {
-        return prev.filter((selected) => selected.symbol !== asset.symbol);
-      }
-
-      if (prev.length >= MAX_SELECTED_ASSETS) {
-        toast.error("You can select only one index board.");
-        return prev;
-      }
-
-      return [...prev, asset];
-    });
+    setSelectedAssets((prev) =>
+      prev[0]?.symbol === asset.symbol ? [] : [asset],
+    );
 
     setAssetQuery("");
     setAssetSelectorOpen(false);
+    setHighlightedAssetIndex(-1);
   };
 
   const saveRecentAssets = (assets: MarketSymbolItem[]) => {
@@ -308,72 +296,73 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
             flex items-center gap-2
           "
         >
-          <Search
-            className="
+          {selectedAssets.length === 0 && (
+            <div className="flex items-center gap-2">
+              <Search
+                className="
               h-4 w-4 shrink-0
               text-gray-500/50 dark:text-zinc-700
             "
-          />
+              />
+              <input
+                type="text"
+                value={assetQuery}
+                onFocus={() => setAssetSelectorOpen(true)}
+                onChange={(e) => {
+                  setAssetQuery(e.target.value);
+                  setAssetSelectorOpen(true);
+                }}
+                onKeyDown={(e) => {
+                  if (!assetSelectorOpen || visibleAssets.length === 0) {
+                    return;
+                  }
 
-          <input
-            type="text"
-            value={assetQuery}
-            onFocus={() => setAssetSelectorOpen(true)}
-            onChange={(e) => {
-              setAssetQuery(e.target.value);
-              setAssetSelectorOpen(true);
-            }}
-            onKeyDown={(e) => {
-              if (!assetSelectorOpen || visibleAssets.length === 0) {
-                return;
-              }
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
 
-              if (e.key === "ArrowDown") {
-                e.preventDefault();
+                    setHighlightedAssetIndex((prev) =>
+                      prev < visibleAssets.length - 1 ? prev + 1 : 0,
+                    );
 
-                setHighlightedAssetIndex((prev) =>
-                  prev < visibleAssets.length - 1 ? prev + 1 : 0,
-                );
+                    return;
+                  }
 
-                return;
-              }
+                  if (e.key === "ArrowUp") {
+                    e.preventDefault();
 
-              if (e.key === "ArrowUp") {
-                e.preventDefault();
+                    setHighlightedAssetIndex((prev) =>
+                      prev > 0 ? prev - 1 : visibleAssets.length - 1,
+                    );
 
-                setHighlightedAssetIndex((prev) =>
-                  prev > 0 ? prev - 1 : visibleAssets.length - 1,
-                );
+                    return;
+                  }
 
-                return;
-              }
+                  if (e.key === "Enter") {
+                    e.preventDefault();
 
-              if (e.key === "Enter") {
-                e.preventDefault();
+                    const asset =
+                      visibleAssets[
+                        highlightedAssetIndex >= 0 ? highlightedAssetIndex : 0
+                      ];
 
-                const asset =
-                  visibleAssets[
-                    highlightedAssetIndex >= 0 ? highlightedAssetIndex : 0
-                  ];
+                    if (asset) {
+                      toggleAsset(asset);
+                      setHighlightedAssetIndex(-1);
+                    }
 
-                if (asset) {
-                  toggleAsset(asset);
-                  setHighlightedAssetIndex(-1);
-                }
+                    return;
+                  }
 
-                return;
-              }
+                  if (e.key === "Escape") {
+                    e.preventDefault();
 
-              if (e.key === "Escape") {
-                e.preventDefault();
-
-                setAssetSelectorOpen(false);
-                setHighlightedAssetIndex(-1);
-              }
-            }}
-            placeholder="Search assets..."
-            autoComplete="off"
-            className="
+                    setAssetSelectorOpen(false);
+                    setHighlightedAssetIndex(-1);
+                  }
+                }}
+                placeholder="Search assets..."
+                autoComplete="off"
+                className="
     placeholder:text-gray-500/50
     dark:placeholder:text-zinc-700
     text-zinc-800
@@ -383,10 +372,12 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
     text-[15px]
     outline-none
   "
-          />
+              />{" "}
+            </div>
+          )}
         </div>
 
-        {assetSelectorOpen && (
+        {selectedAssets.length === 0 && assetSelectorOpen && (
           <div
             className="
               absolute left-0 right-0 top-full z-50

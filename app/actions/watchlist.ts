@@ -80,48 +80,24 @@ export async function toggleMarketWatchlist(symbol: string) {
     throw new Error("Unauthorized.");
   }
 
-  const asset = await prisma.marketAsset.findUnique({
+  const userId = session.user.id;
+
+  const removed = await prisma.watchlist.deleteMany({
     where: {
+      userId,
       symbol,
     },
-    select: {
-      symbol: true,
-    },
   });
 
-  if (!asset) {
-    throw new Error("Market not found.");
-  }
-
-  const existing = await prisma.watchlist.findUnique({
-    where: {
-      userId_symbol: {
-        userId: session.user.id,
-        symbol,
-      },
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  // Remove
-  if (existing) {
-    await prisma.watchlist.delete({
-      where: {
-        id: existing.id,
-      },
-    });
-
+  if (removed.count > 0) {
     return {
       isFavorite: false,
     };
   }
 
-  // Add
   await prisma.watchlist.create({
     data: {
-      userId: session.user.id,
+      userId,
       symbol,
     },
   });

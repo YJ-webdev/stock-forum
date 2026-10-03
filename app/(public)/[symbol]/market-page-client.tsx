@@ -133,24 +133,32 @@ export default function MarketPageClient({
       return;
     }
 
+    const previousIsFavorite = isFavorite;
+    const nextIsFavorite = !previousIsFavorite;
+
+    setIsFavorite(nextIsFavorite);
+
+    const toastId = toast.success(
+      nextIsFavorite
+        ? `${selectedName} added to your favorites.`
+        : `${selectedName} removed from your favorites.`,
+    );
+
     startFavoriteTransition(async () => {
       try {
         const result = await toggleMarketWatchlist(selectedSymbol);
 
         setIsFavorite(result.isFavorite);
-
-        toast.success(
-          result.isFavorite
-            ? `${selectedName} added to your favorites.`
-            : `${selectedName} removed from your favorites.`,
-        );
       } catch (error) {
-        console.error("Failed to update favorites:", error);
+        setIsFavorite(previousIsFavorite);
 
         toast.error(
           error instanceof Error
             ? error.message
             : "Failed to update favorites.",
+          {
+            id: toastId,
+          },
         );
       }
     });
