@@ -15,10 +15,10 @@ export default async function Home() {
 
           <HomeMarketCarousel markets={markets} />
 
-          <p className="mb-3 px-4 text-xs font-normal tracking-wider text-muted-foreground/50">
+          {/* <p className="mb-3 px-4 text-xs font-normal tracking-wider text-muted-foreground/50">
             Vote sentiment
           </p>
-          <VoteSentiment />
+          <VoteSentiment /> */}
         </div>
       </main>
     </div>
