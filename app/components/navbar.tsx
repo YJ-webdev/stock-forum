@@ -22,7 +22,7 @@ import {
   TextAlignJustify as MenuButton,
   Settings,
   ShieldCogCorner,
-  HeartIcon,
+  Pin,
 } from "lucide-react";
 
 import { TbUser } from "react-icons/tb";
@@ -332,7 +332,7 @@ export default function UserMenu({
                 text-[15px]
               "
             >
-              <HeartIcon className="mr-2 size-4.5" strokeWidth={1.5} />
+              <Pin className="mr-2 size-4.5" strokeWidth={1.5} />
               Watchlist
             </DropdownMenuItem>
 

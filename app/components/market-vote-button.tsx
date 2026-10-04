@@ -309,11 +309,6 @@ export function MarketVoteButton({
       return;
     }
 
-    if (!comment.trim() && !gif) {
-      toast.error("Add a comment or GIF to submit.");
-      return;
-    }
-
     const submittedDirection = draftDirection;
     const submittedAmount = betAmount;
     const submittedLookupKey = JSON.stringify([
@@ -708,6 +703,7 @@ export function MarketVoteButton({
                 maxBet={Math.floor(Math.min(500, userPoints) / 50) * 50}
                 currentUser={user}
                 isMarketOpen={votingWindow.isMarketOpen}
+                isPending={isSubmitting}
                 buttonDisabled={inputDisabled}
                 submitVote={(comment, gif) => {
                   void submitVote(comment, gif);

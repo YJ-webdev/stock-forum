@@ -1,17 +1,8 @@
 "use client";
 
+import { toast } from "sonner";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, useTransition } from "react";
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-import { toast } from "sonner";
 
 import {
   ChartRange,
@@ -44,10 +35,11 @@ import { TrendSparkline } from "@/app/components/trend-sparkline";
 import { MarketComments } from "@/app/components/comment";
 import { usePointBalance } from "@/app/context/point-balance-context";
 import { countryCodeToFlag } from "@/lib/utils/nationality-flag";
-import MarketNews from "@/app/components/market-news";
 
-import { EllipsisVertical, Heart, HeartOff, Plus } from "lucide-react";
 import { toggleMarketWatchlist } from "@/app/actions/watchlist";
+
+import MarketNews from "@/app/components/market-news";
+import { MarketActionsMenu } from "@/app/components/market-action-menu";
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
@@ -385,36 +377,12 @@ export default function MarketPageClient({
             {selectedName}
           </h1>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <EllipsisVertical
-                className="h-5 w-5 cursor-pointer text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-300"
-                strokeWidth={1.5}
-              />
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent align="end" className="w-fit min-w-0">
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  disabled={isWatchlistPending}
-                  onClick={handleToggleWatchlist}
-                  className="cursor-pointer whitespace-nowrap tracking-wide"
-                >
-                  {isWatchlist ? (
-                    <HeartOff className="h-4 w-4" strokeWidth={1.5} />
-                  ) : (
-                    <Heart className="h-4 w-4" strokeWidth={1.5} />
-                  )}
-
-                  {isWatchlistPending
-                    ? "Updating..."
-                    : isWatchlist
-                      ? "Remove from my watchlist"
-                      : "Add to my watchlist"}
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <MarketActionsMenu
+            key={selectedSymbol}
+            symbol={selectedSymbol}
+            marketName={selectedName}
+            initialIsWatchlist={initialIsWatchlist}
+          />
         </div>
       </div>
 
@@ -743,6 +711,7 @@ export default function MarketPageClient({
                   betAmount,
                   setBetAmount,
                   handleVote,
+                  isPending,
                   targetMs: votingWindow.targetMs,
                   countdownType: votingWindow.countdownType,
                   showCountdown: votingWindow.showCountdown,

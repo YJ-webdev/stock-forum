@@ -29,6 +29,7 @@ interface PredictionCommentInputProps {
 
   isMarketOpen: boolean;
   buttonDisabled: boolean;
+  isPending: boolean;
 
   submitVote: (comment: string, gif: GifResult | null) => void;
 
@@ -46,6 +47,7 @@ export function PredictionCommentInput({
   userPoints,
   maxBet,
   currentUser,
+  isPending,
 
   isMarketOpen,
   buttonDisabled,
@@ -335,7 +337,7 @@ export function PredictionCommentInput({
                         : ""
                   }
                 />{" "}
-                Vote
+                {isPending ? "Voting..." : "Vote"}
               </Button>
             </div>
           </div>

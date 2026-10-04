@@ -169,10 +169,6 @@ export async function createComment({
     Array.isArray(content.content) &&
     content.content.length > 0;
 
-  if (!hasContent && !prediction) {
-    throw new Error("Please write a comment or select a GIF.");
-  }
-
   const plainContent = hasContent
     ? (JSON.parse(JSON.stringify(content)) as Prisma.InputJsonValue)
     : null;

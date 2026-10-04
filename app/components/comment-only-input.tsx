@@ -43,11 +43,6 @@ export function CommentOnlyInput({
   const [isPending, startTransition] = useTransition();
 
   const handleComment = () => {
-    if (!comment.trim() && !selectedGif) {
-      toast.error("Please write a comment or select a GIF.");
-      return;
-    }
-
     startTransition(async () => {
       try {
         const content = {
@@ -215,7 +210,7 @@ export function CommentOnlyInput({
               <Button
                 type="button"
                 size="sm"
-                disabled={isPending || (!comment.trim() && !selectedGif)}
+                disabled={isPending}
                 onClick={handleComment}
                 className="shrink-0 cursor-pointer"
               >

@@ -172,7 +172,7 @@ export default function MarketNews({ symbol }: MarketNewsProps) {
   return (
     <div className="flex min-w-0 items-center">
       <Link
-        href={`/${encodeURIComponent(symbol)}/news`}
+        href={`/market/${encodeURIComponent(symbol)}/news`}
         className="
           group
           flex min-w-0 items-center gap-2

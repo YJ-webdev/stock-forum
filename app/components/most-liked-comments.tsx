@@ -40,7 +40,7 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
       }
 
       router.push(
-        `/${encodeURIComponent(
+        `/market/${encodeURIComponent(
           symbol,
         )}?comment=${encodeURIComponent(commentId)}&from=most-liked`,
       );

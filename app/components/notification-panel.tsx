@@ -693,7 +693,7 @@ function getNotificationHref(notification: MyNotification): string | null {
         return null;
       }
 
-      return `/${encodeURIComponent(
+      return `/market/${encodeURIComponent(
         symbol,
       )}?comment=${encodeURIComponent(notification.commentId)}`;
     }
@@ -705,7 +705,7 @@ function getNotificationHref(notification: MyNotification): string | null {
         return null;
       }
 
-      return `/${encodeURIComponent(symbol)}?comment=${encodeURIComponent(
+      return `/market/${encodeURIComponent(symbol)}?comment=${encodeURIComponent(
         notification.commentId,
       )}&from=report`;
     }
@@ -719,7 +719,7 @@ function getNotificationHref(notification: MyNotification): string | null {
         return null;
       }
 
-      return `/${encodeURIComponent(symbol)}?comment=${encodeURIComponent(
+      return `/market/${encodeURIComponent(symbol)}?comment=${encodeURIComponent(
         notification.commentId,
       )}&reply=${encodeURIComponent(notification.replyId)}`;
     }
@@ -731,7 +731,7 @@ function getNotificationHref(notification: MyNotification): string | null {
         return null;
       }
 
-      return `/${encodeURIComponent(symbol)}?comment=${encodeURIComponent(
+      return `/market/${encodeURIComponent(symbol)}?comment=${encodeURIComponent(
         notification.commentId,
       )}&reply=${encodeURIComponent(notification.replyId)}&from=report`;
     }
@@ -747,7 +747,7 @@ function getNotificationHref(notification: MyNotification): string | null {
         return null;
       }
 
-      return `/${encodeURIComponent(symbol)}`;
+      return `/market/${encodeURIComponent(symbol)}`;
     }
 
     default:

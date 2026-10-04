@@ -194,7 +194,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
               className="relative isolate w-44 shrink-0"
             >
               <Link
-                href={`/${encodeURIComponent(market.symbol)}`}
+                href={`/market/${encodeURIComponent(market.symbol)}`}
                 aria-label={`View ${market.name}`}
                 draggable={false}
                 className="absolute inset-0 z-10 cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
@@ -221,17 +221,19 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
             scrollByCard(-1);
           }
         }}
-        // Previous
-        className={`absolute left-2 top-1/2 z-30 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm opacity-0 transition-opacity duration-150 group-hover/markets:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 ${
+        className={`absolute left-2 top-1/2 z-30 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm opacity-0 transition-opacity duration-150 group-hover/markets:opacity-100! focus-visible:opacity-100! focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 ${
           canScrollLeft
             ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
             : "cursor-default text-zinc-300 dark:text-zinc-600"
         }`}
       >
         {canScrollLeft ? (
-          <ChevronLeft className="size-5" />
+          <ChevronLeft
+            className="size-5 text-zinc-800 dark:text-zinc-300"
+            strokeWidth={1.75}
+          />
         ) : (
-          <ChevronFirst className="size-5" />
+          <ChevronFirst className="size-5 " strokeWidth={1.75} />
         )}
       </button>
 
@@ -247,17 +249,19 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
             scrollByCard(1);
           }
         }}
-        // Next
-        className={`absolute right-2 top-1/2 z-30 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm opacity-0 transition-opacity duration-150 group-hover/markets:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 ${
+        className={`absolute right-2 top-1/2 z-30 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm opacity-0 transition-opacity duration-150 group-hover/markets:opacity-100! focus-visible:opacity-100! focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 ${
           canScrollRight
             ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
             : "cursor-default text-zinc-300 dark:text-zinc-600"
         }`}
       >
         {canScrollRight ? (
-          <ChevronRight className="size-5" />
+          <ChevronRight
+            className="size-5 text-zinc-800 dark:text-zinc-300"
+            strokeWidth={1.75}
+          />
         ) : (
-          <ChevronLast className="size-5" />
+          <ChevronLast className="size-5" strokeWidth={1.75} />
         )}
       </button>
     </div>

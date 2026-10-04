@@ -6,22 +6,29 @@ import { ChevronRight } from "lucide-react";
 
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
 export const BreadCrumbs = () => {
   const router = useRouter();
   const pathname = usePathname();
 
   const segments = pathname.split("/").filter(Boolean);
+  const isMarketRoute = segments[0] === "market";
 
-  // ---------------------------------------------------------------------------
-  // Market
-  // ---------------------------------------------------------------------------
+  const rawRouteSymbol = isMarketRoute ? (segments[1] ?? null) : null;
 
-  const rawRouteSymbol = segments[0] ?? null;
+  let routeSymbol: string | null = null;
 
-  // pathname can contain encoded symbols such as %5EN225
-  const routeSymbol = rawRouteSymbol
-    ? decodeURIComponent(rawRouteSymbol)
-    : null;
+  if (rawRouteSymbol) {
+    try {
+      routeSymbol = decodeURIComponent(rawRouteSymbol);
+    } catch {
+      routeSymbol = null;
+    }
+  }
 
   const matchedMarketItem = routeSymbol
     ? ALL_MARKET_SYMBOLS.find(
@@ -29,52 +36,38 @@ export const BreadCrumbs = () => {
           item.symbol === routeSymbol ||
           item.displaySymbol?.toLowerCase() === routeSymbol.toLowerCase(),
       )
-    : null;
+    : undefined;
 
-  // Use full market name for breadcrumb label
-  // e.g. ^NDX -> Nasdaq 100
-  const routeDisplayName = matchedMarketItem?.name ?? routeSymbol;
+  const items: BreadcrumbItem[] = [];
 
-  // ---------------------------------------------------------------------------
-  // Breadcrumb items
-  // ---------------------------------------------------------------------------
-
-  const items: {
-    label: string;
-    href?: string;
-  }[] = [];
-
-  if (routeSymbol && routeDisplayName) {
-    const marketHref = `/${encodeURIComponent(
-      matchedMarketItem?.symbol ?? routeSymbol,
+  if (matchedMarketItem) {
+    const marketHref = `/market/${encodeURIComponent(
+      matchedMarketItem.symbol,
     )}`;
 
-    // Market
-    items.push({
-      label: routeDisplayName,
+    const childPage = segments[2];
 
-      // Only clickable when we're inside a child page
-      href: segments.length > 1 ? marketHref : undefined,
+    items.push({
+      label: matchedMarketItem.name,
+      href: childPage ? marketHref : undefined,
     });
 
-    // News
-    if (segments[1] === "news") {
+    if (childPage === "news") {
       items.push({
         label: "News",
       });
     }
 
-    // Post
-    if (segments[1] === "post") {
+    if (childPage === "post") {
       items.push({
         label: "Post",
       });
     }
+  } else if (!isMarketRoute && segments[0] === "news") {
+    items.push({
+      label: "News",
+    });
   }
-
-  // ---------------------------------------------------------------------------
-  // Scroll border
-  // ---------------------------------------------------------------------------
 
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -94,55 +87,57 @@ export const BreadCrumbs = () => {
     };
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
-
   return (
     <div
       className={`
         sticky top-0 z-20
         flex w-full items-center justify-between
-        border-zinc-100
-        bg-white
-        px-4 py-3
-        dark:border-zinc-800
-        dark:bg-zinc-900
+        border-zinc-100 bg-white px-4 py-3
+        dark:border-zinc-800 dark:bg-zinc-900
         ${isScrolled ? "border-b" : ""}
       `}
     >
-      <div className="flex items-center gap-2 text-sm font-medium text-zinc-500 dark:text-zinc-300">
-        {/* Home */}
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center gap-2 text-sm font-medium text-zinc-500 dark:text-zinc-300"
+      >
         <button
           type="button"
           onClick={() => router.push("/")}
+          aria-current={pathname === "/" ? "page" : undefined}
           className="cursor-pointer transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
         >
           Home
         </button>
 
-        {/* Breadcrumb items */}
-        {items.map((item, index) => (
-          <div
-            key={`${item.label}-${index}`}
-            className="flex items-center gap-2"
-          >
-            <ChevronRight className="h-4 w-4" />
+        {items.map((item, index) => {
+          const href = item.href;
+          const isLast = index === items.length - 1;
 
-            {item.href ? (
-              <button
-                type="button"
-                onClick={() => router.push(item.href!)}
-                className="cursor-pointer transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
-              >
-                {item.label}
-              </button>
-            ) : (
-              <span>{item.label}</span>
-            )}
-          </div>
-        ))}
-      </div>
+          return (
+            <div
+              key={`${item.label}-${index}`}
+              className="flex items-center gap-2"
+            >
+              <ChevronRight aria-hidden="true" className="h-4 w-4" />
+
+              {href ? (
+                <button
+                  type="button"
+                  onClick={() => router.push(href)}
+                  className="cursor-pointer transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
+                >
+                  {item.label}
+                </button>
+              ) : (
+                <span aria-current={isLast ? "page" : undefined}>
+                  {item.label}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </nav>
     </div>
   );
 };

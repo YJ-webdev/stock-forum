@@ -23,7 +23,7 @@ export function PopularBoards({ boards }: PopularBoardsProps) {
         return (
           <Link
             key={item.symbol}
-            href={`/${encodeURIComponent(item.symbol)}`}
+            href={`/market/${encodeURIComponent(item.symbol)}`}
             className={`
               group flex min-w-0 items-center
               rounded-md

@@ -67,7 +67,7 @@ interface MarketCommentsProps {
   prediction: {
     selectedVote: PredictionDirection | null;
     isMarketOpen: boolean;
-
+    isPending: boolean;
     userPoints: number;
 
     betAmount: number;
@@ -279,11 +279,6 @@ export function MarketComments({
       return;
     }
 
-    if (!comment.trim() && !gif) {
-      toast.error("Add a comment or GIF to submit.");
-      return;
-    }
-
     handleVote(direction, betAmount, comment, gif, addComment);
   };
 
@@ -418,6 +413,7 @@ export function MarketComments({
           targetMs={prediction.targetMs}
           countdownType={prediction.countdownType}
           showCountdown={prediction.showCountdown}
+          isPending={prediction.isPending}
         />
       ) : (
         /*

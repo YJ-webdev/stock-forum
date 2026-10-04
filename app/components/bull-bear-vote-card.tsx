@@ -78,8 +78,8 @@ export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
   }, [isVoteOpen]);
 
   return (
-    <article className="relative w-44 mt-2 shrink-0 text-zinc-900 dark:text-zinc-300">
-      <header className=" pb-2">
+    <article className="relative w-44  shrink-0 text-zinc-900 dark:text-zinc-300">
+      <header className=" pb-3">
         <p className="outfit min-w-0 truncate pl-3 text-[13px] tracking-wide text-zinc-800 dark:font-light dark:text-zinc-100">
           {market.displaySymbol}
         </p>

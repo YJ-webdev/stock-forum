@@ -222,7 +222,7 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
 
         toast.success("Comment posted.");
 
-        const targetUrl = `/${encodeURIComponent(
+        const targetUrl = `/market/${encodeURIComponent(
           selectedAssets[0]?.symbol ?? symbol,
         )}?comment=${encodeURIComponent(result.commentId)}`;
 

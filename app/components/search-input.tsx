@@ -71,7 +71,7 @@ export default function SearchInput({
   function handleNavigate(symbol: string) {
     handleAssetSelected();
 
-    router.push(`/${encodeURIComponent(symbol)}`, {
+    router.push(`/market/${encodeURIComponent(symbol)}`, {
       scroll: true,
     });
   }

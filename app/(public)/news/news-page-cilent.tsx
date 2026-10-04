@@ -107,7 +107,7 @@ function NewsRow({ item }: { item: GlobalMarketNewsItem }) {
           {/* Meta */}
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <Link
-              href={`/${encodeURIComponent(item.market.symbol)}`}
+              href={`/market/${encodeURIComponent(item.market.symbol)}`}
               className="
                 rounded-md
                 bg-zinc-100

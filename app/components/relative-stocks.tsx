@@ -274,7 +274,7 @@ function RelativeStockRow({
     ? "text-emerald-700 dark:text-emerald-600"
     : "text-[#cf0000] dark:text-[#ff1414]";
 
-  const href = `/${encodeURIComponent(item.symbol)}`;
+  const href = `/market/${encodeURIComponent(item.symbol)}`;
 
   const handleRowClick = () => {
     setActiveRange("1D");
@@ -537,6 +537,7 @@ function RelativeStockRow({
               className="relative mx-auto w-fit items-center"
             >
               <Vote
+                strokeWidth={1.75}
                 className={`
                   h-5 w-5 self-center
                   transition-colors
