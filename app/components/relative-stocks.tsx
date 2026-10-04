@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MdOutlineHowToVote } from "react-icons/md";
 
 import { SelectedRange, useMarketQuote } from "@/app/hooks/useMarketQuote";
 import { MarketSymbolItem } from "@/lib/data/market-symbols";
@@ -16,6 +15,7 @@ import {
 
 import { TrendSparkline } from "./trend-sparkline";
 import { Numeric } from "./numeric";
+import { Vote } from "lucide-react";
 
 interface RelativeStocksProps {
   items: MarketSymbolItem[];
@@ -536,7 +536,7 @@ function RelativeStockRow({
               }
               className="relative mx-auto w-fit items-center"
             >
-              <MdOutlineHowToVote
+              <Vote
                 className={`
                   h-5 w-5 self-center
                   transition-colors

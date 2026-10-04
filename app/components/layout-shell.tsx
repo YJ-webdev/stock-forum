@@ -1,12 +1,10 @@
+// app/components/layout-shell.tsx
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-
 import type { PanelImperativeHandle } from "react-resizable-panels";
-
-import { Navbar } from "./navbar";
 
 import {
   ResizableHandle,
@@ -14,35 +12,25 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 
+import { Navbar } from "./navbar";
 import { Footer } from "./footer";
 import { BreadCrumbs } from "./breadcrumbs";
+import { SideDataLoading } from "./side-data-loading";
+import PanelLeftStream from "./panel-left-stream";
+import PanelLeftMobileStream from "./panel-left-mobile-stream";
+import { LeaderBoardStream } from "./leader-board-stream";
+import { OnboardingCard } from "./onboarding-card";
+import { WatchlistPanel } from "./watchlist-panel";
 
 import { UserProvider } from "../context/user-context";
 import { PointBalanceProvider } from "../context/point-balance-context";
 
 import type { User } from "@/types/user";
-import { LayoutSideData } from "../actions/query";
-import { SideDataLoading } from "./side-data-loading";
-import PanelLeftStream from "./panel-left-stream";
-import { LeaderBoardStream } from "./leader-board-stream";
-import PanelLeftMobileStream from "./panel-left-mobile-stream";
-import { OnboardingCard } from "./onboarding-card";
-import { WatchlistPanel } from "./watchlist-panel";
+import type { LayoutSideData } from "../actions/query";
 
 const PanelLoading = () => (
   <div className="flex h-full w-full items-center justify-center">
-    <div
-      className="
-        size-5
-        animate-spin
-        rounded-full
-        border-2
-        border-zinc-200
-        border-t-zinc-700
-        dark:border-zinc-700
-        dark:border-t-zinc-200
-      "
-    />
+    <div className="size-5 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-700 dark:border-zinc-700 dark:border-t-zinc-200" />
   </div>
 );
 
@@ -72,7 +60,7 @@ const NotificationPanel = dynamic(
 
 interface LayoutShellProps {
   user: User | null;
-  children: React.ReactNode;
+  children: ReactNode;
   sideDataPromise: Promise<LayoutSideData>;
 }
 
@@ -81,6 +69,11 @@ export default function LayoutShell({
   children,
   sideDataPromise,
 }: LayoutShellProps) {
+  const pathname = usePathname();
+
+  const panelBRef = useRef<PanelImperativeHandle>(null);
+  const mainScrollRef = useRef<HTMLElement>(null);
+
   const [layoutReady, setLayoutReady] = useState(false);
 
   const [isDesktopPanelOpen, setIsDesktopPanelOpen] = useState(true);
@@ -93,12 +86,6 @@ export default function LayoutShell({
 
   const [notificationRefreshKey, setNotificationRefreshKey] = useState(0);
 
-  const pathname = usePathname();
-
-  const panelBRef = useRef<PanelImperativeHandle>(null);
-
-  const mainScrollRef = useRef<HTMLElement>(null);
-
   useEffect(() => {
     mainScrollRef.current?.scrollTo({
       top: 0,
@@ -107,25 +94,12 @@ export default function LayoutShell({
     });
   }, [pathname]);
 
-  const handleToggleLeftPanel = () => {
-    if (window.innerWidth >= 1280) {
-      setIsDesktopPanelOpen((prev) => !prev);
-      return;
-    }
-
-    setOnWrite(false);
-    setOnAccount(false);
-    setOnNotification(false);
-
-    setIsMobilePanelOpen((prev) => !prev);
-  };
-
   useEffect(() => {
     const media = window.matchMedia("(min-width: 768px)");
 
-    const updateSectionB = () => {
+    function updateSectionB() {
       panelBRef.current?.resize(media.matches ? "30%" : "0%");
-    };
+    }
 
     updateSectionB();
 
@@ -141,46 +115,52 @@ export default function LayoutShell({
 
     return () => {
       cancelAnimationFrame(frame1);
-
-      if (frame2) {
-        cancelAnimationFrame(frame2);
-      }
-
+      cancelAnimationFrame(frame2);
       media.removeEventListener("change", updateSectionB);
     };
   }, []);
 
-  const resetPanelB = () => {
+  function handleToggleLeftPanel() {
+    if (window.innerWidth >= 1280) {
+      setIsDesktopPanelOpen((current) => !current);
+      return;
+    }
+
+    setOnWrite(false);
+    setOnAccount(false);
+    setOnNotification(false);
+    setOnFavotites(false);
+
+    setIsMobilePanelOpen((current) => !current);
+  }
+
+  function resetPanelB() {
+    setIsMobilePanelOpen(false);
+
     if (window.innerWidth >= 768) {
       panelBRef.current?.resize("30%");
     }
-  };
+  }
 
-  const handleWrite = () => {
-    setIsMobilePanelOpen(false);
-
+  function handleWrite() {
     resetPanelB();
 
     setOnWrite(true);
     setOnAccount(false);
     setOnNotification(false);
     setOnFavotites(false);
-  };
+  }
 
-  const handleAccount = () => {
-    setIsMobilePanelOpen(false);
-
+  function handleAccount() {
     resetPanelB();
 
     setOnWrite(false);
     setOnAccount(true);
     setOnNotification(false);
     setOnFavotites(false);
-  };
+  }
 
-  const handleNotification = () => {
-    setIsMobilePanelOpen(false);
-
+  function handleNotification() {
     resetPanelB();
 
     setOnWrite(false);
@@ -188,37 +168,31 @@ export default function LayoutShell({
     setOnNotification(true);
     setOnFavotites(false);
 
-    setNotificationRefreshKey((prev) => prev + 1);
-  };
+    setNotificationRefreshKey((current) => current + 1);
+  }
 
-  const handleFavotites = () => {
-    setIsMobilePanelOpen(false);
-
+  function handleFavotites() {
     resetPanelB();
 
     setOnWrite(false);
     setOnAccount(false);
     setOnNotification(false);
     setOnFavotites(true);
-  };
+  }
 
-  const mobilePanelOpen = !!user && (onWrite || onAccount || onNotification);
+  const mobilePanelOpen =
+    Boolean(user) && (onWrite || onAccount || onNotification || onFavotites);
+
+  const showLeaderboard =
+    !onWrite && !onAccount && !onNotification && !onFavotites;
 
   return (
     <UserProvider user={user}>
       <PointBalanceProvider>
         <OnboardingCard />
-        <div
-          className="
-            relative
-            flex
-            min-h-screen
-            flex-col
 
-            md:h-screen
-            md:overflow-hidden
-          "
-        >
+        {/* Fixed navbar 높이 72px을 여기서 한 번만 확보 */}
+        <div className="relative box-border flex h-screen min-h-0 flex-col overflow-hidden pt-18 supports-[height:100dvh]:h-dvh">
           <Navbar
             onTogglePanel={handleToggleLeftPanel}
             onWrite={handleWrite}
@@ -228,54 +202,15 @@ export default function LayoutShell({
           />
 
           {!layoutReady && (
-            <div
-              className="
-                fixed
-                top-18
-                right-0
-                bottom-0
-                left-0
-                z-50
-
-                flex
-                items-center
-                justify-center
-
-                bg-white
-                dark:bg-zinc-900
-              "
-            >
-              <div
-                className="
-                  size-6
-                  animate-spin
-                  rounded-full
-                  border-2
-                  border-zinc-200
-                  border-t-zinc-700
-
-                  dark:border-zinc-700
-                  dark:border-t-zinc-200
-                "
-              />
+            <div className="fixed inset-x-0 bottom-0 top-18 z-50 flex items-center justify-center bg-white dark:bg-zinc-900">
+              <div className="size-6 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-700 dark:border-zinc-700 dark:border-t-zinc-200" />
             </div>
           )}
 
           <Suspense
             fallback={
               isMobilePanelOpen ? (
-                <div
-                  className="
-                    fixed
-                    top-18
-                    right-0
-                    bottom-0
-                    left-0
-                    z-40
-                    bg-white
-                    dark:bg-zinc-950
-                  "
-                >
+                <div className="fixed inset-x-0 bottom-0 top-18 z-40 bg-white dark:bg-zinc-950">
                   <SideDataLoading />
                 </div>
               ) : null
@@ -288,154 +223,82 @@ export default function LayoutShell({
             />
           </Suspense>
 
+          {/* Navbar 아래의 남은 높이를 모든 패널이 공유 */}
           <div
-            className={`
-              min-h-0
-              flex-1
-
-              md:h-screen
-              md:overflow-hidden
-
-              xl:grid
-              xl:transition-[grid-template-columns]
-              xl:duration-300
-              xl:ease-out
-
-              ${
-                isDesktopPanelOpen
-                  ? "xl:grid-cols-[320px_minmax(0,1fr)]"
-                  : "xl:grid-cols-[0px_minmax(0,1fr)]"
-              }
-            `}
+            className={`min-h-0 min-w-0 flex-1 overflow-hidden xl:grid xl:transition-[grid-template-columns] xl:duration-300 xl:ease-out ${
+              isDesktopPanelOpen
+                ? "xl:grid-cols-[320px_minmax(0,1fr)]"
+                : "xl:grid-cols-[0px_minmax(0,1fr)]"
+            }`}
           >
-            <div
-              className="
-                mt-18
-                hidden
-                h-[calc(100vh-72px)]
-                min-h-0
-                min-w-0
-                overflow-hidden
-                xl:block
-              "
-            >
+            {/* Desktop PanelLeft: 기존 grid 토글 유지 */}
+            <div className="hidden h-full min-h-0 min-w-0 overflow-hidden xl:block">
               <Suspense fallback={<SideDataLoading />}>
                 <PanelLeftStream sideDataPromise={sideDataPromise} />
               </Suspense>
             </div>
 
-            <div className="min-w-0 overflow-hidden">
-              <ResizablePanelGroup orientation="horizontal" className="h-full">
+            <div className="h-full min-h-0 min-w-0 overflow-hidden">
+              <ResizablePanelGroup
+                orientation="horizontal"
+                className="h-full min-h-0"
+              >
                 <ResizablePanel
                   defaultSize="70%"
                   minSize="30%"
-                  className="
-                    mt-18
-                    min-h-0
-                    min-w-0
-                    overflow-hidden
-                  "
+                  className="min-h-0 min-w-0 overflow-hidden"
                 >
                   <section
                     ref={mainScrollRef}
-                    className="
-                      h-[calc(100vh-72px)]
-                      w-full
-                      min-h-0
-                      min-w-0
-
-                      overflow-x-hidden
-                      overflow-y-auto
-
-                      bg-white
-                      pb-14
-
-                      dark:bg-zinc-900
-                    "
+                    className="h-full min-h-0 w-full min-w-0 overflow-x-hidden overflow-y-auto bg-white pb-14 dark:bg-zinc-900"
                   >
                     <div className="min-h-full">
                       {pathname !== "/" && <BreadCrumbs />}
-
                       {children}
                     </div>
                   </section>
                 </ResizablePanel>
 
-                <ResizableHandle
-                  className="
-                    hidden
-                    w-0
-                    border-gray-50
-
-                    md:flex
-                  "
-                />
+                <ResizableHandle className="hidden w-0 border-gray-50 md:flex" />
 
                 <ResizablePanel
                   panelRef={panelBRef}
                   defaultSize="30%"
                   minSize="0%"
-                  className="
-                    z-2
-                    h-screen
-                    min-w-0
-                    overflow-hidden
-
-                    border-l
-                    border-gray-100
-                    bg-white
-
-                    dark:border-zinc-800
-                    dark:bg-zinc-900
-                  "
+                  className="z-2 min-h-0 min-w-0 overflow-hidden border-l border-gray-100 bg-white dark:border-zinc-800 dark:bg-zinc-900"
                 >
-                  <div
-                    className="
-                      mt-18
-                      hidden
-                      h-[calc(100vh-72px)]
-                      min-h-0
-                      min-w-0
+                  <div className="hidden h-full min-h-0 min-w-0 flex-col overflow-hidden md:flex">
+                    {/* 오른쪽 콘텐츠만 스크롤 */}
+                    <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+                      {user && onWrite && (
+                        <PostEditor setOnWrite={setOnWrite} />
+                      )}
 
-                      flex-col
-                    
+                      {user && onAccount && !onWrite && (
+                        <AccountPanel setOnAccount={setOnAccount} />
+                      )}
 
-                      overflow-x-hidden
-                      overflow-y-auto
+                      {user && onNotification && (
+                        <NotificationPanel
+                          refreshKey={notificationRefreshKey}
+                          setOnNotification={setOnNotification}
+                        />
+                      )}
 
-                      bg-white
+                      {user && onFavotites && (
+                        <WatchlistPanel setOnFavotites={setOnFavotites} />
+                      )}
 
-                      md:flex
-
-                      dark:bg-zinc-900
-                    "
-                  >
-                    {user && onWrite && <PostEditor setOnWrite={setOnWrite} />}
-
-                    {user && onAccount && !onWrite && (
-                      <AccountPanel setOnAccount={setOnAccount} />
-                    )}
-
-                    {user && onNotification && (
-                      <NotificationPanel
-                        refreshKey={notificationRefreshKey}
-                        setOnNotification={setOnNotification}
-                      />
-                    )}
-                    {user && onFavotites && (
-                      <WatchlistPanel setOnFavotites={setOnFavotites} />
-                    )}
-
-                    {!onWrite &&
-                      !onAccount &&
-                      !onNotification &&
-                      !onFavotites && (
+                      {showLeaderboard && (
                         <Suspense fallback={<SideDataLoading />}>
                           <LeaderBoardStream
                             sideDataPromise={sideDataPromise}
                           />
                         </Suspense>
                       )}
+                    </div>
+
+                    {/* Footer는 스크롤 영역 밖 */}
                     <Footer />
                   </div>
                 </ResizablePanel>
@@ -444,46 +307,25 @@ export default function LayoutShell({
           </div>
 
           {mobilePanelOpen && (
-            <div
-              className="
-                fixed
-                top-18
-                right-0
-                bottom-0
-                left-0
+            <div className="fixed inset-x-0 bottom-0 top-18 z-40 flex min-h-0 flex-col overflow-hidden bg-white md:hidden dark:bg-zinc-900">
+              <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+                {user && onWrite && <PostEditor setOnWrite={setOnWrite} />}
 
-                z-40
+                {user && onAccount && (
+                  <AccountPanel setOnAccount={setOnAccount} />
+                )}
 
-                flex
-                w-full
-                flex-col
+                {user && onNotification && (
+                  <NotificationPanel
+                    refreshKey={notificationRefreshKey}
+                    setOnNotification={setOnNotification}
+                  />
+                )}
 
-                overflow-x-hidden
-                overflow-y-auto
-
-                bg-white
-
-                md:hidden
-
-                dark:bg-zinc-900
-              "
-            >
-              {user && onWrite && <PostEditor setOnWrite={setOnWrite} />}
-
-              {user && onAccount && (
-                <AccountPanel setOnAccount={setOnAccount} />
-              )}
-
-              {user && onNotification && (
-                <NotificationPanel
-                  refreshKey={notificationRefreshKey}
-                  setOnNotification={setOnNotification}
-                />
-              )}
-
-              {user && onFavotites && (
-                <WatchlistPanel setOnFavotites={setOnFavotites} />
-              )}
+                {user && onFavotites && (
+                  <WatchlistPanel setOnFavotites={setOnFavotites} />
+                )}
+              </div>
 
               <Footer />
             </div>
