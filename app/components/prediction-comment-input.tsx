@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 type VoteDirection = "BULL" | "BEAR";
 
 interface PredictionCommentInputProps {
+  variant?: "default" | "popup";
   direction: VoteDirection | null;
   setDirection: React.Dispatch<React.SetStateAction<VoteDirection | null>>;
 
@@ -37,6 +38,7 @@ interface PredictionCommentInputProps {
 }
 
 export function PredictionCommentInput({
+  variant = "default",
   direction,
   setDirection,
   betAmount,

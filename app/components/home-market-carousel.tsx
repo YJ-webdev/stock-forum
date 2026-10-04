@@ -7,10 +7,16 @@ import {
   useState,
   type PointerEvent,
 } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronFirst,
+  ChevronLast,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 import type { MarketSymbolItem } from "@/lib/data/market-symbols";
 import { BullBearVoteCard } from "./bull-bear-vote-card";
+import Link from "next/link";
 
 interface HomeMarketCarouselProps {
   markets: {
@@ -65,27 +71,16 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
   }, [markets, updateScrollButtons]);
 
   function scrollByCard(direction: -1 | 1) {
-    const element = scrollRef.current;
+    const container = scrollRef.current;
+    if (!container) return;
 
-    if (!element) return;
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
 
-    const card = element.querySelector<HTMLElement>("[data-carousel-card]");
-
-    const row = element.firstElementChild;
-
-    const gap = row
-      ? parseFloat(window.getComputedStyle(row).columnGap) || 0
-      : 0;
-
-    const distance = card
-      ? card.getBoundingClientRect().width + gap
-      : element.clientWidth;
-
-    element.scrollBy({
-      left: direction * distance,
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
+    container.scrollBy({
+      left: direction * container.clientWidth,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
     });
   }
 
@@ -98,7 +93,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
 
     const target = event.target as HTMLElement;
 
-    if (target.closest("button, a, input, textarea, select, [role='button']")) {
+    if (target.closest("button, input, textarea, select, [role='button']")) {
       return;
     }
 
@@ -146,7 +141,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
   }
 
   return (
-    <div className="relative w-full min-w-0">
+    <div className="group/markets relative w-full min-w-0">
       <div
         ref={scrollRef}
         role="region"
@@ -191,13 +186,20 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
           isDragging ? "cursor-grabbing select-none" : "cursor-grab"
         }`}
       >
-        <div className="flex w-max min-w-full gap-6">
+        <div className="flex w-max min-w-full gap-6 px-4">
           {markets.map(({ market, initialIsWatchlist }) => (
             <div
               key={market.symbol}
               data-carousel-card
-              className="w-46 shrink-0"
+              className="relative isolate w-44 shrink-0"
             >
+              <Link
+                href={`/${encodeURIComponent(market.symbol)}`}
+                aria-label={`View ${market.name}`}
+                draggable={false}
+                className="absolute inset-0 z-10 cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
+              />
+
               <BullBearVoteCard
                 market={market}
                 initialIsWatchlist={initialIsWatchlist}
@@ -207,27 +209,57 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
         </div>
       </div>
 
-      {canScrollLeft && (
-        <button
-          type="button"
-          aria-label="Previous markets"
-          onClick={() => scrollByCard(-1)}
-          className="absolute left-0 top-1/2 z-20 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
-        >
-          <ChevronLeft className="size-5" />
-        </button>
-      )}
+      <button
+        type="button"
+        aria-label="Previous markets"
+        aria-disabled={!canScrollLeft}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
 
-      {canScrollRight && (
-        <button
-          type="button"
-          aria-label="Next markets"
-          onClick={() => scrollByCard(1)}
-          className="absolute right-0 top-1/2 z-20 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
-        >
+          if (canScrollLeft) {
+            scrollByCard(-1);
+          }
+        }}
+        // Previous
+        className={`absolute left-2 top-1/2 z-30 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm opacity-0 transition-opacity duration-150 group-hover/markets:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 ${
+          canScrollLeft
+            ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            : "cursor-default text-zinc-300 dark:text-zinc-600"
+        }`}
+      >
+        {canScrollLeft ? (
+          <ChevronLeft className="size-5" />
+        ) : (
+          <ChevronFirst className="size-5" />
+        )}
+      </button>
+
+      <button
+        type="button"
+        aria-label="Next markets"
+        aria-disabled={!canScrollRight}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          if (canScrollRight) {
+            scrollByCard(1);
+          }
+        }}
+        // Next
+        className={`absolute right-2 top-1/2 z-30 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm opacity-0 transition-opacity duration-150 group-hover/markets:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 ${
+          canScrollRight
+            ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            : "cursor-default text-zinc-300 dark:text-zinc-600"
+        }`}
+      >
+        {canScrollRight ? (
           <ChevronRight className="size-5" />
-        </button>
-      )}
+        ) : (
+          <ChevronLast className="size-5" />
+        )}
+      </button>
     </div>
   );
 }

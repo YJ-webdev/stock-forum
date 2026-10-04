@@ -404,11 +404,6 @@ export function MarketComments({
       {/* --------------------------------------------------------------- */}
 
       {prediction && showPredictionInput ? (
-        /*
-         * Prediction-enabled asset
-         *
-         * User has not voted yet and voting is currently available.
-         */
         <PredictionCommentInput
           direction={direction}
           setDirection={setDirection}
