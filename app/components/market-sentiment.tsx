@@ -202,7 +202,7 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
             ? `Bull ${bullPercent} percent, Bear ${bearPercent} percent, ${totalVotes} votes`
             : "No votes yet"
         }
-        className={`relative flex h-6 w-full overflow-hidden bg-zinc-100/50 dark:bg-zinc-800 ${
+        className={`relative flex h-7 w-full overflow-hidden bg-zinc-100/50 dark:bg-zinc-800 ${
           !hasVotes
             ? "bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)] bg-size-[3px_3px] text-zinc-200 dark:text-zinc-600"
             : ""

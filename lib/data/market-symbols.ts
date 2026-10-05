@@ -254,9 +254,9 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
     },
 
     {
-      name: "Nasdaq 100",
-      symbol: "^NDX",
-      displaySymbol: "NDX",
+      name: "Nasdaq Composite",
+      symbol: "^IXIC",
+      displaySymbol: "IXIC",
       country: "US",
       region: "America",
       assetType: "index",

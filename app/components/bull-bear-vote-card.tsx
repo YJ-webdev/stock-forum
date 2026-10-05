@@ -108,7 +108,7 @@ export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
         <div
           role="img"
           aria-label={`${market.name} price trend`}
-          className="flex h-18 mt-4 items-center justify-center"
+          className="flex h-16 mt-1 items-center justify-center"
         >
           {data && data.history.length >= 2 ? (
             <TrendSparkline
@@ -128,7 +128,7 @@ export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
 
         <div
           ref={voteRowRef}
-          className="outfit relative h-17"
+          className="outfit relative h-17 pt-1.5 "
           onPointerLeave={(event) => {
             if (event.pointerType === "mouse" && supportsDesktopHover()) {
               const activeElement = document.activeElement;
