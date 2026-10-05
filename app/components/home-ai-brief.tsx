@@ -13,10 +13,8 @@ import {
 interface HomeAIBriefItem {
   country: string;
   name: string;
-  region: string;
 
   coverageDate: string;
-  publishedAt: Date | string;
 
   brief: {
     summary: string;

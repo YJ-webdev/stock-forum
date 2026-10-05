@@ -1,9 +1,10 @@
 // app/components/market-vote-button.tsx
+
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MousePointer2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { PiArrowFatLinesUpFill } from "react-icons/pi";
 import { toast } from "sonner";
 import type { JSONContent } from "@tiptap/react";
@@ -17,11 +18,12 @@ import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { PredictionCommentInput } from "./prediction-comment-input";
 import type { GifResult } from "./gif-picker";
 
-type PopupView = "closed" | "directions" | "editor";
+type PopupView = "closed" | "editor";
 
 interface MarketVoteButtonProps {
+  marketName: string;
   symbol: string;
-  displaySymbol?: string;
+
   initialVote?: VoteDirection | null;
   initialVoteSessionKey?: string | null;
 }
@@ -29,12 +31,6 @@ interface MarketVoteButtonProps {
 interface VoteState {
   lookupKey: string | null;
   direction: VoteDirection | null;
-}
-
-function supportsHover() {
-  return window.matchMedia(
-    "(min-width: 1024px) and (hover: hover) and (pointer: fine)",
-  ).matches;
 }
 
 function getSessionKey(
@@ -74,8 +70,9 @@ function buildCommentContent(
 }
 
 export function MarketVoteButton({
+  marketName,
   symbol,
-  displaySymbol = symbol,
+
   initialVote = null,
   initialVoteSessionKey = null,
 }: MarketVoteButtonProps) {
@@ -87,10 +84,8 @@ export function MarketVoteButton({
   const titleId = useId();
 
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const directionPopupRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const submittingRef = useRef(false);
   const voteRevisionRef = useRef(0);
 
@@ -103,12 +98,6 @@ export function MarketVoteButton({
 
   const [now, setNow] = useState(() => Date.now());
   const [refreshVersion, setRefreshVersion] = useState(0);
-
-  const [position, setPosition] = useState({
-    left: 0,
-    top: 0,
-    width: 224,
-  });
 
   const votingWindow = getVotingWindow(symbol, now);
   const sessionKey = getSessionKey(votingWindow.predictionFor);
@@ -135,15 +124,7 @@ export function MarketVoteButton({
 
   const isOpen = view !== "closed";
 
-  function cancelClose() {
-    if (closeTimerRef.current !== null) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-  }
-
   function closePopup() {
-    cancelClose();
     setView("closed");
     triggerRef.current?.focus();
   }
@@ -190,37 +171,7 @@ export function MarketVoteButton({
     return message === null;
   }
 
-  function openDirections() {
-    if (
-      view === "editor" ||
-      submittingRef.current ||
-      !canStartPrediction(false)
-    ) {
-      return;
-    }
-
-    const trigger = triggerRef.current;
-    if (!trigger) return;
-
-    cancelClose();
-
-    const rect = trigger.getBoundingClientRect();
-    const width = Math.min(224, window.innerWidth - 16);
-
-    setPosition({
-      width,
-      left: Math.max(
-        8,
-        Math.min(rect.right - width, window.innerWidth - width - 8),
-      ),
-      top: rect.top - 8,
-    });
-
-    setView("directions");
-  }
-
   function openEditor(nextDirection: VoteDirection | null) {
-    cancelClose();
     setDraftDirection(nextDirection);
     setBetAmount(50);
     setNow(Date.now());
@@ -230,38 +181,7 @@ export function MarketVoteButton({
   function handleTriggerClick() {
     if (!requireLogin() || !canStartPrediction()) return;
 
-    if (supportsHover()) {
-      openDirections();
-    } else {
-      openEditor(null);
-    }
-  }
-
-  function handleDirectionClick(nextDirection: VoteDirection) {
-    if (!requireLogin() || !canStartPrediction()) return;
-
-    if (userPoints < 50) {
-      toast.error("Add points to your balance to continue voting.", {
-        id: "vote-insufficient-points",
-      });
-      return;
-    }
-
-    openEditor(nextDirection);
-  }
-
-  function scheduleClose() {
-    cancelClose();
-
-    closeTimerRef.current = setTimeout(() => {
-      closeTimerRef.current = null;
-
-      if (directionPopupRef.current?.contains(document.activeElement)) {
-        return;
-      }
-
-      setView((current) => (current === "directions" ? "closed" : current));
-    }, 150);
+    openEditor(null);
   }
 
   async function submitVote(comment: string, gif: GifResult | null) {
@@ -368,7 +288,7 @@ export function MarketVoteButton({
     }
   }
 
-  // 장 시간 갱신 및 화면 복귀 시 투표 재조회.
+  // Refresh market time and reload the vote when returning to the page.
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(Date.now());
@@ -395,7 +315,7 @@ export function MarketVoteButton({
     };
   }, []);
 
-  // 사용자 또는 투표 대상 세션이 바뀌면 투표 조회.
+  // Reload the vote when the user or target session changes.
   useEffect(() => {
     let cancelled = false;
     const revision = voteRevisionRef.current;
@@ -449,53 +369,11 @@ export function MarketVoteButton({
   }, [view]);
 
   useEffect(() => {
-    if (view === "directions" && (!votingWindow.canVote || direction)) {
-      setView("closed");
-    }
-  }, [view, votingWindow.canVote, direction]);
-
-  useEffect(() => {
-    if (view !== "directions") return;
-
-    function handleOutsidePointerDown(event: PointerEvent) {
-      const target = event.target as Node;
-
-      if (
-        triggerRef.current?.contains(target) ||
-        directionPopupRef.current?.contains(target)
-      ) {
-        return;
-      }
-
-      setView("closed");
-    }
-
-    function handleViewportChange() {
-      setView((current) => (current === "directions" ? "closed" : current));
-    }
-
-    document.addEventListener("pointerdown", handleOutsidePointerDown);
-    window.addEventListener("resize", handleViewportChange);
-    window.addEventListener("scroll", handleViewportChange, true);
-
-    return () => {
-      document.removeEventListener("pointerdown", handleOutsidePointerDown);
-      window.removeEventListener("resize", handleViewportChange);
-      window.removeEventListener("scroll", handleViewportChange, true);
-    };
-  }, [view]);
-
-  useEffect(() => {
     if (!isOpen) return;
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) {
         return;
-      }
-
-      if (closeTimerRef.current !== null) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
       }
 
       setView("closed");
@@ -508,21 +386,6 @@ export function MarketVoteButton({
       document.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen]);
-
-  useEffect(() => {
-    return () => {
-      if (closeTimerRef.current !== null) {
-        clearTimeout(closeTimerRef.current);
-      }
-    };
-  }, []);
-
-  const buttonLabel =
-    direction === "BULL"
-      ? "Bullish"
-      : direction === "BEAR"
-        ? "Bearish"
-        : "Vote";
 
   const inputDisabled =
     isSubmitting ||
@@ -545,117 +408,49 @@ export function MarketVoteButton({
 
   return (
     <div className="flex min-h-7 w-full justify-end">
-      {votingWindow.isMarketOpen ? (
-        <span className="inline-flex h-7 items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-          <span
-            aria-hidden="true"
-            className="size-1.5 rounded-full bg-emerald-500"
-          />
-          Market open
+      {direction && !votingWindow.isMarketOpen ? (
+        <span className="flex h-4 items-center text-xs font-normal text-zinc-500 dark:text-zinc-400">
+          Vote completed
         </span>
-      ) : votingWindow.canVote ? (
-        <button
-          ref={triggerRef}
-          type="button"
-          aria-expanded={isOpen}
-          aria-controls={isOpen ? popupId : undefined}
-          aria-label={`${displaySymbol}: ${buttonLabel}`}
-          aria-busy={isVoteLoading || isSubmitting}
-          onClick={handleTriggerClick}
-          onPointerEnter={(event) => {
-            if (event.pointerType === "mouse" && supportsHover()) {
-              openDirections();
-            }
-          }}
-          onPointerLeave={(event) => {
-            if (event.pointerType === "mouse" && supportsHover()) {
-              scheduleClose();
-            }
-          }}
-          className="inline-flex h-7 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-        >
-          {direction ? (
-            <PiArrowFatLinesUpFill
-              className={`size-3.5 ${
-                direction === "BEAR" ? "-scale-y-100" : ""
-              }`}
-            />
-          ) : (
-            <MousePointer2 className="size-3.5 -scale-x-100" />
-          )}
+      ) : (
+        !votingWindow.isMarketOpen &&
+        votingWindow.canVote && (
+          <div className="flex w-full items-center justify-between gap-2">
+            <button
+              ref={triggerRef}
+              type="button"
+              aria-expanded={isOpen}
+              aria-controls={isOpen ? popupId : undefined}
+              aria-label={`${marketName}: Bull`}
+              aria-busy={isVoteLoading || isSubmitting}
+              onClick={handleTriggerClick}
+              className="w-full inline-flex h-7 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              <PiArrowFatLinesUpFill className="size-3.5" />
+              Bull
+            </button>
 
-          {buttonLabel}
-        </button>
-      ) : null}
+            <button
+              type="button"
+              aria-expanded={isOpen}
+              aria-controls={isOpen ? popupId : undefined}
+              aria-label={`${marketName}: Bear`}
+              aria-busy={isVoteLoading || isSubmitting}
+              onClick={handleTriggerClick}
+              className="w-full inline-flex h-7 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              <PiArrowFatLinesUpFill className="size-3.5 -scale-y-100" />
+              Bear
+            </button>
+          </div>
+        )
+      )}
 
       <p role="status" className="sr-only">
         {direction
           ? `${direction === "BULL" ? "Bullish" : "Bearish"} selected`
           : ""}
       </p>
-
-      {view === "directions" &&
-        createPortal(
-          <div
-            ref={directionPopupRef}
-            id={popupId}
-            role="group"
-            aria-label={`${displaySymbol} prediction`}
-            style={{
-              left: position.left,
-              top: position.top,
-              width: position.width,
-              transform: "translateY(-100%)",
-            }}
-            onPointerEnter={cancelClose}
-            onPointerLeave={(event) => {
-              if (event.pointerType === "mouse" && supportsHover()) {
-                scheduleClose();
-              }
-            }}
-            onBlur={(event) => {
-              const nextTarget = event.relatedTarget as Node | null;
-
-              if (
-                nextTarget &&
-                (event.currentTarget.contains(nextTarget) ||
-                  triggerRef.current?.contains(nextTarget))
-              ) {
-                return;
-              }
-
-              setView((current) =>
-                current === "directions" ? "closed" : current,
-              );
-            }}
-            className="fixed z-100 rounded-xl border border-zinc-200 bg-white p-3 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
-          >
-            <p className="mb-3 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-              {displaySymbol} prediction
-            </p>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleDirectionClick("BULL")}
-                className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-emerald-600 text-sm font-medium text-white hover:bg-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-              >
-                <PiArrowFatLinesUpFill className="size-4" />
-                Bull
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDirectionClick("BEAR")}
-                className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-              >
-                <PiArrowFatLinesUpFill className="size-4 -scale-y-100" />
-                Bear
-              </button>
-            </div>
-          </div>,
-          document.body,
-        )}
 
       {view === "editor" &&
         createPortal(
@@ -680,7 +475,7 @@ export function MarketVoteButton({
                   id={titleId}
                   className="text-sm font-medium text-zinc-700 dark:text-zinc-200"
                 >
-                  {displaySymbol} prediction
+                  {marketName} prediction
                 </h2>
 
                 <button

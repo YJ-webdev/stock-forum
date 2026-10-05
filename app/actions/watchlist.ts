@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
+import { getVotingWindow } from "@/lib/utils/get-voting-window";
+import { HomeMarketEntry } from "@/types/home-market";
 
 const DEFAULT_HOME_MARKETS = [
   "^GSPC", // S&P 500
@@ -120,13 +122,14 @@ export async function toggleMarketWatchlist(symbol: string) {
   };
 }
 
-export async function getHomeMarkets() {
+export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
   const session = await auth();
+  const userId = session?.user?.id;
 
-  const watchlist = session?.user?.id
+  const watchlist = userId
     ? await prisma.watchlist.findMany({
         where: {
-          userId: session.user.id,
+          userId,
         },
         orderBy: [{ createdAt: "asc" }, { id: "asc" }],
         select: {
@@ -144,7 +147,7 @@ export async function getHomeMarkets() {
 
   const selectedSymbols = new Set<string>();
 
-  const result: {
+  const candidates: {
     market: (typeof ALL_MARKET_SYMBOLS)[number];
     initialIsWatchlist: boolean;
   }[] = [];
@@ -158,13 +161,99 @@ export async function getHomeMarkets() {
 
     selectedSymbols.add(symbol);
 
-    result.push({
+    candidates.push({
       market,
       initialIsWatchlist: watchlistSymbols.has(symbol),
     });
-
-    if (result.length === 20) break;
   }
 
-  return result;
+  const nowMs = Date.now();
+
+  const marketsWithVoting = candidates.map((item) => ({
+    ...item,
+    votingWindow: getVotingWindow(item.market.symbol, nowMs),
+  }));
+
+  const voteTargets = marketsWithVoting.flatMap(({ market, votingWindow }) => {
+    if (
+      market.assetType !== "index" ||
+      votingWindow.isMarketOpen ||
+      !votingWindow.canVote ||
+      !votingWindow.predictionFor
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        symbol: market.symbol,
+        sessionDate: votingWindow.predictionFor,
+      },
+    ];
+  });
+
+  const predictions =
+    userId && voteTargets.length > 0
+      ? await prisma.prediction.findMany({
+          where: {
+            userId,
+            OR: voteTargets,
+          },
+          select: {
+            symbol: true,
+            sessionDate: true,
+          },
+        })
+      : [];
+
+  function getVoteKey(symbol: string, sessionDate: Date) {
+    return JSON.stringify([symbol, sessionDate.toISOString()]);
+  }
+
+  const votedSessions = new Set(
+    predictions.map((prediction) =>
+      getVoteKey(prediction.symbol, prediction.sessionDate),
+    ),
+  );
+
+  function getPriority(item: (typeof marketsWithVoting)[number]) {
+    const { market, votingWindow } = item;
+
+    if (market.assetType !== "index") return 3;
+
+    if (
+      votingWindow.isMarketOpen ||
+      !votingWindow.canVote ||
+      !votingWindow.predictionFor
+    ) {
+      return 2;
+    }
+
+    const hasVoted = votedSessions.has(
+      getVoteKey(market.symbol, votingWindow.predictionFor),
+    );
+
+    return hasVoted ? 1 : 0;
+  }
+
+  return marketsWithVoting
+    .map((item, originalIndex) => ({
+      ...item,
+      originalIndex,
+      priority: getPriority(item),
+    }))
+    .sort(
+      (a, b) => a.priority - b.priority || a.originalIndex - b.originalIndex,
+    )
+    .slice(0, 20)
+    .map(({ market, initialIsWatchlist }) => ({
+      market: {
+        symbol: market.symbol,
+        providerSymbol: market.providerSymbol,
+        name: market.name,
+        displaySymbol: market.displaySymbol,
+        assetType: market.assetType,
+      },
+      initialIsWatchlist,
+    }));
 }

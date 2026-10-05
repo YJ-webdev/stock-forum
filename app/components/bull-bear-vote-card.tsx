@@ -8,11 +8,13 @@ import type { MarketSymbolItem } from "@/lib/data/market-symbols";
 import { Numeric } from "./numeric";
 import { TrendSparkline } from "./trend-sparkline";
 import { MarketVoteButton } from "./market-vote-button";
+import { MarketSentiment } from "./market-sentiment";
+import { HomeMarketItem } from "@/types/home-market";
 
 type Direction = "BULL" | "BEAR";
 
 interface BullBearVoteCardProps {
-  market: MarketSymbolItem;
+  market: HomeMarketItem;
   initialIsWatchlist: boolean;
 }
 
@@ -86,7 +88,7 @@ export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
 
         <h3
           title={market.name}
-          className="outfit mt-0.5 truncate pl-3 text-2xl font-semibold tracking-normal text-gray-500/50 dark:text-zinc-600"
+          className="outfit truncate pl-3 text-2xl font-semibold tracking-normal text-gray-500/50 dark:text-zinc-600"
         >
           {market.name}
         </h3>
@@ -126,7 +128,7 @@ export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
 
         <div
           ref={voteRowRef}
-          className="outfit relative h-7"
+          className="outfit relative h-17"
           onPointerLeave={(event) => {
             if (event.pointerType === "mouse" && supportsDesktopHover()) {
               const activeElement = document.activeElement;
@@ -160,10 +162,11 @@ export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
           }}
         >
           {market.assetType === "index" && (
-            <div className="relative z-20 ml-auto w-fit">
+            <div className="relative flex flex-col gap-2  z-20">
+              <MarketSentiment symbol={market.symbol} />
               <MarketVoteButton
-                symbol={market.symbol} // 실제 심볼: ^GSPC, ^DJI, ^KS11
-                displaySymbol={market.displaySymbol}
+                marketName={market.name}
+                symbol={market.symbol}
               />
             </div>
           )}

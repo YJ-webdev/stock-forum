@@ -1,3 +1,5 @@
+// app/components/home-market-carousel.tsx
+
 "use client";
 
 import {
@@ -13,16 +15,13 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-
-import type { MarketSymbolItem } from "@/lib/data/market-symbols";
-import { BullBearVoteCard } from "./bull-bear-vote-card";
 import Link from "next/link";
 
+import { BullBearVoteCard } from "./bull-bear-vote-card";
+import { HomeMarketEntry } from "@/types/home-market";
+
 interface HomeMarketCarouselProps {
-  markets: {
-    market: MarketSymbolItem;
-    initialIsWatchlist: boolean;
-  }[];
+  markets: HomeMarketEntry[];
 }
 
 interface DragState {
@@ -233,7 +232,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
             strokeWidth={1.75}
           />
         ) : (
-          <ChevronFirst className="size-5 " strokeWidth={1.75} />
+          <ChevronFirst className="size-5" strokeWidth={1.75} />
         )}
       </button>
 

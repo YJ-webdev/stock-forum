@@ -101,13 +101,11 @@ export async function getHomeCountryBriefs() {
       coverageDate: { not: null },
       publishedAt: { not: null },
     },
-
     select: {
       country: true,
       content: true,
       sources: true,
       coverageDate: true,
-      publishedAt: true,
     },
   });
 
@@ -116,13 +114,13 @@ export async function getHomeCountryBriefs() {
   return BRIEF_COUNTRIES.flatMap((config) => {
     const item = savedByCountry.get(config.country);
 
-    if (!item?.content || !item.coverageDate || !item.publishedAt) {
+    if (!item?.content || !item.coverageDate) {
       return [];
     }
 
     const brief = parseBriefContent(item.content);
 
-    if (!brief) {
+    if (!brief || !brief.summary.trim()) {
       return [];
     }
 
@@ -130,11 +128,15 @@ export async function getHomeCountryBriefs() {
       {
         country: config.country,
         name: config.name,
-        region: config.region,
         coverageDate: item.coverageDate,
-        publishedAt: item.publishedAt,
-        brief,
-        sources: parseBriefSources(item.sources),
+        brief: {
+          summary: brief.summary,
+          keyFactors: brief.keyFactors,
+        },
+        sources: parseBriefSources(item.sources).map((source) => ({
+          title: source.title,
+          url: source.url,
+        })),
       },
     ];
   });
