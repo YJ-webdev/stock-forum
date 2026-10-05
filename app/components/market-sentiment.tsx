@@ -171,7 +171,7 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
 
   if (predictionMs === null) {
     return (
-      <div className="outfit flex h-6 items-center text-xs text-zinc-400 dark:text-zinc-500">
+      <div className="outfit flex h-7 items-center text-xs text-zinc-400 dark:text-zinc-500">
         Sentiment unavailable
       </div>
     );
@@ -184,7 +184,7 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
 
   if (!stats) {
     return (
-      <div className="outfit flex h-6 items-center text-xs text-zinc-400 dark:text-zinc-500">
+      <div className="outfit flex h-7 items-center text-xs text-zinc-400 dark:text-zinc-500">
         {hasError ? "Sentiment unavailable" : "Loading sentiment…"}
       </div>
     );
