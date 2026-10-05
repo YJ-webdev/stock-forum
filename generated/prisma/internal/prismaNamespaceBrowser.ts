@@ -63,7 +63,7 @@ export const ModelName = {
   CommentLike: 'CommentLike',
   ReplyLike: 'ReplyLike',
   MarketAsset: 'MarketAsset',
-  MarketAiBrief: 'MarketAiBrief',
+  CountryAiBrief: 'CountryAiBrief',
   MarketNews: 'MarketNews',
   AccountBalance: 'AccountBalance',
   Watchlist: 'Watchlist',
@@ -252,7 +252,6 @@ export const MarketAssetScalarFieldEnum = {
   high: 'high',
   low: 'low',
   volume: 'volume',
-  aiBriefEnabled: 'aiBriefEnabled',
   newsLastFetchedAt: 'newsLastFetchedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -261,18 +260,19 @@ export const MarketAssetScalarFieldEnum = {
 export type MarketAssetScalarFieldEnum = (typeof MarketAssetScalarFieldEnum)[keyof typeof MarketAssetScalarFieldEnum]
 
 
-export const MarketAiBriefScalarFieldEnum = {
-  id: 'id',
-  marketSymbol: 'marketSymbol',
+export const CountryAiBriefScalarFieldEnum = {
+  country: 'country',
+  enabled: 'enabled',
   content: 'content',
   sources: 'sources',
-  lastCheckedAt: 'lastCheckedAt',
+  coverageDate: 'coverageDate',
   publishedAt: 'publishedAt',
+  lastCheckedAt: 'lastCheckedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
-export type MarketAiBriefScalarFieldEnum = (typeof MarketAiBriefScalarFieldEnum)[keyof typeof MarketAiBriefScalarFieldEnum]
+export type CountryAiBriefScalarFieldEnum = (typeof CountryAiBriefScalarFieldEnum)[keyof typeof CountryAiBriefScalarFieldEnum]
 
 
 export const MarketNewsScalarFieldEnum = {

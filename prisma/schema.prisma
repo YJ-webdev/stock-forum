@@ -306,32 +306,27 @@ model MarketAsset {
   predictions    Prediction[]
   news           MarketNews[]
 
-  aiBriefEnabled Boolean        @default(false)
-  aiBrief        MarketAiBrief?
-
   newsLastFetchedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model MarketAiBrief {
-  id String @id @default(cuid())
+model CountryAiBrief {
+  country String @id
 
-  marketSymbol String      @unique
-  market       MarketAsset @relation(fields: [marketSymbol],references: [symbol],onDelete: Cascade)
+  enabled Boolean @default(false)
 
-  content String
-  sources Json?
-
+  content       String?
+  sources       Json?
+  coverageDate  String?
+  publishedAt   DateTime?
   lastCheckedAt DateTime?
-  publishedAt   DateTime
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([publishedAt])
 }
+
 
 model MarketNews {
   id String @id @default(cuid())

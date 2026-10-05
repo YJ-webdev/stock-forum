@@ -89,7 +89,7 @@ export function LeaderBoard({ traders }: LeaderBoardProps) {
           </div>
         )}
 
-        {traders.length > 0 && (
+        {/* {traders.length > 0 && (
           <button
             type="button"
             aria-label="View more traders"
@@ -105,7 +105,7 @@ export function LeaderBoard({ traders }: LeaderBoardProps) {
           >
             <Ellipsis className="mx-auto size-4" />
           </button>
-        )}
+        )} */}
       </div>
     </div>
   );

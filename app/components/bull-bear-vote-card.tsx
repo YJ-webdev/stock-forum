@@ -84,12 +84,12 @@ export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
           {market.displaySymbol}
         </p>
 
-        <h2
+        <h3
           title={market.name}
           className="outfit mt-0.5 truncate pl-3 text-2xl font-semibold tracking-normal text-gray-500/50 dark:text-zinc-600"
         >
           {market.name}
-        </h2>
+        </h3>
       </header>
 
       <div className=" pb-2 ">
@@ -106,7 +106,7 @@ export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
         <div
           role="img"
           aria-label={`${market.name} price trend`}
-          className="flex h-20 items-center justify-center"
+          className="flex h-18 mt-4 items-center justify-center"
         >
           {data && data.history.length >= 2 ? (
             <TrendSparkline

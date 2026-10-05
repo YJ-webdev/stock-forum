@@ -186,7 +186,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
           isDragging ? "cursor-grabbing select-none" : "cursor-grab"
         }`}
       >
-        <div className="flex w-max min-w-full gap-6 px-4">
+        <div className="flex w-max min-w-full gap-8 px-4">
           {markets.map(({ market, initialIsWatchlist }) => (
             <div
               key={market.symbol}

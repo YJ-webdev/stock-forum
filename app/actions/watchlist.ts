@@ -5,7 +5,16 @@ import { prisma } from "@/lib/prisma";
 
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 
-const DEFAULT_HOME_MARKETS = ["^GSPC", "^NDX", "^DJI", "^RUT", "^KS11"];
+const DEFAULT_HOME_MARKETS = [
+  "^GSPC", // S&P 500
+  "^NDX", // Nasdaq 100
+  "^GDAXI", // DAX
+  "^FTSE", // FTSE 100
+  "^N225", // Nikkei 225
+  "^KS11", // KOSPI
+  "^HSI", // Hang Seng
+  "^NSEI", // NIFTY 50
+];
 
 export async function addMarketsToWatchlist(symbols: string[]) {
   const session = await auth();

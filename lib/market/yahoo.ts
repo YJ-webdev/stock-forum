@@ -474,3 +474,93 @@ export async function getSettlementCandle(
 
   return settlementCandle;
 }
+
+// -----------------------------------------------------------------------------
+// DAILY AI BRIEF SNAPSHOT
+// -----------------------------------------------------------------------------
+
+export async function getDailyAiBriefSnapshot(
+  symbol: string,
+  now = new Date(),
+) {
+  const market = getMarket(symbol);
+
+  if (!market?.marketSchedule) {
+    throw new Error(`Market schedule unavailable for ${symbol}.`);
+  }
+
+  const schedule = TRADING_HOURS[market.marketSchedule];
+
+  if (!schedule) {
+    throw new Error(`Trading hours unavailable for ${symbol}.`);
+  }
+
+  const nowMs = now.getTime();
+
+  if (!Number.isFinite(nowMs)) {
+    throw new Error("Invalid snapshot time.");
+  }
+
+  const graceMs = 30 * 60 * 1000;
+
+  const candles = await getDailyCandles({
+    symbol,
+    period1: new Date(nowMs - 30 * 24 * 60 * 60 * 1000),
+    period2: new Date(nowMs + 24 * 60 * 60 * 1000),
+  });
+
+  // Select only sessions whose scheduled close plus grace period has passed.
+  const completed = candles.filter((candle) => {
+    const closeMs = getTimestampForMarketTime(
+      candle.date,
+      schedule.close,
+      schedule.timezone,
+    );
+
+    return (
+      Number.isFinite(candle.timestampMs) &&
+      Number.isFinite(closeMs) &&
+      nowMs >= closeMs + graceMs &&
+      candle.open > 0 &&
+      candle.high > 0 &&
+      candle.low > 0 &&
+      candle.close > 0 &&
+      candle.high >= candle.low
+    );
+  });
+
+  const latest = completed[completed.length - 1];
+
+  // Require a distinct earlier trading date.
+  const previous = latest
+    ? completed.filter((candle) => candle.date < latest.date).at(-1)
+    : undefined;
+
+  if (!latest || !previous) {
+    throw new Error(`Not enough completed trading sessions for ${symbol}.`);
+  }
+
+  const closeMs = getTimestampForMarketTime(
+    latest.date,
+    schedule.close,
+    schedule.timezone,
+  );
+
+  const change = latest.close - previous.close;
+  const changePercent = (change / previous.close) * 100;
+
+  return {
+    sessionDate: latest.date,
+    marketDataAsOf: new Date(closeMs).toISOString(),
+    exchangeTimezone: schedule.timezone,
+    isSessionClosed: true as const,
+
+    marketData: {
+      lastPrice: latest.close,
+      change,
+      changePercent,
+      high: latest.high,
+      low: latest.low,
+    },
+  };
+}

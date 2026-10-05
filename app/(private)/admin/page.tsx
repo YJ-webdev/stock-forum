@@ -1,29 +1,24 @@
-import { getAiBriefMarkets } from "@/app/actions/ai-market-brief";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
+import { getAiBriefCountries } from "@/app/actions/ai-country-brief";
+import { AiBriefCountryManager } from "@/app/components/ai-brief-country-manager";
 import { AiBriefTest } from "./_components/ai-brief-test";
-import { AiBriefMarketManager } from "@/app/components/ai-brief-market-manager";
 
 export default async function AdminPage() {
-  const markets = await getAiBriefMarkets();
+  const session = await auth();
+
+  if (!session?.user || session.user.role !== "ADMIN") {
+    redirect("/");
+  }
+
+  const countries = await getAiBriefCountries();
 
   return (
-    <main className="mx-auto w-full max-w-5xl">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight">
-          AI Market Brief
-        </h1>
+    <main className="mx-auto w-full max-w-4xl space-y-8 px-4 py-8">
+      <AiBriefCountryManager countries={countries} />
 
-        <p className="mt-1 text-sm text-muted-foreground">
-          Select which markets should be monitored for AI-generated market
-          briefs.
-        </p>
-      </div>
-
-      <div className="space-y-6">
-        <AiBriefMarketManager markets={markets} />
-
-        <AiBriefTest />
-      </div>
+      <AiBriefTest />
     </main>
   );
 }
