@@ -9,7 +9,7 @@ import { HomeMarketEntry } from "@/types/home-market";
 
 const DEFAULT_HOME_MARKETS = [
   "^GSPC", // S&P 500
-  "^NDX", // Nasdaq 100
+  "^IXIC", // Nasdaq 100
   "^GDAXI", // DAX
   "^FTSE", // FTSE 100
   "^N225", // Nikkei 225
