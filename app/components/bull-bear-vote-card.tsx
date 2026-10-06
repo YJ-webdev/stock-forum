@@ -66,7 +66,7 @@ export function BullBearVoteCard({
         <div
           role="img"
           aria-label={`${market.name} price trend`}
-          className="mt-1 flex h-16 items-center justify-center"
+          className="mt-2 flex h-16 items-center justify-center"
         >
           {data && data.history.length >= 2 ? (
             <TrendSparkline
