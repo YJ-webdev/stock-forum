@@ -210,10 +210,10 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
         {hasVotes && (
           <div
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 flex h-px"
+            className="absolute inset-x-0 bottom-0 flex h-[1.5px]"
           >
             <div
-              className={`h-full bg-emerald-500 ${WIDTH_TRANSITION}`}
+              className={`h-full bg-emerald-600 dark:bg-emerald-400 ${WIDTH_TRANSITION}`}
               style={{ width: `${bullPercent}%` }}
             />
 

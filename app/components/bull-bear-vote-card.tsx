@@ -34,8 +34,8 @@ export function BullBearVoteCard({
   const changeColor = !data
     ? "text-zinc-400 dark:text-zinc-500"
     : data.isPositive
-      ? "text-emerald-600 dark:text-emerald-400"
-      : "text-[#cf0000] dark:text-[#ff1414]";
+      ? "text-[#047857] dark:text-emerald-400"
+      : "text-[#cf0000] dark:text-[#ff1414] dark:font-semibold";
 
   return (
     <article className="relative w-44 shrink-0 text-zinc-900 dark:text-zinc-300">
@@ -53,7 +53,7 @@ export function BullBearVoteCard({
       </header>
 
       <div className="pb-2">
-        <Numeric className="pl-3 text-[18px] font-extrabold tracking-tight tabular-nums text-zinc-800 dark:text-zinc-200">
+        <Numeric className="pl-3 text-[18px] font-extrabold tracking-normal tabular-nums text-zinc-800 dark:text-zinc-200">
           {data?.value ?? "—"}
         </Numeric>
 

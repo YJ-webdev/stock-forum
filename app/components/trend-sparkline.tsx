@@ -184,7 +184,7 @@ export function TrendSparkline({
   // --------------------------------------------------
 
   const strokeColorClass = isPositive
-    ? "text-[#047857] dark:text-[#059669]"
+    ? "text-[#047857] dark:text-emerald-400"
     : "text-[#cf0000] dark:text-[#ff1414]";
 
   const lastPoint = coords[coords.length - 1];
@@ -293,7 +293,7 @@ export function TrendSparkline({
             y2={lunchBridgeY}
             stroke="currentColor"
             strokeDasharray="2.5 2.5"
-            strokeWidth="1.25"
+            strokeWidth="1.5"
             opacity="0.55"
           />
         </>
