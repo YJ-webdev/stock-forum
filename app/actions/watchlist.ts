@@ -287,65 +287,47 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
   }
 
   const voteDirections = new Map<string, VoteDirection>();
-  const sessionsWithVotes = new Set<string>();
 
-  if (voteTargets.length > 0) {
-    if (userId) {
-      const predictions = await prisma.prediction.findMany({
-        where: {
-          userId,
-          OR: voteTargets,
-        },
-        select: {
-          symbol: true,
-          sessionDate: true,
-          direction: true,
-        },
-      });
+  if (userId && voteTargets.length > 0) {
+    const predictions = await prisma.prediction.findMany({
+      where: {
+        userId,
+        OR: voteTargets,
+      },
+      select: {
+        symbol: true,
+        sessionDate: true,
+        direction: true,
+      },
+    });
 
-      for (const prediction of predictions) {
-        voteDirections.set(
-          getVoteKey(prediction.symbol, prediction.sessionDate),
-          prediction.direction,
-        );
-      }
-    } else {
-      const publicVoteCounts = await prisma.prediction.groupBy({
-        by: ["symbol", "sessionDate"],
-        where: {
-          OR: voteTargets,
-        },
-        _count: {
-          _all: true,
-        },
-      });
-
-      for (const item of publicVoteCounts) {
-        sessionsWithVotes.add(getVoteKey(item.symbol, item.sessionDate));
-      }
+    for (const prediction of predictions) {
+      voteDirections.set(
+        getVoteKey(prediction.symbol, prediction.sessionDate),
+        prediction.direction,
+      );
     }
   }
 
   function getPriority(item: (typeof marketsWithVoting)[number]) {
     const { market, votingWindow } = item;
 
-    if (market.assetType !== "index") return 3;
+    if (market.assetType !== "index") return 2;
 
-    if (
-      votingWindow.isMarketOpen ||
-      !votingWindow.canVote ||
-      !votingWindow.predictionFor
-    ) {
-      return 2;
-    }
+    const isVotingActive =
+      !votingWindow.isMarketOpen &&
+      votingWindow.canVote &&
+      Boolean(votingWindow.predictionFor);
 
-    const voteKey = getVoteKey(market.symbol, votingWindow.predictionFor);
+    return isVotingActive ? 0 : 1;
+  }
 
-    if (!userId) {
-      return sessionsWithVotes.has(voteKey) ? 0 : 1;
-    }
+  function getRegionPriority(market: (typeof ALL_MARKET_SYMBOLS)[number]) {
+    if (market.country === "US") return 0;
+    if (market.region === "Europe") return 1;
+    if (market.region === "Asia") return 2;
 
-    return voteDirections.has(voteKey) ? 1 : 0;
+    return 3;
   }
 
   return marketsWithVoting
@@ -353,9 +335,13 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
       ...item,
       originalIndex,
       priority: getPriority(item),
+      regionPriority: getRegionPriority(item.market),
     }))
     .sort(
-      (a, b) => a.priority - b.priority || a.originalIndex - b.originalIndex,
+      (a, b) =>
+        a.priority - b.priority ||
+        a.regionPriority - b.regionPriority ||
+        a.originalIndex - b.originalIndex,
     )
     .slice(0, 20)
     .map(({ market, initialIsWatchlist, votingWindow }) => {
