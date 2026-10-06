@@ -29,7 +29,7 @@ const SENTIMENT_REFRESH_MS = 60_000;
 
 const DOT_PATTERN =
   "bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)] " +
-  "bg-size-[3px_3px] text-zinc-200 dark:text-zinc-600";
+  "bg-size-[3px_3px] text-zinc-200 dark:text-zinc-600/50";
 
 const WIDTH_TRANSITION =
   "transition-[width] duration-300 motion-reduce:transition-none";
@@ -182,11 +182,11 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
             : undefined
         }
         aria-hidden={stats ? undefined : true}
-        className={`relative flex h-7 w-full items-center overflow-hidden bg-zinc-100/50 dark:bg-zinc-800 ${DOT_PATTERN}`}
+        className={`relative flex h-7 w-full items-center overflow-hidden bg-white dark:bg-zinc-900 ${DOT_PATTERN}`}
       >
         <div
           aria-hidden="true"
-          className="flex w-full items-center justify-around pb-0.75 text-[13px] leading-none tabular-nums"
+          className="flex w-full items-center justify-around text-[13px] leading-none tabular-nums"
         >
           {hasVotes ? (
             <>
@@ -210,7 +210,7 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
         {hasVotes && (
           <div
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 flex h-0.75"
+            className="absolute inset-x-0 bottom-0 flex h-px"
           >
             <div
               className={`h-full bg-emerald-500 ${WIDTH_TRANSITION}`}

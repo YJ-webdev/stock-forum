@@ -16,8 +16,9 @@ import {
   ChevronRight,
   Plus,
   Pin,
-  Diff,
 } from "lucide-react";
+import { FaPlusMinus } from "react-icons/fa6";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ import { BullBearVoteCard } from "./bull-bear-vote-card";
 import { MarketPicker } from "./market-picker";
 import { useCurrentUser } from "../context/user-context";
 import { MAX_WATCHLIST_MARKETS } from "@/lib/constants/watchlist";
+import { PiPlusMinus } from "react-icons/pi";
 
 interface HomeMarketCarouselProps {
   markets: HomeMarketEntry[];
@@ -397,12 +399,12 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                   aria-haspopup="dialog"
                   className="outfit flex h-60 w-44 shrink-0 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50/60 text-sm text-zinc-500 transition-colors hover:border-zinc-400 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-800/20 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:bg-zinc-800/50"
                 >
-                  <Diff
-                    className="size-5"
-                    strokeWidth={1.5}
+                  <PiPlusMinus
+                    className="size-5 shrink-0 "
                     aria-hidden="true"
+                    strokeWidth={1.5}
                   />
-                  Add or remove markets
+                  Manage watchlist
                 </button>
               </div>
             </div>
