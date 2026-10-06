@@ -24,41 +24,14 @@ import {
 
 import { NATIONALITIES } from "@/lib/data/nationalities";
 import { LANGUAGES } from "@/lib/data/languages";
-import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 
 import { updateAccountPreferences } from "@/app/actions/update-account-preferences";
 
 import { useCurrentUser, useSetCurrentUser } from "../context/user-context";
 import { addMarketsToWatchlist } from "../actions/watchlist";
+import { MarketPicker } from "./market-picker";
 
 type OnboardingStep = 1 | 2;
-
-// -----------------------------------------------------------------------------
-// Market groups
-// -----------------------------------------------------------------------------
-
-const MARKET_GROUPS = Object.entries(
-  ALL_MARKET_SYMBOLS.reduce<
-    Record<string, Record<string, typeof ALL_MARKET_SYMBOLS>>
-  >((groups, asset) => {
-    const group =
-      asset.region.toLowerCase() === "global" ? asset.assetType : asset.region;
-
-    const assetType = asset.assetType;
-
-    if (!groups[group]) {
-      groups[group] = {};
-    }
-
-    if (!groups[group][assetType]) {
-      groups[group][assetType] = [];
-    }
-
-    groups[group][assetType].push(asset);
-
-    return groups;
-  }, {}),
-);
 
 // -----------------------------------------------------------------------------
 // Component
@@ -80,10 +53,6 @@ export function OnboardingCard() {
   if (!user || user.nationality) {
     return null;
   }
-
-  // ---------------------------------------------------------------------------
-  // Market selection
-  // ---------------------------------------------------------------------------
 
   const toggleMarket = (symbol: string) => {
     setSelectedSymbols((prev) =>
@@ -434,94 +403,11 @@ export function OnboardingCard() {
                   sm:max-h-95
                 "
               >
-                <div className="space-y-8">
-                  {MARKET_GROUPS.map(([region, assetTypes]) => (
-                    <section key={region}>
-                      {/* Region */}
-                      <div
-                        className="
-                          mb-4 text-xs font-medium
-                          uppercase tracking-wide
-                          text-zinc-500
-                          dark:text-zinc-400
-                        "
-                      >
-                        {region}
-                      </div>
-
-                      <div className="space-y-5">
-                        {Object.entries(assetTypes).map(
-                          ([assetType, assets]) => (
-                            <div key={assetType}>
-                              {/* Assets */}
-                              <div className="grid grid-cols-2 gap-2">
-                                {assets.map((asset) => {
-                                  const selected = selectedSymbols.includes(
-                                    asset.symbol,
-                                  );
-
-                                  return (
-                                    <button
-                                      key={asset.symbol}
-                                      type="button"
-                                      disabled={isPending}
-                                      onClick={() => toggleMarket(asset.symbol)}
-                                      className={`
-                                        flex min-h-10 min-w-0
-                                        items-center justify-between
-                                        gap-2 rounded-lg border
-                                        px-3 py-2
-                                        text-left text-sm
-                                        transition-colors
-                                        disabled:cursor-not-allowed
-                                        disabled:opacity-50
-
-                                        ${
-                                          selected
-                                            ? `
-                                              border-zinc-400
-                                              bg-zinc-100
-                                              text-zinc-900
-
-                                              dark:border-zinc-600
-                                              dark:bg-zinc-800
-                                              dark:text-zinc-100
-                                            `
-                                            : `
-                                              border-zinc-200
-                                              bg-transparent
-                                              text-zinc-600
-
-                                              hover:bg-zinc-50
-
-                                              dark:border-zinc-700
-                                              dark:text-zinc-300
-                                              dark:hover:bg-zinc-800/50
-                                            `
-                                        }
-                                      `}
-                                    >
-                                      <span className="min-w-0 truncate">
-                                        {asset.name}
-                                      </span>
-
-                                      {selected && (
-                                        <Check
-                                          className="size-3.5 shrink-0"
-                                          strokeWidth={2}
-                                        />
-                                      )}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ),
-                        )}
-                      </div>
-                    </section>
-                  ))}
-                </div>
+                <MarketPicker
+                  selectedSymbols={selectedSymbols}
+                  onToggle={toggleMarket}
+                  disabled={isPending}
+                />
               </div>
 
               {/* ------------------------------------------------------------ */}

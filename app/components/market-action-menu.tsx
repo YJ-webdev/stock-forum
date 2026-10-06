@@ -44,33 +44,6 @@ const SHARE_PLATFORMS: SharePlatform[] = [
   "Telegram",
 ];
 
-interface KakaoShareSDK {
-  init: (key: string) => void;
-  isInitialized: () => boolean;
-  Share: {
-    sendScrap: (options: { requestUrl: string }) => void;
-  };
-}
-
-const getKakaoSDK = () => {
-  if (typeof window === "undefined") return undefined;
-
-  return (window as Window & { Kakao?: KakaoShareSDK }).Kakao;
-};
-
-const initializeKakao = () => {
-  const sdk = getKakaoSDK();
-  const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
-
-  if (!sdk || !key) return null;
-
-  if (!sdk.isInitialized()) {
-    sdk.init(key);
-  }
-
-  return sdk;
-};
-
 interface MarketActionsMenuProps {
   symbol: string;
   marketName: string;
@@ -156,9 +129,17 @@ export const MarketActionsMenu = ({
 
     startWatchlistTransition(async () => {
       try {
+        // The server checks the limit when adding.
         const result = await toggleMarketWatchlist(symbol);
 
         setIsWatchlist(result.isWatchlist);
+
+        toast.success(
+          result.isWatchlist
+            ? `${marketName} added to your watchlist.`
+            : `${marketName} removed from your watchlist.`,
+          { id: toastId },
+        );
       } catch (error) {
         setIsWatchlist(previousIsWatchlist);
 
