@@ -223,7 +223,7 @@ export function CommentOnlyInput({
               <Button
                 type="button"
                 size="sm"
-                disabled={isPending || comment.trim().length === 0}
+                disabled={isPending || (!comment.trim() && !selectedGif)}
                 onClick={handleComment}
                 className="shrink-0 cursor-pointer"
               >
