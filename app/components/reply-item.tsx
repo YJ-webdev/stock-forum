@@ -240,7 +240,7 @@ export function ReplyItem({
   }, [targetReplyId, reply.id]);
 
   return (
-    <div id={`reply-${reply.id}`} className="relative scroll-mt-24">
+    <div id={`reply-${reply.id}`} className="relative scroll-mt-0">
       {/* ---------------------------------------------------------------
           CURRENT REPLY
       ---------------------------------------------------------------- */}
@@ -522,7 +522,7 @@ export function ReplyItem({
             ---------------------------------------------------------- */
 
             <div className="relative mt-6">
-              <div className="space-y-6">
+              <div className="">
                 {childReplies.map((childReply, index) => {
                   const isLastChild = index === childReplies.length - 1;
 
