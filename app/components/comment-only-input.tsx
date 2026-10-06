@@ -118,23 +118,36 @@ export function CommentOnlyInput({
           <textarea
             value={comment}
             onChange={(e) => {
+              if (!currentUser) return;
+
+              setComment(e.target.value);
+            }}
+            readOnly={!currentUser}
+            tabIndex={currentUser ? 0 : -1}
+            onFocus={(e) => {
+              if (!currentUser) {
+                e.currentTarget.blur();
+              }
+            }}
+            onClick={() => {
               if (!currentUser) {
                 toast.error("Log in to write a comment.", {
                   id: "login-required",
                 });
-                return;
               }
-              setComment(e.target.value);
             }}
             rows={1}
-            placeholder={`${currentUser ? "Write a comment..." : "Log in to comment..."}`}
-            className="
+            placeholder={
+              currentUser ? "Write a comment..." : "Log in to comment..."
+            }
+            className={`
     min-h-11 w-full resize-none
     bg-transparent py-3
     text-[15px] outline-none
     placeholder:text-zinc-500
     placeholder:truncate
-  "
+    ${!currentUser ? "cursor-default caret-transparent" : ""}
+  `}
           />
 
           {/* Selected GIF */}
@@ -210,7 +223,7 @@ export function CommentOnlyInput({
               <Button
                 type="button"
                 size="sm"
-                disabled={isPending}
+                disabled={isPending || comment.trim().length === 0}
                 onClick={handleComment}
                 className="shrink-0 cursor-pointer"
               >

@@ -209,24 +209,38 @@ export function PredictionCommentInput({
           <textarea
             value={comment}
             onChange={(e) => {
+              if (!currentUser) return;
+
+              setComment(e.target.value);
+            }}
+            readOnly={!currentUser}
+            tabIndex={currentUser ? 0 : -1}
+            onFocus={(e) => {
+              if (!currentUser) {
+                e.currentTarget.blur();
+              }
+            }}
+            onClick={() => {
               if (!currentUser) {
                 toast.error("Log in to write a comment.", {
                   id: "login-required",
                 });
-                return;
               }
-
-              setComment(e.target.value);
             }}
             rows={1}
-            placeholder={`${currentUser ? "Write a comment..." : "Log in to make your prediction or comment..."}`}
-            className="
+            placeholder={
+              currentUser
+                ? "Write a comment..."
+                : "Log in to make your prediction or comment..."
+            }
+            className={`
     min-h-11 w-full resize-none
     bg-transparent py-3
     text-[15px] outline-none
     placeholder:text-zinc-500
     placeholder:truncate
-  "
+    ${!currentUser ? "cursor-default caret-transparent" : ""}
+  `}
           />
 
           {/* Selected GIF */}
