@@ -403,7 +403,7 @@ export function MarketVoteButton({
             : null;
 
   return (
-    <div className="flex min-h-7 w-full justify-end">
+    <div className="flex min-h-7  w-full justify-end">
       {direction && !votingWindow.isMarketOpen ? (
         <span className="flex h-4 items-center text-xs font-normal text-zinc-500 dark:text-zinc-400">
           Vote completed
@@ -411,7 +411,7 @@ export function MarketVoteButton({
       ) : (
         !votingWindow.isMarketOpen &&
         votingWindow.canVote && (
-          <div className="flex w-full items-center justify-between gap-2">
+          <div className=" flex w-full items-center justify-between gap-2">
             <button
               ref={triggerRef}
               type="button"
@@ -420,7 +420,7 @@ export function MarketVoteButton({
               aria-label={`${marketName}: Bull`}
               aria-busy={isVoteLoading || isSubmitting}
               onClick={handleTriggerClick}
-              className="w-full inline-flex hover:bg-emerald-600 hover:border-transparent hover:text-white h-7 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300"
+              className="w-full inline-flex hover:bg-emerald-600 hover:border-transparent hover:text-white h-7.5 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300"
             >
               <PiArrowFatLinesUpFill className="size-3.5" />
               Bull
@@ -433,7 +433,7 @@ export function MarketVoteButton({
               aria-label={`${marketName}: Bear`}
               aria-busy={isVoteLoading || isSubmitting}
               onClick={handleTriggerClick}
-              className="w-full inline-flex h-7 hover:bg-[#cf0000] hover-border-transparent hover:text-white cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300 "
+              className="w-full inline-flex h-7.5 hover:bg-[#cf0000] hover:border-transparent hover:text-white cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300"
             >
               <PiArrowFatLinesUpFill className="size-3.5 -scale-y-100" />
               Bear
