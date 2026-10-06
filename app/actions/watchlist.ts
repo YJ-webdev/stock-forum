@@ -139,12 +139,15 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
       })
     : [];
 
+  if (userId && watchlist.length === 0) {
+    return [];
+  }
+
   const watchlistSymbols = new Set(watchlist.map((item) => item.symbol));
 
-  const candidateSymbols = [
-    ...watchlist.map((item) => item.symbol),
-    ...DEFAULT_HOME_MARKETS,
-  ];
+  const candidateSymbols = userId
+    ? watchlist.map((item) => item.symbol)
+    : DEFAULT_HOME_MARKETS;
 
   const selectedSymbols = new Set<string>();
 
@@ -166,6 +169,10 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
       market,
       initialIsWatchlist: watchlistSymbols.has(symbol),
     });
+  }
+
+  if (candidates.length === 0) {
+    return [];
   }
 
   const nowMs = Date.now();
@@ -202,7 +209,6 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
 
   if (voteTargets.length > 0) {
     if (userId) {
-      // One query supplies both sorting and initial button state.
       const predictions = await prisma.prediction.findMany({
         where: {
           userId,
@@ -222,7 +228,6 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
         );
       }
     } else {
-      // Guests: prioritize sessions that already have votes.
       const publicVoteCounts = await prisma.prediction.groupBy({
         by: ["symbol", "sessionDate"],
         where: {
@@ -258,7 +263,6 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
       return sessionsWithVotes.has(voteKey) ? 0 : 1;
     }
 
-    // Signed-in users: unvoted sessions first.
     return voteDirections.has(voteKey) ? 1 : 0;
   }
 
@@ -273,7 +277,6 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
     )
     .slice(0, 20)
     .map(({ market, initialIsWatchlist, votingWindow }) => {
-      // A session key also marks "checked, no vote" for the client.
       const checkedSessionDate =
         userId &&
         market.assetType === "index" &&

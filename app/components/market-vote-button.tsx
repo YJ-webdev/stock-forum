@@ -3,7 +3,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { Check, LockKeyhole, X } from "lucide-react";
 import { PiArrowFatLinesUpFill } from "react-icons/pi";
 import { toast } from "sonner";
 import type { JSONContent } from "@tiptap/react";
@@ -449,11 +449,17 @@ export function MarketVoteButton({
   return (
     <div className="flex min-h-7 w-full justify-end">
       {votingWindow.isMarketOpen ? (
-        <span className="text-right text-xs font-normal leading-4 text-zinc-500 dark:text-zinc-400">
-          Market open · Voting closed
+        <span className="inline-flex h-7.5 items-center gap-1.5 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+          <LockKeyhole
+            className="size-3.5"
+            strokeWidth={1.5}
+            aria-hidden="true"
+          />
+          Voting closed
         </span>
       ) : direction ? (
-        <span className="flex h-4 items-center text-xs font-normal text-zinc-500 dark:text-zinc-400">
+        <span className="inline-flex h-7.5 items-center gap-1.5 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+          <Check className="size-3.5" strokeWidth={1.5} aria-hidden="true" />
           Vote completed
         </span>
       ) : (

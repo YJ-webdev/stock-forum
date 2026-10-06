@@ -34,7 +34,7 @@ const DOT_PATTERN =
 const WIDTH_TRANSITION =
   "transition-[width] duration-300 motion-reduce:transition-none";
 
-const PERCENT_TEXT = "ibmPlexMono font-normal text-zinc-800 dark:text-zinc-100";
+const PERCENT_TEXT = "outfit font-normal text-zinc-800 dark:text-zinc-100";
 
 function getSentimentSession(symbol: string): MarketSession {
   const window = getVotingWindow(symbol, Date.now());
@@ -171,7 +171,7 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
   const bearPercent = stats?.bearPercent ?? 0;
 
   return (
-    <div className="outfit flex w-full items-center">
+    <div className="outfit w-full">
       <div
         role={stats ? "img" : undefined}
         aria-label={
@@ -182,33 +182,11 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
             : undefined
         }
         aria-hidden={stats ? undefined : true}
-        className={`
-          relative flex h-7 w-full overflow-hidden
-          bg-zinc-100/50 dark:bg-zinc-800
-          ${hasVotes ? "" : DOT_PATTERN}
-        `}
+        className={`relative flex h-7 w-full items-center overflow-hidden bg-zinc-100/50 dark:bg-zinc-800 ${DOT_PATTERN}`}
       >
-        {hasVotes && (
-          <>
-            <div
-              className={`h-full bg-neutral-300/50 dark:bg-stone-800/50 ${WIDTH_TRANSITION}`}
-              style={{ width: `${bullPercent}%` }}
-            />
-
-            <div
-              className={`h-full ${DOT_PATTERN} ${WIDTH_TRANSITION}`}
-              style={{ width: `${bearPercent}%` }}
-            />
-          </>
-        )}
-
         <div
           aria-hidden="true"
-          className="
-            pointer-events-none absolute inset-0
-            flex items-center justify-around px-1.5
-            text-[13px] leading-none tabular-nums
-          "
+          className="flex w-full items-center justify-around pb-0.75 text-[13px] leading-none tabular-nums"
         >
           {hasVotes ? (
             <>
@@ -217,9 +195,7 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
               )}
 
               {bearPercent > 0 && (
-                <span
-                  className={`${PERCENT_TEXT} bear-percent dark:font-light`}
-                >
+                <span className={`${PERCENT_TEXT} dark:font-light`}>
                   {bearPercent}%
                 </span>
               )}
@@ -230,6 +206,23 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
             </span>
           )}
         </div>
+
+        {hasVotes && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-x-0 bottom-0 flex h-0.75"
+          >
+            <div
+              className={`h-full bg-emerald-500 ${WIDTH_TRANSITION}`}
+              style={{ width: `${bullPercent}%` }}
+            />
+
+            <div
+              className={`h-full bg-[#cf0000] dark:bg-[#ff1414] ${WIDTH_TRANSITION}`}
+              style={{ width: `${bearPercent}%` }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

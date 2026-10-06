@@ -104,25 +104,28 @@ async function fetchQuote(
   displaySymbol: string,
   assetType: AssetType,
   chartInterval?: ChartInterval,
-) {
+): Promise<void> {
   const entry = getEntry(symbol, range, chartInterval);
 
-  /*
-   * Prevent duplicate requests for the same
-   * symbol/range/interval.
-   */
   if (entry.fetchPromise) {
     return entry.fetchPromise;
   }
 
-  entry.fetchPromise = (async () => {
+  // Defer execution until fetchPromise has been assigned.
+  const request = Promise.resolve().then(async () => {
+    const controller = new AbortController();
+
+    const timeout = window.setTimeout(() => {
+      controller.abort();
+    }, 15_000);
+
     entry.loading = true;
     entry.error = null;
 
-    updateSnapshot(entry);
-    notify(entry);
-
     try {
+      updateSnapshot(entry);
+      notify(entry);
+
       const params = new URLSearchParams({
         symbol,
         range,
@@ -132,7 +135,9 @@ async function fetchQuote(
         params.set("interval", chartInterval);
       }
 
-      const res = await fetch(`/api/candles?${params.toString()}`);
+      const res = await fetch(`/api/candles?${params.toString()}`, {
+        signal: controller.signal,
+      });
 
       if (!res.ok) {
         throw new Error(`Failed to load market data (${res.status})`);
@@ -140,115 +145,108 @@ async function fetchQuote(
 
       const json = await res.json();
 
-      /*
-       * Request succeeded, but Yahoo/API returned no usable
-       * chart points.
-       */
+      // The timeout covers both fetching and reading the response.
+      window.clearTimeout(timeout);
+
+      const isValidPrice = (value: unknown): value is number =>
+        typeof value === "number" && Number.isFinite(value) && value > 0;
+
       const points: ChartPoint[] = Array.isArray(json?.points)
-        ? json.points
+        ? json.points.filter(
+            (point: ChartPoint) =>
+              point &&
+              isValidPrice(point.price) &&
+              Number.isFinite(point.timestampMs),
+          )
         : [];
 
-      const hasCurrentPrice =
-        typeof json?.currentPrice === "number" &&
-        Number.isFinite(json.currentPrice) &&
-        json.currentPrice > 0;
+      const lastPoint = points[points.length - 1];
 
-      if (points.length === 0 && !hasCurrentPrice) {
-        entry.data = null;
-        entry.error = "No market data available";
-        return;
+      const currentPrice = isValidPrice(json?.currentPrice)
+        ? json.currentPrice
+        : lastPoint?.price;
+
+      if (!isValidPrice(currentPrice)) {
+        throw new Error("No market data available");
       }
 
-      const currentPrice =
-        json.currentPrice ?? points[points.length - 1]?.price ?? 0;
+      const previousClose = isValidPrice(json?.previousClose)
+        ? json.previousClose
+        : undefined;
 
       const basePrice =
         range === "1D"
-          ? (json.previousClose ?? points[0]?.price ?? currentPrice)
-          : (points[0]?.price ?? json.previousClose ?? currentPrice);
+          ? (previousClose ?? points[0]?.price ?? currentPrice)
+          : (points[0]?.price ?? previousClose ?? currentPrice);
 
       const changeVal = currentPrice - basePrice;
 
       const percentVal =
-        range === "1D" ? json.dailyChangePercent : json.rangeChangePercent;
+        range === "1D" ? json?.dailyChangePercent : json?.rangeChangePercent;
 
-      /*
-       * Make sure percentVal is actually usable.
-       */
       if (typeof percentVal !== "number" || !Number.isFinite(percentVal)) {
         throw new Error("Invalid percentage data received");
       }
 
       const formattedValue = currentPrice.toLocaleString("en-US", {
         style: assetType === "crypto" ? "currency" : "decimal",
-
         currency: assetType === "crypto" ? "USD" : undefined,
-
         minimumFractionDigits: assetType === "currency" ? 4 : 2,
-
         maximumFractionDigits: assetType === "currency" ? 4 : 2,
       });
 
-      /*
-       * Successful request.
-       */
-      entry.error = null;
-
       entry.data = {
         id: symbol,
-
         name,
-
         displaySymbol,
 
         value: formattedValue,
-
         change: `${changeVal >= 0 ? "+" : ""}${changeVal.toFixed(2)}`,
-
         percent: `${percentVal >= 0 ? "+" : ""}${percentVal.toFixed(2)}%`,
-
         isPositive: percentVal >= 0,
 
         history: points,
-
         isClosed: json.isClosed ?? true,
 
         marketOpenMs: json.marketOpenMs ?? null,
-
         marketCloseMs: json.marketCloseMs ?? null,
 
         rawPrice: currentPrice,
-
         previousClose: json.previousClose,
 
-        updatedAt:
-          json.updatedAt ??
-          points[points.length - 1]?.timestampMs ??
-          Date.now(),
+        updatedAt: json.updatedAt ?? lastPoint?.timestampMs ?? Date.now(),
 
         exchangeTimezone: json.exchangeTimezone,
-
         lunchStartMs: json.lunchStartMs ?? null,
-
         lunchEndMs: json.lunchEndMs ?? null,
       };
+
+      entry.error = null;
     } catch (error) {
-      console.error(`Market quote error for ${symbol}:`, error);
+      const message = controller.signal.aborted
+        ? "Market data request timed out"
+        : error instanceof Error
+          ? error.message
+          : "Failed to load market data";
 
-      entry.data = null;
+      console.error(`Market quote error for ${symbol}:`, message);
 
-      entry.error =
-        error instanceof Error ? error.message : "Failed to load market data";
+      // Preserve previously loaded data if this refresh fails.
+      entry.error = message;
     } finally {
+      window.clearTimeout(timeout);
+
       entry.loading = false;
       entry.fetchPromise = null;
 
       updateSnapshot(entry);
       notify(entry);
     }
-  })();
+  });
 
-  return entry.fetchPromise;
+  entry.fetchPromise = request;
+
+  return request;
 }
 
 function startPolling(

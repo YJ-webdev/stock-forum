@@ -58,14 +58,16 @@ export function PopularBoards({ boards }: PopularBoardsProps) {
             `}
           >
             {item.icon && (
-              <div className="flex mr-3.5 size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white dark:bg-zinc-900">
+              <div className="mr-3.5 flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white dark:bg-zinc-900">
                 <img
                   src={item.icon}
                   alt=""
                   width={24}
                   height={24}
-                  className={`size-full object-cover group-hover:grayscale-0 active:grayscale-0 ${
-                    isSelected ? "grayscale-0" : "grayscale"
+                  className={`size-full object-cover transition-[filter,opacity] group-hover:grayscale-0 group-hover:opacity-100 active:grayscale-0 active:opacity-100 ${
+                    isSelected
+                      ? "grayscale-0 opacity-100"
+                      : "grayscale opacity-50"
                   }`}
                 />
               </div>

@@ -21,7 +21,7 @@ export function BullBearVoteCard({
   initialVote = null,
   initialVoteSessionKey = null,
 }: BullBearVoteCardProps) {
-  const { data } = useMarketQuote(
+  const { data, loading, error } = useMarketQuote(
     market.providerSymbol ?? market.symbol,
     market.name,
     "1D",
@@ -79,7 +79,11 @@ export function BullBearVoteCard({
             />
           ) : (
             <span className="text-xs text-zinc-400 dark:text-zinc-500">
-              {data ? "Chart unavailable" : "Loading…"}
+              {loading && !data
+                ? "Loading…"
+                : error
+                  ? "Data unavailable"
+                  : "Chart unavailable"}
             </span>
           )}
         </div>
