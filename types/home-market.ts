@@ -1,6 +1,7 @@
 // lib/types/home-market.ts
 
 import type { MarketSymbolItem } from "@/lib/data/market-symbols";
+import type { VoteDirection } from "@/app/actions/market-vote";
 
 export type HomeMarketItem = Pick<
   MarketSymbolItem,
@@ -10,4 +11,6 @@ export type HomeMarketItem = Pick<
 export interface HomeMarketEntry {
   market: HomeMarketItem;
   initialIsWatchlist: boolean;
+  initialVote: VoteDirection | null;
+  initialVoteSessionKey: string | null;
 }

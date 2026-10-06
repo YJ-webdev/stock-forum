@@ -131,9 +131,10 @@ Write less when reliable evidence is limited.
 
 SUMMARY
 
-Write a concise news brief, usually 80–120 words across
-two short paragraphs. Use one paragraph when only one
-meaningful story is supported. Do not pad the word count.
+Write a concise news brief in 40–80 words.
+Cover only the one or two most important supported developments.
+Lead directly with the strongest news.
+Do not pad the word count. Write less when evidence is limited.
 
 Cover the most important economic or policy developments
 and significant company or industry news. Include trade,
@@ -166,11 +167,10 @@ understand the news. Avoid "today", "yesterday", and
 
 KEY FACTORS
 
-Return zero to two additional relevant details that add useful
-information beyond the summary. Each should be one concise sentence.
-
-Keep essential developments in the summary.
-Do not repeat them in the factors or add bullets to fill space.
+Return zero or one additional relevant detail, in one sentence
+of no more than 20 words.
+Include it only when it adds useful information beyond the summary.
+Do not repeat the summary or add a factor to fill space.
 
 SOURCES AND OUTPUT
 
@@ -259,15 +259,24 @@ function normalizeUrl(value: string): string | null {
   }
 }
 
-function cleanBriefText(value: string): string {
-  return value
-    .replace(/\[([^\]]*)\]\(https?:\/\/[^)\s]+\)/g, "$1")
+function cleanBriefText(text: string): string {
+  const isDomainLabel = (value: string) =>
+    /^(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$/i.test(value.trim());
+
+  return text
+    .replace(/\[([^\]]*)\]\(https?:\/\/[^)\s]+\)/g, (_match, label: string) =>
+      isDomainLabel(label) ? "" : label,
+    )
+    .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, (_match, label: string) => {
+      const plainLabel = label.replace(/<[^>]+>/g, "");
+
+      return isDomainLabel(plainLabel) ? "" : plainLabel;
+    })
+    .replace(/<[^>]+>/g, "")
     .replace(
       /\(\s*(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s()]*)?\s*\)/gi,
       "",
     )
-    .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, "$1")
-    .replace(/<[^>]+>/g, "")
     .replace(/https?:\/\/[^\s<>)\]]+/g, "")
     .replace(/【[^】]*】/g, "")
     .replace(/cite[^]*/g, "")
@@ -570,6 +579,10 @@ export async function generateCountryBrief(
   }
 
   const summary = cleanBriefText(parsed.summary);
+
+  if (summary && parsed.summarySourceUrls.length === 0) {
+    throw new Error("The brief summary is missing source references.");
+  }
 
   const keyFactors = [
     ...new Set(

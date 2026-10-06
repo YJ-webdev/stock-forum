@@ -1,5 +1,4 @@
 // app/components/market-vote-button.tsx
-
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
@@ -23,7 +22,6 @@ type PopupView = "closed" | "editor";
 interface MarketVoteButtonProps {
   marketName: string;
   symbol: string;
-
   initialVote?: VoteDirection | null;
   initialVoteSessionKey?: string | null;
 }
@@ -32,6 +30,9 @@ interface VoteState {
   lookupKey: string | null;
   direction: VoteDirection | null;
 }
+
+const VOTE_BUTTON_CLASS =
+  "inline-flex h-7.5 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors enabled:hover:border-transparent enabled:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 disabled:cursor-default disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300";
 
 function getSessionKey(
   sessionDate: ReturnType<typeof getVotingWindow>["predictionFor"],
@@ -72,7 +73,6 @@ function buildCommentContent(
 export function MarketVoteButton({
   marketName,
   symbol,
-
   initialVote = null,
   initialVoteSessionKey = null,
 }: MarketVoteButtonProps) {
@@ -83,11 +83,11 @@ export function MarketVoteButton({
   const popupId = useId();
   const titleId = useId();
 
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
-
   const submittingRef = useRef(false);
   const voteRevisionRef = useRef(0);
+  const lastFocusRefreshRef = useRef(0);
 
   const [view, setView] = useState<PopupView>("closed");
   const [draftDirection, setDraftDirection] = useState<VoteDirection | null>(
@@ -103,14 +103,23 @@ export function MarketVoteButton({
   const sessionKey = getSessionKey(votingWindow.predictionFor);
   const lookupKey = JSON.stringify([userId, symbol, sessionKey]);
 
-  const [voteState, setVoteState] = useState<VoteState>(() => ({
-    lookupKey: initialVoteSessionKey
-      ? JSON.stringify([userId, symbol, initialVoteSessionKey])
-      : null,
+  // Bind initial data to the user and session present at mount.
+  const initialVoteSnapshotRef = useRef<VoteState>({
+    lookupKey:
+      userId && initialVoteSessionKey
+        ? JSON.stringify([userId, symbol, initialVoteSessionKey])
+        : null,
     direction: initialVote,
-  }));
+  });
 
-  const [checkedLookupKey, setCheckedLookupKey] = useState<string | null>(null);
+  const [voteState, setVoteState] = useState<VoteState>(
+    () => initialVoteSnapshotRef.current,
+  );
+
+  const [checkedLookupKey, setCheckedLookupKey] = useState<string | null>(
+    () => initialVoteSnapshotRef.current.lookupKey,
+  );
+
   const [voteLookupFailed, setVoteLookupFailed] = useState(false);
 
   const activeLookupKeyRef = useRef(lookupKey);
@@ -122,18 +131,25 @@ export function MarketVoteButton({
   const isVoteLoading =
     Boolean(userId && sessionKey) && checkedLookupKey !== lookupKey;
 
-  const isOpen = view !== "closed";
+  const voteButtonDisabled = isVoteLoading || isSubmitting;
+  const isOpen = view === "editor";
+  const maxBet = Math.floor(Math.min(500, userPoints) / 50) * 50;
 
   function closePopup() {
     setView("closed");
     triggerRef.current?.focus();
   }
 
+  function retryVoteLookup() {
+    setCheckedLookupKey(null);
+    setVoteLookupFailed(false);
+    setRefreshVersion((current) => current + 1);
+  }
+
   function requireLogin() {
     if (user) return true;
 
     toast.error("Log in to make your prediction.");
-
     return false;
   }
 
@@ -153,8 +169,7 @@ export function MarketVoteButton({
       message = "Could not check your prediction. Please try again.";
 
       if (showMessage) {
-        setCheckedLookupKey(null);
-        setRefreshVersion((current) => current + 1);
+        retryVoteLookup();
       }
     } else if (direction) {
       message = "You have already voted for this round.";
@@ -167,17 +182,18 @@ export function MarketVoteButton({
     return message === null;
   }
 
-  function openEditor(nextDirection: VoteDirection | null) {
+  function handleTriggerClick(
+    nextDirection: VoteDirection,
+    trigger: HTMLButtonElement,
+  ) {
+    if (voteButtonDisabled || submittingRef.current) return;
+    if (!requireLogin() || !canStartPrediction()) return;
+
+    triggerRef.current = trigger;
     setDraftDirection(nextDirection);
     setBetAmount(50);
     setNow(Date.now());
     setView("editor");
-  }
-
-  function handleTriggerClick() {
-    if (!requireLogin() || !canStartPrediction()) return;
-
-    openEditor(null);
   }
 
   async function submitVote(comment: string, gif: GifResult | null) {
@@ -210,8 +226,6 @@ export function MarketVoteButton({
       toast.error("Add points to your balance to continue voting.");
       return;
     }
-
-    const maxBet = Math.floor(Math.min(500, userPoints) / 50) * 50;
 
     if (
       !Number.isInteger(betAmount) ||
@@ -251,18 +265,18 @@ export function MarketVoteButton({
         setPoints(result.points);
       }
 
+      // Prevent an older lookup from overwriting the submitted vote.
       voteRevisionRef.current += 1;
 
-      setVoteState({
-        lookupKey: submittedLookupKey,
-        direction: submittedDirection,
-      });
-
       if (activeLookupKeyRef.current === submittedLookupKey) {
+        setVoteState({
+          lookupKey: submittedLookupKey,
+          direction: submittedDirection,
+        });
         setCheckedLookupKey(submittedLookupKey);
         setVoteLookupFailed(false);
       } else {
-        setRefreshVersion((current) => current + 1);
+        retryVoteLookup();
       }
 
       closePopup();
@@ -277,21 +291,31 @@ export function MarketVoteButton({
         error instanceof Error ? error.message : "Failed to submit prediction.",
       );
 
-      setRefreshVersion((current) => current + 1);
+      retryVoteLookup();
     } finally {
       submittingRef.current = false;
       setIsSubmitting(false);
     }
   }
 
-  // Refresh market time and reload the vote when returning to the page.
+  // Update market time. Refresh in the background when returning.
   useEffect(() => {
-    const interval = setInterval(() => {
+    const interval = window.setInterval(() => {
       setNow(Date.now());
     }, 1000);
 
     function handleFocus() {
-      setNow(Date.now());
+      if (document.visibilityState !== "visible") return;
+
+      const currentTime = Date.now();
+      setNow(currentTime);
+
+      // Focus and visibilitychange can fire for the same return.
+      if (currentTime - lastFocusRefreshRef.current < 1000) {
+        return;
+      }
+
+      lastFocusRefreshRef.current = currentTime;
       setRefreshVersion((current) => current + 1);
     }
 
@@ -305,13 +329,13 @@ export function MarketVoteButton({
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      clearInterval(interval);
+      window.clearInterval(interval);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
-  // Reload the vote when the user or target session changes.
+  // Skip the initial request when server data matches this session.
   useEffect(() => {
     let cancelled = false;
     const revision = voteRevisionRef.current;
@@ -323,29 +347,50 @@ export function MarketVoteButton({
       return;
     }
 
+    const initialSnapshot = initialVoteSnapshotRef.current;
+
+    if (refreshVersion === 0 && initialSnapshot.lookupKey === lookupKey) {
+      return;
+    }
+
+    // Do not reuse the initial snapshot after changing user/session.
+    if (initialSnapshot.lookupKey !== lookupKey) {
+      initialVoteSnapshotRef.current = {
+        lookupKey: null,
+        direction: null,
+      };
+    }
+
+    const sessionDate = new Date(sessionKey);
+
+    function isCurrentRequest() {
+      return (
+        !cancelled &&
+        revision === voteRevisionRef.current &&
+        activeLookupKeyRef.current === lookupKey
+      );
+    }
+
     async function loadVote() {
       try {
         const vote = await getMarketVote({
           symbol,
-          sessionDate: new Date(sessionKey!),
+          sessionDate,
         });
 
-        if (cancelled || revision !== voteRevisionRef.current) {
-          return;
-        }
+        if (!isCurrentRequest()) return;
 
         setVoteState({
           lookupKey,
           direction: vote,
         });
+        setVoteLookupFailed(false);
       } catch {
-        if (cancelled || revision !== voteRevisionRef.current) {
-          return;
-        }
+        if (!isCurrentRequest()) return;
 
         setVoteLookupFailed(true);
       } finally {
-        if (!cancelled && revision === voteRevisionRef.current) {
+        if (isCurrentRequest()) {
           setCheckedLookupKey(lookupKey);
         }
       }
@@ -384,8 +429,7 @@ export function MarketVoteButton({
   }, [isOpen]);
 
   const inputDisabled =
-    isSubmitting ||
-    isVoteLoading ||
+    voteButtonDisabled ||
     voteLookupFailed ||
     direction !== null ||
     !votingWindow.canVote;
@@ -403,39 +447,50 @@ export function MarketVoteButton({
             : null;
 
   return (
-    <div className="flex min-h-7  w-full justify-end">
-      {direction && !votingWindow.isMarketOpen ? (
+    <div className="flex min-h-7 w-full justify-end">
+      {votingWindow.isMarketOpen ? (
+        <span className="text-right text-xs font-normal leading-4 text-zinc-500 dark:text-zinc-400">
+          Market open · Voting closed
+        </span>
+      ) : direction ? (
         <span className="flex h-4 items-center text-xs font-normal text-zinc-500 dark:text-zinc-400">
           Vote completed
         </span>
       ) : (
-        !votingWindow.isMarketOpen &&
         votingWindow.canVote && (
-          <div className=" flex w-full items-center justify-between gap-2">
+          <div className="flex w-full items-center justify-between gap-2">
             <button
-              ref={triggerRef}
               type="button"
+              disabled={voteButtonDisabled}
               aria-expanded={isOpen}
               aria-controls={isOpen ? popupId : undefined}
               aria-label={`${marketName}: Bull`}
-              aria-busy={isVoteLoading || isSubmitting}
-              onClick={handleTriggerClick}
-              className="w-full inline-flex hover:bg-emerald-600 hover:border-transparent hover:text-white h-7.5 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300"
+              aria-busy={voteButtonDisabled}
+              onClick={(event) =>
+                handleTriggerClick("BULL", event.currentTarget)
+              }
+              className={`${VOTE_BUTTON_CLASS} enabled:hover:bg-emerald-600`}
             >
-              <PiArrowFatLinesUpFill className="size-3.5" />
+              <PiArrowFatLinesUpFill className="size-3.5" aria-hidden="true" />
               Bull
             </button>
 
             <button
               type="button"
+              disabled={voteButtonDisabled}
               aria-expanded={isOpen}
               aria-controls={isOpen ? popupId : undefined}
               aria-label={`${marketName}: Bear`}
-              aria-busy={isVoteLoading || isSubmitting}
-              onClick={handleTriggerClick}
-              className="w-full inline-flex h-7.5 hover:bg-[#cf0000] hover:border-transparent hover:text-white cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300"
+              aria-busy={voteButtonDisabled}
+              onClick={(event) =>
+                handleTriggerClick("BEAR", event.currentTarget)
+              }
+              className={`${VOTE_BUTTON_CLASS} enabled:hover:bg-[#cf0000]`}
             >
-              <PiArrowFatLinesUpFill className="size-3.5 -scale-y-100" />
+              <PiArrowFatLinesUpFill
+                className="size-3.5 -scale-y-100"
+                aria-hidden="true"
+              />
               Bear
             </button>
           </div>
@@ -448,7 +503,7 @@ export function MarketVoteButton({
           : ""}
       </p>
 
-      {view === "editor" &&
+      {isOpen &&
         createPortal(
           <div
             onClick={(event) => {
@@ -462,6 +517,7 @@ export function MarketVoteButton({
               ref={editorRef}
               id={popupId}
               role="dialog"
+              aria-modal="true"
               aria-labelledby={titleId}
               tabIndex={-1}
               className="max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-zinc-200 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl outline-none dark:border-zinc-700 dark:bg-zinc-900 lg:max-w-lg lg:rounded-2xl"
@@ -478,9 +534,9 @@ export function MarketVoteButton({
                   type="button"
                   aria-label="Close prediction input"
                   onClick={closePopup}
-                  className="flex size-7 cursor-pointer items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400  "
+                  className="flex size-7 cursor-pointer items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
                 >
-                  <X className="size-4" />
+                  <X className="size-4" aria-hidden="true" />
                 </button>
               </div>
 
@@ -491,7 +547,7 @@ export function MarketVoteButton({
                 betAmount={betAmount}
                 setBetAmount={setBetAmount}
                 userPoints={userPoints}
-                maxBet={Math.floor(Math.min(500, userPoints) / 50) * 50}
+                maxBet={maxBet}
                 currentUser={user}
                 isMarketOpen={votingWindow.isMarketOpen}
                 isPending={isSubmitting}
@@ -513,12 +569,9 @@ export function MarketVoteButton({
               {voteLookupFailed && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setCheckedLookupKey(null);
-                    setVoteLookupFailed(false);
-                    setRefreshVersion((current) => current + 1);
-                  }}
-                  className="mt-2 cursor-pointer text-xs underline underline-offset-4"
+                  disabled={voteButtonDisabled}
+                  onClick={retryVoteLookup}
+                  className="mt-2 cursor-pointer text-xs underline underline-offset-4 disabled:cursor-default disabled:opacity-50"
                 >
                   Try again
                 </button>

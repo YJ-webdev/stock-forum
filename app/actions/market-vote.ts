@@ -155,6 +155,8 @@ export async function getMarketVote({
       },
     },
     select: {
+      symbol: true,
+      sessionDate: true,
       direction: true,
     },
   });

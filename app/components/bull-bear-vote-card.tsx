@@ -1,30 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
 import { useMarketQuote } from "@/app/hooks/useMarketQuote";
-import type { MarketSymbolItem } from "@/lib/data/market-symbols";
+import type { VoteDirection } from "@/app/actions/market-vote";
+import type { HomeMarketItem } from "@/types/home-market";
 
 import { Numeric } from "./numeric";
 import { TrendSparkline } from "./trend-sparkline";
 import { MarketVoteButton } from "./market-vote-button";
 import { MarketSentiment } from "./market-sentiment";
-import { HomeMarketItem } from "@/types/home-market";
-
-type Direction = "BULL" | "BEAR";
 
 interface BullBearVoteCardProps {
   market: HomeMarketItem;
   initialIsWatchlist: boolean;
+  initialVote?: VoteDirection | null;
+  initialVoteSessionKey?: string | null;
 }
 
-function supportsDesktopHover() {
-  return window.matchMedia(
-    "(min-width: 1024px) and (hover: hover) and (pointer: fine)",
-  ).matches;
-}
-
-export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
+export function BullBearVoteCard({
+  market,
+  initialVote = null,
+  initialVoteSessionKey = null,
+}: BullBearVoteCardProps) {
   const { data } = useMarketQuote(
     market.providerSymbol ?? market.symbol,
     market.name,
@@ -35,53 +31,15 @@ export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
     "5m",
   );
 
-  const [direction, setDirection] = useState<Direction | null>(null);
-  const [isVoteOpen, setIsVoteOpen] = useState(false);
-
-  const voteRowRef = useRef<HTMLDivElement>(null);
-  const voteTriggerRef = useRef<HTMLButtonElement>(null);
-  const bullButtonRef = useRef<HTMLButtonElement>(null);
-
   const changeColor = !data
     ? "text-zinc-400 dark:text-zinc-500"
     : data.isPositive
       ? "text-emerald-600 dark:text-emerald-400"
       : "text-[#cf0000] dark:text-[#ff1414]";
 
-  function closeVoteOptions() {
-    setIsVoteOpen(false);
-  }
-
-  // Move keyboard focus into the options when the trigger was focused.
-  useEffect(() => {
-    if (isVoteOpen && document.activeElement === voteTriggerRef.current) {
-      bullButtonRef.current?.focus();
-    }
-  }, [isVoteOpen]);
-
-  // Touch users can dismiss by tapping outside the row.
-  useEffect(() => {
-    if (!isVoteOpen) return;
-
-    function handlePointerDown(event: PointerEvent) {
-      if (
-        event.target instanceof Node &&
-        !voteRowRef.current?.contains(event.target)
-      ) {
-        setIsVoteOpen(false);
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown);
-
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-    };
-  }, [isVoteOpen]);
-
   return (
-    <article className="relative w-44  shrink-0 text-zinc-900 dark:text-zinc-300">
-      <header className=" pb-3">
+    <article className="relative w-44 shrink-0 text-zinc-900 dark:text-zinc-300">
+      <header className="pb-3">
         <p className="outfit min-w-0 truncate pl-3 text-[13px] tracking-wide text-zinc-800 dark:font-light dark:text-zinc-100">
           {market.displaySymbol}
         </p>
@@ -94,7 +52,7 @@ export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
         </h3>
       </header>
 
-      <div className=" pb-2 ">
+      <div className="pb-2">
         <Numeric className="pl-3 text-[18px] font-extrabold tracking-tight tabular-nums text-zinc-800 dark:text-zinc-200">
           {data?.value ?? "—"}
         </Numeric>
@@ -108,7 +66,7 @@ export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
         <div
           role="img"
           aria-label={`${market.name} price trend`}
-          className="flex h-16 mt-1 items-center justify-center"
+          className="mt-1 flex h-16 items-center justify-center"
         >
           {data && data.history.length >= 2 ? (
             <TrendSparkline
@@ -126,55 +84,19 @@ export function BullBearVoteCard({ market }: BullBearVoteCardProps) {
           )}
         </div>
 
-        <div
-          ref={voteRowRef}
-          className="outfit relative h-17 pt-1.5 "
-          onPointerLeave={(event) => {
-            if (event.pointerType === "mouse" && supportsDesktopHover()) {
-              const activeElement = document.activeElement;
-
-              if (
-                activeElement instanceof HTMLElement &&
-                activeElement.matches(":focus-visible") &&
-                event.currentTarget.contains(activeElement)
-              ) {
-                return;
-              }
-
-              closeVoteOptions();
-            }
-          }}
-          onBlur={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) {
-              closeVoteOptions();
-            }
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Escape" && isVoteOpen) {
-              event.preventDefault();
-              closeVoteOptions();
-
-              // The trigger remains mounted; focus after it becomes visible.
-              requestAnimationFrame(() => {
-                voteTriggerRef.current?.focus();
-              });
-            }
-          }}
-        >
+        <div className="outfit relative h-17 pt-1.5">
           {market.assetType === "index" && (
-            <div className="relative flex flex-col gap-2  z-20">
+            <div className="relative z-20 flex flex-col gap-2">
               <MarketSentiment symbol={market.symbol} />
+
               <MarketVoteButton
                 marketName={market.name}
                 symbol={market.symbol}
+                initialVote={initialVote}
+                initialVoteSessionKey={initialVoteSessionKey}
               />
             </div>
           )}
-          <p aria-live="polite" className="sr-only">
-            {direction
-              ? `${direction === "BULL" ? "Bullish" : "Bearish"} selected`
-              : ""}
-          </p>
         </div>
       </div>
     </article>

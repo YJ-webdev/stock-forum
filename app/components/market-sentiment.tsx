@@ -24,33 +24,46 @@ interface SentimentResult {
   stats: MarketVoteStats;
 }
 
+const SESSION_REFRESH_MS = 15_000;
+const SENTIMENT_REFRESH_MS = 60_000;
+
+const DOT_PATTERN =
+  "bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)] " +
+  "bg-size-[3px_3px] text-zinc-200 dark:text-zinc-600";
+
+const WIDTH_TRANSITION =
+  "transition-[width] duration-300 motion-reduce:transition-none";
+
+const PERCENT_TEXT = "ibmPlexMono font-normal text-zinc-800 dark:text-zinc-100";
+
+function getSentimentSession(symbol: string): MarketSession {
+  const window = getVotingWindow(symbol, Date.now());
+
+  return {
+    symbol,
+    isMarketOpen: window.isMarketOpen,
+    predictionMs: window.isMarketOpen
+      ? (window.currentSessionStartMs ?? null)
+      : (window.predictionFor?.getTime() ?? null),
+  };
+}
+
 export function MarketSentiment({ symbol }: MarketSentimentProps) {
   const [session, setSession] = useState<MarketSession | null>(null);
   const [result, setResult] = useState<SentimentResult | null>(null);
-  const [hasError, setHasError] = useState(false);
 
-  // Track market opening, closing, and the target voting session.
+  // Track the current session and market opening/closing.
   useEffect(() => {
     function updateSession() {
-      const votingWindow = getVotingWindow(symbol, Date.now());
+      const next = getSentimentSession(symbol);
 
-      const nextSession: MarketSession = {
-        symbol,
-        isMarketOpen: votingWindow.isMarketOpen,
-        predictionMs: votingWindow.predictionFor?.getTime() ?? null,
-      };
-
-      setSession((previous) => {
-        if (
-          previous?.symbol === nextSession.symbol &&
-          previous.isMarketOpen === nextSession.isMarketOpen &&
-          previous.predictionMs === nextSession.predictionMs
-        ) {
-          return previous;
-        }
-
-        return nextSession;
-      });
+      setSession((previous) =>
+        previous?.symbol === next.symbol &&
+        previous.isMarketOpen === next.isMarketOpen &&
+        previous.predictionMs === next.predictionMs
+          ? previous
+          : next,
+      );
     }
 
     function handleVisibilityChange() {
@@ -61,7 +74,7 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
 
     updateSession();
 
-    const interval = window.setInterval(updateSession, 15_000);
+    const interval = window.setInterval(updateSession, SESSION_REFRESH_MS);
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
@@ -75,31 +88,25 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
   const isMarketOpen = currentSession?.isMarketOpen ?? null;
   const predictionMs = currentSession?.predictionMs ?? null;
 
-  // Refresh sentiment while voting is available.
+  // Fetch once during market hours; poll while the market is closed.
   useEffect(() => {
-    setHasError(false);
-
-    if (isMarketOpen !== false || predictionMs === null) {
-      return;
-    }
+    if (isMarketOpen === null || predictionMs === null) return;
 
     const sessionMs = predictionMs;
-
     let cancelled = false;
     let fetching = false;
 
+    function matchesCurrentSession() {
+      const current = getSentimentSession(symbol);
+
+      return (
+        current.predictionMs === sessionMs &&
+        current.isMarketOpen === isMarketOpen
+      );
+    }
+
     async function loadSentiment() {
-      if (fetching) return;
-
-      // Avoid fetching the previous session at a market boundary.
-      const votingWindow = getVotingWindow(symbol, Date.now());
-
-      if (
-        votingWindow.isMarketOpen ||
-        votingWindow.predictionFor?.getTime() !== sessionMs
-      ) {
-        return;
-      }
+      if (cancelled || fetching || !matchesCurrentSession()) return;
 
       fetching = true;
 
@@ -109,19 +116,15 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
           sessionDate: new Date(sessionMs),
         });
 
-        if (cancelled) return;
+        if (cancelled || !matchesCurrentSession()) return;
 
         setResult({
           symbol,
           predictionMs: sessionMs,
           stats,
         });
-
-        setHasError(false);
       } catch {
-        if (!cancelled) {
-          setHasError(true);
-        }
+        // Preserve the previous stats or default display.
       } finally {
         fetching = false;
       }
@@ -135,106 +138,65 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
 
     void loadSentiment();
 
-    const interval = window.setInterval(() => {
-      if (document.visibilityState === "visible") {
-        void loadSentiment();
-      }
-    }, 60_000);
+    const interval = isMarketOpen
+      ? null
+      : window.setInterval(() => {
+          if (document.visibilityState === "visible") {
+            void loadSentiment();
+          }
+        }, SENTIMENT_REFRESH_MS);
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+
+      if (interval !== null) {
+        window.clearInterval(interval);
+      }
+
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [symbol, isMarketOpen, predictionMs]);
 
-  if (isMarketOpen === null) {
-    return <div className="h-9" aria-hidden="true" />;
-  }
-
-  if (isMarketOpen) {
-    return (
-      <div className="outfit flex justify-end items-center gap-2">
-        <span className="relative flex size-1.5" aria-hidden="true">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:animate-none" />
-          <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
-        </span>
-
-        <span className="text-xs font-normal text-zinc-800 dark:text-zinc-300">
-          Market open
-        </span>
-      </div>
-    );
-  }
-
-  if (predictionMs === null) {
-    return (
-      <div className="outfit flex h-7 items-center text-xs text-zinc-400 dark:text-zinc-500">
-        Sentiment unavailable
-      </div>
-    );
-  }
-
   const stats =
-    result?.symbol === symbol && result.predictionMs === predictionMs
+    predictionMs !== null &&
+    result?.symbol === symbol &&
+    result.predictionMs === predictionMs
       ? result.stats
       : null;
 
-  if (!stats) {
-    return (
-      <div className="outfit flex w-full items-center" aria-hidden="true">
-        <div
-          className="
-          h-7 w-full overflow-hidden
-          bg-zinc-100/50 dark:bg-zinc-800
-          bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)]
-          bg-size-[3px_3px]
-          text-zinc-200 dark:text-zinc-600
-        "
-        />
-      </div>
-    );
-  }
-
-  const { totalVotes, bullPercent, bearPercent } = stats;
-  const hasVotes = totalVotes > 0;
+  const hasVotes = stats !== null && stats.totalVotes > 0;
+  const bullPercent = stats?.bullPercent ?? 0;
+  const bearPercent = stats?.bearPercent ?? 0;
 
   return (
     <div className="outfit flex w-full items-center">
       <div
-        role="img"
+        role={stats ? "img" : undefined}
         aria-label={
-          hasVotes
-            ? `Bull ${bullPercent} percent, Bear ${bearPercent} percent, ${totalVotes} votes`
-            : "No votes yet"
+          stats
+            ? hasVotes
+              ? `Bull ${bullPercent} percent, Bear ${bearPercent} percent, ${stats.totalVotes} votes`
+              : "No votes yet"
+            : undefined
         }
-        className={`relative flex h-7 w-full overflow-hidden bg-zinc-100/50 dark:bg-zinc-800 ${
-          !hasVotes
-            ? "bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)] bg-size-[3px_3px] text-zinc-200 dark:text-zinc-600"
-            : ""
-        }`}
+        aria-hidden={stats ? undefined : true}
+        className={`
+          relative flex h-7 w-full overflow-hidden
+          bg-zinc-100/50 dark:bg-zinc-800
+          ${hasVotes ? "" : DOT_PATTERN}
+        `}
       >
         {hasVotes && (
           <>
             <div
-              className="h-full bg-neutral-300/50  dark:bg-stone-800/50 transition-[width] duration-300 motion-reduce:transition-none"
+              className={`h-full bg-neutral-300/50 dark:bg-stone-800/50 ${WIDTH_TRANSITION}`}
               style={{ width: `${bullPercent}%` }}
             />
 
             <div
-              className="
-              peer/bear
-              h-full
-              bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)]
-              bg-size-[3px_3px]
-              text-zinc-200
-              dark:text-zinc-600
-            
-              transition-[width] duration-300
-              motion-reduce:transition-none
-            "
+              className={`h-full ${DOT_PATTERN} ${WIDTH_TRANSITION}`}
               style={{ width: `${bearPercent}%` }}
             />
           </>
@@ -243,27 +205,27 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
         <div
           aria-hidden="true"
           className="
-          pointer-events-none absolute inset-0
-          flex items-center justify-around px-1.5
-          text-[13px] font-medium leading-none tabular-nums
-          text-zinc-900 dark:text-zinc-100"
+            pointer-events-none absolute inset-0
+            flex items-center justify-around px-1.5
+            text-[13px] leading-none tabular-nums
+          "
         >
           {hasVotes ? (
             <>
               {bullPercent > 0 && (
-                <span className="ibmPlexMono text-zinc-800 dark:text-zinc-100 font-normal">
-                  {bullPercent}%
-                </span>
+                <span className={PERCENT_TEXT}>{bullPercent}%</span>
               )}
 
               {bearPercent > 0 && (
-                <span className="ibmPlexMono bear-percent text-zinc-800 dark:text-zinc-100 dark:font-light font-normal">
+                <span
+                  className={`${PERCENT_TEXT} bear-percent dark:font-light`}
+                >
                   {bearPercent}%
                 </span>
               )}
             </>
           ) : (
-            <span className="text-zinc-800 dark:text-zinc-100 font-normal dark:font-light">
+            <span className="font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
               No vote yet
             </span>
           )}

@@ -9,6 +9,7 @@ import {
   useState,
   type PointerEvent,
 } from "react";
+
 import {
   ChevronFirst,
   ChevronLast,
@@ -186,25 +187,34 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
         }`}
       >
         <div className="flex w-max min-w-full gap-8 px-4">
-          {markets.map(({ market, initialIsWatchlist }) => (
-            <div
-              key={market.symbol}
-              data-carousel-card
-              className="relative isolate w-44 shrink-0"
-            >
-              <Link
-                href={`/market/${encodeURIComponent(market.symbol)}`}
-                aria-label={`View ${market.name}`}
-                draggable={false}
-                className="absolute inset-0 z-10 cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
-              />
+          {markets.map(
+            ({
+              market,
+              initialIsWatchlist,
+              initialVote,
+              initialVoteSessionKey,
+            }) => (
+              <div
+                key={market.symbol}
+                data-carousel-card
+                className="relative isolate w-44 shrink-0"
+              >
+                <Link
+                  href={`/market/${encodeURIComponent(market.symbol)}`}
+                  aria-label={`View ${market.name}`}
+                  draggable={false}
+                  className="absolute inset-0 z-10 cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
+                />
 
-              <BullBearVoteCard
-                market={market}
-                initialIsWatchlist={initialIsWatchlist}
-              />
-            </div>
-          ))}
+                <BullBearVoteCard
+                  market={market}
+                  initialIsWatchlist={initialIsWatchlist}
+                  initialVote={initialVote}
+                  initialVoteSessionKey={initialVoteSessionKey}
+                />
+              </div>
+            ),
+          )}
         </div>
       </div>
 
