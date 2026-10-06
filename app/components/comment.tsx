@@ -232,7 +232,7 @@ export function MarketComments({
     }
 
     if (!user) {
-      toast.error("Log in to vote.");
+      toast.error("Log in to make your prediction.");
       return;
     }
 

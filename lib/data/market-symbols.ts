@@ -55,6 +55,7 @@ export interface MarketSymbolItem {
   country: string;
   region: MarketRegion;
   assetType: AssetType;
+  icon?: string;
 
   providerSymbol?: string;
   isProxy?: boolean;
@@ -251,6 +252,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       assetType: "index",
       timezone: "America/New_York",
       marketSchedule: "US_EQUITY",
+      icon: "/market-icons/s&p500_icon.png",
     },
 
     {
@@ -262,6 +264,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       assetType: "index",
       timezone: "America/New_York",
       marketSchedule: "US_EQUITY",
+      icon: "/market-icons/nasdaq_icon.png",
     },
 
     {
@@ -273,6 +276,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       assetType: "index",
       timezone: "America/New_York",
       marketSchedule: "US_EQUITY",
+      icon: "/market-icons/dji_icon.png",
     },
 
     {
@@ -334,6 +338,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       assetType: "index",
       timezone: "Asia/Tokyo",
       marketSchedule: "JP_EQUITY",
+      icon: "/market-icons/nikkei225_icon.png",
     },
 
     {
@@ -380,6 +385,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       assetType: "index",
       timezone: "Asia/Hong_Kong",
       marketSchedule: "HK_EQUITY",
+      icon: "/market-icons/hsi_icon.png",
     },
 
     {
@@ -391,6 +397,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       assetType: "index",
       timezone: "Asia/Kolkata",
       marketSchedule: "IN_EQUITY",
+      icon: "/market-icons/nifty50_icon.png",
     },
 
     {
@@ -413,6 +420,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       assetType: "index",
       timezone: "Asia/Seoul",
       marketSchedule: "KR_EQUITY",
+      icon: "/market-icons/kospi_icon.png",
     },
 
     // {
@@ -495,6 +503,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       assetType: "index",
       timezone: "Europe/Berlin",
       marketSchedule: "DE_EQUITY",
+      icon: "/market-icons/dax_icon.png",
     },
 
     {
@@ -506,6 +515,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       assetType: "index",
       timezone: "Europe/London",
       marketSchedule: "GB_EQUITY",
+      icon: "/market-icons/ftse100_icon.png",
     },
 
     {

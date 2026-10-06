@@ -132,9 +132,7 @@ export function MarketVoteButton({
   function requireLogin() {
     if (user) return true;
 
-    toast.error("Log in to vote.", {
-      id: "vote-login-required",
-    });
+    toast.error("Log in to make your prediction.");
 
     return false;
   }
@@ -163,9 +161,7 @@ export function MarketVoteButton({
     }
 
     if (message && showMessage) {
-      toast.error(message, {
-        id: `vote-status-${symbol}`,
-      });
+      toast.error(message);
     }
 
     return message === null;
@@ -424,7 +420,7 @@ export function MarketVoteButton({
               aria-label={`${marketName}: Bull`}
               aria-busy={isVoteLoading || isSubmitting}
               onClick={handleTriggerClick}
-              className="w-full inline-flex h-7 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="w-full inline-flex hover:bg-emerald-600 hover:border-transparent hover:text-white h-7 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300"
             >
               <PiArrowFatLinesUpFill className="size-3.5" />
               Bull
@@ -437,7 +433,7 @@ export function MarketVoteButton({
               aria-label={`${marketName}: Bear`}
               aria-busy={isVoteLoading || isSubmitting}
               onClick={handleTriggerClick}
-              className="w-full inline-flex h-7 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="w-full inline-flex h-7 hover:bg-[#cf0000] hover-border-transparent hover:text-white cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-300 "
             >
               <PiArrowFatLinesUpFill className="size-3.5 -scale-y-100" />
               Bear
@@ -482,7 +478,7 @@ export function MarketVoteButton({
                   type="button"
                   aria-label="Close prediction input"
                   onClick={closePopup}
-                  className="flex size-7 cursor-pointer items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                  className="flex size-7 cursor-pointer items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400  "
                 >
                   <X className="size-4" />
                 </button>

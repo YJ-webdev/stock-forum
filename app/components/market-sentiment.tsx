@@ -184,8 +184,16 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
 
   if (!stats) {
     return (
-      <div className="outfit flex h-7 items-center text-xs text-zinc-400 dark:text-zinc-500">
-        {hasError ? "Sentiment unavailable" : "Loading sentiment…"}
+      <div className="outfit flex w-full items-center" aria-hidden="true">
+        <div
+          className="
+          h-7 w-full overflow-hidden
+          bg-zinc-100/50 dark:bg-zinc-800
+          bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)]
+          bg-size-[3px_3px]
+          text-zinc-200 dark:text-zinc-600
+        "
+        />
       </div>
     );
   }

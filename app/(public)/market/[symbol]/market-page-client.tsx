@@ -169,7 +169,7 @@ export default function MarketPageClient({
     }
 
     if (!isLoggedIn) {
-      toast.error("Log in to vote.");
+      toast.error("Log in to make your prediction.");
       return;
     }
 

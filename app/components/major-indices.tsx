@@ -57,28 +57,19 @@ export function PopularBoards({ boards }: PopularBoardsProps) {
               }
             `}
           >
-            <Globe
-              className={`
-                mr-2 h-4.75 w-4.75 shrink-0
-                transition-colors
-
-                ${
-                  isSelected
-                    ? `
-                      text-zinc-800
-                      dark:text-zinc-400
-                    `
-                    : `
-                      text-zinc-400
-                      group-hover:text-zinc-800
-                      dark:text-zinc-600
-                      dark:group-hover:text-zinc-400
-                    `
-                }
-              `}
-              strokeWidth={1}
-            />
-
+            {item.icon && (
+              <div className="flex mr-3.5 size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white dark:bg-zinc-900">
+                <img
+                  src={item.icon}
+                  alt=""
+                  width={24}
+                  height={24}
+                  className={`size-full object-cover group-hover:grayscale-0 active:grayscale-0 ${
+                    isSelected ? "grayscale-0" : "grayscale"
+                  }`}
+                />
+              </div>
+            )}
             <span className="min-w-0 flex-1 truncate text-[16px] font-normal text-zinc-800 dark:text-zinc-300 dark:font-light">
               {item.name}
             </span>

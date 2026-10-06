@@ -67,7 +67,7 @@ export function PredictionCommentInput({
     if (buttonDisabled) return;
 
     if (!currentUser) {
-      toast.error("Log in to vote.");
+      toast.error("Log in to make your prediction.");
       return;
     }
 
@@ -219,7 +219,7 @@ export function PredictionCommentInput({
               setComment(e.target.value);
             }}
             rows={1}
-            placeholder={`${currentUser ? "Write a comment..." : "Log in to vote or comment..."}`}
+            placeholder={`${currentUser ? "Write a comment..." : "Log in to make your prediction or comment..."}`}
             className="
     min-h-11 w-full resize-none
     bg-transparent py-3

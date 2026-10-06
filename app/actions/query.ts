@@ -5,6 +5,7 @@ import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import type { JSONContent } from "@tiptap/react";
 
 import { getTopBetters } from "./leaderboard";
+import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 
 // -----------------------------------------------------------------------------
 // Types
@@ -13,6 +14,7 @@ import { getTopBetters } from "./leaderboard";
 export interface PopularBoard {
   symbol: string;
   name: string;
+  icon?: string;
   commentCount: number;
   newCommentCount: number;
 }
@@ -82,7 +84,25 @@ function isDeletedCommentContent(content: JSONContent): boolean {
 // -----------------------------------------------------------------------------
 
 export async function getPopularBoards(limit = 7): Promise<PopularBoard[]> {
+  const allowedSymbols = [
+    "^IXIC", // Nasdaq Composite
+    "^GSPC", // S&P 500
+    "^NSEI", // Nifty 50
+    "^KS11", // KOSPI
+    "^N225", // Nikkei 225
+    "^FTSE", // FTSE 100
+    "^GDAXI", // DAX
+    "^HSI", // Hang Seng Index
+    "^DJI",
+  ];
+
   const assets = await prisma.marketAsset.findMany({
+    where: {
+      symbol: {
+        in: allowedSymbols,
+      },
+    },
+
     select: {
       symbol: true,
       name: true,
@@ -95,9 +115,12 @@ export async function getPopularBoards(limit = 7): Promise<PopularBoard[]> {
     },
   });
 
-  // Only 48 markets, so sorting this in memory is cheap.
   const popularAssets = assets
-    .sort((a, b) => b._count.comments - a._count.comments)
+    .sort(
+      (a, b) =>
+        b._count.comments - a._count.comments ||
+        allowedSymbols.indexOf(a.symbol) - allowedSymbols.indexOf(b.symbol),
+    )
     .slice(0, limit);
 
   if (popularAssets.length === 0) {
@@ -105,19 +128,7 @@ export async function getPopularBoards(limit = 7): Promise<PopularBoard[]> {
   }
 
   const nowMs = Date.now();
-
-  const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
-  const last24HoursMs = nowMs - TWENTY_FOUR_HOURS_MS;
-
-  // ---------------------------------------------------------------------------
-  // NEW COMMENT BOUNDARY
-  //
-  // Session-based markets:
-  //   → comments since the current trading session started
-  //
-  // Markets without a trading session (crypto / currency / commodity):
-  //   → comments from the last 24 hours
-  // ---------------------------------------------------------------------------
+  const last24HoursMs = nowMs - 24 * 60 * 60 * 1000;
 
   const newCommentStartBySymbol = new Map<string, number>();
 
@@ -131,12 +142,7 @@ export async function getPopularBoards(limit = 7): Promise<PopularBoard[]> {
   }
 
   const earliestStart = Math.min(...newCommentStartBySymbol.values());
-
   const symbols = popularAssets.map((asset) => asset.symbol);
-
-  // ---------------------------------------------------------------------------
-  // One query for recent comments across all selected boards.
-  // ---------------------------------------------------------------------------
 
   const recentComments = await prisma.comment.findMany({
     where: {
@@ -198,14 +204,19 @@ export async function getPopularBoards(limit = 7): Promise<PopularBoard[]> {
     }
   }
 
-  return popularAssets.map((asset) => ({
-    symbol: asset.symbol,
-    name: asset.name,
+  return popularAssets.map((asset) => {
+    const metadata = ALL_MARKET_SYMBOLS.find(
+      (market) => market.symbol === asset.symbol,
+    );
 
-    commentCount: asset._count.comments,
-
-    newCommentCount: newCommentCounts.get(asset.symbol) ?? 0,
-  }));
+    return {
+      symbol: asset.symbol,
+      name: asset.name,
+      icon: metadata?.icon,
+      commentCount: asset._count.comments,
+      newCommentCount: newCommentCounts.get(asset.symbol) ?? 0,
+    };
+  });
 }
 
 // -----------------------------------------------------------------------------

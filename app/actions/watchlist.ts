@@ -192,29 +192,49 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
     ];
   });
 
-  const predictions =
-    userId && voteTargets.length > 0
-      ? await prisma.prediction.findMany({
-          where: {
-            userId,
-            OR: voteTargets,
-          },
-          select: {
-            symbol: true,
-            sessionDate: true,
-          },
-        })
-      : [];
-
   function getVoteKey(symbol: string, sessionDate: Date) {
     return JSON.stringify([symbol, sessionDate.toISOString()]);
   }
 
-  const votedSessions = new Set(
-    predictions.map((prediction) =>
-      getVoteKey(prediction.symbol, prediction.sessionDate),
-    ),
-  );
+  const votedSessions = new Set<string>();
+  const sessionsWithVotes = new Set<string>();
+
+  if (voteTargets.length > 0) {
+    if (userId) {
+      // Signed-in users: check their votes for each target session.
+      const predictions = await prisma.prediction.findMany({
+        where: {
+          userId,
+          OR: voteTargets,
+        },
+        select: {
+          symbol: true,
+          sessionDate: true,
+        },
+      });
+
+      for (const prediction of predictions) {
+        votedSessions.add(
+          getVoteKey(prediction.symbol, prediction.sessionDate),
+        );
+      }
+    } else {
+      // Guests: check which target sessions have any votes.
+      const publicVoteCounts = await prisma.prediction.groupBy({
+        by: ["symbol", "sessionDate"],
+        where: {
+          OR: voteTargets,
+        },
+        _count: {
+          _all: true,
+        },
+      });
+
+      for (const item of publicVoteCounts) {
+        sessionsWithVotes.add(getVoteKey(item.symbol, item.sessionDate));
+      }
+    }
+  }
 
   function getPriority(item: (typeof marketsWithVoting)[number]) {
     const { market, votingWindow } = item;
@@ -229,11 +249,15 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
       return 2;
     }
 
-    const hasVoted = votedSessions.has(
-      getVoteKey(market.symbol, votingWindow.predictionFor),
-    );
+    const voteKey = getVoteKey(market.symbol, votingWindow.predictionFor);
 
-    return hasVoted ? 1 : 0;
+    // Guests: markets with votes first.
+    if (!userId) {
+      return sessionsWithVotes.has(voteKey) ? 0 : 1;
+    }
+
+    // Signed-in users: markets they haven't voted on first.
+    return votedSessions.has(voteKey) ? 1 : 0;
   }
 
   return marketsWithVoting
