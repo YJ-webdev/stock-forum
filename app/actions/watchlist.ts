@@ -56,6 +56,9 @@ export async function toggleMarketWatchlist(symbol: string) {
 
   const userId = session.user.id;
   const marketSymbol = symbol.trim();
+  const displaySymbol = ALL_MARKET_SYMBOLS.find(
+    (market) => market.symbol === marketSymbol,
+  )?.name;
 
   const result = await prisma.$transaction(async (tx) => {
     // PostgreSQL: serialize watchlist additions for this user.
@@ -93,7 +96,9 @@ export async function toggleMarketWatchlist(symbol: string) {
     });
 
     if (currentCount >= MAX_WATCHLIST_MARKETS) {
-      throw new Error(`You can follow up to ${MAX_WATCHLIST_MARKETS} markets.`);
+      throw new Error(
+        `Failed to add ${displaySymbol} . Your watchlist is full.`,
+      );
     }
 
     await tx.watchlist.create({

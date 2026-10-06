@@ -73,12 +73,15 @@ export default function RootLayout({
           <Toaster
             position="bottom-center"
             theme="dark"
-            duration={2000}
+            duration={5000}
+            className="left-1/2! right-auto! translate-none! transform-[translateX(-50%)]!"
             toastOptions={{
               classNames: {
-                toast: "border-none! px-5! py-4! text-[15px]!",
-                title: "text-[15px]! font-medium!",
-                description: "text-sm!",
+                toast:
+                  "left-1/2! right-auto! -translate-x-1/2! w-max! max-w-[calc(100vw-32px)]! border-none! px-5! py-4! text-[15px]!",
+                title:
+                  "min-w-0! text-[15px]! font-medium! whitespace-normal! break-words! sm:whitespace-nowrap!",
+                description: "text-sm! whitespace-normal! break-words!",
               },
             }}
           />

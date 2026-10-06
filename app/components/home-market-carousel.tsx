@@ -297,7 +297,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 />
               </div>
 
-              <p className="text-[18.5px] font-normal text-zinc-900 dark:text-zinc-300">
+              <p className="text-[18px] font-normal text-zinc-900 dark:text-zinc-300">
                 Your markets, all in one place
               </p>
 
@@ -314,28 +314,6 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 <Plus className="size-4" strokeWidth={1.5} aria-hidden="true" />
                 Add markets
               </button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isPending}
-                onClick={() => {
-                  startTransition(async () => {
-                    try {
-                      await removeMarketsFromWatchlist(["^NDX"]);
-                      router.refresh();
-                      toast.success("Old Nasdaq market removed.");
-                    } catch (error) {
-                      toast.error(
-                        error instanceof Error
-                          ? error.message
-                          : "Failed to remove the old market.",
-                      );
-                    }
-                  });
-                }}
-              >
-                Remove old Nasdaq
-              </Button>
             </div>
           </div>
         ) : (
