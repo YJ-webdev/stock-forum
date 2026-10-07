@@ -1,15 +1,30 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type KeyboardEvent,
+  type RefObject,
+  type SetStateAction,
+} from "react";
 import { useRouter } from "next/navigation";
-
 import { TZDate } from "@date-fns/tz";
+import { Vote } from "lucide-react";
 
 import {
   TRADING_HOURS,
   type MarketSymbolItem,
 } from "@/lib/data/market-symbols";
-import { SelectedRange, useMarketQuote } from "@/app/hooks/useMarketQuote";
+
+import { useMarketQuote, type SelectedRange } from "@/app/hooks/useMarketQuote";
+
+import {
+  useRelativeQuotes,
+  type RelativeQuote,
+} from "@/app/hooks/useRelativeQuotes";
 
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 
@@ -21,34 +36,36 @@ import {
 
 import { TrendSparkline } from "./trend-sparkline";
 import { Numeric } from "./numeric";
-import { Vote } from "lucide-react";
 import { RollingPrice } from "./rolling-price";
 import { SparklineLoading } from "./sparkline-loading";
 
 interface RelativeStocksProps {
   items: MarketSymbolItem[];
-  setActiveRange: React.Dispatch<React.SetStateAction<SelectedRange>>;
+  setActiveRange: Dispatch<SetStateAction<SelectedRange>>;
   selectedIndex?: number;
   onNavigate?: () => void;
 }
 
 interface RelativeStockRowProps {
   item: MarketSymbolItem;
-  setActiveRange: React.Dispatch<React.SetStateAction<SelectedRange>>;
-  voteStats: MarketVoteListStats | undefined;
+  setActiveRange: Dispatch<SetStateAction<SelectedRange>>;
+  voteStats?: MarketVoteListStats;
   canVote: boolean;
   showVotingColumns: boolean;
   isSelected: boolean;
-  rowRef?: React.RefObject<HTMLTableRowElement | null>;
+  rowRef?: RefObject<HTMLTableRowElement | null>;
   onNavigate?: () => void;
+  priceQuote?: RelativeQuote;
+  quotesLoading: boolean;
+}
+
+interface VotingRequest {
+  symbol: string;
+  sessionDateMs: number;
 }
 
 function isVotingAsset(item: MarketSymbolItem) {
-  return (
-    item.assetType !== "crypto" &&
-    item.assetType !== "currency" &&
-    item.assetType !== "commodity"
-  );
+  return item.assetType === "index";
 }
 
 function getSparklineSession(
@@ -88,12 +105,8 @@ function getSparklineSession(
     return emptySession;
   }
 
-  // 실제 데이터의 거래일을 사용.
-  // 휴일이나 주말에도 마지막 거래일의 시간축을 유지.
   const dataDate = new TZDate(latestTimestampMs, schedule.timezone);
-
   const [openHour, openMinute] = schedule.open.split(":").map(Number);
-
   const [closeHour, closeMinute] = schedule.close.split(":").map(Number);
 
   if (![openHour, openMinute, closeHour, closeMinute].every(Number.isFinite)) {
@@ -102,7 +115,6 @@ function getSparklineSession(
 
   const year = dataDate.getFullYear();
   const month = dataDate.getMonth();
-
   const openMinutes = openHour * 60 + openMinute;
   const closeMinutes = closeHour * 60 + closeMinute;
   const isOvernight = closeMinutes <= openMinutes;
@@ -142,107 +154,182 @@ function getSparklineSession(
   };
 }
 
+function handleMarketRowKeyDown(
+  event: KeyboardEvent<HTMLTableRowElement>,
+  navigate: () => void,
+) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    navigate();
+    return;
+  }
+
+  if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+    return;
+  }
+
+  event.preventDefault();
+
+  const table = event.currentTarget.closest("table");
+
+  const rows = Array.from(
+    table?.querySelectorAll<HTMLTableRowElement>('[data-market-row="true"]') ??
+      [],
+  );
+
+  const currentIndex = rows.indexOf(event.currentTarget);
+
+  if (event.key === "ArrowDown") {
+    rows[currentIndex + 1]?.focus();
+    return;
+  }
+
+  if (currentIndex === 0) {
+    document
+      .querySelector<HTMLButtonElement>('[data-active-category="true"]')
+      ?.focus();
+
+    return;
+  }
+
+  rows[currentIndex - 1]?.focus();
+}
+
+function formatSigned(value: number | null, decimals = 2) {
+  if (value === null || !Number.isFinite(value)) {
+    return "—";
+  }
+
+  return `${value >= 0 ? "+" : ""}${value.toFixed(decimals)}`;
+}
+
 export function RelativeStocks({
   items,
   setActiveRange,
   selectedIndex = -1,
   onNavigate,
 }: RelativeStocksProps) {
-  const [now] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
 
-  const [voteStats, setVoteStats] = useState<MarketVoteListStatsMap>({});
+  const [voteState, setVoteState] = useState<{
+    key: string;
+    stats: MarketVoteListStatsMap;
+  }>({
+    key: "",
+    stats: {},
+  });
 
   const selectedRowRef = useRef<HTMLTableRowElement | null>(null);
 
-  const showVotingColumns = items.some(isVotingAsset);
+  const { quotes, loading: quotesLoading } = useRelativeQuotes(
+    items.map((item) => item.symbol),
+  );
 
-  const votingStatuses = showVotingColumns
-    ? items.filter(isVotingAsset).map((item) => {
-        const votingWindow = getVotingWindow(item.symbol, now);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 30_000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const votingStatuses = useMemo(
+    () =>
+      items.filter(isVotingAsset).map((item) => {
+        const window = getVotingWindow(item.symbol, now);
 
         return {
           symbol: item.symbol,
-          canVote: votingWindow.canVote,
-          predictionFor: votingWindow.predictionFor,
+          canVote: window.canVote,
+          predictionFor: window.predictionFor,
         };
-      })
-    : [];
+      }),
+    [items, now],
+  );
 
-  const votingSessionKey = votingStatuses
-    .map(
-      (status) =>
-        `${status.symbol}:${status.predictionFor?.getTime() ?? "none"}`,
-    )
-    .join("|");
+  const showVotingColumns = votingStatuses.length > 0;
+
+  const votingStatusMap = useMemo(
+    () => new Map(votingStatuses.map((status) => [status.symbol, status])),
+    [votingStatuses],
+  );
+
+  const votingRequestKey = JSON.stringify(
+    votingStatuses.flatMap((status) =>
+      status.predictionFor
+        ? [
+            {
+              symbol: status.symbol,
+              sessionDateMs: status.predictionFor.getTime(),
+            },
+          ]
+        : [],
+    ),
+  );
+
+  const voteStats = voteState.key === votingRequestKey ? voteState.stats : {};
 
   useEffect(() => {
     let cancelled = false;
 
+    const requests = JSON.parse(votingRequestKey) as VotingRequest[];
+
+    if (requests.length === 0) {
+      setVoteState({
+        key: votingRequestKey,
+        stats: {},
+      });
+
+      return;
+    }
+
     async function loadVoteStats() {
-      if (!showVotingColumns) {
-        setVoteStats({});
-        return;
-      }
-
-      const markets = votingStatuses
-        .filter(
-          (
-            status,
-          ): status is typeof status & {
-            predictionFor: Date;
-          } => status.predictionFor !== null,
-        )
-        .map((status) => ({
-          symbol: status.symbol,
-          sessionDate: status.predictionFor,
-        }));
-
-      if (markets.length === 0) {
-        setVoteStats({});
-        return;
-      }
-
       try {
         const result = await getMarketVoteListStats({
-          markets,
+          markets: requests.map((request) => ({
+            symbol: request.symbol,
+            sessionDate: new Date(request.sessionDateMs),
+          })),
         });
 
         if (!cancelled) {
-          setVoteStats(result);
+          setVoteState({
+            key: votingRequestKey,
+            stats: result,
+          });
         }
       } catch (error) {
         console.error("Failed to load market vote stats:", error);
 
         if (!cancelled) {
-          setVoteStats({});
+          setVoteState({
+            key: votingRequestKey,
+            stats: {},
+          });
         }
       }
     }
 
-    loadVoteStats();
+    void loadVoteStats();
 
     return () => {
       cancelled = true;
     };
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [votingSessionKey, showVotingColumns]);
+  }, [votingRequestKey]);
 
   useEffect(() => {
-    if (selectedIndex < 0) {
-      return;
+    if (selectedIndex >= 0) {
+      selectedRowRef.current?.scrollIntoView({
+        block: "nearest",
+      });
     }
-
-    selectedRowRef.current?.scrollIntoView({
-      block: "nearest",
-    });
   }, [selectedIndex]);
 
   return (
     <div className="flex max-h-[calc(100vh-230px)] w-full flex-col overflow-y-auto">
-      <div className="w-full  bg-zinc-100  dark:bg-zinc-800 md:rounded-lg  md:bg-white ">
+      <div className="w-full bg-zinc-100 dark:bg-zinc-800 md:rounded-lg md:bg-white">
         <table className="w-full table-fixed">
-          <thead className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-800 md:bg-white ">
+          <thead className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-800 md:bg-white">
             <tr className="border-b border-zinc-200 text-[11px] uppercase tracking-wider text-zinc-400 dark:border-zinc-700/50 dark:text-zinc-500 md:text-xs">
               <th
                 className={
@@ -318,10 +405,7 @@ export function RelativeStocks({
 
           <tbody className="font-medium">
             {items.map((item, index) => {
-              const status = showVotingColumns
-                ? votingStatuses.find((status) => status.symbol === item.symbol)
-                : undefined;
-
+              const status = votingStatusMap.get(item.symbol);
               const isSelected = selectedIndex === index;
 
               return (
@@ -329,14 +413,14 @@ export function RelativeStocks({
                   key={item.symbol}
                   item={item}
                   setActiveRange={setActiveRange}
-                  voteStats={
-                    showVotingColumns ? voteStats[item.symbol] : undefined
-                  }
+                  voteStats={voteStats[item.symbol]}
                   canVote={status?.canVote ?? false}
                   showVotingColumns={showVotingColumns}
                   isSelected={isSelected}
                   rowRef={isSelected ? selectedRowRef : undefined}
                   onNavigate={onNavigate}
+                  priceQuote={quotes[item.symbol]}
+                  quotesLoading={quotesLoading}
                 />
               );
             })}
@@ -356,145 +440,80 @@ function RelativeStockRow({
   isSelected,
   rowRef,
   onNavigate,
+  priceQuote,
+  quotesLoading,
 }: RelativeStockRowProps) {
   const router = useRouter();
 
-  const { data: quote, loading } = useMarketQuote(
-    item.symbol,
-    item.name,
-    "1D",
-    item.displaySymbol,
-    item.assetType,
-    0,
-    "15m",
-  );
+  const decimals = 2;
+  const priceTemplate = "00,000.00";
+  const isInitialLoading = !priceQuote && quotesLoading;
 
-  const { sessionStartMs, sessionEndMs } = getSparklineSession(
-    item,
-    quote?.history,
-  );
+  const formattedPrice = priceQuote
+    ? priceQuote.price.toLocaleString("en-US", {
+        style: item.assetType === "crypto" ? "currency" : "decimal",
+        currency: item.assetType === "crypto" ? "USD" : undefined,
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      })
+    : undefined;
 
-  const priceColor = !quote
-    ? "text-zinc-400 dark:text-zinc-500"
-    : quote.isPositive
-      ? "text-emerald-700 dark:text-emerald-600"
-      : "text-[#cf0000] dark:text-[#ff1414]";
+  const formattedChange = priceQuote
+    ? formatSigned(priceQuote.change, decimals)
+    : undefined;
 
-  const href = `/market/${encodeURIComponent(item.symbol)}`;
+  const formattedPercent = priceQuote
+    ? priceQuote.percent === null
+      ? "—"
+      : `${formatSigned(priceQuote.percent)}%`
+    : undefined;
 
-  const handleRowClick = () => {
+  const direction = priceQuote?.percent ?? priceQuote?.change;
+
+  const priceColor =
+    direction == null
+      ? "text-zinc-400 dark:text-zinc-500"
+      : direction >= 0
+        ? "text-emerald-700 dark:text-emerald-600"
+        : "text-[#cf0000] dark:text-[#ff1414]";
+
+  function navigate() {
     setActiveRange("1D");
-
     onNavigate?.();
 
-    router.push(href, {
+    router.push(`/market/${encodeURIComponent(item.symbol)}`, {
       scroll: true,
     });
-  };
+  }
 
-  const handleRowKeyDown = (
-    event: React.KeyboardEvent<HTMLTableRowElement>,
-  ) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
+  const eligibleForVoting = isVotingAsset(item);
 
-      handleRowClick();
+  const hasVotes =
+    eligibleForVoting && showVotingColumns && (voteStats?.totalVotes ?? 0) > 0;
 
-      return;
-    }
-
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-
-      const rows = Array.from(
-        document.querySelectorAll<HTMLTableRowElement>(
-          '[data-market-row="true"]',
-        ),
-      );
-
-      const currentIndex = rows.indexOf(event.currentTarget);
-      const nextRow = rows[currentIndex + 1];
-
-      nextRow?.focus();
-
-      return;
-    }
-
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-
-      const rows = Array.from(
-        document.querySelectorAll<HTMLTableRowElement>(
-          '[data-market-row="true"]',
-        ),
-      );
-
-      const currentIndex = rows.indexOf(event.currentTarget);
-
-      if (currentIndex === 0) {
-        const activeCategory = document.querySelector<HTMLButtonElement>(
-          '[data-active-category="true"]',
-        );
-
-        activeCategory?.focus();
-
-        return;
-      }
-
-      const previousRow = rows[currentIndex - 1];
-
-      previousRow?.focus();
-    }
-  };
-
-  const hasVotes = showVotingColumns && (voteStats?.totalVotes ?? 0) > 0;
-
-  const myPrediction = showVotingColumns
-    ? (voteStats?.myPrediction ?? null)
-    : null;
-
-  const hasVoted = myPrediction !== null;
+  const myPrediction =
+    eligibleForVoting && showVotingColumns
+      ? (voteStats?.myPrediction ?? null)
+      : null;
 
   const bullPercent = hasVotes ? (voteStats?.bullPercent ?? 0) : 0;
-
   const bearPercent = hasVotes ? (voteStats?.bearPercent ?? 0) : 0;
-
-  const currencyDecimals =
-    item.assetType === "currency"
-      ? item.displaySymbol?.toUpperCase().includes("JPY")
-        ? 2
-        : 4
-      : 2;
-
-  const priceTemplate =
-    item.assetType === "currency"
-      ? currencyDecimals === 4
-        ? "0.0000"
-        : "000.00"
-      : "00,000.00";
-
-  const isInitialLoading = loading && !quote;
 
   return (
     <tr
       ref={rowRef}
       tabIndex={0}
       data-market-row="true"
-      onClick={handleRowClick}
-      onKeyDown={handleRowKeyDown}
+      onClick={navigate}
+      onKeyDown={(event) => handleMarketRowKeyDown(event, navigate)}
       className={`
         border-b border-zinc-200/80
         text-[14px] text-zinc-800
-        transition-colors
-        last:border-b-0
-        hover:cursor-pointer
-        hover:bg-zinc-100/60
-        focus:bg-zinc-100
-        focus:outline-none
-        dark:border-zinc-700/50
-        dark:text-zinc-100
-        dark:hover:bg-zinc-700/20
-        dark:focus:bg-zinc-700/60
+        transition-colors last:border-b-0
+        hover:cursor-pointer hover:bg-zinc-100/60
+        focus:bg-zinc-100 focus:outline-none
+        dark:border-zinc-700/50 dark:text-zinc-100
+        dark:hover:bg-zinc-700/20 dark:focus:bg-zinc-700/60
         md:text-[15px]
         ${isSelected ? "bg-zinc-100 dark:bg-zinc-700/60" : ""}
       `}
@@ -508,7 +527,7 @@ function RelativeStockRow({
       >
         <div className="ml-4 min-w-0">
           <div className="truncate text-[16px] font-medium leading-4.5 md:text-[17px]">
-            {item.displaySymbol}
+            {item.displaySymbol ?? item.symbol}
           </div>
 
           <p className="mt-0.5 block truncate pr-2 text-[12px] font-normal text-zinc-500 dark:text-zinc-400 md:text-[13px]">
@@ -525,18 +544,7 @@ function RelativeStockRow({
         }
       >
         <div className="flex w-full justify-center overflow-hidden">
-          {isInitialLoading ? (
-            <SparklineLoading />
-          ) : (
-            <TrendSparkline
-              data={quote?.history}
-              isPositive={quote?.isPositive}
-              lunchStartMs={quote?.lunchStartMs}
-              lunchEndMs={quote?.lunchEndMs}
-              sessionStartMs={sessionStartMs}
-              sessionEndMs={sessionEndMs}
-            />
-          )}
+          <RelativeSparkline item={item} />
         </div>
       </td>
 
@@ -547,8 +555,8 @@ function RelativeStockRow({
             : "w-[37%] whitespace-nowrap text-right font-medium dark:font-normal md:w-[15%]"
         }
       >
-        <Numeric decimals={currencyDecimals}>
-          {quote?.value ??
+        <Numeric decimals={decimals}>
+          {formattedPrice ??
             (isInitialLoading ? (
               <RollingPrice template={priceTemplate} />
             ) : (
@@ -558,13 +566,11 @@ function RelativeStockRow({
 
         <span
           className={`
-    mt-0.5 block
-    text-[12px] leading-4 font-medium
-    md:hidden
-    ${priceColor}
-  `}
+            mt-0.5 block text-[12px] font-medium leading-4
+            md:hidden ${priceColor}
+          `}
         >
-          {quote?.percent ??
+          {formattedPercent ??
             (isInitialLoading ? <RollingPrice template="0.00%" /> : "—")}
         </span>
       </td>
@@ -576,8 +582,8 @@ function RelativeStockRow({
             : "w-[37%] whitespace-nowrap py-3 text-right font-medium text-zinc-500 dark:text-zinc-400 md:w-[17%]"
         }
       >
-        <Numeric decimals={currencyDecimals}>
-          {quote?.previousClose ??
+        <Numeric decimals={decimals}>
+          {priceQuote?.previousClose ??
             (isInitialLoading ? (
               <RollingPrice template={priceTemplate} />
             ) : (
@@ -589,23 +595,20 @@ function RelativeStockRow({
       <td
         className={`
           hidden whitespace-nowrap py-3.5
-          text-right font-medium
-          dark:font-semibold
-          md:table-cell
+          text-right font-medium dark:font-semibold md:table-cell
           ${showVotingColumns ? "md:w-[37%]" : "md:w-[16.5%]"}
           ${priceColor}
         `}
       >
         <Numeric>
-          {quote?.percent ??
+          {formattedPercent ??
             (isInitialLoading ? <RollingPrice template="0.00%" /> : "—")}
         </Numeric>
       </td>
 
       <td
         className={`
-          whitespace-nowrap py-3.5
-          text-right font-medium
+          whitespace-nowrap py-3.5 text-right font-medium
           dark:font-semibold
           ${
             showVotingColumns
@@ -615,124 +618,211 @@ function RelativeStockRow({
           ${priceColor}
         `}
       >
-        <Numeric decimals={currencyDecimals}>
-          {quote?.change ??
-            (isInitialLoading ? (
-              <RollingPrice
-                template={currencyDecimals === 4 ? "0.0000" : "00.00"}
-              />
-            ) : (
-              "—"
-            ))}
+        <Numeric decimals={decimals}>
+          {formattedChange ??
+            (isInitialLoading ? <RollingPrice template="00.00" /> : "—")}
         </Numeric>
       </td>
 
       {showVotingColumns && (
         <>
           <td className="w-[37%] pl-5 pr-3 md:w-[20%]">
-            <div
-              title={
-                hasVotes
-                  ? `${voteStats?.bullVotes ?? 0} Bull / ${
-                      voteStats?.bearVotes ?? 0
-                    } Bear`
-                  : "No votes yet"
-              }
-              className="
-                flex h-3 w-full
-                overflow-hidden
-                bg-zinc-200
-                dark:bg-zinc-700
-              "
-            >
-              {hasVotes && (
-                <>
-                  <div
-                    className="
-                      bg-emerald-600
-                      transition-[width]
-                      duration-300
-                    "
-                    style={{
-                      width: `${bullPercent}%`,
-                    }}
-                  />
+            {eligibleForVoting ? (
+              <div
+                title={
+                  voteStats === undefined
+                    ? "Vote statistics unavailable"
+                    : hasVotes
+                      ? `${voteStats.bullVotes} Bull / ${voteStats.bearVotes} Bear`
+                      : "No votes yet"
+                }
+                className="
+                  flex h-3 w-full overflow-hidden
+                  bg-zinc-200 dark:bg-zinc-700
+                "
+              >
+                {hasVotes && (
+                  <>
+                    <div
+                      className="bg-emerald-600 transition-[width] duration-300"
+                      style={{ width: `${bullPercent}%` }}
+                    />
 
-                  <div
-                    className="
-                      bg-rose-600
-                      transition-[width]
-                      duration-300
-                    "
-                    style={{
-                      width: `${bearPercent}%`,
-                    }}
-                  />
-                </>
-              )}
-            </div>
+                    <div
+                      className="bg-rose-600 transition-[width] duration-300"
+                      style={{ width: `${bearPercent}%` }}
+                    />
+                  </>
+                )}
+              </div>
+            ) : (
+              <span className="block text-center text-zinc-400">—</span>
+            )}
           </td>
 
-          <td className="w-[5%] justify-center text-center md:w-[6%]">
-            <div
-              title={
-                hasVoted
-                  ? `You voted ${myPrediction.direction} · ${myPrediction.pointsBet} pts`
-                  : canVote
-                    ? "Voting is open"
-                    : "Voting is closed"
-              }
-              className="relative mx-auto w-fit items-center"
-            >
-              <Vote
-                strokeWidth={1.75}
-                className={`
-                  h-5 w-5 self-center
-                  transition-colors
-                  ${
-                    canVote
-                      ? "text-zinc-700 dark:text-zinc-300"
-                      : "text-zinc-400 dark:text-zinc-600"
-                  }
-                `}
-              />
-
-              {hasVoted ? (
-                <span
+          <td className="w-[5%] text-center md:w-[6%]">
+            {eligibleForVoting ? (
+              <div
+                title={
+                  myPrediction
+                    ? `You voted ${myPrediction.direction} · ${myPrediction.pointsBet} pts`
+                    : canVote
+                      ? "Voting is open"
+                      : "Voting is closed"
+                }
+                className="relative mx-auto w-fit items-center"
+              >
+                <Vote
+                  strokeWidth={1.75}
                   className={`
-                    absolute
-                    -right-2 -top-2
-                    flex h-4 w-4
-                    items-center justify-center
+                    h-5 w-5 self-center transition-colors
                     ${
-                      myPrediction.direction === "BULL"
-                        ? "text-emerald-500"
-                        : "text-rose-500"
+                      canVote
+                        ? "text-zinc-700 dark:text-zinc-300"
+                        : "text-zinc-400 dark:text-zinc-600"
                     }
                   `}
-                >
-                  ✘
-                </span>
-              ) : (
-                canVote && (
+                />
+
+                {myPrediction ? (
                   <span
-                    className="
-                      absolute
-                      -right-1 -top-1
-                      h-2 w-2
-                      rounded-full
-                      bg-emerald-500
-                      ring-2 ring-white
-                      dark:ring-zinc-900
-                      pulse-animation
-                    "
-                  />
-                )
-              )}
-            </div>
+                    className={`
+                      absolute -right-2 -top-2
+                      flex h-4 w-4 items-center justify-center
+                      ${
+                        myPrediction.direction === "BULL"
+                          ? "text-emerald-500"
+                          : "text-rose-500"
+                      }
+                    `}
+                  >
+                    ✘
+                  </span>
+                ) : (
+                  canVote && (
+                    <span
+                      className="
+                        pulse-animation absolute -right-1 -top-1
+                        h-2 w-2 rounded-full bg-emerald-500
+                        ring-2 ring-white dark:ring-zinc-900
+                      "
+                    />
+                  )
+                )}
+              </div>
+            ) : (
+              <span className="text-zinc-400">—</span>
+            )}
           </td>
         </>
       )}
     </tr>
+  );
+}
+
+function RelativeSparkline({ item }: { item: MarketSymbolItem }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [nearViewport, setNearViewport] = useState(false);
+  const [desktop, setDesktop] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)");
+    const update = () => setDesktop(media.matches);
+
+    update();
+
+    // Support older Safari as well.
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", update);
+
+      return () => media.removeEventListener("change", update);
+    }
+
+    media.addListener(update);
+
+    return () => media.removeListener(update);
+  }, []);
+
+  useEffect(() => {
+    if (!desktop || nearViewport) {
+      return;
+    }
+
+    if (!("IntersectionObserver" in window)) {
+      setNearViewport(true);
+      return;
+    }
+
+    const container = containerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setNearViewport(true);
+          observer.disconnect();
+        }
+      },
+      {
+        rootMargin: "150px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(container);
+
+    return () => observer.disconnect();
+  }, [desktop, nearViewport]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="flex h-10 w-full items-center justify-center"
+    >
+      {desktop && nearViewport ? (
+        <LoadedRelativeSparkline item={item} />
+      ) : (
+        <SparklineLoading />
+      )}
+    </div>
+  );
+}
+
+function LoadedRelativeSparkline({ item }: { item: MarketSymbolItem }) {
+  const { data, loading, error } = useMarketQuote(
+    item.providerSymbol ?? item.symbol,
+    item.name,
+    "1D",
+    item.displaySymbol,
+    item.assetType,
+    0,
+    "15m",
+  );
+
+  const { sessionStartMs, sessionEndMs } = useMemo(
+    () => getSparklineSession(item, data?.history),
+    [item, data?.history],
+  );
+
+  if (!data && (loading || !error)) {
+    return <SparklineLoading />;
+  }
+
+  if (!data) {
+    return <span className="text-zinc-400">—</span>;
+  }
+
+  return (
+    <TrendSparkline
+      data={data.history}
+      isPositive={data.isPositive}
+      lunchStartMs={data.lunchStartMs}
+      lunchEndMs={data.lunchEndMs}
+      sessionStartMs={sessionStartMs}
+      sessionEndMs={sessionEndMs}
+    />
   );
 }

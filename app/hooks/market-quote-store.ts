@@ -14,27 +14,28 @@ interface MarketQuoteSnapshot {
   error: string | null;
 }
 
+interface Subscription {
+  listener: () => void;
+  pollingInterval: number;
+}
+
 interface StoreEntry {
   data: MarketItem | null;
   loading: boolean;
   error: string | null;
 
-  listeners: Set<() => void>;
-
+  subscriptions: Set<Subscription>;
   fetchPromise: Promise<void> | null;
 
-  subscribers: number;
-  pollingSubscribers: number;
+  pollingTimer: number | null;
+  pollingMs: number;
 
-  pollingInterval: ReturnType<typeof setInterval> | null;
-
-  /*
-   * IMPORTANT:
-   * This object is only replaced when data/loading/error changes.
-   * useSyncExternalStore needs a stable snapshot reference.
-   */
+  lastSuccessAt: number;
   snapshot: MarketQuoteSnapshot;
 }
+
+const CACHE_FRESH_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 15_000;
 
 const store = new Map<string, StoreEntry>();
 
@@ -61,14 +62,13 @@ function getEntry(
       loading: false,
       error: null,
 
-      listeners: new Set(),
-
+      subscriptions: new Set(),
       fetchPromise: null,
 
-      subscribers: 0,
-      pollingSubscribers: 0,
+      pollingTimer: null,
+      pollingMs: 0,
 
-      pollingInterval: null,
+      lastSuccessAt: 0,
 
       snapshot: {
         data: null,
@@ -83,18 +83,36 @@ function getEntry(
   return entry;
 }
 
-function updateSnapshot(entry: StoreEntry) {
+function publish(entry: StoreEntry) {
+  const previous = entry.snapshot;
+
+  if (
+    previous.data === entry.data &&
+    previous.loading === entry.loading &&
+    previous.error === entry.error
+  ) {
+    return;
+  }
+
   entry.snapshot = {
     data: entry.data,
     loading: entry.loading,
     error: entry.error,
   };
+
+  for (const subscription of entry.subscriptions) {
+    subscription.listener();
+  }
 }
 
-function notify(entry: StoreEntry) {
-  entry.listeners.forEach((listener) => {
-    listener();
-  });
+function isValidPrice(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+function isFresh(entry: StoreEntry) {
+  return (
+    entry.data !== null && Date.now() - entry.lastSuccessAt < CACHE_FRESH_MS
+  );
 }
 
 async function fetchQuote(
@@ -111,20 +129,20 @@ async function fetchQuote(
     return entry.fetchPromise;
   }
 
-  // Defer execution until fetchPromise has been assigned.
+  // Assign fetchPromise before notifying subscribers.
   const request = Promise.resolve().then(async () => {
     const controller = new AbortController();
 
     const timeout = window.setTimeout(() => {
       controller.abort();
-    }, 15_000);
+    }, REQUEST_TIMEOUT_MS);
 
-    entry.loading = true;
+    // Refresh existing data without showing the initial loading state.
+    entry.loading = entry.data === null;
     entry.error = null;
 
     try {
-      updateSnapshot(entry);
-      notify(entry);
+      publish(entry);
 
       const params = new URLSearchParams({
         symbol,
@@ -135,22 +153,18 @@ async function fetchQuote(
         params.set("interval", chartInterval);
       }
 
-      const res = await fetch(`/api/candles?${params.toString()}`, {
+      const response = await fetch(`/api/candles?${params.toString()}`, {
         signal: controller.signal,
         cache: "no-store",
       });
 
-      if (!res.ok) {
-        throw new Error(`Failed to load market data (${res.status})`);
+      if (!response.ok) {
+        throw new Error(`Failed to load market data (${response.status})`);
       }
 
-      const json = await res.json();
+      const json = await response.json();
 
-      // The timeout covers both fetching and reading the response.
       window.clearTimeout(timeout);
-
-      const isValidPrice = (value: unknown): value is number =>
-        typeof value === "number" && Number.isFinite(value) && value > 0;
 
       const points: ChartPoint[] = Array.isArray(json?.points)
         ? json.points.filter(
@@ -161,7 +175,7 @@ async function fetchQuote(
           )
         : [];
 
-      const lastPoint = points[points.length - 1];
+      const lastPoint = points.at(-1);
 
       const currentPrice = isValidPrice(json?.currentPrice)
         ? json.currentPrice
@@ -207,13 +221,12 @@ async function fetchQuote(
         isPositive: percentVal >= 0,
 
         history: points,
-        isClosed: json.isClosed ?? true,
+        rawPrice: currentPrice,
+        previousClose,
 
+        isClosed: json.isClosed ?? true,
         marketOpenMs: json.marketOpenMs ?? null,
         marketCloseMs: json.marketCloseMs ?? null,
-
-        rawPrice: currentPrice,
-        previousClose: json.previousClose,
 
         updatedAt: json.updatedAt ?? lastPoint?.timestampMs ?? Date.now(),
 
@@ -222,6 +235,7 @@ async function fetchQuote(
         lunchEndMs: json.lunchEndMs ?? null,
       };
 
+      entry.lastSuccessAt = Date.now();
       entry.error = null;
     } catch (error) {
       const message = controller.signal.aborted
@@ -232,7 +246,7 @@ async function fetchQuote(
 
       console.error(`Market quote error for ${symbol}:`, message);
 
-      // Preserve previously loaded data if this refresh fails.
+      // Keep the last successful data when a refresh fails.
       entry.error = message;
     } finally {
       window.clearTimeout(timeout);
@@ -240,8 +254,7 @@ async function fetchQuote(
       entry.loading = false;
       entry.fetchPromise = null;
 
-      updateSnapshot(entry);
-      notify(entry);
+      publish(entry);
     }
   });
 
@@ -250,43 +263,69 @@ async function fetchQuote(
   return request;
 }
 
-function startPolling(
+function configurePolling(
   symbol: string,
   name: string,
   range: ChartRange,
   displaySymbol: string,
   assetType: AssetType,
-  pollingInterval: number,
   chartInterval?: ChartInterval,
 ) {
   const entry = getEntry(symbol, range, chartInterval);
 
-  // Already polling.
-  if (entry.pollingInterval) {
+  let nextPollingMs = Infinity;
+
+  for (const subscription of entry.subscriptions) {
+    if (
+      Number.isFinite(subscription.pollingInterval) &&
+      subscription.pollingInterval > 0
+    ) {
+      nextPollingMs = Math.min(nextPollingMs, subscription.pollingInterval);
+    }
+  }
+
+  if (!Number.isFinite(nextPollingMs)) {
+    nextPollingMs = 0;
+  }
+
+  if (entry.pollingMs === nextPollingMs) {
     return;
   }
 
-  entry.pollingInterval = setInterval(() => {
-    if (entry.pollingSubscribers <= 0) {
+  if (entry.pollingTimer !== null) {
+    window.clearInterval(entry.pollingTimer);
+    entry.pollingTimer = null;
+  }
+
+  entry.pollingMs = nextPollingMs;
+
+  if (nextPollingMs === 0) {
+    return;
+  }
+
+  entry.pollingTimer = window.setInterval(() => {
+    if (
+      document.hidden ||
+      entry.subscriptions.size === 0 ||
+      entry.fetchPromise
+    ) {
       return;
     }
 
-    fetchQuote(symbol, name, range, displaySymbol, assetType, chartInterval);
-  }, pollingInterval);
-}
+    // A recent mount or manual refresh already provided fresh data.
+    if (Date.now() - entry.lastSuccessAt < entry.pollingMs) {
+      return;
+    }
 
-function stopPolling(
-  symbol: string,
-  range: ChartRange,
-  chartInterval?: ChartInterval,
-) {
-  const entry = getEntry(symbol, range, chartInterval);
-
-  if (entry.pollingInterval) {
-    clearInterval(entry.pollingInterval);
-
-    entry.pollingInterval = null;
-  }
+    void fetchQuote(
+      symbol,
+      name,
+      range,
+      displaySymbol,
+      assetType,
+      chartInterval,
+    );
+  }, nextPollingMs);
 }
 
 export function subscribeToMarketQuote(
@@ -301,27 +340,28 @@ export function subscribeToMarketQuote(
 ) {
   const entry = getEntry(symbol, range, chartInterval);
 
-  entry.listeners.add(listener);
+  const subscription: Subscription = {
+    listener,
+    pollingInterval,
+  };
 
-  entry.subscribers++;
+  const isFirstSubscriber = entry.subscriptions.size === 0;
 
-  if (pollingInterval > 0) {
-    entry.pollingSubscribers++;
+  entry.subscriptions.add(subscription);
 
-    startPolling(
-      symbol,
-      name,
-      range,
-      displaySymbol,
-      assetType,
-      pollingInterval,
-      chartInterval,
-    );
-  }
+  configurePolling(
+    symbol,
+    name,
+    range,
+    displaySymbol,
+    assetType,
+    chartInterval,
+  );
 
-  // Refresh when the first subscriber mounts, including cached entries.
-  // Additional subscribers share the existing data and request.
-  if (!entry.fetchPromise && (!entry.data || entry.subscribers === 1)) {
+  if (
+    !entry.fetchPromise &&
+    (!entry.data || (isFirstSubscriber && !isFresh(entry)))
+  ) {
     void fetchQuote(
       symbol,
       name,
@@ -333,19 +373,16 @@ export function subscribeToMarketQuote(
   }
 
   return () => {
-    entry.listeners.delete(listener);
+    entry.subscriptions.delete(subscription);
 
-    entry.subscribers--;
-
-    if (pollingInterval > 0) {
-      entry.pollingSubscribers--;
-
-      if (entry.pollingSubscribers <= 0) {
-        entry.pollingSubscribers = 0;
-
-        stopPolling(symbol, range, chartInterval);
-      }
-    }
+    configurePolling(
+      symbol,
+      name,
+      range,
+      displaySymbol,
+      assetType,
+      chartInterval,
+    );
   };
 }
 

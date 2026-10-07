@@ -13,6 +13,8 @@ export const dynamic = "force-dynamic";
 
 const yahoo = new YahooFinance();
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 const PROVIDER_SYMBOLS: Record<string, string> = {
   TOPIX: "1306.T",
 };
@@ -23,6 +25,14 @@ interface MarketSession {
   isClosed: boolean;
   marketOpenMs: number | null;
   marketCloseMs: number | null;
+}
+
+interface Candle {
+  date: Date | string | number;
+  open?: number | null;
+  high?: number | null;
+  low?: number | null;
+  close?: number | null;
 }
 
 const INTERVALS: Record<string, YahooInterval> = {
@@ -44,24 +54,53 @@ const INTERVAL_MS: Record<YahooInterval, number> = {
   "15m": 15 * 60_000,
   "30m": 30 * 60_000,
   "60m": 60 * 60_000,
-  "1d": 24 * 60 * 60_000,
-  "1wk": 7 * 24 * 60 * 60_000,
+  "1d": DAY_MS,
+  "1wk": 7 * DAY_MS,
 };
+
+const ALLOWED_INTERVALS = new Set<YahooInterval>([
+  "1m",
+  "2m",
+  "5m",
+  "15m",
+  "30m",
+  "60m",
+  "1d",
+  "1wk",
+]);
+
+function isValidPrice(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+function toTimestamp(value: unknown): number {
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    return new Date(value).getTime();
+  }
+
+  return NaN;
+}
+
+function hasValidCandle(candles: Candle[]): boolean {
+  return candles.some(
+    (candle) =>
+      isValidPrice(candle.close) && Number.isFinite(toTimestamp(candle.date)),
+  );
+}
 
 function getPeriod1(range: string): Date {
   const now = new Date();
 
   switch (range) {
     case "1D":
-      /*
-       * Fetch several days so the latest complete/active
-       * trading session can still be found after close,
-       * weekends, etc.
-       */
-      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return new Date(now.getTime() - 7 * DAY_MS);
 
     case "5D":
-      return new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
+      return new Date(now.getTime() - 5 * DAY_MS);
 
     case "1M":
       return new Date(now.setMonth(now.getMonth() - 1));
@@ -85,79 +124,61 @@ function getPeriod1(range: string): Date {
       return new Date("1980-01-01");
 
     default:
-      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return new Date(now.getTime() - 7 * DAY_MS);
   }
 }
 
 // -----------------------------------------------------------------------------
-// YAHOO CHART CACHE
+// YAHOO CACHE
 // -----------------------------------------------------------------------------
-
-type CachedYahooChartResult = {
-  chartResult: any;
-  fetchedAt: number;
-};
 
 async function fetchYahooChart(
   symbol: string,
   range: string,
   interval: YahooInterval,
-): Promise<CachedYahooChartResult> {
-  const start = performance.now();
-
-  const chartResult = await yahoo.chart(symbol, {
+) {
+  return yahoo.chart(symbol, {
     period1: getPeriod1(range),
     interval,
     includePrePost: false,
   });
-
-  return {
-    chartResult,
-    fetchedAt: Date.now(),
-  };
 }
 
-// 1D → 30 seconds
+const getYahooQuote30Seconds = unstable_cache(
+  async (symbol: string) => yahoo.quote(symbol),
+  ["yahoo-quote-30-seconds-v1"],
+  { revalidate: 30 },
+);
+
 const getYahooChart30Seconds = unstable_cache(
   fetchYahooChart,
-  ["yahoo-chart-30-seconds-v1"],
-  {
-    revalidate: 30,
-  },
+  ["yahoo-chart-30-seconds-v2"],
+  { revalidate: 30 },
 );
 
-// 5D → 1 minute
 const getYahooChart1Minute = unstable_cache(
   fetchYahooChart,
-  ["yahoo-chart-1-minute-v1"],
-  {
-    revalidate: 60,
-  },
+  ["yahoo-chart-1-minute-v2"],
+  { revalidate: 60 },
 );
 
-// 1M / 3M / 6M / YTD / 1Y → 5 minutes
 const getYahooChart5Minutes = unstable_cache(
   fetchYahooChart,
-  ["yahoo-chart-5-minutes-v1"],
-  {
-    revalidate: 5 * 60,
-  },
+  ["yahoo-chart-5-minutes-v2"],
+  { revalidate: 300 },
 );
 
-// 5Y / MAX → 30 minutes
 const getYahooChart30Minutes = unstable_cache(
   fetchYahooChart,
-  ["yahoo-chart-30-minutes-v1"],
-  {
-    revalidate: 30 * 60,
-  },
+  ["yahoo-chart-30-minutes-v2"],
+  { revalidate: 1_800 },
 );
 
 function getCachedYahooChart(
   symbol: string,
   range: string,
   interval: YahooInterval,
-): Promise<CachedYahooChartResult> {
+) {
   switch (range) {
     case "1D":
       return getYahooChart30Seconds(symbol, range, interval);
@@ -181,11 +202,8 @@ function getCachedYahooChart(
   }
 }
 
-// Cache fallback requests during long holidays.
 const getHolidayFallbackChart = unstable_cache(
   async (symbol: string, interval: YahooInterval, quoteTimeMs: number) => {
-    const DAY_MS = 24 * 60 * 60 * 1000;
-
     return yahoo.chart(symbol, {
       period1: new Date(quoteTimeMs - 3 * DAY_MS),
       period2: new Date(Math.min(Date.now(), quoteTimeMs + DAY_MS)),
@@ -225,31 +243,37 @@ const getPreviousDailyClose = unstable_cache(
       includePrePost: false,
     });
 
-    const previousCandles = (Array.isArray(result.quotes) ? result.quotes : [])
-      .filter((candle) => {
-        const timestamp = new Date(candle.date).getTime();
+    let latestTimestamp = -Infinity;
+    let previousClose: number | null = null;
 
-        return (
-          Number.isFinite(timestamp) &&
-          typeof candle.close === "number" &&
-          Number.isFinite(candle.close) &&
-          candle.close > 0 &&
-          getExchangeDate(new Date(timestamp), timezone) < quoteDate
-        );
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    for (const candle of result.quotes ?? []) {
+      const timestamp = toTimestamp(candle.date);
 
-    return previousCandles.at(-1)?.close ?? null;
+      if (
+        !Number.isFinite(timestamp) ||
+        !isValidPrice(candle.close) ||
+        getExchangeDate(new Date(timestamp), timezone) >= quoteDate
+      ) {
+        continue;
+      }
+
+      if (timestamp > latestTimestamp) {
+        latestTimestamp = timestamp;
+        previousClose = candle.close;
+      }
+    }
+
+    return previousClose;
   },
   ["yahoo-previous-daily-close-v1"],
   { revalidate: 300 },
 );
+
 // -----------------------------------------------------------------------------
-// INTL FORMATTER CACHE
+// EXCHANGE DATE HELPERS
 // -----------------------------------------------------------------------------
 
 const exchangeDateFormatters = new Map<string, Intl.DateTimeFormat>();
-
 const exchangeWeekdayFormatters = new Map<string, Intl.DateTimeFormat>();
 
 function getExchangeDateFormatter(timezone: string): Intl.DateTimeFormat {
@@ -289,7 +313,13 @@ function getExchangeDate(date: Date, timezone?: string): string {
     return date.toISOString().slice(0, 10);
   }
 
-  return getExchangeDateFormatter(timezone).format(date);
+  const parts = getExchangeDateFormatter(timezone).formatToParts(date);
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  return `${year}-${month}-${day}`;
 }
 
 function getExchangeWeekday(date: Date, timezone: string): number {
@@ -314,10 +344,9 @@ function getTimestampForMarketTime(
   timezone: string,
 ): number {
   const [year, month, day] = date.split("-").map(Number);
-
   const [hours, minutes] = time.split(":").map(Number);
 
-  const zonedDate = new TZDate(
+  return new TZDate(
     year,
     month - 1,
     day,
@@ -325,19 +354,11 @@ function getTimestampForMarketTime(
     minutes,
     0,
     timezone,
-  );
-
-  return zonedDate.getTime();
+  ).getTime();
 }
 
 function addCalendarDays(dateString: string, amount: number): string {
   const [year, month, day] = dateString.split("-").map(Number);
-
-  /*
-   * UTC is intentionally used here only for calendar arithmetic.
-   * The resulting YYYY-MM-DD is later interpreted in the
-   * exchange's own timezone by TZDate.
-   */
   const date = new Date(Date.UTC(year, month - 1, day));
 
   date.setUTCDate(date.getUTCDate() + amount);
@@ -355,12 +376,10 @@ function isMarketWeekend(
   weekday: number,
   marketSchedule?: MarketSymbolItem["marketSchedule"],
 ): boolean {
-  // Saudi Exchange: Friday + Saturday
   if (marketSchedule === "SA_EQUITY") {
     return weekday === 5 || weekday === 6;
   }
 
-  // Default: Saturday + Sunday
   return weekday === 0 || weekday === 6;
 }
 
@@ -370,62 +389,52 @@ function getNextTradingDay(
 ): string {
   let nextDate = addCalendarDays(dateString, 1);
 
-  while (true) {
-    const weekday = getCalendarWeekday(nextDate);
-
-    if (!isMarketWeekend(weekday, marketSchedule)) {
-      return nextDate;
-    }
-
+  while (isMarketWeekend(getCalendarWeekday(nextDate), marketSchedule)) {
     nextDate = addCalendarDays(nextDate, 1);
   }
+
+  return nextDate;
 }
 
-function getLatestTradingSession(quotes: any[], timezone?: string): any[] {
-  if (quotes.length === 0) {
-    return [];
+// -----------------------------------------------------------------------------
+// LATEST TRADING SESSION
+// -----------------------------------------------------------------------------
+
+function getLatestTradingSession(
+  quotes: Candle[],
+  timezone?: string,
+): Candle[] {
+  let latestTimestamp = -Infinity;
+
+  for (const quote of quotes) {
+    const timestamp = toTimestamp(quote.date);
+
+    if (
+      isValidPrice(quote.close) &&
+      Number.isFinite(timestamp) &&
+      timestamp > latestTimestamp
+    ) {
+      latestTimestamp = timestamp;
+    }
   }
 
-  // Only real candles should be allowed to determine
-  // what the latest available trading session is.
-  //
-  // This is important after weekends / holidays / exchange closures,
-  // because Yahoo may return timestamped entries without a valid close.
-  const validQuotes = quotes.filter(
-    (quote) =>
-      quote?.date &&
-      quote?.close != null &&
-      Number.isFinite(Number(quote.close)),
-  );
-
-  if (validQuotes.length === 0) {
+  if (!Number.isFinite(latestTimestamp)) {
     return [];
   }
-
-  // Do not assume Yahoo's array ordering.
-  // Find the newest actual candle explicitly.
-  const latestQuote = validQuotes.reduce((latest, quote) => {
-    const latestMs = new Date(latest.date).getTime();
-    const quoteMs = new Date(quote.date).getTime();
-
-    return quoteMs > latestMs ? quote : latest;
-  });
 
   const latestTradingDate = getExchangeDate(
-    new Date(latestQuote.date),
+    new Date(latestTimestamp),
     timezone,
   );
 
-  // Return all quotes belonging to that actual trading session.
-  //
-  // We intentionally filter from the original array instead of validQuotes
-  // so null candles inside a real session remain available to
-  // detectTradingBreak().
-  return quotes.filter(
-    (quote) =>
-      quote?.date &&
-      getExchangeDate(new Date(quote.date), timezone) === latestTradingDate,
-  );
+  return quotes.filter((quote) => {
+    const timestamp = toTimestamp(quote.date);
+
+    return (
+      Number.isFinite(timestamp) &&
+      getExchangeDate(new Date(timestamp), timezone) === latestTradingDate
+    );
+  });
 }
 
 // -----------------------------------------------------------------------------
@@ -433,20 +442,13 @@ function getLatestTradingSession(quotes: any[], timezone?: string): any[] {
 // -----------------------------------------------------------------------------
 
 function detectTradingBreak(
-  quotes: any[],
+  quotes: Candle[],
   interval: YahooInterval,
 ): {
   lunchStartMs: number | null;
   lunchEndMs: number | null;
 } {
-  if (interval === "1d" || interval === "1wk") {
-    return {
-      lunchStartMs: null,
-      lunchEndMs: null,
-    };
-  }
-
-  if (quotes.length < 2) {
+  if (interval === "1d" || interval === "1wk" || quotes.length < 2) {
     return {
       lunchStartMs: null,
       lunchEndMs: null,
@@ -454,27 +456,18 @@ function detectTradingBreak(
   }
 
   const expectedInterval = INTERVAL_MS[interval];
-
-  // At least 10 minutes of consecutive null candles
-  // so we don't mistake a few missing candles for a lunch break.
-  const minimumBreakDuration = 10 * 60 * 1000;
-
-  // Don't consider anything longer than 3 hours a lunch break.
-  const maximumBreakDuration = 3 * 60 * 60 * 1000;
+  const minimumBreakDuration = 10 * 60_000;
+  const maximumBreakDuration = 3 * 60 * 60_000;
 
   let bestStartMs: number | null = null;
   let bestEndMs: number | null = null;
   let bestDuration = 0;
-
   let nullStartIndex: number | null = null;
 
   for (let i = 0; i < quotes.length; i++) {
     const quote = quotes[i];
 
-    const hasPrice =
-      quote?.close != null && Number.isFinite(Number(quote.close));
-
-    if (!hasPrice) {
+    if (!isValidPrice(quote.close)) {
       if (nullStartIndex === null) {
         nullStartIndex = i;
       }
@@ -482,14 +475,9 @@ function detectTradingBreak(
       continue;
     }
 
-    // We just reached the first valid candle after a null run.
     if (nullStartIndex !== null) {
-      const firstNullQuote = quotes[nullStartIndex];
-      const firstValidAfterBreak = quote;
-
-      const startMs = new Date(firstNullQuote.date).getTime();
-      const endMs = new Date(firstValidAfterBreak.date).getTime();
-
+      const startMs = toTimestamp(quotes[nullStartIndex].date);
+      const endMs = toTimestamp(quote.date);
       const duration = endMs - startMs;
 
       if (
@@ -506,18 +494,15 @@ function detectTradingBreak(
     }
   }
 
-  if (bestStartMs == null || bestEndMs == null) {
+  if (bestStartMs === null || bestEndMs === null) {
     const validQuotes = quotes.filter(
       (quote) =>
-        quote?.date &&
-        quote?.close != null &&
-        Number.isFinite(Number(quote.close)),
+        isValidPrice(quote.close) && Number.isFinite(toTimestamp(quote.date)),
     );
 
     for (let i = 1; i < validQuotes.length; i++) {
-      const previous = new Date(validQuotes[i - 1].date).getTime();
-      const current = new Date(validQuotes[i].date).getTime();
-
+      const previous = toTimestamp(validQuotes[i - 1].date);
+      const current = toTimestamp(validQuotes[i].date);
       const gap = current - previous;
 
       if (
@@ -526,7 +511,6 @@ function detectTradingBreak(
         gap > bestDuration
       ) {
         bestDuration = gap;
-
         bestStartMs = previous + expectedInterval;
         bestEndMs = current;
       }
@@ -538,6 +522,10 @@ function detectTradingBreak(
     lunchEndMs: bestEndMs,
   };
 }
+
+// -----------------------------------------------------------------------------
+// MARKET SESSIONS
+// -----------------------------------------------------------------------------
 
 function getRegularMarketSession(
   market: MarketSymbolItem,
@@ -553,24 +541,20 @@ function getRegularMarketSession(
 
   const schedule = TRADING_HOURS[market.marketSchedule];
   const timezone = schedule.timezone;
-
   const nowMs = now.getTime();
   const today = getExchangeDate(now, timezone);
   const weekday = getExchangeWeekday(now, timezone);
 
-  // Weekend
   if (isMarketWeekend(weekday, market.marketSchedule)) {
     const nextDate = getNextTradingDay(today, market.marketSchedule);
 
     return {
       isClosed: true,
-
       marketOpenMs: getTimestampForMarketTime(
         nextDate,
         schedule.open,
         timezone,
       ),
-
       marketCloseMs: null,
     };
   }
@@ -583,7 +567,6 @@ function getRegularMarketSession(
     timezone,
   );
 
-  // Before today's opening
   if (nowMs < todayOpenMs) {
     return {
       isClosed: true,
@@ -592,8 +575,7 @@ function getRegularMarketSession(
     };
   }
 
-  // During today's regular session
-  if (nowMs >= todayOpenMs && nowMs < todayCloseMs) {
+  if (nowMs < todayCloseMs) {
     return {
       isClosed: false,
       marketOpenMs: todayOpenMs,
@@ -601,49 +583,35 @@ function getRegularMarketSession(
     };
   }
 
-  // After close -> next weekday
   const nextDate = getNextTradingDay(today, market.marketSchedule);
 
   return {
     isClosed: true,
-
     marketOpenMs: getTimestampForMarketTime(nextDate, schedule.open, timezone),
-
     marketCloseMs: todayCloseMs,
   };
 }
 
 function getForexSession(now = new Date()): MarketSession {
-  /*
-   * Simplified global FX session:
-   *
-   * Sunday 17:00 New York
-   * ->
-   * Friday 17:00 New York
-   */
-
   const timezone = "America/New_York";
-
   const nowMs = now.getTime();
   const today = getExchangeDate(now, timezone);
   const weekday = getExchangeWeekday(now, timezone);
 
   const today1700 = getTimestampForMarketTime(today, "17:00", timezone);
 
-  // Saturday
   if (weekday === 6) {
-    const sunday = addCalendarDays(today, 1);
-
     return {
       isClosed: true,
-
-      marketOpenMs: getTimestampForMarketTime(sunday, "17:00", timezone),
-
+      marketOpenMs: getTimestampForMarketTime(
+        addCalendarDays(today, 1),
+        "17:00",
+        timezone,
+      ),
       marketCloseMs: null,
     };
   }
 
-  // Sunday before 17:00
   if (weekday === 0 && nowMs < today1700) {
     return {
       isClosed: true,
@@ -652,27 +620,18 @@ function getForexSession(now = new Date()): MarketSession {
     };
   }
 
-  // Friday at/after 17:00
   if (weekday === 5 && nowMs >= today1700) {
-    const sunday = addCalendarDays(today, 2);
-
     return {
       isClosed: true,
-
-      marketOpenMs: getTimestampForMarketTime(sunday, "17:00", timezone),
-
+      marketOpenMs: getTimestampForMarketTime(
+        addCalendarDays(today, 2),
+        "17:00",
+        timezone,
+      ),
       marketCloseMs: today1700,
     };
   }
 
-  return {
-    isClosed: false,
-    marketOpenMs: null,
-    marketCloseMs: null,
-  };
-}
-
-function getCryptoSession(): MarketSession {
   return {
     isClosed: false,
     marketOpenMs: null,
@@ -690,9 +649,6 @@ function getMarketSession(market?: MarketSymbolItem): MarketSession {
   }
 
   switch (market.assetType) {
-    case "crypto":
-      return getCryptoSession();
-
     case "currency":
       return getForexSession();
 
@@ -700,15 +656,7 @@ function getMarketSession(market?: MarketSymbolItem): MarketSession {
     case "stock":
       return getRegularMarketSession(market);
 
-    /*
-     * Futures require their own session model.
-     *
-     * They often trade almost 24 hours and cross
-     * midnight with daily maintenance breaks.
-     *
-     * Until we add that properly, don't pretend
-     * GLOBAL has stock-market hours.
-     */
+    case "crypto":
     case "commodity":
       return {
         isClosed: false,
@@ -725,55 +673,36 @@ function getMarketSession(market?: MarketSymbolItem): MarketSession {
   }
 }
 
-export async function GET(request: Request) {
-  const totalStart = performance.now();
+// -----------------------------------------------------------------------------
+// ROUTE
+// -----------------------------------------------------------------------------
 
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
   const rawSymbol = searchParams.get("symbol") || "^GSPC";
   const range = searchParams.get("range") || "1D";
-
   const symbol = PROVIDER_SYMBOLS[rawSymbol] || rawSymbol;
 
   const requestedInterval = searchParams.get("interval");
 
-  const allowedIntervals = new Set<YahooInterval>([
-    "1m",
-    "2m",
-    "5m",
-    "15m",
-    "30m",
-    "60m",
-    "1d",
-    "1wk",
-  ]);
-
   const interval: YahooInterval =
     requestedInterval &&
-    allowedIntervals.has(requestedInterval as YahooInterval)
+    ALLOWED_INTERVALS.has(requestedInterval as YahooInterval)
       ? (requestedInterval as YahooInterval)
       : INTERVALS[range] || "5m";
 
   try {
-    const yahooStart = performance.now();
-
-    const requestStartedAt = Date.now();
-
-    const [cachedYahoo, quote] = await Promise.all([
+    const [chartResult, quote] = await Promise.all([
       getCachedYahooChart(symbol, range, interval),
-      yahoo.quote(symbol),
+      getYahooQuote30Seconds(symbol),
     ]);
 
-    const chartResult = cachedYahoo.chartResult;
-
-    const cacheStatus =
-      cachedYahoo.fetchedAt >= requestStartedAt - 5 ? "MISS" : "HIT";
-
-    const rawQuotes = Array.isArray(chartResult?.quotes)
+    const rawQuotes: Candle[] = Array.isArray(chartResult.quotes)
       ? chartResult.quotes
       : [];
 
-    const meta = chartResult?.meta || {};
+    const meta = chartResult.meta;
 
     const market = ALL_MARKET_SYMBOLS.find(
       (item) =>
@@ -785,32 +714,40 @@ export async function GET(request: Request) {
     const exchangeTimezone =
       market?.timezone ||
       market?.exchangeTimezone ||
-      meta.exchangeTimezoneName ||
+      meta?.exchangeTimezoneName ||
       undefined;
+
+    const quoteTimeMs = toTimestamp(quote.regularMarketTime);
+
+    const shouldCheckDailyClose =
+      market?.assetType === "index" || market?.assetType === "stock";
+
+    // Start before holiday fallback so both requests can run concurrently.
+    const previousDailyClosePromise =
+      shouldCheckDailyClose && exchangeTimezone && Number.isFinite(quoteTimeMs)
+        ? getPreviousDailyClose(
+            symbol,
+            getExchangeDate(new Date(quoteTimeMs), exchangeTimezone),
+            exchangeTimezone,
+          ).catch((error) => {
+            console.warn(
+              `[candles] Previous daily close lookup failed: ${symbol}`,
+              error instanceof Error ? error.message : String(error),
+            );
+
+            return null;
+          })
+        : Promise.resolve(null);
 
     const { isClosed, marketOpenMs, marketCloseMs } = getMarketSession(market);
 
     let sessionQuotes = rawQuotes;
+    let effectiveInterval = interval;
 
     if (range === "1D") {
       sessionQuotes = getLatestTradingSession(rawQuotes, exchangeTimezone);
 
-      // When the rolling window contains no candles,
-      // look around the date of the last available quote.
-      const quoteTimeMs = quote.regularMarketTime
-        ? new Date(quote.regularMarketTime).getTime()
-        : NaN;
-
-      const hasValidCandle = sessionQuotes.some(
-        (candle: any) =>
-          candle?.close != null &&
-          Number.isFinite(Number(candle.close)) &&
-          Number.isFinite(new Date(candle.date).getTime()),
-      );
-
-      if (!hasValidCandle && Number.isFinite(quoteTimeMs)) {
-        // Older 1m data may be unavailable.
-        // Try coarser intraday candles if needed.
+      if (!hasValidCandle(sessionQuotes) && Number.isFinite(quoteTimeMs)) {
         const fallbackIntervals = Array.from(
           new Set<YahooInterval>([interval, "5m", "15m"]),
         );
@@ -828,15 +765,9 @@ export async function GET(request: Request) {
               exchangeTimezone,
             );
 
-            const hasFallbackCandle = fallbackQuotes.some(
-              (candle: any) =>
-                candle?.close != null &&
-                Number.isFinite(Number(candle.close)) &&
-                Number.isFinite(new Date(candle.date).getTime()),
-            );
-
-            if (hasFallbackCandle) {
+            if (hasValidCandle(fallbackQuotes)) {
               sessionQuotes = fallbackQuotes;
+              effectiveInterval = fallbackInterval;
               break;
             }
           } catch (error) {
@@ -849,213 +780,95 @@ export async function GET(request: Request) {
       }
     }
 
-    // Keep candles ordered before detecting gaps or selecting endpoints.
     sessionQuotes = sessionQuotes
-      .filter(
-        (candle: any) =>
-          candle?.date != null &&
-          Number.isFinite(new Date(candle.date).getTime()),
-      )
+      .filter((candle) => Number.isFinite(toTimestamp(candle.date)))
       .slice()
-      .sort(
-        (a: any, b: any) =>
-          new Date(a.date).getTime() - new Date(b.date).getTime(),
-      );
+      .sort((a, b) => toTimestamp(a.date) - toTimestamp(b.date));
 
-    /*
-     * Determine previous close once and reuse it
-     * everywhere below, including early returns.
-     *
-     * For 1D, prefer the final valid candle before
-     * the latest trading session.
-     */
-    const isValidPrice = (value: unknown): value is number =>
-      typeof value === "number" && Number.isFinite(value) && value > 0;
-
-    // Daily lookup failure falls back to the quote's previous close.
-    // Do not use the current price or a multi-day chart's starting baseline.
     let previousClose = isValidPrice(quote.regularMarketPreviousClose)
       ? quote.regularMarketPreviousClose
-      : isValidPrice(meta.previousClose)
+      : isValidPrice(meta?.previousClose)
         ? meta.previousClose
         : 0;
 
-    const quoteTimeMs = quote.regularMarketTime
-      ? new Date(quote.regularMarketTime).getTime()
-      : NaN;
+    const dailyPreviousClose = await previousDailyClosePromise;
 
-    const shouldCheckDailyClose =
-      market?.assetType === "index" || market?.assetType === "stock";
-
-    if (
-      shouldCheckDailyClose &&
-      exchangeTimezone &&
-      Number.isFinite(quoteTimeMs)
-    ) {
-      const quoteDate = getExchangeDate(
-        new Date(quoteTimeMs),
-        exchangeTimezone,
-      );
-
-      try {
-        const dailyPreviousClose = await getPreviousDailyClose(
-          symbol,
-          quoteDate,
-          exchangeTimezone,
-        );
-
-        if (isValidPrice(dailyPreviousClose)) {
-          previousClose = dailyPreviousClose;
-        }
-      } catch (error) {
-        console.warn(
-          `[candles] Previous daily close lookup failed: ${symbol}`,
-          error instanceof Error ? error.message : String(error),
-        );
-      }
-    }
-
-    const availablePrice =
-      typeof quote.regularMarketPrice === "number" &&
-      Number.isFinite(quote.regularMarketPrice)
-        ? quote.regularMarketPrice
-        : typeof meta.regularMarketPrice === "number" &&
-            Number.isFinite(meta.regularMarketPrice)
-          ? meta.regularMarketPrice
-          : 0;
-
-    const availableDailyChangePercent =
-      previousClose > 0 && availablePrice > 0
-        ? ((availablePrice - previousClose) / previousClose) * 100
-        : 0;
-
-    const availableUpdatedAt = quote.regularMarketTime
-      ? new Date(quote.regularMarketTime).getTime()
-      : meta.regularMarketTime
-        ? new Date(meta.regularMarketTime).getTime()
-        : null;
-
-    function emptyChartResponse() {
-      return NextResponse.json({
-        points: [],
-
-        currentPrice: availablePrice,
-        previousClose,
-
-        dailyChangePercent: availableDailyChangePercent,
-        rangeChangePercent: range === "1D" ? availableDailyChangePercent : null,
-
-        isClosed,
-        marketOpenMs,
-        marketCloseMs,
-
-        requestedSymbol: rawSymbol,
-        providerSymbol: symbol,
-        exchangeTimezone,
-
-        updatedAt:
-          availableUpdatedAt !== null && Number.isFinite(availableUpdatedAt)
-            ? availableUpdatedAt
-            : null,
-
-        lunchStartMs: null,
-        lunchEndMs: null,
-      });
-    }
-    let lunchStartMs: number | null = null;
-    let lunchEndMs: number | null = null;
-
-    if (range === "1D" && sessionQuotes.length > 0) {
-      const detectedBreak = detectTradingBreak(sessionQuotes, interval);
-
-      lunchStartMs = detectedBreak.lunchStartMs;
-      lunchEndMs = detectedBreak.lunchEndMs;
-    }
-
-    if (sessionQuotes.length === 0) {
-      return emptyChartResponse();
+    if (isValidPrice(dailyPreviousClose)) {
+      previousClose = dailyPreviousClose;
     }
 
     const points = sessionQuotes
-      .filter(
-        (quote: any) =>
-          quote?.close != null && Number.isFinite(Number(quote.close)),
+      .filter((candle): candle is Candle & { close: number } =>
+        isValidPrice(candle.close),
       )
-      .map((quote: any) => {
-        const close = Number(quote.close);
-
-        const normalizedClose = Number(close.toFixed(2));
+      .map((candle) => {
+        const close = Number(candle.close.toFixed(2));
 
         return {
-          timestampMs: new Date(quote.date).getTime(),
-          price: normalizedClose,
-
-          open:
-            quote.open != null
-              ? Number(Number(quote.open).toFixed(2))
-              : normalizedClose,
-
-          high:
-            quote.high != null
-              ? Number(Number(quote.high).toFixed(2))
-              : normalizedClose,
-
-          low:
-            quote.low != null
-              ? Number(Number(quote.low).toFixed(2))
-              : normalizedClose,
-
-          close: normalizedClose,
+          timestampMs: toTimestamp(candle.date),
+          price: close,
+          open: isValidPrice(candle.open)
+            ? Number(candle.open.toFixed(2))
+            : close,
+          high: isValidPrice(candle.high)
+            ? Number(candle.high.toFixed(2))
+            : close,
+          low: isValidPrice(candle.low) ? Number(candle.low.toFixed(2)) : close,
+          close,
         };
       });
 
-    if (points.length === 0) {
-      return emptyChartResponse();
-    }
-
-    const currentPrice =
-      typeof quote.regularMarketPrice === "number"
-        ? quote.regularMarketPrice
-        : typeof meta.regularMarketPrice === "number"
-          ? meta.regularMarketPrice
-          : (points[points.length - 1]?.price ?? 0);
-
-    const rangeStartPrice = points[0]?.price ?? previousClose;
+    const currentPrice = isValidPrice(quote.regularMarketPrice)
+      ? quote.regularMarketPrice
+      : isValidPrice(meta?.regularMarketPrice)
+        ? meta.regularMarketPrice
+        : (points.at(-1)?.price ?? 0);
 
     const dailyChangePercent =
-      previousClose !== 0
+      previousClose > 0 && currentPrice > 0
         ? ((currentPrice - previousClose) / previousClose) * 100
         : 0;
 
+    const rangeStartPrice = points[0]?.price ?? previousClose;
+
     const rangeChangePercent =
-      rangeStartPrice !== 0
-        ? ((currentPrice - rangeStartPrice) / rangeStartPrice) * 100
-        : 0;
+      points.length === 0
+        ? range === "1D"
+          ? dailyChangePercent
+          : null
+        : rangeStartPrice > 0
+          ? ((currentPrice - rangeStartPrice) / rangeStartPrice) * 100
+          : 0;
+
+    const metaTimeMs = toTimestamp(meta?.regularMarketTime);
+
+    const updatedAt = Number.isFinite(quoteTimeMs)
+      ? quoteTimeMs
+      : Number.isFinite(metaTimeMs)
+        ? metaTimeMs
+        : (points.at(-1)?.timestampMs ?? null);
+
+    const { lunchStartMs, lunchEndMs } =
+      range === "1D" && sessionQuotes.length > 0
+        ? detectTradingBreak(sessionQuotes, effectiveInterval)
+        : {
+            lunchStartMs: null,
+            lunchEndMs: null,
+          };
 
     return NextResponse.json({
       points,
-
       currentPrice,
       previousClose,
-
       dailyChangePercent,
       rangeChangePercent,
-
       isClosed,
-
       marketOpenMs,
       marketCloseMs,
-
       requestedSymbol: rawSymbol,
-
       providerSymbol: symbol,
-
       exchangeTimezone,
-
-      updatedAt: meta.regularMarketTime
-        ? new Date(meta.regularMarketTime).getTime()
-        : (points[points.length - 1]?.timestampMs ?? Date.now()),
-
+      updatedAt,
       lunchStartMs,
       lunchEndMs,
     });
@@ -1066,9 +879,7 @@ export async function GET(request: Request) {
       {
         error: error instanceof Error ? error.message : String(error),
       },
-      {
-        status: 500,
-      },
+      { status: 500 },
     );
   }
 }

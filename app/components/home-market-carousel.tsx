@@ -9,6 +9,7 @@ import {
   useTransition,
   type PointerEvent,
 } from "react";
+
 import {
   ChevronFirst,
   ChevronLast,
@@ -17,7 +18,7 @@ import {
   Plus,
   Pin,
 } from "lucide-react";
-import { FaPlusMinus } from "react-icons/fa6";
+import { PiPlusMinus } from "react-icons/pi";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -37,12 +38,11 @@ import {
   removeMarketsFromWatchlist,
 } from "@/app/actions/watchlist";
 import type { HomeMarketEntry } from "@/types/home-market";
+import { MAX_WATCHLIST_MARKETS } from "@/lib/constants/watchlist";
 
 import { BullBearVoteCard } from "./bull-bear-vote-card";
 import { MarketPicker } from "./market-picker";
 import { useCurrentUser } from "../context/user-context";
-import { MAX_WATCHLIST_MARKETS } from "@/lib/constants/watchlist";
-import { PiPlusMinus } from "react-icons/pi";
 
 interface HomeMarketCarouselProps {
   markets: HomeMarketEntry[];
@@ -75,7 +75,6 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
   const isEmpty = markets.length === 0;
   const existingSymbols = markets.map(({ market }) => market.symbol);
 
-  // Exclude markets that may have been added while the popup was open.
   const symbolsToAdd = selectedSymbols.filter(
     (symbol) => !existingSymbols.includes(symbol),
   );
@@ -179,7 +178,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
       let removed = false;
 
       try {
-        // Remove first so replacing markets works at the limit.
+        // Remove first so replacements work at the watchlist limit.
         if (removals.length > 0) {
           await removeMarketsFromWatchlist(removals);
           removed = true;
@@ -195,7 +194,6 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
         toast.success("Watchlist updated.");
         router.refresh();
       } catch (error) {
-        // Refresh if removal succeeded but addition failed.
         if (removed) {
           router.refresh();
         }
@@ -287,9 +285,9 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
 
   return (
     <>
-      <div className="group/markets relative h-[254.5px] w-full min-w-0 mt-4">
+      <div className="group/markets relative mt-4 min-h-[254.5px] w-full min-w-0">
         {isEmpty ? (
-          <div className="px-4 h-full w-full">
+          <div className="h-[254.5px] w-full px-4">
             <div className="outfit flex h-full w-full items-center justify-center rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50/60 dark:border-zinc-700 dark:bg-zinc-800/20">
               <div className="flex flex-col items-center text-center">
                 <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
@@ -305,14 +303,24 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 </p>
 
                 <p className="mt-1 text-xs font-light text-zinc-500 dark:text-zinc-400">
-                  Add favorites to follow prices and community sentiment.
+                  Add markets to follow prices and community sentiment.
                 </p>
 
                 <button
                   type="button"
                   onClick={openPicker}
                   aria-haspopup="dialog"
-                  className="mt-4 inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-sm font-normal text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  className="
+                    mt-4 inline-flex h-9 cursor-pointer
+                    items-center justify-center gap-1.5
+                    rounded-md border border-zinc-200 bg-white px-3
+                    text-sm font-normal text-zinc-900 transition-colors
+                    hover:bg-zinc-100
+                    focus-visible:outline-none focus-visible:ring-2
+                    focus-visible:ring-zinc-400
+                    dark:border-zinc-700 dark:bg-zinc-900
+                    dark:text-zinc-300 dark:hover:bg-zinc-800
+                  "
                 >
                   <Plus
                     className="size-4"
@@ -365,11 +373,15 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                   scrollByCard(1);
                 }
               }}
-              className={`hide-scrollbar h-full w-full overflow-x-auto overscroll-x-contain rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${
-                isDragging ? "cursor-grabbing select-none" : "cursor-grab"
-              }`}
+              className={`
+                hide-scrollbar w-full overflow-x-auto
+                overscroll-x-contain rounded-sm
+                focus-visible:outline-none focus-visible:ring-2
+                focus-visible:ring-zinc-400
+                ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}
+              `}
             >
-              <div className="flex min-h-full w-max min-w-full items-center gap-8 px-4">
+              <div className="flex min-h-[254.5px] w-max min-w-full items-center gap-8 px-4 py-2">
                 {markets.map(
                   ({
                     market,
@@ -386,7 +398,11 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                         href={`/market/${encodeURIComponent(market.symbol)}`}
                         aria-label={`View ${market.name}`}
                         draggable={false}
-                        className="absolute inset-0 z-10 cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
+                        className="
+                          absolute inset-0 z-10 cursor-pointer rounded-lg
+                          focus-visible:outline-none focus-visible:ring-2
+                          focus-visible:ring-zinc-400
+                        "
                       />
 
                       <BullBearVoteCard
@@ -404,12 +420,22 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                     type="button"
                     onClick={openPicker}
                     aria-haspopup="dialog"
-                    className="outfit flex h-60 w-44 shrink-0 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50/60 text-sm text-zinc-500 transition-colors hover:border-zinc-400 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-800/20 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:bg-zinc-800/50"
+                    className="
+                      outfit flex h-60 w-44 shrink-0 cursor-pointer
+                      flex-col items-center justify-center gap-2
+                      rounded-xl border-2 border-dashed border-zinc-200
+                      bg-zinc-50/60 text-sm text-zinc-500 transition-colors
+                      hover:border-zinc-400 hover:bg-zinc-100
+                      focus-visible:outline-none focus-visible:ring-2
+                      focus-visible:ring-zinc-400
+                      dark:border-zinc-700 dark:bg-zinc-800/20
+                      dark:text-zinc-400 dark:hover:border-zinc-500
+                      dark:hover:bg-zinc-800/50
+                    "
                   >
                     <PiPlusMinus
-                      className="size-5 shrink-0 "
+                      className="size-5 shrink-0"
                       aria-hidden="true"
-                      strokeWidth={1.5}
                     />
                     Manage watchlist
                   </button>
@@ -427,11 +453,22 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
 
                 if (canScrollLeft) scrollByCard(-1);
               }}
-              className={`absolute left-2 top-1/2 z-30 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm opacity-0 transition-opacity duration-150 group-hover/markets:opacity-100! focus-visible:opacity-100! focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 ${
-                canScrollLeft
-                  ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  : "cursor-default text-zinc-300 dark:text-zinc-600"
-              }`}
+              className={`
+                absolute left-2 top-1/2 z-30 flex size-9
+                -translate-y-1/2 items-center justify-center
+                rounded-full border border-zinc-200 bg-white shadow-sm
+                opacity-0 transition-opacity duration-150
+                group-hover/markets:opacity-100!
+                focus-visible:opacity-100!
+                focus-visible:outline-none focus-visible:ring-2
+                focus-visible:ring-zinc-400
+                dark:border-zinc-700 dark:bg-zinc-900
+                ${
+                  canScrollLeft
+                    ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    : "cursor-default text-zinc-300 dark:text-zinc-600"
+                }
+              `}
             >
               {canScrollLeft ? (
                 <ChevronLeft
@@ -453,11 +490,22 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
 
                 if (canScrollRight) scrollByCard(1);
               }}
-              className={`absolute right-2 top-1/2 z-30 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm opacity-0 transition-opacity duration-150 group-hover/markets:opacity-100! focus-visible:opacity-100! focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 ${
-                canScrollRight
-                  ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  : "cursor-default text-zinc-300 dark:text-zinc-600"
-              }`}
+              className={`
+                absolute right-2 top-1/2 z-30 flex size-9
+                -translate-y-1/2 items-center justify-center
+                rounded-full border border-zinc-200 bg-white shadow-sm
+                opacity-0 transition-opacity duration-150
+                group-hover/markets:opacity-100!
+                focus-visible:opacity-100!
+                focus-visible:outline-none focus-visible:ring-2
+                focus-visible:ring-zinc-400
+                dark:border-zinc-700 dark:bg-zinc-900
+                ${
+                  canScrollRight
+                    ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    : "cursor-default text-zinc-300 dark:text-zinc-600"
+                }
+              `}
             >
               {canScrollRight ? (
                 <ChevronRight

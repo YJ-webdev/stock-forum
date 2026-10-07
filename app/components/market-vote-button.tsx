@@ -32,10 +32,12 @@ interface VoteState {
 }
 
 const VOTE_BUTTON_CLASS = `
-  inline-flex h-7.5 w-full cursor-pointer items-center justify-center gap-1.5
+  inline-flex h-7.5 min-w-0 flex-1 cursor-pointer
+  items-center justify-center gap-1.5
   rounded-full px-3 text-xs font-medium text-white transition-colors
-  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400
-  focus-visible:ring-offset-2
+  focus-visible:outline-none
+  focus-visible:ring-2 focus-visible:ring-zinc-400
+  focus-visible:ring-offset-2 focus-visible:ring-offset-white
   disabled:cursor-default disabled:opacity-50
   dark:focus-visible:ring-offset-zinc-900
 `;
