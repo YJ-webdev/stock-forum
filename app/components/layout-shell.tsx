@@ -293,6 +293,7 @@ export default function LayoutShell({
                         <Suspense fallback={<SideDataLoading />}>
                           <LeaderBoardStream
                             sideDataPromise={sideDataPromise}
+                            user={user}
                           />
                         </Suspense>
                       )}
