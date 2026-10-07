@@ -1,14 +1,17 @@
-// components/ui/trend-sparkline.tsx
 "use client";
 
-import React, { useId } from "react";
-import { ChartPoint } from "@/app/hooks/useMarketQuote";
+import { useId } from "react";
+import type { ChartPoint } from "@/app/hooks/useMarketQuote";
 
 interface TrendSparklineProps {
   data?: ChartPoint[];
   isPositive?: boolean;
   width?: number;
   height?: number;
+
+  sessionStartMs?: number | null;
+  sessionEndMs?: number | null;
+
   lunchStartMs?: number | null;
   lunchEndMs?: number | null;
 }
@@ -18,16 +21,26 @@ export function TrendSparkline({
   isPositive = true,
   width = 120,
   height = 40,
+  sessionStartMs,
+  sessionEndMs,
   lunchStartMs,
   lunchEndMs,
 }: TrendSparklineProps) {
   const rawId = useId();
 
-  const gradientId = `sparkline-gradient-${
-    isPositive ? "up" : "down"
-  }-${rawId.replace(/:/g, "")}`;
+  const gradientId = `sparkline-gradient-${rawId.replace(/:/g, "")}`;
 
-  if (!data || data.length < 2) {
+  const points = data.filter((point) => Number.isFinite(point.price)).slice();
+
+  const hasValidTimestamps =
+    points.length > 0 &&
+    points.every((point) => Number.isFinite(point.timestampMs));
+
+  if (hasValidTimestamps) {
+    points.sort((a, b) => a.timestampMs - b.timestampMs);
+  }
+
+  if (points.length === 0) {
     return (
       <div
         style={{ width, height }}
@@ -37,83 +50,100 @@ export function TrendSparkline({
   }
 
   // --------------------------------------------------
+  // LAYOUT
+  // --------------------------------------------------
+
+  const paddingX = Math.min(3, width / 4);
+  const paddingY = Math.min(4, height / 4);
+
+  const plotWidth = Math.max(width - paddingX * 2, 1);
+  const plotHeight = Math.max(height - paddingY * 2, 1);
+  const chartBottom = height - paddingY;
+
+  // --------------------------------------------------
   // PRICE RANGE
   // --------------------------------------------------
 
-  const prices = data.map((d) => d.price);
+  const prices = points.map((point) => point.price);
 
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
-  const priceRange = maxPrice - minPrice || 1;
+  const priceRange = maxPrice - minPrice;
+
+  function getY(price: number) {
+    if (priceRange === 0) {
+      return height / 2;
+    }
+
+    return chartBottom - ((price - minPrice) / priceRange) * plotHeight;
+  }
 
   // --------------------------------------------------
   // TIME RANGE
   // --------------------------------------------------
 
-  const validTimestamps = data
-    .map((d) => d.timestampMs)
-    .filter((timestamp): timestamp is number => Number.isFinite(timestamp));
+  const firstTimestamp = points[0].timestampMs;
+  const lastTimestamp = points[points.length - 1].timestampMs;
 
-  const hasValidTimestamps = validTimestamps.length === data.length;
+  const hasSessionRange =
+    hasValidTimestamps &&
+    typeof sessionStartMs === "number" &&
+    Number.isFinite(sessionStartMs) &&
+    typeof sessionEndMs === "number" &&
+    Number.isFinite(sessionEndMs) &&
+    sessionEndMs > sessionStartMs &&
+    firstTimestamp >= sessionStartMs &&
+    lastTimestamp <= sessionEndMs;
 
-  const firstTimestamp = hasValidTimestamps ? validTimestamps[0] : undefined;
+  const axisStartMs = hasSessionRange ? sessionStartMs : firstTimestamp;
 
-  const lastTimestamp = hasValidTimestamps
-    ? validTimestamps[validTimestamps.length - 1]
-    : undefined;
+  const axisEndMs = hasSessionRange ? sessionEndMs : lastTimestamp;
 
-  const timeRange =
-    firstTimestamp !== undefined &&
-    lastTimestamp !== undefined &&
-    lastTimestamp > firstTimestamp
-      ? lastTimestamp - firstTimestamp
-      : 1;
+  const timeRange = Math.max(axisEndMs - axisStartMs, 1);
+
+  function getX(timestampMs: number) {
+    const ratio = (timestampMs - axisStartMs) / timeRange;
+
+    return paddingX + Math.max(0, Math.min(1, ratio)) * plotWidth;
+  }
 
   // --------------------------------------------------
-  // SVG COORDINATES
-  //
-  // IMPORTANT:
-  // X uses actual timestamp.
-  //
-  // This means:
-  //
-  // 11:30 ------------ 13:00
-  //
-  // receives actual visual width instead of being
-  // compressed into a single point step.
+  // COORDINATES
   // --------------------------------------------------
 
-  const coords = data.map((point, index) => {
-    const x =
-      hasValidTimestamps && firstTimestamp !== undefined
-        ? ((point.timestampMs - firstTimestamp) / timeRange) * width
-        : (index / (data.length - 1)) * width;
+  const coords = points.map((point, index) => {
+    let x: number;
 
-    const y =
-      height - ((point.price - minPrice) / priceRange) * (height - 8) - 4;
+    if (hasValidTimestamps) {
+      x =
+        !hasSessionRange && firstTimestamp === lastTimestamp
+          ? paddingX + plotWidth / 2
+          : getX(point.timestampMs);
+    } else {
+      x =
+        points.length === 1
+          ? paddingX + plotWidth / 2
+          : paddingX + (index / (points.length - 1)) * plotWidth;
+    }
 
     return {
       x,
-      y,
+      y: getY(point.price),
       timestampMs: point.timestampMs,
     };
   });
 
   // --------------------------------------------------
-  // LUNCH BREAK DETECTION
-  //
-  // Example:
-  //
-  // 11:15 ●
-  //       \
-  // 11:30 ● ............... ● 13:00
-  //             Lunch
-  //
-  // We find:
-  //
-  // - last candle before lunch
-  // - first candle after lunch
+  // LUNCH BREAK
   // --------------------------------------------------
+
+  const hasLunchSchedule =
+    hasValidTimestamps &&
+    typeof lunchStartMs === "number" &&
+    Number.isFinite(lunchStartMs) &&
+    typeof lunchEndMs === "number" &&
+    Number.isFinite(lunchEndMs) &&
+    lunchEndMs > lunchStartMs;
 
   let preLunchCoords = coords;
   let postLunchCoords: typeof coords = [];
@@ -121,13 +151,18 @@ export function TrendSparkline({
   let lunchStartPoint: (typeof coords)[number] | undefined;
   let lunchEndPoint: (typeof coords)[number] | undefined;
 
-  if (hasValidTimestamps && lunchStartMs != null && lunchEndMs != null) {
-    const beforeLunchIndex = coords.findLastIndex(
-      (point) => point.timestampMs != null && point.timestampMs <= lunchStartMs,
-    );
+  if (hasLunchSchedule) {
+    let beforeLunchIndex = -1;
+
+    for (let index = coords.length - 1; index >= 0; index--) {
+      if (coords[index].timestampMs <= lunchStartMs) {
+        beforeLunchIndex = index;
+        break;
+      }
+    }
 
     const afterLunchIndex = coords.findIndex(
-      (point) => point.timestampMs != null && point.timestampMs >= lunchEndMs,
+      (point) => point.timestampMs >= lunchEndMs,
     );
 
     if (
@@ -139,48 +174,43 @@ export function TrendSparkline({
       lunchEndPoint = coords[afterLunchIndex];
 
       preLunchCoords = coords.slice(0, beforeLunchIndex + 1);
-
       postLunchCoords = coords.slice(afterLunchIndex);
     }
   }
 
-  const hasLunch =
-    lunchStartPoint !== undefined &&
-    lunchEndPoint !== undefined &&
-    postLunchCoords.length > 0;
+  const segments = [preLunchCoords, postLunchCoords].filter(
+    (segment) => segment.length > 0,
+  );
 
   // --------------------------------------------------
-  // SVG PATH HELPERS
+  // PATH HELPERS
   // --------------------------------------------------
 
-  const buildPath = (points: typeof coords) =>
-    points
+  function buildPath(segment: typeof coords) {
+    return segment
       .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x},${point.y}`)
       .join(" ");
+  }
 
-  const prePathD = buildPath(preLunchCoords);
-  const postPathD = buildPath(postLunchCoords);
+  function buildArea(segment: typeof coords) {
+    if (segment.length < 2) {
+      return "";
+    }
 
-  // --------------------------------------------------
-  // AREA FILLS
-  // --------------------------------------------------
+    const first = segment[0];
+    const last = segment[segment.length - 1];
 
-  const preLastPoint = preLunchCoords[preLunchCoords.length - 1];
-
-  const postFirstPoint = postLunchCoords[0];
-
-  const preFillD =
-    prePathD && preLastPoint
-      ? `${prePathD} L ${preLastPoint.x},${height} L 0,${height} Z`
-      : "";
-
-  const postFillD =
-    postPathD && postFirstPoint
-      ? `${postPathD} L ${width},${height} L ${postFirstPoint.x},${height} Z`
-      : "";
+    // Close the fill at the actual last point.
+    // Future time stays empty.
+    return (
+      `${buildPath(segment)} ` +
+      `L ${last.x},${chartBottom} ` +
+      `L ${first.x},${chartBottom} Z`
+    );
+  }
 
   // --------------------------------------------------
-  // COLORS
+  // COLORS / LAST POINT
   // --------------------------------------------------
 
   const strokeColorClass = isPositive
@@ -189,31 +219,14 @@ export function TrendSparkline({
 
   const lastPoint = coords[coords.length - 1];
 
-  // --------------------------------------------------
-  // LUNCH UI
-  // --------------------------------------------------
-
-  const lunchGapWidth =
-    hasLunch && lunchStartPoint && lunchEndPoint
-      ? lunchEndPoint.x - lunchStartPoint.x
-      : 0;
-
-  const lunchMidX =
-    hasLunch && lunchStartPoint && lunchEndPoint
-      ? (lunchStartPoint.x + lunchEndPoint.x) / 2
-      : 0;
-
-  const lunchBridgeY = hasLunch && lunchStartPoint ? lunchStartPoint.y : 0;
-
-  // Only show text if there is enough horizontal room.
-  const showLunchLabel = hasLunch && lunchGapWidth >= 45;
-
   return (
     <svg
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
-      className={`overflow-visible ${strokeColorClass} transition-all`}
+      role="img"
+      aria-label="Market price trend"
+      className={`overflow-visible ${strokeColorClass}`}
     >
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -223,93 +236,75 @@ export function TrendSparkline({
         </linearGradient>
       </defs>
 
-      {/* -------------------------------------------------- */}
       {/* BASELINE */}
-      {/* -------------------------------------------------- */}
 
       <line
-        x1="0"
-        y1={height - 4}
-        x2={width}
-        y2={height - 4}
+        x1={paddingX}
+        y1={chartBottom}
+        x2={paddingX + plotWidth}
+        y2={chartBottom}
         stroke="currentColor"
         strokeDasharray="2 2"
         strokeWidth="1.25"
         className="text-zinc-300 dark:text-zinc-700"
       />
 
-      {/* -------------------------------------------------- */}
-      {/* AREA — BEFORE LUNCH */}
-      {/* -------------------------------------------------- */}
+      {/* AREA / LINE SEGMENTS */}
 
-      {preFillD && <path d={preFillD} fill={`url(#${gradientId})`} />}
+      {segments.map((segment, index) => {
+        const area = buildArea(segment);
 
-      {/* -------------------------------------------------- */}
-      {/* AREA — AFTER LUNCH */}
-      {/* -------------------------------------------------- */}
+        return (
+          <g key={index}>
+            {area && <path d={area} fill={`url(#${gradientId})`} />}
 
-      {hasLunch && postFillD && (
-        <path d={postFillD} fill={`url(#${gradientId})`} />
-      )}
+            {segment.length >= 2 && (
+              <path
+                d={buildPath(segment)}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.25"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )}
 
-      {/* -------------------------------------------------- */}
-      {/* LINE — BEFORE LUNCH */}
-      {/* -------------------------------------------------- */}
+            {segment.length === 1 && segment[0] !== lastPoint && (
+              <circle
+                cx={segment[0].x}
+                cy={segment[0].y}
+                r="1.75"
+                fill="currentColor"
+              />
+            )}
+          </g>
+        );
+      })}
 
-      <path
-        d={prePathD}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      {/* LUNCH GAP */}
 
-      {/* -------------------------------------------------- */}
-      {/* LINE — AFTER LUNCH */}
-      {/* -------------------------------------------------- */}
-
-      {hasLunch && (
-        <path
-          d={postPathD}
-          fill="none"
+      {lunchStartPoint && lunchEndPoint && (
+        <line
+          x1={lunchStartPoint.x}
+          y1={lunchStartPoint.y}
+          x2={lunchEndPoint.x}
+          y2={lunchStartPoint.y}
           stroke="currentColor"
-          strokeWidth="1.25"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          strokeDasharray="2.5 2.5"
+          strokeWidth="1.5"
+          opacity="0.55"
         />
       )}
 
-      {/* -------------------------------------------------- */}
-      {/* GOOGLE-STYLE LUNCH GAP */}
-      {/* -------------------------------------------------- */}
+      {/* LAST ACTUAL PRICE */}
 
-      {hasLunch && lunchStartPoint && lunchEndPoint && (
-        <>
-          <line
-            x1={lunchStartPoint.x}
-            y1={lunchBridgeY}
-            x2={lunchEndPoint.x}
-            y2={lunchBridgeY}
-            stroke="currentColor"
-            strokeDasharray="2.5 2.5"
-            strokeWidth="1.5"
-            opacity="0.55"
-          />
-        </>
-      )}
-
-      {/* -------------------------------------------------- */}
-      {/* LAST PRICE INDICATOR */}
-      {/* -------------------------------------------------- */}
-
-      <g className={strokeColorClass}>
+      <g>
         <circle
           cx={lastPoint.x}
           cy={lastPoint.y}
           r="4"
           fill="currentColor"
-          className="animate-ping opacity-10"
+          className="animate-ping opacity-10 motion-reduce:animate-none"
           style={{
             transformOrigin: `${lastPoint.x}px ${lastPoint.y}px`,
           }}

@@ -3,8 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { TZDate } from "@date-fns/tz";
+
+import {
+  TRADING_HOURS,
+  type MarketSymbolItem,
+} from "@/lib/data/market-symbols";
 import { SelectedRange, useMarketQuote } from "@/app/hooks/useMarketQuote";
-import { MarketSymbolItem } from "@/lib/data/market-symbols";
+
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 
 import {
@@ -41,6 +47,97 @@ function isVotingAsset(item: MarketSymbolItem) {
     item.assetType !== "currency" &&
     item.assetType !== "commodity"
   );
+}
+
+function getSparklineSession(
+  item: MarketSymbolItem,
+  history?: { timestampMs: number }[],
+): {
+  sessionStartMs: number | null;
+  sessionEndMs: number | null;
+} {
+  const emptySession = {
+    sessionStartMs: null,
+    sessionEndMs: null,
+  };
+
+  if (!item.marketSchedule || !history?.length) {
+    return emptySession;
+  }
+
+  const schedule = TRADING_HOURS[item.marketSchedule];
+
+  if (!schedule) {
+    return emptySession;
+  }
+
+  let latestTimestampMs = -Infinity;
+
+  for (const point of history) {
+    if (
+      Number.isFinite(point.timestampMs) &&
+      point.timestampMs > latestTimestampMs
+    ) {
+      latestTimestampMs = point.timestampMs;
+    }
+  }
+
+  if (!Number.isFinite(latestTimestampMs)) {
+    return emptySession;
+  }
+
+  // 실제 데이터의 거래일을 사용.
+  // 휴일이나 주말에도 마지막 거래일의 시간축을 유지.
+  const dataDate = new TZDate(latestTimestampMs, schedule.timezone);
+
+  const [openHour, openMinute] = schedule.open.split(":").map(Number);
+
+  const [closeHour, closeMinute] = schedule.close.split(":").map(Number);
+
+  if (![openHour, openMinute, closeHour, closeMinute].every(Number.isFinite)) {
+    return emptySession;
+  }
+
+  const year = dataDate.getFullYear();
+  const month = dataDate.getMonth();
+
+  const openMinutes = openHour * 60 + openMinute;
+  const closeMinutes = closeHour * 60 + closeMinute;
+  const isOvernight = closeMinutes <= openMinutes;
+
+  let startDay = dataDate.getDate();
+
+  if (isOvernight) {
+    const dataMinutes = dataDate.getHours() * 60 + dataDate.getMinutes();
+
+    if (dataMinutes <= closeMinutes) {
+      startDay -= 1;
+    }
+  }
+
+  return {
+    sessionStartMs: new TZDate(
+      year,
+      month,
+      startDay,
+      openHour,
+      openMinute,
+      0,
+      0,
+      schedule.timezone,
+    ).getTime(),
+
+    sessionEndMs: new TZDate(
+      year,
+      month,
+      startDay + (isOvernight ? 1 : 0),
+      closeHour,
+      closeMinute,
+      0,
+      0,
+      schedule.timezone,
+    ).getTime(),
+  };
 }
 
 export function RelativeStocks({
@@ -270,6 +367,11 @@ function RelativeStockRow({
     "15m",
   );
 
+  const { sessionStartMs, sessionEndMs } = getSparklineSession(
+    item,
+    quote?.history,
+  );
+
   const priceColor = quote?.isPositive
     ? "text-emerald-700 dark:text-emerald-600"
     : "text-[#cf0000] dark:text-[#ff1414]";
@@ -415,6 +517,8 @@ function RelativeStockRow({
             isPositive={quote?.isPositive}
             lunchStartMs={quote?.lunchStartMs}
             lunchEndMs={quote?.lunchEndMs}
+            sessionStartMs={sessionStartMs}
+            sessionEndMs={sessionEndMs}
           />
         </div>
       </td>

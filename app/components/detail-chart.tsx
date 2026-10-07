@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
+
 import {
   AreaChart,
   CandlestickChart,
   BarChart3,
   ChartLine,
-  CircleX,
   Minimize2,
 } from "lucide-react";
 
@@ -21,15 +21,35 @@ export interface DetailChartProps {
     low?: number;
     close?: number;
   }[];
+
   isPositive: boolean;
   isClosed: boolean;
   range: string;
   previousClose?: number;
+
   lunchStartMs?: number | null;
   lunchEndMs?: number | null;
+
   exchangeTimezone?: string;
+
+  // 해당 데이터 거래일의 실제 개장·폐장 시각
+  // Unix timestamp in milliseconds
+  sessionStartMs?: number | null;
+  sessionEndMs?: number | null;
+
   onClick?: () => void;
 }
+
+const chartTypeOptions: {
+  id: ChartType;
+  label: string;
+  icon: typeof ChartLine;
+}[] = [
+  { id: "line", label: "Line", icon: ChartLine },
+  { id: "area", label: "Area", icon: AreaChart },
+  { id: "candle", label: "Candle", icon: CandlestickChart },
+  { id: "bar", label: "Bar", icon: BarChart3 },
+];
 
 export function DetailChart({
   history,
@@ -39,10 +59,13 @@ export function DetailChart({
   lunchStartMs,
   lunchEndMs,
   exchangeTimezone,
+  sessionStartMs,
+  sessionEndMs,
   onClick,
 }: DetailChartProps) {
+  const chartId = useId().replace(/:/g, "");
+
   const [chartType, setChartType] = useState<ChartType>("area");
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [hoveredPoint, setHoveredPoint] = useState<{
     x: number;
@@ -52,9 +75,17 @@ export function DetailChart({
     timeStr: string;
   } | null>(null);
 
-  if (!history || history.length === 0) {
+  const data = (history ?? [])
+    .filter(
+      (point) =>
+        Number.isFinite(point.timestampMs) && Number.isFinite(point.price),
+    )
+    .slice()
+    .sort((a, b) => a.timestampMs - b.timestampMs);
+
+  if (data.length === 0) {
     return (
-      <div className="h-64 w-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 p-4 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
+      <div className="flex h-64 w-full items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
         <span className="text-xs text-zinc-400">No chart data available</span>
       </div>
     );
@@ -70,43 +101,13 @@ export function DetailChart({
   const paddingLeft = 65;
   const paddingRight = 20;
   const paddingTop = 30;
-
-  // Reduced from 40 -> 30.
-  // This gives the plot/grid a little more vertical room.
   const paddingBottom = 40;
 
   const chartWidth = width - paddingLeft - paddingRight;
   const chartHeight = height - paddingTop - paddingBottom;
 
+  const chartRight = paddingLeft + chartWidth;
   const chartBottom = paddingTop + chartHeight;
-
-  // --------------------------------------------------
-  // PRICE RANGE
-  // --------------------------------------------------
-
-  const prices = history.map((p) => p.price);
-
-  const validPrices =
-    previousClose != null ? [...prices, previousClose] : prices;
-
-  const rawMin = Math.min(...validPrices);
-  const rawMax = Math.max(...validPrices);
-
-  const rawPriceRange = rawMax - rawMin;
-
-  const min =
-    rawPriceRange === 0
-      ? rawMin - rawMin * 0.005
-      : rawMin - rawPriceRange * 0.05;
-
-  const max =
-    rawPriceRange === 0
-      ? rawMax + rawMax * 0.005
-      : rawMax + rawPriceRange * 0.05;
-
-  const priceRange = max - min || 1;
-
-  const baselinePrice = previousClose ?? history[0]?.price ?? 1;
 
   // --------------------------------------------------
   // TIME RANGE
@@ -114,26 +115,74 @@ export function DetailChart({
 
   const is1D = range === "1D";
 
-  const firstTimestamp = history[0]?.timestampMs ?? 0;
+  const firstTimestamp = data[0].timestampMs;
+  const lastTimestamp = data[data.length - 1].timestampMs;
 
-  const lastTimestamp =
-    history[history.length - 1]?.timestampMs ?? firstTimestamp;
+  const hasSessionRange =
+    is1D &&
+    typeof sessionStartMs === "number" &&
+    Number.isFinite(sessionStartMs) &&
+    typeof sessionEndMs === "number" &&
+    Number.isFinite(sessionEndMs) &&
+    sessionEndMs > sessionStartMs &&
+    firstTimestamp >= sessionStartMs &&
+    lastTimestamp <= sessionEndMs;
 
-  const fullTimeRange = Math.max(lastTimestamp - firstTimestamp, 1);
+  // 1D uses the entire session, even when only a few
+  // minutes of actual data are available.
+  const axisStartMs = hasSessionRange ? sessionStartMs : firstTimestamp;
 
-  // --------------------------------------------------
-  // X POSITION
-  // --------------------------------------------------
+  const axisEndMs = hasSessionRange ? sessionEndMs : lastTimestamp;
+
+  const fullTimeRange = Math.max(axisEndMs - axisStartMs, 1);
 
   function getX(timestampMs: number) {
-    const ratio = (timestampMs - firstTimestamp) / fullTimeRange;
+    const ratio = (timestampMs - axisStartMs) / fullTimeRange;
 
     return paddingLeft + Math.max(0, Math.min(1, ratio)) * chartWidth;
   }
 
   // --------------------------------------------------
-  // Y POSITION
+  // PRICE RANGE
   // --------------------------------------------------
+
+  const validPreviousClose =
+    typeof previousClose === "number" && Number.isFinite(previousClose)
+      ? previousClose
+      : undefined;
+
+  const priceValues = data.flatMap((point) => {
+    const values = [point.price];
+
+    if (chartType === "candle") {
+      for (const value of [point.open, point.high, point.low, point.close]) {
+        if (typeof value === "number" && Number.isFinite(value)) {
+          values.push(value);
+        }
+      }
+    }
+
+    return values;
+  });
+
+  if (validPreviousClose !== undefined) {
+    priceValues.push(validPreviousClose);
+  }
+
+  const rawMin = Math.min(...priceValues);
+  const rawMax = Math.max(...priceValues);
+  const rawPriceRange = rawMax - rawMin;
+
+  const pricePadding =
+    rawPriceRange === 0
+      ? Math.max(Math.abs(rawMin) * 0.005, 0.01)
+      : rawPriceRange * 0.05;
+
+  const min = rawMin - pricePadding;
+  const max = rawMax + pricePadding;
+  const priceRange = max - min || 1;
+
+  const baselinePrice = validPreviousClose ?? data[0].price;
 
   function getY(price: number) {
     return (
@@ -142,50 +191,47 @@ export function DetailChart({
   }
 
   // --------------------------------------------------
-  // MAP DATA -> CHART COORDINATES
+  // CHART COORDINATES
   // --------------------------------------------------
 
-  const coords = history.map((pt, idx) => {
-    const x = getX(pt.timestampMs);
-    const y = getY(pt.price);
+  const coords = data.map((point, index) => {
+    const previousPrice = index > 0 ? data[index - 1].price : point.price;
 
-    const prevPrice = idx > 0 ? history[idx - 1].price : pt.price;
+    const open =
+      typeof point.open === "number" && Number.isFinite(point.open)
+        ? point.open
+        : previousPrice;
 
-    const open = pt.open ?? prevPrice;
-    const close = pt.close ?? pt.price;
+    const close =
+      typeof point.close === "number" && Number.isFinite(point.close)
+        ? point.close
+        : point.price;
 
     const high =
-      pt.high ?? Math.max(open, close) + Math.abs(close - open) * 0.5;
+      typeof point.high === "number" && Number.isFinite(point.high)
+        ? point.high
+        : Math.max(open, close);
 
-    const low = pt.low ?? Math.min(open, close) - Math.abs(close - open) * 0.5;
-
-    const openY = getY(open);
-    const closeY = getY(close);
-    const highY = getY(high);
-    const lowY = getY(low);
+    const low =
+      typeof point.low === "number" && Number.isFinite(point.low)
+        ? point.low
+        : Math.min(open, close);
 
     return {
-      x,
-      y,
-      price: pt.price,
-      timestampMs: pt.timestampMs,
-      openY,
-      closeY,
-      highY,
-      lowY,
+      x: getX(point.timestampMs),
+      y: getY(point.price),
+      price: point.price,
+      timestampMs: point.timestampMs,
+      openY: getY(open),
+      closeY: getY(close),
+      highY: getY(high),
+      lowY: getY(low),
       isRising: close >= open,
     };
   });
 
+  const firstPoint = coords[0];
   const lastPoint = coords[coords.length - 1];
-
-  // --------------------------------------------------
-  // LUNCH BREAK
-  // --------------------------------------------------
-
-  // --------------------------------------------------
-  // LUNCH BREAK
-  // --------------------------------------------------
 
   // --------------------------------------------------
   // LUNCH BREAK
@@ -193,25 +239,30 @@ export function DetailChart({
 
   const hasLunch =
     is1D &&
-    lunchStartMs != null &&
-    lunchEndMs != null &&
+    typeof lunchStartMs === "number" &&
+    Number.isFinite(lunchStartMs) &&
+    typeof lunchEndMs === "number" &&
+    Number.isFinite(lunchEndMs) &&
     lunchEndMs > lunchStartMs;
 
   let preLunchCoords = coords;
   let postLunchCoords: typeof coords = [];
 
-  let lunchStartPt: (typeof coords)[number] | undefined;
-  let lunchEndPt: (typeof coords)[number] | undefined;
+  let lunchStartPoint: (typeof coords)[number] | undefined;
+  let lunchEndPoint: (typeof coords)[number] | undefined;
 
   if (hasLunch) {
-    // Last real candle before the lunch break
-    const beforeLunchIndex = coords.findLastIndex(
-      (point) => point.timestampMs < lunchStartMs!,
-    );
+    let beforeLunchIndex = -1;
 
-    // First real candle after the lunch break
+    for (let index = coords.length - 1; index >= 0; index--) {
+      if (coords[index].timestampMs < lunchStartMs) {
+        beforeLunchIndex = index;
+        break;
+      }
+    }
+
     const afterLunchIndex = coords.findIndex(
-      (point) => point.timestampMs >= lunchEndMs!,
+      (point) => point.timestampMs >= lunchEndMs,
     );
 
     if (
@@ -219,10 +270,9 @@ export function DetailChart({
       afterLunchIndex !== -1 &&
       afterLunchIndex > beforeLunchIndex
     ) {
-      lunchStartPt = coords[beforeLunchIndex];
-      lunchEndPt = coords[afterLunchIndex];
+      lunchStartPoint = coords[beforeLunchIndex];
+      lunchEndPoint = coords[afterLunchIndex];
 
-      // IMPORTANT: two completely separate paths
       preLunchCoords = coords.slice(0, beforeLunchIndex + 1);
       postLunchCoords = coords.slice(afterLunchIndex);
     }
@@ -232,42 +282,44 @@ export function DetailChart({
   // PATH HELPERS
   // --------------------------------------------------
 
-  const buildPath = (pts: typeof coords) =>
-    pts.reduce(
-      (acc, pt, i) =>
-        i === 0 ? `M ${pt.x},${pt.y}` : `${acc} L ${pt.x},${pt.y}`,
-      "",
+  function buildPath(points: typeof coords) {
+    return points
+      .map((point, index) =>
+        index === 0 ? `M ${point.x},${point.y}` : `L ${point.x},${point.y}`,
+      )
+      .join(" ");
+  }
+
+  function buildArea(points: typeof coords) {
+    if (points.length < 2) {
+      return "";
+    }
+
+    const path = buildPath(points);
+    const first = points[0];
+    const last = points[points.length - 1];
+
+    return (
+      `${path} ` +
+      `L ${last.x},${chartBottom} ` +
+      `L ${first.x},${chartBottom} Z`
     );
+  }
 
-  const prePathD = buildPath(preLunchCoords);
-  const postPathD = buildPath(postLunchCoords);
-
-  const preAreaD =
-    prePathD && preLunchCoords.length > 0
-      ? `${prePathD} L ${
-          preLunchCoords[preLunchCoords.length - 1].x
-        },${chartBottom} L ${preLunchCoords[0].x},${chartBottom} Z`
-      : "";
-
-  const postAreaD =
-    postPathD && postLunchCoords.length > 0
-      ? `${postPathD} L ${
-          postLunchCoords[postLunchCoords.length - 1].x
-        },${chartBottom} L ${postLunchCoords[0].x},${chartBottom} Z`
-      : "";
+  const segments = [preLunchCoords, postLunchCoords].filter(
+    (points) => points.length > 0,
+  );
 
   // --------------------------------------------------
   // Y GRID / LABELS
   // --------------------------------------------------
 
-  const yTicks = Array.from({ length: 5 }, (_, i) => {
-    const priceVal = min + (i / 4) * priceRange;
-
-    const yPos = paddingTop + chartHeight - (i / 4) * chartHeight;
+  const yTicks = Array.from({ length: 5 }, (_, index) => {
+    const ratio = index / 4;
 
     return {
-      price: priceVal,
-      y: yPos,
+      price: min + ratio * priceRange,
+      y: paddingTop + chartHeight - ratio * chartHeight,
     };
   });
 
@@ -275,65 +327,39 @@ export function DetailChart({
   // DATE / TIME FORMATTERS
   // --------------------------------------------------
 
-  const formatTimeLabel = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-      ...(exchangeTimezone
-        ? {
-            timeZone: exchangeTimezone,
-          }
-        : {}),
-    });
-  };
+  const timezoneOptions = exchangeTimezone
+    ? { timeZone: exchangeTimezone }
+    : {};
 
-  const formatDateLabel = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      ...(exchangeTimezone
-        ? {
-            timeZone: exchangeTimezone,
-          }
-        : {}),
-    });
-  };
+  const timeFormatter = new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    ...timezoneOptions,
+  });
 
-  // --------------------------------------------------
-  // EXCHANGE LOCAL TIME PARTS
-  // --------------------------------------------------
+  const dateFormatter = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    ...timezoneOptions,
+  });
 
-  function getLocalTimeParts(timestamp: number) {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-      ...(exchangeTimezone
-        ? {
-            timeZone: exchangeTimezone,
-          }
-        : {}),
-    });
-
-    const parts = formatter.formatToParts(new Date(timestamp));
-
-    const hour =
-      Number(parts.find((part) => part.type === "hour")?.value ?? 0) % 24;
-
-    const minute = Number(
-      parts.find((part) => part.type === "minute")?.value ?? 0,
-    );
-
-    return {
-      hour,
-      minute,
-    };
+  function formatTimeLabel(timestampMs: number) {
+    return timeFormatter.format(new Date(timestampMs));
   }
 
-  // --------------------------------------------------
-  // X GRID
-  // --------------------------------------------------
+  function formatDateLabel(timestampMs: number) {
+    return dateFormatter.format(new Date(timestampMs));
+  }
+
+  function getLocalTimeParts(timestampMs: number) {
+    const parts = timeFormatter.formatToParts(new Date(timestampMs));
+
+    return {
+      hour: Number(parts.find((part) => part.type === "hour")?.value ?? 0) % 24,
+      minute: Number(parts.find((part) => part.type === "minute")?.value ?? 0),
+    };
+  }
 
   // --------------------------------------------------
   // X GRID
@@ -347,156 +373,123 @@ export function DetailChart({
   if (is1D) {
     const ONE_MINUTE = 60 * 1000;
     const ONE_HOUR = 60 * ONE_MINUTE;
+    const EDGE_MARGIN = 15 * ONE_MINUTE;
 
-    // Long 1D sessions such as crypto can span nearly 24 hours.
-    // Reduce the number of labels so they do not overlap.
     const totalHours = fullTimeRange / ONE_HOUR;
 
-    const tickEveryHours = totalHours >= 20 ? 4 : totalHours >= 10 ? 2 : 1;
+    const tickEveryHours = totalHours >= 20 ? 4 : totalHours >= 6 ? 2 : 1;
 
-    const scanStart = Math.ceil(firstTimestamp / ONE_MINUTE) * ONE_MINUTE;
+    const scanStart = Math.ceil(axisStartMs / ONE_MINUTE) * ONE_MINUTE;
 
     for (
-      let timestamp = scanStart;
-      timestamp < lastTimestamp;
-      timestamp += ONE_MINUTE
+      let timestampMs = scanStart;
+      timestampMs < axisEndMs;
+      timestampMs += ONE_MINUTE
     ) {
-      const { hour, minute } = getLocalTimeParts(timestamp);
+      const { hour, minute } = getLocalTimeParts(timestampMs);
 
-      if (minute === 0 && hour % tickEveryHours === 0) {
-        const distanceFromStart = timestamp - firstTimestamp;
-        const distanceFromEnd = lastTimestamp - timestamp;
+      if (minute !== 0 || hour % tickEveryHours !== 0) {
+        continue;
+      }
 
-        const EDGE_MARGIN = 15 * ONE_MINUTE;
-
-        if (distanceFromStart > EDGE_MARGIN && distanceFromEnd > EDGE_MARGIN) {
-          xTicks.push({
-            label: formatTimeLabel(timestamp),
-            x: getX(timestamp),
-          });
-        }
+      if (
+        timestampMs - axisStartMs > EDGE_MARGIN &&
+        axisEndMs - timestampMs > EDGE_MARGIN
+      ) {
+        xTicks.push({
+          label: formatTimeLabel(timestampMs),
+          x: getX(timestampMs),
+        });
       }
     }
   } else {
-    xTicks = Array.from({ length: 4 }, (_, i) => {
-      const ratio = i / 3;
-
-      const timestamp = firstTimestamp + fullTimeRange * ratio;
-
-      let label = "";
-
-      if (range === "5D") {
-        label = `${formatDateLabel(timestamp)} ${formatTimeLabel(timestamp)}`;
-      } else {
-        label = formatDateLabel(timestamp);
-      }
+    xTicks = Array.from({ length: 4 }, (_, index) => {
+      const ratio = index / 3;
+      const timestampMs = axisStartMs + fullTimeRange * ratio;
 
       return {
-        label,
+        label:
+          range === "5D"
+            ? `${formatDateLabel(timestampMs)} ${formatTimeLabel(timestampMs)}`
+            : formatDateLabel(timestampMs),
         x: paddingLeft + ratio * chartWidth,
       };
     });
   }
 
   // --------------------------------------------------
-  // PREVIOUS CLOSE
+  // PREVIOUS CLOSE / COLOR
   // --------------------------------------------------
 
-  const prevCloseY = previousClose != null ? getY(previousClose) : null;
-
-  // --------------------------------------------------
-  // COLOR
-  // --------------------------------------------------
+  const previousCloseY =
+    validPreviousClose !== undefined ? getY(validPreviousClose) : null;
 
   const strokeColor = isPositive ? "#008549" : "#cf0000";
-
-  const gradientId = `detail-area-grad-${isPositive ? "pos" : "neg"}`;
-
-  // --------------------------------------------------
-  // CHART TYPE MENU
-  // --------------------------------------------------
-
-  const chartTypeOptions = [
-    {
-      id: "line",
-      label: "Line",
-      icon: ChartLine,
-    },
-    {
-      id: "area",
-      label: "Area",
-      icon: AreaChart,
-    },
-    {
-      id: "candle",
-      label: "Candle",
-      icon: CandlestickChart,
-    },
-    {
-      id: "bar",
-      label: "Bar",
-      icon: BarChart3,
-    },
-  ];
-
-  const CurrentIcon =
-    chartTypeOptions.find((o) => o.id === chartType)?.icon || AreaChart;
+  const gradientId = `detail-area-gradient-${chartId}`;
 
   // --------------------------------------------------
   // HOVER
   // --------------------------------------------------
 
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+  function handleMouseMove(event: React.MouseEvent<SVGSVGElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
 
-    const mouseX = ((e.clientX - rect.left) / rect.width) * width;
+    const mouseX = ((event.clientX - rect.left) / rect.width) * width;
 
-    let closest = coords[0];
+    const mouseY = ((event.clientY - rect.top) / rect.height) * height;
 
-    let minDistance = Math.abs(coords[0].x - mouseX);
+    // Future time has no data, so it has no tooltip.
+    if (
+      mouseX < paddingLeft ||
+      mouseX > chartRight ||
+      mouseY < paddingTop ||
+      mouseY > chartBottom ||
+      mouseX < firstPoint.x - 6 ||
+      mouseX > lastPoint.x + 6
+    ) {
+      setHoveredPoint(null);
+      return;
+    }
 
-    for (let i = 1; i < coords.length; i++) {
-      const dist = Math.abs(coords[i].x - mouseX);
+    let closest = firstPoint;
+    let minimumDistance = Math.abs(firstPoint.x - mouseX);
 
-      if (dist < minDistance) {
-        minDistance = dist;
-        closest = coords[i];
+    for (let index = 1; index < coords.length; index++) {
+      const distance = Math.abs(coords[index].x - mouseX);
+
+      if (distance < minimumDistance) {
+        minimumDistance = distance;
+        closest = coords[index];
       }
     }
 
-    const d = new Date(closest.timestampMs);
+    // Do not select candles across the lunch break.
+    if (
+      hasLunch &&
+      lunchStartPoint &&
+      lunchEndPoint &&
+      mouseX > getX(lunchStartMs) &&
+      mouseX < getX(lunchEndMs)
+    ) {
+      setHoveredPoint(null);
+      return;
+    }
 
-    const dateStr = d.toLocaleDateString("en-US", {
-      day: "numeric",
-      month: "short",
-      ...(exchangeTimezone
-        ? {
-            timeZone: exchangeTimezone,
-          }
-        : {}),
-    });
-
-    const timeStr = d.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-      ...(exchangeTimezone
-        ? {
-            timeZone: exchangeTimezone,
-          }
-        : {}),
-    });
-
-    const percent = ((closest.price - baselinePrice) / baselinePrice) * 100;
+    const percentChange =
+      baselinePrice !== 0
+        ? ((closest.price - baselinePrice) / baselinePrice) * 100
+        : 0;
 
     setHoveredPoint({
       x: closest.x,
       y: closest.y,
       price: closest.price,
-      percentChange: percent,
-      timeStr: `${dateStr}, ${timeStr}`,
+      percentChange,
+      timeStr:
+        `${formatDateLabel(closest.timestampMs)}, ` +
+        formatTimeLabel(closest.timestampMs),
     });
-  };
+  }
 
   // --------------------------------------------------
   // CANDLE / BAR WIDTH
@@ -504,13 +497,11 @@ export function DetailChart({
 
   let minimumPointSpacing = chartWidth / Math.max(coords.length, 1);
 
-  if (coords.length >= 2) {
-    for (let i = 1; i < coords.length; i++) {
-      const spacing = coords[i].x - coords[i - 1].x;
+  for (let index = 1; index < coords.length; index++) {
+    const spacing = coords[index].x - coords[index - 1].x;
 
-      if (spacing > 0) {
-        minimumPointSpacing = Math.min(minimumPointSpacing, spacing);
-      }
+    if (spacing > 0) {
+      minimumPointSpacing = Math.min(minimumPointSpacing, spacing);
     }
   }
 
@@ -518,52 +509,61 @@ export function DetailChart({
 
   const barWidth = Math.max(Math.min(minimumPointSpacing * 0.75, 7), 1);
 
+  const hoverLabelX = hoveredPoint
+    ? Math.max(paddingLeft, Math.min(chartRight - 120, hoveredPoint.x - 60))
+    : 0;
+
   // --------------------------------------------------
   // RENDER
   // --------------------------------------------------
 
   return (
-    <div className="w-full relative bg-zinc-50 dark:bg-zinc-800/50 md:rounded-2xl md:border border-zinc-200 dark:border-zinc-800 p-4 select-none">
+    <div className="relative w-full select-none bg-zinc-50 p-4 md:rounded-2xl md:border md:border-zinc-200 dark:bg-zinc-800/50 dark:md:border-zinc-800">
       {/* TOP CONTROL BAR */}
 
       <div className="relative z-5 flex items-center justify-between gap-6 dark:text-zinc-300">
-        <div className="relative flex justify-between">
-          {chartTypeOptions.map((opt) => {
-            const Icon = opt.icon;
+        <div className="flex items-center">
+          {chartTypeOptions.map((option) => {
+            const Icon = option.icon;
+            const isSelected = chartType === option.id;
 
             return (
               <button
-                key={opt.id}
+                key={option.id}
+                type="button"
+                aria-label={`${option.label} chart`}
+                aria-pressed={isSelected}
                 onClick={() => {
-                  setChartType(opt.id as ChartType);
-                  setIsMenuOpen(false);
+                  setChartType(option.id);
+                  setHoveredPoint(null);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-all cursor-pointer ${
-                  chartType === opt.id
-                    ? " text-zinc-900 dark:text-white"
-                    : "text-zinc-600 dark:text-zinc-300! hover:bg-zinc-200/60 dark:hover:bg-zinc-700/50"
+                className={`flex cursor-pointer items-center justify-center rounded-sm px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+                  isSelected
+                    ? "text-zinc-900 dark:text-white"
+                    : "text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-700/50"
                 }`}
               >
-                <Icon className="w-3 h-3 md:w-4 md:h-4" />
+                <Icon className="size-3 md:size-4" />
               </button>
             );
           })}
         </div>
-        <Minimize2
-          strokeWidth={1.5}
-          className="w-5 h-5 mr-2 rounded-full text-zinc-600 bg-zinc-white dark:text-zinc-300 dark:bg-zinc-800 cursor-pointer"
+
+        <button
+          type="button"
           onClick={onClick}
-          aria-label="Close"
-        />
+          aria-label="Close chart"
+          className="mr-2 flex size-7 cursor-pointer items-center justify-center rounded-sm text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-300 dark:hover:text-white"
+        >
+          <Minimize2 className="size-5" strokeWidth={1.5} />
+        </button>
       </div>
 
       {/* HOVER PRICE BADGE */}
 
       {hoveredPoint && (
-        <div className="absolute jakarta top-14 right-1/2 translate-x-12/29 z-10 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2.5 py-1 rounded-sm text-xs font-normal shadow-xs flex items-center gap-1.5">
-          <span className="text-zinc-600 jakarta dark:text-zinc-400">
-            Price:
-          </span>
+        <div className="jakarta absolute left-1/2 top-14 z-10 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-sm border border-zinc-200 bg-white px-2.5 py-1 text-xs font-normal shadow-xs dark:border-zinc-700 dark:bg-zinc-800">
+          <span className="text-zinc-600 dark:text-zinc-400">Price:</span>
 
           <span className="text-zinc-900 dark:text-zinc-100">
             {hoveredPoint.price.toLocaleString("en-US", {
@@ -580,8 +580,7 @@ export function DetailChart({
             }
           >
             ({hoveredPoint.percentChange >= 0 ? "+" : ""}
-            {hoveredPoint.percentChange.toFixed(2)}
-            %)
+            {hoveredPoint.percentChange.toFixed(2)}%)
           </span>
         </div>
       )}
@@ -590,7 +589,7 @@ export function DetailChart({
 
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="w-full h-auto overflow-visible cursor-crosshair"
+        className="h-auto w-full cursor-crosshair overflow-visible"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHoveredPoint(null)}
       >
@@ -604,13 +603,13 @@ export function DetailChart({
 
         {/* Y AXIS LABELS */}
 
-        {yTicks.map((tick, i) => (
+        {yTicks.map((tick, index) => (
           <text
-            key={i}
+            key={index}
             x={paddingLeft - 12}
             y={tick.y + 4}
             textAnchor="end"
-            className="fill-zinc-800 jakarta dark:fill-zinc-300 dark:font-light text-[12px] font-normal"
+            className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-300 dark:font-light"
           >
             {tick.price.toLocaleString("en-US", {
               minimumFractionDigits: 2,
@@ -619,31 +618,25 @@ export function DetailChart({
           </text>
         ))}
 
-        {/* VERTICAL GRID */}
+        {/* GRID BOUNDARIES */}
 
-        {/* LEFT + RIGHT GRID BOUNDARIES */}
-        <line
-          x1={paddingLeft}
-          y1={paddingTop}
-          x2={paddingLeft}
-          y2={chartBottom}
-          stroke="#e2e8f0"
-          strokeWidth="1"
-          className="dark:stroke-zinc-600/50"
-        />
+        {[paddingLeft, chartRight].map((x) => (
+          <line
+            key={x}
+            x1={x}
+            y1={paddingTop}
+            x2={x}
+            y2={chartBottom}
+            stroke="#e2e8f0"
+            strokeWidth="1"
+            className="dark:stroke-zinc-600/50"
+          />
+        ))}
 
-        <line
-          x1={paddingLeft + chartWidth}
-          y1={paddingTop}
-          x2={paddingLeft + chartWidth}
-          y2={chartBottom}
-          stroke="#e2e8f0"
-          strokeWidth="1"
-          className="dark:stroke-zinc-600/50"
-        />
+        {/* X GRID / LABELS */}
 
-        {xTicks.map((tick, i) => (
-          <g key={i}>
+        {xTicks.map((tick, index) => (
+          <g key={index}>
             <line
               x1={tick.x}
               y1={paddingTop}
@@ -658,7 +651,7 @@ export function DetailChart({
               x={tick.x}
               y={chartBottom + 20}
               textAnchor="middle"
-              className="fill-zinc-800 jakarta dark:fill-zinc-300 dark:font-light text-[12px] font-normal"
+              className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-300 dark:font-light"
             >
               {tick.label}
             </text>
@@ -667,106 +660,49 @@ export function DetailChart({
 
         {/* PREVIOUS CLOSE */}
 
-        {previousClose != null &&
-          prevCloseY != null &&
-          (() => {
-            const isAboveChart = previousClose > max;
+        {validPreviousClose !== undefined && previousCloseY !== null && (
+          <g>
+            <line
+              x1={paddingLeft}
+              y1={previousCloseY}
+              x2={chartRight}
+              y2={previousCloseY}
+              stroke="#94a3b8"
+              strokeDasharray="2 3"
+              strokeWidth="1.5"
+            />
 
-            const isBelowChart = previousClose < min;
+            <text
+              x={chartRight - 10}
+              y={previousCloseY - 6}
+              textAnchor="end"
+              className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-300 dark:font-light"
+            >
+              Prev. close{" "}
+              {validPreviousClose.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </text>
+          </g>
+        )}
 
-            const isOutOfBounds = isAboveChart || isBelowChart;
+        {/* AREA / LINE CHART */}
 
-            const clampedY = Math.max(
-              paddingTop,
-              Math.min(chartBottom, prevCloseY),
-            );
+        {(chartType === "area" || chartType === "line") &&
+          segments.map((points, index) => {
+            const path = buildPath(points);
+            const area = buildArea(points);
 
             return (
-              <g>
-                <line
-                  x1={paddingLeft}
-                  y1={clampedY}
-                  x2={paddingLeft + chartWidth}
-                  y2={clampedY}
-                  stroke="#94a3b8"
-                  strokeDasharray="2 3"
-                  strokeWidth="1.5"
-                />
-
-                {!isOutOfBounds && (
-                  <text
-                    x={paddingLeft + chartWidth - 10}
-                    y={prevCloseY - 6}
-                    textAnchor="end"
-                    className="fill-zinc-800 jakarta dark:fill-zinc-300 dark:font-light text-[12px] font-normal"
-                  >
-                    Prev. close{" "}
-                    {previousClose.toLocaleString("en-US", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </text>
+              <g key={index}>
+                {chartType === "area" && area && (
+                  <path d={area} fill={`url(#${gradientId})`} />
                 )}
 
-                {isOutOfBounds && (
-                  <g
-                    transform={`translate(${paddingLeft + chartWidth - 120}, ${
-                      isAboveChart ? paddingTop + 4 : chartBottom - 20
-                    })`}
-                  >
-                    <rect
-                      x="0"
-                      y="0"
-                      width="120"
-                      height="18"
-                      rx="4"
-                      className="fill-zinc-100 dark:fill-zinc-800 stroke-zinc-300 dark:stroke-zinc-700 opacity-90"
-                    />
-
-                    <text
-                      x="60"
-                      y="13"
-                      textAnchor="middle"
-                      className="fill-zinc-600 dark:fill-zinc-300 text-[10px] font-semibold"
-                    >
-                      Prev. close{" "}
-                      {previousClose.toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </text>
-                  </g>
-                )}
-              </g>
-            );
-          })()}
-
-        {/* AREA CHART */}
-
-        {chartType === "area" && (
-          <g>
-            {preAreaD && <path d={preAreaD} fill={`url(#${gradientId})`} />}
-
-            {prePathD && (
-              <path
-                d={prePathD}
-                fill="none"
-                stroke={strokeColor}
-                strokeWidth="1.25"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            )}
-
-            {postLunchCoords.length > 0 && (
-              <>
-                {postAreaD && (
-                  <path d={postAreaD} fill={`url(#${gradientId})`} />
-                )}
-
-                {postPathD && (
+                {points.length >= 2 && (
                   <path
-                    d={postPathD}
+                    d={path}
                     fill="none"
                     stroke={strokeColor}
                     strokeWidth="1.25"
@@ -774,101 +710,76 @@ export function DetailChart({
                     strokeLinejoin="round"
                   />
                 )}
-              </>
-            )}
-          </g>
-        )}
 
-        {/* LINE CHART */}
-
-        {chartType === "line" && (
-          <g>
-            <path
-              d={prePathD}
-              fill="none"
-              stroke={strokeColor}
-              strokeWidth="1.25"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-
-            {postLunchCoords.length > 0 && (
-              <path
-                d={postPathD}
-                fill="none"
-                stroke={strokeColor}
-                strokeWidth="1.25"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            )}
-          </g>
-        )}
+                {points.length === 1 && points[0] !== lastPoint && (
+                  <circle
+                    cx={points[0].x}
+                    cy={points[0].y}
+                    r="2.5"
+                    fill={strokeColor}
+                  />
+                )}
+              </g>
+            );
+          })}
 
         {/* LUNCH BREAK */}
-        {hasLunch && lunchStartPt && lunchEndPt && (
-          <g>
-            {/* Dashed break line */}
-            <line
-              x1={lunchStartPt.x}
-              y1={lunchStartPt.y}
-              x2={lunchEndPt.x}
-              y2={lunchStartPt.y}
-              stroke={strokeColor}
-              strokeDasharray="2.5 2.5"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              opacity="0.6"
-            />
 
-            {/* Break label */}
-            {(() => {
-              const labelX = (lunchStartPt.x + lunchEndPt.x) / 2;
-              const labelY = (lunchStartPt.y + lunchEndPt.y) / 2;
+        {hasLunch &&
+          lunchStartPoint &&
+          lunchEndPoint &&
+          (chartType === "line" || chartType === "area") && (
+            <g>
+              <line
+                x1={lunchStartPoint.x}
+                y1={lunchStartPoint.y}
+                x2={lunchEndPoint.x}
+                y2={lunchStartPoint.y}
+                stroke={strokeColor}
+                strokeDasharray="2.5 2.5"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                opacity="0.6"
+              />
 
-              return (
-                <g>
-                  <text
-                    x={labelX}
-                    y={labelY - 10}
-                    textAnchor="middle"
-                    className="fill-zinc-700 dark:fill-zinc-400 text-[15px] tracking-wide font-medium"
-                  >
-                    Lunch Break
-                  </text>
-                </g>
-              );
-            })()}
-          </g>
-        )}
+              <text
+                x={(lunchStartPoint.x + lunchEndPoint.x) / 2}
+                y={(lunchStartPoint.y + lunchEndPoint.y) / 2 - 10}
+                textAnchor="middle"
+                className="fill-zinc-700 text-[15px] font-medium tracking-wide dark:fill-zinc-400"
+              >
+                Lunch Break
+              </text>
+            </g>
+          )}
 
         {/* CANDLESTICK */}
 
         {chartType === "candle" && (
           <g>
-            {coords.map((pt, i) => {
-              const color = pt.isRising ? "#008549" : "#cf0000";
+            {coords.map((point, index) => {
+              const color = point.isRising ? "#008549" : "#cf0000";
 
-              const candleTop = Math.min(pt.openY, pt.closeY);
+              const candleTop = Math.min(point.openY, point.closeY);
 
               const candleHeight = Math.max(
-                Math.abs(pt.closeY - pt.openY),
+                Math.abs(point.closeY - point.openY),
                 1.5,
               );
 
               return (
-                <g key={i}>
+                <g key={index}>
                   <line
-                    x1={pt.x}
-                    y1={pt.highY}
-                    x2={pt.x}
-                    y2={pt.lowY}
+                    x1={point.x}
+                    y1={point.highY}
+                    x2={point.x}
+                    y2={point.lowY}
                     stroke={color}
                     strokeWidth="1.25"
                   />
 
                   <rect
-                    x={pt.x - candleWidth / 2}
+                    x={point.x - candleWidth / 2}
                     y={candleTop}
                     width={candleWidth}
                     height={candleHeight}
@@ -885,42 +796,36 @@ export function DetailChart({
 
         {chartType === "bar" && (
           <g>
-            {coords.map((pt, i) => {
-              const fillColor = pt.isRising
-                ? "rgba(0, 133, 73, 0.45)"
-                : "rgba(207, 0, 0, 0.45)";
-
-              const barStroke = pt.isRising ? "#008549" : "#cf0000";
-
-              return (
-                <rect
-                  key={i}
-                  x={pt.x - barWidth / 2}
-                  y={pt.y}
-                  width={barWidth}
-                  height={chartBottom - pt.y}
-                  fill={fillColor}
-                  stroke={barStroke}
-                  strokeWidth="0.5"
-                  rx="1"
-                />
-              );
-            })}
+            {coords.map((point, index) => (
+              <rect
+                key={index}
+                x={point.x - barWidth / 2}
+                y={point.y}
+                width={barWidth}
+                height={chartBottom - point.y}
+                fill={
+                  point.isRising
+                    ? "rgba(0, 133, 73, 0.45)"
+                    : "rgba(207, 0, 0, 0.45)"
+                }
+                stroke={point.isRising ? "#008549" : "#cf0000"}
+                strokeWidth="0.5"
+                rx="1"
+              />
+            ))}
           </g>
         )}
 
-        {/* END POINT */}
+        {/* LATEST DATA POINT */}
 
-        {lastPoint &&
-          !hoveredPoint &&
-          (chartType === "line" || chartType === "area") && (
-            <circle
-              cx={lastPoint.x}
-              cy={lastPoint.y}
-              r="4.5"
-              fill={strokeColor}
-            />
-          )}
+        {!hoveredPoint && (chartType === "line" || chartType === "area") && (
+          <circle
+            cx={lastPoint.x}
+            cy={lastPoint.y}
+            r="4.5"
+            fill={strokeColor}
+          />
+        )}
 
         {/* HOVER CROSSHAIR */}
 
@@ -941,31 +846,25 @@ export function DetailChart({
               cy={hoveredPoint.y}
               r="5"
               fill={strokeColor}
-              className="stroke-white dark:stroke-zinc-200"
               strokeWidth="2"
+              className="stroke-white dark:stroke-zinc-200"
             />
 
-            <g
-              transform={`translate(${
-                hoveredPoint.x + 60 > width - paddingRight
-                  ? hoveredPoint.x - 120
-                  : hoveredPoint.x - 60
-              }, ${chartBottom - 5})`}
-            >
+            <g transform={`translate(${hoverLabelX}, ${chartBottom - 5})`}>
               <rect
                 x="0"
                 y="0"
                 width="120"
                 height="24"
                 rx="6"
-                className="fill-white dark:fill-zinc-800 stroke-zinc-300 dark:stroke-zinc-700 shadow-sm"
+                className="fill-white stroke-zinc-300 dark:fill-zinc-800 dark:stroke-zinc-700"
               />
 
               <text
                 x="60"
                 y="16"
                 textAnchor="middle"
-                className="fill-zinc-700 dark:fill-zinc-200 text-[10.5px] font-medium"
+                className="fill-zinc-700 text-[10.5px] font-medium dark:fill-zinc-200"
               >
                 {hoveredPoint.timeStr}
               </text>

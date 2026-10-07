@@ -1,8 +1,12 @@
 "use client";
 
+import { TZDate } from "@date-fns/tz";
+
 import { useMarketQuote } from "@/app/hooks/useMarketQuote";
 import type { VoteDirection } from "@/app/actions/market-vote";
 import type { HomeMarketItem } from "@/types/home-market";
+
+import { ALL_MARKET_SYMBOLS, TRADING_HOURS } from "@/lib/data/market-symbols";
 
 import { Numeric } from "./numeric";
 import { TrendSparkline } from "./trend-sparkline";
@@ -14,6 +18,106 @@ interface BullBearVoteCardProps {
   initialIsWatchlist: boolean;
   initialVote?: VoteDirection | null;
   initialVoteSessionKey?: string | null;
+}
+
+function getSparklineSession(
+  market: HomeMarketItem,
+  history?: { timestampMs: number }[],
+): {
+  sessionStartMs: number | null;
+  sessionEndMs: number | null;
+} {
+  const emptySession = {
+    sessionStartMs: null,
+    sessionEndMs: null,
+  };
+
+  if (!history?.length) {
+    return emptySession;
+  }
+
+  const marketMeta =
+    ALL_MARKET_SYMBOLS.find((item) => item.symbol === market.symbol) ??
+    ALL_MARKET_SYMBOLS.find((item) => item.symbol === market.providerSymbol);
+
+  if (!marketMeta?.marketSchedule) {
+    return emptySession;
+  }
+
+  const schedule = TRADING_HOURS[marketMeta.marketSchedule];
+
+  if (!schedule) {
+    return emptySession;
+  }
+
+  let latestTimestampMs = -Infinity;
+
+  for (const point of history) {
+    if (
+      Number.isFinite(point.timestampMs) &&
+      point.timestampMs > latestTimestampMs
+    ) {
+      latestTimestampMs = point.timestampMs;
+    }
+  }
+
+  if (!Number.isFinite(latestTimestampMs)) {
+    return emptySession;
+  }
+
+  // Use the actual data's trading date, including when
+  // the API returns the last session during a holiday.
+  const dataDate = new TZDate(latestTimestampMs, schedule.timezone);
+
+  const [openHour, openMinute] = schedule.open.split(":").map(Number);
+
+  const [closeHour, closeMinute] = schedule.close.split(":").map(Number);
+
+  if (![openHour, openMinute, closeHour, closeMinute].every(Number.isFinite)) {
+    return emptySession;
+  }
+
+  const year = dataDate.getFullYear();
+  const month = dataDate.getMonth();
+
+  const openMinutes = openHour * 60 + openMinute;
+  const closeMinutes = closeHour * 60 + closeMinute;
+
+  const isOvernight = closeMinutes <= openMinutes;
+
+  let startDay = dataDate.getDate();
+
+  if (isOvernight) {
+    const dataMinutes = dataDate.getHours() * 60 + dataDate.getMinutes();
+
+    if (dataMinutes <= closeMinutes) {
+      startDay -= 1;
+    }
+  }
+
+  return {
+    sessionStartMs: new TZDate(
+      year,
+      month,
+      startDay,
+      openHour,
+      openMinute,
+      0,
+      0,
+      schedule.timezone,
+    ).getTime(),
+
+    sessionEndMs: new TZDate(
+      year,
+      month,
+      startDay + (isOvernight ? 1 : 0),
+      closeHour,
+      closeMinute,
+      0,
+      0,
+      schedule.timezone,
+    ).getTime(),
+  };
 }
 
 export function BullBearVoteCard({
@@ -31,11 +135,20 @@ export function BullBearVoteCard({
     "5m",
   );
 
+  const { sessionStartMs, sessionEndMs } = getSparklineSession(
+    market,
+    data?.history,
+  );
+
   const changeColor = !data
     ? "text-zinc-400 dark:text-zinc-500"
     : data.isPositive
       ? "text-[#047857] dark:text-emerald-400"
       : "text-[#cf0000] dark:text-[#ff1414] dark:font-semibold";
+
+  const hasChartData = data?.history.some((point) =>
+    Number.isFinite(point.price),
+  );
 
   return (
     <article className="relative w-44 shrink-0 text-zinc-900 dark:text-zinc-300">
@@ -63,15 +176,13 @@ export function BullBearVoteCard({
           {data ? `${data.change} (${data.percent})` : "—"}
         </p>
 
-        <div
-          role="img"
-          aria-label={`${market.name} price trend`}
-          className="mt-2 flex h-16 items-center justify-center"
-        >
-          {data && data.history.length >= 2 ? (
+        <div className="mt-2 flex h-16 items-center justify-center">
+          {data && hasChartData ? (
             <TrendSparkline
               data={data.history}
               isPositive={data.isPositive}
+              sessionStartMs={sessionStartMs}
+              sessionEndMs={sessionEndMs}
               width={174}
               height={64}
               lunchStartMs={data.lunchStartMs}
