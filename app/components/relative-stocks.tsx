@@ -475,7 +475,7 @@ function RelativeStockRow({
       ? "text-zinc-400 dark:text-zinc-500"
       : direction >= 0
         ? "text-emerald-700 dark:text-emerald-400"
-        : "text-[#cf0000] dark:text-[#ff0d42]";
+        : "text-[#cf0000] dark:text-[#ff4545]";
 
   function navigate() {
     setActiveRange("1D");

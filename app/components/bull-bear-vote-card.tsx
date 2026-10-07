@@ -146,7 +146,7 @@ export function BullBearVoteCard({
     ? "text-zinc-400 dark:text-zinc-500"
     : data.isPositive
       ? "text-[#047857] dark:text-emerald-400"
-      : "text-[#cf0000] dark:text-[#ff0d42] dark:font-[550]";
+      : "text-[#cf0000] dark:text-[#ff4545] dark:font-[550]";
 
   const hasChartData = data?.history.some((point) =>
     Number.isFinite(point.price),

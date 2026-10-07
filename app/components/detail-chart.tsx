@@ -686,7 +686,7 @@ export function DetailChart({
 
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="h-auto w-full cursor-crosshair overflow-visible [--chart-down:#cf0000] dark:[--chart-down:#ff0d42]"
+        className="h-auto w-full cursor-crosshair overflow-visible [--chart-down:#cf0000] dark:[--chart-down:#ff4545]"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHoveredPoint(null)}
       >
