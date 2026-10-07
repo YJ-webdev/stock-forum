@@ -35,9 +35,9 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
 
       <div className="flex w-full flex-col px-2">
         {traders.map((trader) => (
-          <Link
+          <div
             key={trader.id}
-            href={`/user/${trader.id}`}
+            // href={`/user/${trader.id}`}
             className="
              group
               flex
@@ -90,7 +90,7 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
                 pts
               </p>
             </div>
-          </Link>
+          </div>
         ))}
 
         {traders.length === 0 && (
