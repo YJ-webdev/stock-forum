@@ -361,41 +361,28 @@ export default function UserMenu({
               Settings
             </DropdownMenuItem>
 
-            {user.role === "ADMIN" && (
-              <DropdownMenuItem
-                onClick={() => router.push("/admin")}
-                className="
-                
-              h-11 cursor-pointer
-              text-[15px]
-            "
-              >
-                <ShieldCogCorner className="mr-2 size-4.5" strokeWidth={1.5} />
-                Admin
-              </DropdownMenuItem>
-            )}
-
             <DropdownMenuItem
               onClick={toggleTheme}
-              className="relative cursor-pointer sm:hidden"
+              className="h-11 cursor-pointer text-[15px] sm:hidden"
             >
-              <Sun
-                className="
-                  mr-2 h-4 w-4
-                  rotate-0 scale-100
-                  transition-all
-                  dark:-rotate-90 dark:scale-0
-                "
-              />
+              <span className="relative mr-2 flex size-4.5 shrink-0 items-center justify-center">
+                <Sun
+                  strokeWidth={1.5}
+                  className="
+        absolute size-4.5
+        rotate-0 scale-100 transition-transform
+        dark:-rotate-90 dark:scale-0
+      "
+                />
 
-              <BsMoon
-                className="
-                  absolute h-4 w-4
-                  rotate-90 scale-0
-                  transition-all
-                  dark:rotate-0 dark:scale-100
-                "
-              />
+                <BsMoon
+                  className="
+        absolute size-4.5
+        rotate-90 scale-0 transition-transform
+        dark:rotate-0 dark:scale-100
+      "
+                />
+              </span>
 
               <span>Mode</span>
             </DropdownMenuItem>
@@ -418,6 +405,20 @@ export default function UserMenu({
 
             {isPending ? "Signing out..." : "Sign Out"}
           </DropdownMenuItem>
+
+          {user.role === "ADMIN" && (
+            <DropdownMenuItem
+              onClick={() => router.push("/admin")}
+              className="
+                
+              h-11 cursor-pointer
+              text-[15px]
+            "
+            >
+              <ShieldCogCorner className="mr-2 size-4.5" strokeWidth={1.5} />
+              Admin
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </>

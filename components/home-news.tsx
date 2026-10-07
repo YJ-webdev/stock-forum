@@ -35,7 +35,11 @@ function NewsLogo({ url, source }: { url: string; source: string }) {
           height={20}
           loading="lazy"
           onError={() => setFailed(true)}
-          className="size-6 object-contain"
+          className="
+  size-6 object-contain
+  opacity-50 grayscale transition-all duration-200
+  group-hover:opacity-100 group-hover:grayscale-0
+"
         />
       ) : (
         <Newspaper
@@ -379,9 +383,9 @@ export const HomeNews = ({ briefs }: HomeNewsProps) => {
               data-news-item
               aria-hidden={isClone ? true : undefined}
               className="
-                flex w-full shrink-0 snap-start items-center
-                gap-3 px-4 py-4
-              "
+  group flex w-full shrink-0 snap-start items-center
+  gap-3 px-4 py-4
+"
             >
               <NewsLogo url={brief.url} source={brief.source} />
 

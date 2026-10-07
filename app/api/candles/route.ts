@@ -111,12 +111,6 @@ async function fetchYahooChart(
     includePrePost: false,
   });
 
-  console.log(
-    `[PERF] yahoo.chart SOURCE ${symbol} ${range}/${interval}: ${(
-      performance.now() - start
-    ).toFixed(0)}ms`,
-  );
-
   return {
     chartResult,
     fetchedAt: Date.now(),
@@ -775,12 +769,6 @@ export async function GET(request: Request) {
     const cacheStatus =
       cachedYahoo.fetchedAt >= requestStartedAt - 5 ? "MISS" : "HIT";
 
-    console.log(
-      `[PERF] yahoo.chart ${symbol} ${range}/${interval}: ${(
-        performance.now() - yahooStart
-      ).toFixed(0)}ms (${cacheStatus})`,
-    );
-
     const rawQuotes = Array.isArray(chartResult?.quotes)
       ? chartResult.quotes
       : [];
@@ -927,12 +915,6 @@ export async function GET(request: Request) {
       }
     }
 
-    console.log("[candles] previous close", {
-      symbol,
-      quotePreviousClose: quote.regularMarketPreviousClose,
-      selectedPreviousClose: previousClose,
-    });
-
     const availablePrice =
       typeof quote.regularMarketPrice === "number" &&
       Number.isFinite(quote.regularMarketPrice)
@@ -1049,12 +1031,6 @@ export async function GET(request: Request) {
       rangeStartPrice !== 0
         ? ((currentPrice - rangeStartPrice) / rangeStartPrice) * 100
         : 0;
-
-    console.log(
-      `[PERF] candles total ${symbol} ${range}/${interval}: ${(
-        performance.now() - totalStart
-      ).toFixed(0)}ms`,
-    );
 
     return NextResponse.json({
       points,
