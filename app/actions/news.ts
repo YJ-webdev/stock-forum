@@ -1354,3 +1354,393 @@ export async function getGlobalMarketNews(
     take: limit,
   });
 }
+
+// -----------------------------------------------------------------------------
+// HOME MARKET HEADLINES
+// -----------------------------------------------------------------------------
+
+export interface HomeMarketHeadline {
+  id: string;
+  title: string;
+  summary: string;
+  source: string;
+  url: string;
+  publishedAt: string;
+}
+
+interface HomeHeadlineCandidate extends HomeMarketHeadline {
+  score: number;
+  topic: string | null;
+}
+
+interface HomeHeadlineRule {
+  topic: string;
+  weight: number;
+  patterns: RegExp[];
+}
+
+const HOME_HEADLINES_LIMIT = 3;
+const HOME_HEADLINES_HISTORY_MS = 24 * 60 * 60 * 1000;
+
+const HOME_HEADLINES_SEARCH = [
+  '"global stocks"',
+  '"global markets"',
+  '"stock market"',
+  '"Wall Street"',
+  '"Asian stocks"',
+  '"European stocks"',
+  '"Federal Reserve"',
+  '"European Central Bank"',
+  '"Bank of Japan"',
+  '"interest rates"',
+  '"inflation"',
+  '"jobs report"',
+  '"trade tariffs"',
+].join(" | ");
+
+// These scores are editorial rules, not an objective importance measure.
+const HOME_HEADLINE_RULES: HomeHeadlineRule[] = [
+  {
+    topic: "monetary-policy",
+    weight: 60,
+    patterns: [
+      /\b(?:fed|federal reserve|ecb|boj|central banks?)\b/i,
+      /\b(?:rate cuts?|rate hikes?|interest rates?|monetary policy)\b/i,
+    ],
+  },
+  {
+    topic: "inflation",
+    weight: 50,
+    patterns: [/\b(?:inflation|cpi|pce|consumer prices?|producer prices?)\b/i],
+  },
+  {
+    topic: "employment",
+    weight: 45,
+    patterns: [/\b(?:jobs report|payrolls?|unemployment|employment report)\b/i],
+  },
+  {
+    topic: "trade",
+    weight: 45,
+    patterns: [
+      /\b(?:tariffs?|trade war|trade deal|trade tensions?|sanctions?)\b/i,
+    ],
+  },
+  {
+    topic: "economy",
+    weight: 40,
+    patterns: [/\b(?:gdp|recession|economic growth|economic contraction)\b/i],
+  },
+  {
+    topic: "global-markets",
+    weight: 40,
+    patterns: [
+      /\b(?:global|world|worldwide)\s+(?:stocks|equities|markets)\b/i,
+      /\b(?:global selloff|global sell off)\b/i,
+    ],
+  },
+  {
+    topic: "regional-markets",
+    weight: 30,
+    patterns: [
+      /\b(?:asian|european|japanese|chinese|korean|us|u s)\s+(?:stocks|equities|markets)\b/i,
+      /\b(?:wall street|stock markets?|equity markets?)\b/i,
+      /\b(?:s p 500|nasdaq|dow jones|nikkei|kospi|hang seng|stoxx|ftse|dax)\b/i,
+    ],
+  },
+  {
+    topic: "energy",
+    weight: 25,
+    patterns: [/\b(?:oil prices?|crude oil|opec|energy crisis|oil supply)\b/i],
+  },
+];
+
+const HOME_HEADLINE_PROMOTION_PATTERN =
+  /\b(?:stocks? to buy|best stocks?|top stocks?|buy now|should you buy|price targets?|stock picks?|sponsored|advertorial)\b/i;
+
+const HOME_HEADLINE_ROUTINE_PATTERN =
+  /\b(?:insider selling|insider buying|analyst ratings?|upgrades?|downgrades?|dividend announcements?|share buybacks?)\b/i;
+
+const HOME_HEADLINE_PREVIEW_PATTERN =
+  /\b(?:what to watch|what to expect|preview|could|might)\b/i;
+
+const HOME_HEADLINE_MATERIAL_MOVE_PATTERN =
+  /\b(?:surges?|plunges?|tumbles?|slumps?|selloff|sell off|record high|record low|crashes?)\b/i;
+
+// -----------------------------------------------------------------------------
+// HELPERS
+// -----------------------------------------------------------------------------
+
+function getHomeHeadlineUrlKey(value: string): string | null {
+  try {
+    const url = new URL(value);
+
+    if (!["https:", "http:"].includes(url.protocol)) {
+      return null;
+    }
+
+    url.hash = "";
+
+    for (const key of [...url.searchParams.keys()]) {
+      const normalizedKey = key.toLowerCase();
+
+      if (
+        normalizedKey.startsWith("utm_") ||
+        ["fbclid", "gclid"].includes(normalizedKey)
+      ) {
+        url.searchParams.delete(key);
+      }
+    }
+
+    url.searchParams.sort();
+
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function scoreHomeHeadline(
+  title: string,
+  description: string,
+): { score: number; topic: string | null } {
+  const normalizedTitle = normalizeText(title);
+  const normalizedDescription = normalizeText(description);
+
+  if (HOME_HEADLINE_PROMOTION_PATTERN.test(normalizedTitle)) {
+    return { score: 0, topic: null };
+  }
+
+  let score = 0;
+  let topic: string | null = null;
+  let strongestMatch = 0;
+
+  for (const rule of HOME_HEADLINE_RULES) {
+    const titleMatches = rule.patterns.some((pattern) =>
+      pattern.test(normalizedTitle),
+    );
+
+    const descriptionMatches = rule.patterns.some((pattern) =>
+      pattern.test(normalizedDescription),
+    );
+
+    // Title mentions carry more weight than body mentions.
+    const ruleScore = titleMatches
+      ? rule.weight
+      : descriptionMatches
+        ? rule.weight * 0.2
+        : 0;
+
+    score += ruleScore;
+
+    if (ruleScore > strongestMatch) {
+      strongestMatch = ruleScore;
+      topic = rule.topic;
+    }
+  }
+
+  if (score > 0 && HOME_HEADLINE_MATERIAL_MOVE_PATTERN.test(normalizedTitle)) {
+    score += 10;
+  }
+
+  if (HOME_HEADLINE_PREVIEW_PATTERN.test(normalizedTitle)) {
+    score -= 10;
+  }
+
+  if (HOME_HEADLINE_ROUTINE_PATTERN.test(normalizedTitle)) {
+    score -= 30;
+  }
+
+  return {
+    score: Math.max(0, score),
+    topic,
+  };
+}
+
+// Prefer a mix of topics, then fill remaining slots by score.
+// Topic diversity is a heuristic; it does not identify every duplicate event.
+function selectHomeHeadlines(
+  candidates: HomeHeadlineCandidate[],
+): HomeMarketHeadline[] {
+  const ranked = [...candidates].sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+
+    return Date.parse(b.publishedAt) - Date.parse(a.publishedAt);
+  });
+
+  const selected: HomeHeadlineCandidate[] = [];
+  const selectedIds = new Set<string>();
+  const selectedTopics = new Set<string>();
+
+  for (const candidate of ranked) {
+    if (candidate.topic && selectedTopics.has(candidate.topic)) {
+      continue;
+    }
+
+    selected.push(candidate);
+    selectedIds.add(candidate.id);
+
+    if (candidate.topic) {
+      selectedTopics.add(candidate.topic);
+    }
+
+    if (selected.length === HOME_HEADLINES_LIMIT) {
+      break;
+    }
+  }
+
+  if (selected.length < HOME_HEADLINES_LIMIT) {
+    for (const candidate of ranked) {
+      if (selectedIds.has(candidate.id)) {
+        continue;
+      }
+
+      selected.push(candidate);
+      selectedIds.add(candidate.id);
+
+      if (selected.length === HOME_HEADLINES_LIMIT) {
+        break;
+      }
+    }
+  }
+
+  // Display the chosen articles in importance-score order.
+  return selected
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
+    )
+    .map((article) => ({
+      id: article.id,
+      title: article.title,
+      summary: article.summary,
+      source: article.source,
+      url: article.url,
+      publishedAt: article.publishedAt,
+    }));
+}
+
+// -----------------------------------------------------------------------------
+// FETCH / CACHE
+// -----------------------------------------------------------------------------
+
+const getCachedHomeMarketHeadlines = unstable_cache(
+  async (): Promise<HomeMarketHeadline[]> => {
+    const apiKey = process.env.MARKETAUX_API_KEY;
+
+    if (!apiKey) {
+      throw new Error("MARKETAUX_API_KEY is missing.");
+    }
+
+    const nowMs = Date.now();
+    const cutoffMs = nowMs - HOME_HEADLINES_HISTORY_MS;
+
+    const params = new URLSearchParams({
+      api_token: apiKey,
+      search: HOME_HEADLINES_SEARCH,
+      language: "en",
+      published_after: new Date(cutoffMs).toISOString().slice(0, 19),
+      group_similar: "true",
+      sort: "relevance_score",
+
+      // Omitting limit uses the maximum allowed by your plan.
+    });
+
+    const response = await fetch(`${MARKETAUX_URL}?${params.toString()}`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (!response.ok) {
+      // Do not log the URL: it contains the API key.
+      throw new Error(`Home headlines request failed (${response.status}).`);
+    }
+
+    const json = (await response.json()) as MarketauxResponse;
+
+    if (!Array.isArray(json.data)) {
+      throw new Error("Invalid Marketaux headlines response.");
+    }
+
+    const seenUrls = new Set<string>();
+    const seenTitles = new Set<string>();
+    const candidates: HomeHeadlineCandidate[] = [];
+
+    for (const article of json.data) {
+      const title = article.title?.trim();
+      const url = article.url?.trim();
+
+      if (!title || !url) {
+        continue;
+      }
+
+      const urlKey = getHomeHeadlineUrlKey(url);
+      const titleKey = normalizeText(title);
+      const publishedMs = Date.parse(article.published_at);
+
+      if (
+        !urlKey ||
+        !titleKey ||
+        !Number.isFinite(publishedMs) ||
+        publishedMs < cutoffMs ||
+        publishedMs > nowMs ||
+        seenUrls.has(urlKey) ||
+        seenTitles.has(titleKey)
+      ) {
+        continue;
+      }
+
+      seenUrls.add(urlKey);
+      seenTitles.add(titleKey);
+
+      const description =
+        article.description?.trim() || article.snippet?.trim() || "";
+
+      const { score, topic } = scoreHomeHeadline(title, description);
+
+      if (score <= 0) {
+        continue;
+      }
+
+      candidates.push({
+        id: urlKey,
+        title,
+        summary: (
+          article.description?.trim() ||
+          article.snippet?.trim() ||
+          title
+        )
+          .replace(/\s+/g, " ")
+          .trim(),
+        source:
+          article.source?.trim() || getPublisherDomain(url) || "Market News",
+        url,
+        publishedAt: new Date(publishedMs).toISOString(),
+        score,
+        topic,
+      });
+    }
+
+    return selectHomeHeadlines(candidates);
+  },
+  ["home-market-headlines-rules-v2"],
+  {
+    revalidate: 24 * 60 * 60,
+    tags: ["home-market-headlines"],
+  },
+);
+
+// -----------------------------------------------------------------------------
+// PUBLIC ACTION
+// -----------------------------------------------------------------------------
+
+export async function getHomeMarketHeadlines(): Promise<HomeMarketHeadline[]> {
+  try {
+    return await getCachedHomeMarketHeadlines();
+  } catch {
+    console.error("Failed to load home market headlines.");
+    return [];
+  }
+}

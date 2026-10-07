@@ -1,16 +1,14 @@
 // app/(public)/page.tsx
 
-import { Sparkle } from "lucide-react";
-
-import { getHomeCountryBriefs } from "../actions/ai-country-brief";
 import { getHomeMarkets } from "../actions/watchlist";
 import { HomeMarketCarousel } from "../components/home-market-carousel";
-import { HomeAIBrief } from "../components/home-ai-brief";
+import { HomeNews } from "@/components/home-news";
+import { getHomeMarketHeadlines } from "../actions/news";
 
 export default async function Home() {
   const [markets, briefs] = await Promise.all([
     getHomeMarkets(),
-    getHomeCountryBriefs(),
+    getHomeMarketHeadlines(),
   ]);
 
   return (
@@ -19,31 +17,31 @@ export default async function Home() {
         <h1 className="sr-only">Global market dashboard</h1>
 
         <div className="w-full min-w-0 ">
-          <section aria-labelledby="home-watchlist-heading">
-            <h2
-              id="home-watchlist-heading"
-              className="mb-4 px-4 mt-4 text-xs font-normal tracking-wider text-muted-foreground/50"
-            >
-              Watchlist
-            </h2>
-
-            <HomeMarketCarousel markets={markets} />
-          </section>
-
           {briefs.length > 0 && (
-            <section aria-labelledby="home-ai-brief-heading" className="pt-4">
-              <h2
+            <section aria-labelledby="home-ai-brief-heading" className="">
+              {/* <h2
                 id="home-ai-brief-heading"
                 className="flex items-center gap-1.5 px-4 text-xs font-normal tracking-wider text-muted-foreground/50"
               >
                 <span>Market brief</span>{" "}
-              </h2>
+              </h2> */}
 
-              <div className="mt-2 px-4 ">
-                <HomeAIBrief briefs={briefs} />
+              <div className="">
+                {/* <HomeAIBrief briefs={briefs} /> */}
+                <HomeNews briefs={briefs} />
               </div>
             </section>
           )}
+          <section aria-labelledby="home-watchlist-heading mt-4">
+            {/* <h2
+              id="home-watchlist-heading"
+              className="mb-4 px-4 text-xs font-normal tracking-wider text-muted-foreground/50"
+            >
+              Watchlist
+            </h2> */}
+
+            <HomeMarketCarousel markets={markets} />
+          </section>
 
           <section aria-labelledby="home-community-heading">
             <h2

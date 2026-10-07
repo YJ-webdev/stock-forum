@@ -39,7 +39,7 @@ export function LeaderBoard({ traders }: LeaderBoardProps) {
               items-center
               gap-3
               rounded-lg
-              py-2
+              py-1.5
               transition-colors
               hover:bg-zinc-100
               dark:hover:bg-zinc-800

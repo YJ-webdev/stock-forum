@@ -16,7 +16,6 @@ import SearchInput from "./search-input";
 import { useCurrentUser } from "../context/user-context";
 
 import {
-  Bell,
   BellIcon,
   LogOutIcon,
   User as UserIcon,
@@ -278,9 +277,9 @@ export default function UserMenu({
             <FaBell
               aria-hidden="true"
               className="
-      absolute top-0 -left-1.5 md:-left-3 size-4.5 z-5
+      absolute top-0 -left-2 size-4.5
       origin-top text-yellow-300
-      motion-safe:animate-[bell-ring_2s_ease-in-out_infinite]
+      motion-safe:animate-[bell-ring_1s_linear_infinite]
     "
             />
           )}

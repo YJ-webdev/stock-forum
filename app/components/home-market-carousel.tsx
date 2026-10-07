@@ -287,7 +287,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
 
   return (
     <>
-      <div className="group/markets relative h-[254.5px] w-full min-w-0">
+      <div className="group/markets relative h-[254.5px] w-full min-w-0 mt-4">
         {isEmpty ? (
           <div className="px-4 h-full w-full">
             <div className="outfit flex h-full w-full items-center justify-center rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50/60 dark:border-zinc-700 dark:bg-zinc-800/20">

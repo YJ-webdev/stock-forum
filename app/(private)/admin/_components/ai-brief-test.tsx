@@ -252,21 +252,13 @@ export function AiBriefTest() {
 
           <button
             type="button"
-            disabled={isPending}
+            disabled
+            title="Temporarily unavailable"
             onClick={() => void handleGenerate()}
             className="flex h-9 cursor-pointer items-center gap-2 rounded-md border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isPending ? (
-              <>
-                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <FlaskConical aria-hidden="true" className="h-4 w-4" />
-                Generate
-              </>
-            )}
+            <FlaskConical aria-hidden="true" className="h-4 w-4" />
+            Generate
           </button>
         </div>
       </div>

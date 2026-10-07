@@ -15,7 +15,7 @@ export default async function AdminPage() {
   const countries = await getAiBriefCountries();
 
   return (
-    <main className="mx-auto w-full max-w-4xl space-y-8 px-4 py-8">
+    <main className="mx-auto w-full max-w-4xl space-y-8 px-4 ">
       <AiBriefCountryManager countries={countries} />
 
       <AiBriefTest />

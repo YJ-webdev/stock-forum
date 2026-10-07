@@ -247,7 +247,7 @@ export function AiBriefCountryManager({
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-background">
-          {filteredCountries.length > 0 ? (
+        {filteredCountries.length > 0 ? (
           <div className="divide-y">
             {filteredCountries.map((item) => {
               const isSaving = pendingCountries.has(item.country);
@@ -290,37 +290,29 @@ export function AiBriefCountryManager({
                       )}
                     </p>
                   </div>
-
                   <button
                     type="button"
                     role="switch"
                     aria-checked={item.enabled}
                     aria-label={`AI market brief for ${item.name}`}
-                    disabled={isSaving || isGenerating}
-                    onClick={() => void handleToggle(item)}
-                    className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors disabled:cursor-default disabled:opacity-60 ${
+                    title="Temporarily unavailable"
+                    disabled
+                    className={`relative h-6 w-11 shrink-0 cursor-not-allowed rounded-full opacity-50 ${
                       item.enabled
                         ? "bg-emerald-500"
                         : "bg-zinc-200 dark:bg-zinc-700"
                     }`}
                   >
                     <span
-                      className={`absolute left-0 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform ${
+                      className={`absolute left-0 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm ${
                         item.enabled ? "translate-x-5" : "translate-x-0.5"
                       }`}
                     >
-                      {isSaving ? (
-                        <Loader2
+                      {item.enabled && (
+                        <Check
                           aria-hidden="true"
-                          className="h-3 w-3 animate-spin text-zinc-500"
+                          className="h-3 w-3 text-emerald-600"
                         />
-                      ) : (
-                        item.enabled && (
-                          <Check
-                            aria-hidden="true"
-                            className="h-3 w-3 text-emerald-600"
-                          />
-                        )
                       )}
                     </span>
                   </button>
