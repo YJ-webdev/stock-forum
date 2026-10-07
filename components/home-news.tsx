@@ -403,7 +403,7 @@ export const HomeNews = ({ briefs }: HomeNewsProps) => {
     hover:text-zinc-600
     focus-visible:outline-none focus-visible:ring-2
     focus-visible:ring-zinc-400
-    dark:text-zinc-200 dark:hover:text-zinc-400
+    dark:text-zinc-300 dark:hover:text-zinc-400
   "
                 >
                   {brief.summary}
