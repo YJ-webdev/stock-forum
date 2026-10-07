@@ -577,7 +577,7 @@ export default function MarketPageClient({
 
                     {/* Range selector */}
 
-                    <div className="mb-10 mt-4 flex flex-wrap gap-2">
+                    <div className="mt-4 flex flex-wrap gap-1 sm:gap-2 items-center justify-start sm:justify-start">
                       {RANGES.map((range) => {
                         const isUnavailable =
                           unavailableRanges[selectedSymbol]?.has(
@@ -596,7 +596,7 @@ export default function MarketPageClient({
                             }
                             disabled={isUnavailable}
                             onClick={() => handleRangeChange(range)}
-                            className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
+                            className={`rounded-full px-3.25 py-1.25 text-xs font-medium transition-all ${
                               isUnavailable
                                 ? "cursor-default bg-zinc-100 font-thin text-zinc-400 dark:bg-zinc-700/50 dark:text-zinc-600"
                                 : isActive

@@ -218,7 +218,7 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
             />
 
             <div
-              className={`h-full bg-[#cf0000] dark:bg-[#ff1414] ${WIDTH_TRANSITION}`}
+              className={`h-full bg-[#cf0000] dark:bg-[#ff0d42] ${WIDTH_TRANSITION}`}
               style={{ width: `${bearPercent}%` }}
             />
           </div>

@@ -146,7 +146,7 @@ export function BullBearVoteCard({
     ? "text-zinc-400 dark:text-zinc-500"
     : data.isPositive
       ? "text-[#047857] dark:text-emerald-400"
-      : "text-[#cf0000] dark:text-[#ff1414] dark:font-semibold";
+      : "text-[#cf0000] dark:text-[#ff0d42] dark:font-[550]";
 
   const hasChartData = data?.history.some((point) =>
     Number.isFinite(point.price),
@@ -168,12 +168,12 @@ export function BullBearVoteCard({
       </header>
 
       <div className="pb-2">
-        <Numeric className="pl-3 text-[18px] font-extrabold tracking-normal tabular-nums text-zinc-800 dark:text-zinc-200">
+        <Numeric className="pl-3 text-[18px] font-extrabold tracking-normal tabular-nums text-zinc-700 dark:text-zinc-300">
           {data ? data.value : loading ? <RollingPrice /> : "—"}
         </Numeric>
 
         <p
-          className={`jakarta min-h-5 pl-3 text-sm font-medium tabular-nums ${changeColor}`}
+          className={`jakarta min-h-5 pl-3 text-sm font-[450] tabular-nums ${changeColor}`}
         >
           {data ? (
             `${data.change} (${data.percent})`

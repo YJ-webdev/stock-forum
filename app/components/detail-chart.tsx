@@ -521,7 +521,7 @@ export function DetailChart({
   const previousCloseY =
     validPreviousClose !== undefined ? getY(validPreviousClose) : null;
 
-  const strokeColor = isPositive ? "#008549" : "#cf0000";
+  const strokeColor = isPositive ? "#008549" : "var(--chart-down)";
   const gradientId = `detail-area-gradient-${chartId}`;
 
   // --------------------------------------------------
@@ -672,8 +672,8 @@ export function DetailChart({
           <span
             className={
               hoveredPoint.percentChange >= 0
-                ? "text-emerald-700 dark:text-emerald-500"
-                : "text-[#ff1414]"
+                ? "text-emerald-700 dark:text-emerald-400"
+                : "text-[#cf0000] dark:text-[#ff4f4f]"
             }
           >
             ({hoveredPoint.percentChange >= 0 ? "+" : ""}
@@ -686,7 +686,7 @@ export function DetailChart({
 
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="h-auto w-full cursor-crosshair overflow-visible"
+        className="h-auto w-full cursor-crosshair overflow-visible [--chart-down:#cf0000] dark:[--chart-down:#ff0d42]"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHoveredPoint(null)}
       >
@@ -843,9 +843,9 @@ export function DetailChart({
                 x={(lunchStartPoint.x + lunchEndPoint.x) / 2}
                 y={(lunchStartPoint.y + lunchEndPoint.y) / 2 - 10}
                 textAnchor="middle"
-                className="outfit fill-zinc-600 text-[14px] font-[450] dark:fill-zinc-400"
+                className="outfit fill-zinc-400 text-[15px] font-[450] dark:fill-zinc-400"
               >
-                Lunch Break
+                Lunch break
               </text>
             </g>
           )}
@@ -855,7 +855,7 @@ export function DetailChart({
         {chartType === "candle" && (
           <g>
             {coords.map((point, index) => {
-              const color = point.isRising ? "#008549" : "#cf0000";
+              const color = point.isRising ? "#008549" : "var(--chart-down)";
 
               const candleTop = Math.min(point.openY, point.closeY);
 
@@ -900,12 +900,9 @@ export function DetailChart({
                 y={point.y}
                 width={barWidth}
                 height={chartBottom - point.y}
-                fill={
-                  point.isRising
-                    ? "rgba(0, 133, 73, 0.45)"
-                    : "rgba(207, 0, 0, 0.45)"
-                }
-                stroke={point.isRising ? "#008549" : "#cf0000"}
+                fill={point.isRising ? "#008549" : "var(--chart-down)"}
+                fillOpacity={0.45}
+                stroke={point.isRising ? "#008549" : "var(--chart-down)"}
                 strokeWidth="0.5"
                 rx="1"
               />

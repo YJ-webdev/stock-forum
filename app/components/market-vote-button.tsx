@@ -504,7 +504,7 @@ export function MarketVoteButton({
               onClick={(event) =>
                 handleTriggerClick("BEAR", event.currentTarget)
               }
-              className={`${VOTE_BUTTON_CLASS} bg-[#cf0000] enabled:hover:bg-[#b50000]`}
+              className={`${VOTE_BUTTON_CLASS} bg-[#cf0000] dark:bg-[#cf0000] enabled:hover:bg-[#b50000]`}
             >
               <PiArrowFatLinesUpFill
                 className="size-3.5 -scale-y-100"

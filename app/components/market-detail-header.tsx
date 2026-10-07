@@ -90,7 +90,7 @@ export function MarketDetailHeader({
   const rangeLabel = rangeLabelMap[selectedRange] || "Today";
   const colorClass = isPositive
     ? "text-emerald-600 dark:text-emerald-400"
-    : "text-[#cf0000] dark:text-[#ff1414]";
+    : "text-[#cf0000] dark:text-[#ff0d42]";
 
   return (
     <div className="px-4 flex items-center gap-3 min-w-0">

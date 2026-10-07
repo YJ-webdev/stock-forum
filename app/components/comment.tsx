@@ -873,7 +873,7 @@ function CommentItem({
                       ${
                         comment.prediction.direction === "BULL"
                           ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                          : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                          : "bg-[#cf0000]/8 dark:bg-[#c10303]/20 text-[#c10303] dark:text-[#ec5a5a]"
                       }
                     `}
                   >

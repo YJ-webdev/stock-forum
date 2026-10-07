@@ -215,7 +215,7 @@ export function TrendSparkline({
 
   const strokeColorClass = isPositive
     ? "text-[#047857] dark:text-emerald-400"
-    : "text-[#cf0000] dark:text-[#ff1414]";
+    : "text-[#cf0000] dark:text-[#ff0d42]";
 
   const lastPoint = coords[coords.length - 1];
 
