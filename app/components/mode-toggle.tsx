@@ -17,8 +17,8 @@ export function ModeToggle() {
     () => false,
   );
 
-  const toggleTheme = () => {
-    // If currently dark, switch to light; otherwise switch to dark
+  const toggleTheme = (e: React.MouseEvent) => {
+    e.preventDefault();
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
   };
 

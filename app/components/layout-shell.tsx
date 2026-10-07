@@ -199,6 +199,7 @@ export default function LayoutShell({
             onAccount={handleAccount}
             onNotification={handleNotification}
             onFavotites={handleFavotites}
+            user={user}
           />
 
           {!layoutReady && (
