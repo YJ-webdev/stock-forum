@@ -376,7 +376,7 @@ export default function SearchInput({
             }}
             className="
               fixed inset-x-0 bottom-0 top-18
-              z-40 flex min-h-0 flex-col
+              z-40! flex min-h-0 flex-col
               overflow-hidden overscroll-contain
               bg-zinc-100 pt-3
               dark:bg-zinc-800

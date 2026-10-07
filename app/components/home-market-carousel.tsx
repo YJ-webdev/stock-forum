@@ -454,7 +454,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 if (canScrollLeft) scrollByCard(-1);
               }}
               className={`
-                absolute left-2 top-1/2 z-30 flex size-9
+                absolute left-2 top-1/2 flex size-9
                 -translate-y-1/2 items-center justify-center
                 rounded-full border border-zinc-200 bg-white shadow-sm
                 opacity-0 transition-opacity duration-150
@@ -491,7 +491,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 if (canScrollRight) scrollByCard(1);
               }}
               className={`
-                absolute right-2 top-1/2 z-30 flex size-9
+                absolute right-2 top-1/2 flex size-9
                 -translate-y-1/2 items-center justify-center
                 rounded-full border border-zinc-200 bg-white shadow-sm
                 opacity-0 transition-opacity duration-150

@@ -196,12 +196,15 @@ async function fetchQuote(
 
       const changeVal = currentPrice - basePrice;
 
-      const percentVal =
+      const apiPercent =
         range === "1D" ? json?.dailyChangePercent : json?.rangeChangePercent;
 
-      if (typeof percentVal !== "number" || !Number.isFinite(percentVal)) {
-        throw new Error("Invalid percentage data received");
-      }
+      // Calculate from the same base price used for the displayed change
+      // when the API does not provide a valid percentage.
+      const percentVal =
+        typeof apiPercent === "number" && Number.isFinite(apiPercent)
+          ? apiPercent
+          : (changeVal / basePrice) * 100;
 
       const formattedValue = currentPrice.toLocaleString("en-US", {
         style: assetType === "crypto" ? "currency" : "decimal",

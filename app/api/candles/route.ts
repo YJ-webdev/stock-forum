@@ -100,7 +100,7 @@ function getPeriod1(range: string): Date {
       return new Date(now.getTime() - 7 * DAY_MS);
 
     case "5D":
-      return new Date(now.getTime() - 5 * DAY_MS);
+      return new Date(now.getTime() - 30 * DAY_MS);
 
     case "1M":
       return new Date(now.setMonth(now.getMonth() - 1));
@@ -158,7 +158,7 @@ const getYahooChart30Seconds = unstable_cache(
 
 const getYahooChart1Minute = unstable_cache(
   fetchYahooChart,
-  ["yahoo-chart-1-minute-v2"],
+  ["yahoo-chart-1-minute-v3"],
   { revalidate: 60 },
 );
 
@@ -437,6 +437,39 @@ function getLatestTradingSession(
   });
 }
 
+function getLatestTradingSessions(
+  quotes: Candle[],
+  count: number,
+  timezone?: string,
+): Candle[] {
+  const validQuotes = quotes
+    .filter(
+      (candle) =>
+        isValidPrice(candle.close) && Number.isFinite(toTimestamp(candle.date)),
+    )
+    .slice()
+    .sort((a, b) => toTimestamp(a.date) - toTimestamp(b.date));
+
+  const tradingDates = Array.from(
+    new Set(
+      validQuotes.map((candle) =>
+        getExchangeDate(new Date(toTimestamp(candle.date)), timezone),
+      ),
+    ),
+  );
+
+  const selectedDates = new Set(tradingDates.slice(-count));
+
+  // Preserve null-price candles within the selected sessions.
+  return quotes.filter((candle) => {
+    const timestampMs = toTimestamp(candle.date);
+
+    return (
+      Number.isFinite(timestampMs) &&
+      selectedDates.has(getExchangeDate(new Date(timestampMs), timezone))
+    );
+  });
+}
 // -----------------------------------------------------------------------------
 // DETECT INTRADAY BREAK
 // -----------------------------------------------------------------------------
@@ -778,6 +811,10 @@ export async function GET(request: Request) {
           }
         }
       }
+    }
+
+    if (range === "5D") {
+      sessionQuotes = getLatestTradingSessions(rawQuotes, 5, exchangeTimezone);
     }
 
     sessionQuotes = sessionQuotes
