@@ -7,7 +7,10 @@ import { useRouter } from "next/navigation";
 import { ModeToggle } from "./mode-toggle";
 import { LoginDialog } from "./log-in-dialog";
 import { handleSignOut } from "../actions/auth";
-import { hasUnreadNotifications } from "../actions/notification";
+import {
+  getUnreadNotificationCount,
+  hasUnreadNotifications,
+} from "../actions/notification";
 import SearchInput from "./search-input";
 
 import { useCurrentUser } from "../context/user-context";
@@ -39,6 +42,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FaBell } from "react-icons/fa6";
 
 interface HeaderProps {
   onTogglePanel: () => void;
@@ -119,7 +123,7 @@ export function Navbar({
           onFavotites={onFavotites}
         />
 
-        <div className="hidden items-center xl:flex">
+        <div className="hidden items-center sm:flex">
           <ModeToggle />
         </div>
       </div>
@@ -135,12 +139,12 @@ export default function UserMenu({
   onWrite,
   onAccount,
   onNotification,
-  onFavotites,
 }: UserMenuProps) {
   const user = useCurrentUser();
 
   const [isPending, startTransition] = useTransition();
-  const [hasUnread, setHasUnread] = useState(false);
+  const [hasUnread, setHasUnread] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const { setTheme, theme } = useTheme();
   const router = useRouter();
@@ -221,20 +225,67 @@ export default function UserMenu({
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
+  useEffect(() => {
+    setUnreadCount(0);
+
+    if (!user?.id) return;
+
+    let cancelled = false;
+    let fetching = false;
+
+    async function checkUnread() {
+      if (fetching) return;
+
+      fetching = true;
+
+      try {
+        const count = await getUnreadNotificationCount();
+
+        if (!cancelled) {
+          setUnreadCount(count);
+        }
+      } catch (error) {
+        console.error("Failed to load unread notification count:", error);
+      } finally {
+        fetching = false;
+      }
+    }
+
+    void checkUnread();
+
+    const intervalId = window.setInterval(() => {
+      void checkUnread();
+    }, 30_000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [user?.id]);
+
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="
-            flex cursor-pointer items-center gap-2
-            rounded-full
-            transition
-            
-            
-          "
-          aria-label="User menu"
+          className="relative isolate flex cursor-pointer items-center gap-2 rounded-full"
+          aria-label={
+            unreadCount > 0
+              ? `User menu, ${unreadCount} unread notifications`
+              : "User menu"
+          }
         >
-          <div className="flex items-center gap-2">
+          {unreadCount > 0 && (
+            <FaBell
+              aria-hidden="true"
+              className="
+      absolute top-0 -left-1.5 md:-left-3 size-4.5 z-5
+      origin-top text-yellow-300
+      motion-safe:animate-[bell-ring_2s_ease-in-out_infinite]
+    "
+            />
+          )}
+
+          <div className="relative flex items-center gap-2">
             <div className="flex items-center justify-center sm:hidden">
               <Avatar className="h-12 w-12">
                 {user.image && (
@@ -244,67 +295,18 @@ export default function UserMenu({
                   />
                 )}
 
-                <AvatarFallback
-                  className="
-                    bg-zinc-200
-                    text-xs font-semibold
-                    dark:bg-zinc-800
-                  "
-                >
+                <AvatarFallback className="bg-zinc-200 text-xs font-semibold dark:bg-zinc-800">
                   {user.image ? (
                     initials
                   ) : (
-                    <UserIcon
-                      className="
-                        h-4 w-4
-                        text-zinc-600
-                        dark:text-zinc-300
-                      "
-                    />
+                    <UserIcon className="h-4 w-4 text-zinc-600 dark:text-zinc-300" />
                   )}
                 </AvatarFallback>
               </Avatar>
             </div>
 
-            <p
-              className="
-                relative hidden
-                rounded-full
-                px-2 py-2.75
-                text-zinc-900
-                transition-all
-                sm:inline
-                dark:text-zinc-100
-              "
-            >
+            <p className=" hidden rounded-full px-2 py-2.75 text-zinc-900 sm:inline dark:text-zinc-100">
               {`Hi, ${user.name || user.email || "User"}`}
-
-              {hasUnread && (
-                <Bell
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    onNotification();
-                  }}
-                  strokeWidth={1}
-                  className="
-                    absolute top-0 left-0
-                    h-5 w-5 -translate-x-3
-                    origin-top
-                    cursor-pointer
-                    fill-amber-100
-                    text-zinc-800
-                    hover:animate-[bell-ring_1s_ease-in-out_infinite]
-                    dark:fill-amber-200
-                    dark:text-zinc-300
-                  "
-                />
-              )}
             </p>
           </div>
         </DropdownMenuTrigger>
@@ -325,7 +327,7 @@ export default function UserMenu({
               Write
             </DropdownMenuItem>
 
-            <DropdownMenuItem
+            {/* <DropdownMenuItem
               onClick={onFavotites}
               className="
                 h-11 cursor-pointer
@@ -334,17 +336,19 @@ export default function UserMenu({
             >
               <Pin className="mr-2 size-4.5" strokeWidth={1.5} />
               Watchlist
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
 
             <DropdownMenuItem
               onClick={onNotification}
-              className="
-                h-11 cursor-pointer
-                text-[15px]
-              "
+              className="h-11 cursor-pointer text-[15px]"
             >
               <BellIcon className="mr-2 size-4.5" strokeWidth={1.5} />
               Notifications
+              {unreadCount > 0 && (
+                <span className="ml-auto text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </DropdownMenuItem>
 
             <DropdownMenuItem

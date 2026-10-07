@@ -269,3 +269,16 @@ export async function deleteAllSocialNotifications() {
     },
   });
 }
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  const session = await auth();
+
+  if (!session?.user?.id) return 0;
+
+  return prisma.notification.count({
+    where: {
+      userId: session.user.id,
+      readAt: null,
+    },
+  });
+}
