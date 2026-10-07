@@ -380,7 +380,7 @@ export const HomeNews = ({ briefs }: HomeNewsProps) => {
               aria-hidden={isClone ? true : undefined}
               className="
                 flex w-full shrink-0 snap-start items-center
-                gap-3 px-3 py-3
+                gap-3 px-4 py-4
               "
             >
               <NewsLogo url={brief.url} source={brief.source} />
