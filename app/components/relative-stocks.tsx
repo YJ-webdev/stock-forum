@@ -22,6 +22,8 @@ import {
 import { TrendSparkline } from "./trend-sparkline";
 import { Numeric } from "./numeric";
 import { Vote } from "lucide-react";
+import { RollingPrice } from "./rolling-price";
+import { SparklineLoading } from "./sparkline-loading";
 
 interface RelativeStocksProps {
   items: MarketSymbolItem[];
@@ -357,7 +359,7 @@ function RelativeStockRow({
 }: RelativeStockRowProps) {
   const router = useRouter();
 
-  const { data: quote } = useMarketQuote(
+  const { data: quote, loading } = useMarketQuote(
     item.symbol,
     item.name,
     "1D",
@@ -372,9 +374,11 @@ function RelativeStockRow({
     quote?.history,
   );
 
-  const priceColor = quote?.isPositive
-    ? "text-emerald-700 dark:text-emerald-600"
-    : "text-[#cf0000] dark:text-[#ff1414]";
+  const priceColor = !quote
+    ? "text-zinc-400 dark:text-zinc-500"
+    : quote.isPositive
+      ? "text-emerald-700 dark:text-emerald-600"
+      : "text-[#cf0000] dark:text-[#ff1414]";
 
   const href = `/market/${encodeURIComponent(item.symbol)}`;
 
@@ -462,6 +466,15 @@ function RelativeStockRow({
         : 4
       : 2;
 
+  const priceTemplate =
+    item.assetType === "currency"
+      ? currencyDecimals === 4
+        ? "0.0000"
+        : "000.00"
+      : "00,000.00";
+
+  const isInitialLoading = loading && !quote;
+
   return (
     <tr
       ref={rowRef}
@@ -512,14 +525,18 @@ function RelativeStockRow({
         }
       >
         <div className="flex w-full justify-center overflow-hidden">
-          <TrendSparkline
-            data={quote?.history}
-            isPositive={quote?.isPositive}
-            lunchStartMs={quote?.lunchStartMs}
-            lunchEndMs={quote?.lunchEndMs}
-            sessionStartMs={sessionStartMs}
-            sessionEndMs={sessionEndMs}
-          />
+          {isInitialLoading ? (
+            <SparklineLoading />
+          ) : (
+            <TrendSparkline
+              data={quote?.history}
+              isPositive={quote?.isPositive}
+              lunchStartMs={quote?.lunchStartMs}
+              lunchEndMs={quote?.lunchEndMs}
+              sessionStartMs={sessionStartMs}
+              sessionEndMs={sessionEndMs}
+            />
+          )}
         </div>
       </td>
 
@@ -530,17 +547,25 @@ function RelativeStockRow({
             : "w-[37%] whitespace-nowrap text-right font-medium dark:font-normal md:w-[15%]"
         }
       >
-        <Numeric decimals={currencyDecimals}>{quote?.value ?? "-"}</Numeric>
+        <Numeric decimals={currencyDecimals}>
+          {quote?.value ??
+            (isInitialLoading ? (
+              <RollingPrice template={priceTemplate} />
+            ) : (
+              "—"
+            ))}
+        </Numeric>
 
         <span
           className={`
-            mt-0.5 block
-            text-[12px] leading-4 font-medium
-            md:hidden
-            ${priceColor}
-          `}
+    mt-0.5 block
+    text-[12px] leading-4 font-medium
+    md:hidden
+    ${priceColor}
+  `}
         >
-          {quote?.percent ?? "-"}
+          {quote?.percent ??
+            (isInitialLoading ? <RollingPrice template="0.00%" /> : "—")}
         </span>
       </td>
 
@@ -551,7 +576,14 @@ function RelativeStockRow({
             : "w-[37%] whitespace-nowrap py-3 text-right font-medium text-zinc-500 dark:text-zinc-400 md:w-[17%]"
         }
       >
-        <Numeric>{quote?.previousClose ?? "-"}</Numeric>
+        <Numeric decimals={currencyDecimals}>
+          {quote?.previousClose ??
+            (isInitialLoading ? (
+              <RollingPrice template={priceTemplate} />
+            ) : (
+              "—"
+            ))}
+        </Numeric>
       </td>
 
       <td
@@ -564,7 +596,10 @@ function RelativeStockRow({
           ${priceColor}
         `}
       >
-        <Numeric>{quote?.percent ?? "-"}</Numeric>
+        <Numeric>
+          {quote?.percent ??
+            (isInitialLoading ? <RollingPrice template="0.00%" /> : "—")}
+        </Numeric>
       </td>
 
       <td
@@ -580,7 +615,16 @@ function RelativeStockRow({
           ${priceColor}
         `}
       >
-        <Numeric>{quote?.change ?? "-"}</Numeric>
+        <Numeric decimals={currencyDecimals}>
+          {quote?.change ??
+            (isInitialLoading ? (
+              <RollingPrice
+                template={currencyDecimals === 4 ? "0.0000" : "00.00"}
+              />
+            ) : (
+              "—"
+            ))}
+        </Numeric>
       </td>
 
       {showVotingColumns && (

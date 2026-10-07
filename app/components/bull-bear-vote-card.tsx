@@ -12,6 +12,8 @@ import { Numeric } from "./numeric";
 import { TrendSparkline } from "./trend-sparkline";
 import { MarketVoteButton } from "./market-vote-button";
 import { MarketSentiment } from "./market-sentiment";
+import { RollingPrice } from "./rolling-price";
+import { SparklineLoading } from "./sparkline-loading";
 
 interface BullBearVoteCardProps {
   market: HomeMarketItem;
@@ -167,13 +169,19 @@ export function BullBearVoteCard({
 
       <div className="pb-2">
         <Numeric className="pl-3 text-[18px] font-extrabold tracking-normal tabular-nums text-zinc-800 dark:text-zinc-200">
-          {data?.value ?? "—"}
+          {data ? data.value : loading ? <RollingPrice /> : "—"}
         </Numeric>
 
         <p
           className={`jakarta min-h-5 pl-3 text-sm font-medium tabular-nums ${changeColor}`}
         >
-          {data ? `${data.change} (${data.percent})` : "—"}
+          {data ? (
+            `${data.change} (${data.percent})`
+          ) : loading ? (
+            <RollingPrice />
+          ) : (
+            "—"
+          )}
         </p>
 
         <div className="mt-2 flex h-16 items-center justify-center">
@@ -188,13 +196,11 @@ export function BullBearVoteCard({
               lunchStartMs={data.lunchStartMs}
               lunchEndMs={data.lunchEndMs}
             />
+          ) : loading && !data ? (
+            <SparklineLoading width={174} height={64} />
           ) : (
             <span className="text-xs text-zinc-400 dark:text-zinc-500">
-              {loading && !data
-                ? "Loading…"
-                : error
-                  ? "Data unavailable"
-                  : "Chart unavailable"}
+              {error ? "Data unavailable" : "Chart unavailable"}
             </span>
           )}
         </div>
