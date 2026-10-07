@@ -5,11 +5,13 @@ import { useId, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getTimeAgo } from "@/lib/utils/time-ago";
 
 interface HomeAIBriefItem {
   country: string;
   name: string;
   coverageDate: string;
+  publishedAt: string;
 
   brief: {
     summary: string;
@@ -241,11 +243,11 @@ export function HomeAIBrief({ briefs }: HomeAIBriefProps) {
                         </div>
                       )}
 
-                      {coverageLabel && (
+                      {item.publishedAt && (
                         <p className="text-xs text-muted-foreground">
-                          As of{" "}
-                          <time dateTime={item.coverageDate}>
-                            {coverageLabel}
+                          Updated{" "}
+                          <time dateTime={item.publishedAt}>
+                            {getTimeAgo(item.publishedAt)}
                           </time>
                         </p>
                       )}

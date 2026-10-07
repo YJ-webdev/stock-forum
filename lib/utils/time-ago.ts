@@ -1,58 +1,25 @@
 // lib/utils/time-ago.ts
 
 export function getTimeAgo(dateInput?: string | Date | number | null): string {
-  if (!dateInput) return "";
+  if (dateInput == null || dateInput === "") return "";
 
-  const now = new Date();
-  let postDate: Date;
+  const timestamp =
+    dateInput instanceof Date
+      ? dateInput.getTime()
+      : new Date(dateInput).getTime();
 
-  if (
-    typeof dateInput === "string" &&
-    (dateInput.includes("AM") || dateInput.includes("PM"))
-  ) {
-    const isPM = dateInput.includes("오후") || dateInput.includes("PM");
-    const cleanTime = dateInput.replace(/(AM|PM)/gi, "").trim();
-    const [hoursStr, minutesStr] = cleanTime.split(":");
+  if (!Number.isFinite(timestamp)) return "";
 
-    let hours = parseInt(hoursStr, 10);
-    const minutes = parseInt(minutesStr, 10);
+  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
 
-    if (isNaN(hours) || isNaN(minutes)) return String(dateInput);
+  if (seconds < 60) return "Just now";
 
-    if (isPM && hours < 12) hours += 12;
-    if (!isPM && hours === 12) hours = 0;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
 
-    postDate = new Date();
-    postDate.setHours(hours, minutes, 0, 0);
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
 
-    // If the time is later than current time, it occurred before midnight (Yesterday)
-    if (postDate.getTime() > now.getTime()) {
-      return "Yesterday";
-    }
-
-    return "Today";
-  }
-
-  // 2. Handle standard dates / ISO strings
-  postDate = new Date(dateInput);
-  if (isNaN(postDate.getTime())) return String(dateInput);
-
-  // Normalize dates to midnight to compare calendar days accurately
-  const todayMidnight = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  );
-  const postMidnight = new Date(
-    postDate.getFullYear(),
-    postDate.getMonth(),
-    postDate.getDate(),
-  );
-
-  const diffTime = todayMidnight.getTime() - postMidnight.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays <= 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  return `${diffDays}d ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }

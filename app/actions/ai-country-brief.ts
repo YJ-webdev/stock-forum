@@ -106,6 +106,7 @@ export async function getHomeCountryBriefs() {
       content: true,
       sources: true,
       coverageDate: true,
+      publishedAt: true,
     },
   });
 
@@ -114,7 +115,8 @@ export async function getHomeCountryBriefs() {
   return BRIEF_COUNTRIES.flatMap((config) => {
     const item = savedByCountry.get(config.country);
 
-    if (!item?.content || !item.coverageDate) {
+    // 여기: 기존 null 검사 교체
+    if (!item?.content || !item.coverageDate || !item.publishedAt) {
       return [];
     }
 
@@ -129,6 +131,7 @@ export async function getHomeCountryBriefs() {
         country: config.country,
         name: config.name,
         coverageDate: item.coverageDate,
+        publishedAt: item.publishedAt.toISOString(),
         brief: {
           summary: brief.summary,
           keyFactors: brief.keyFactors,
