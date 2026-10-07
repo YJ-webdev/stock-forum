@@ -31,8 +31,19 @@ interface VoteState {
   direction: VoteDirection | null;
 }
 
-const VOTE_BUTTON_CLASS =
-  "inline-flex h-7.5 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition-colors enabled:hover:border-transparent enabled:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 disabled:cursor-default disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300";
+const VOTE_BUTTON_CLASS = `
+  inline-flex h-7.5 w-full cursor-pointer items-center justify-center gap-1.5
+  rounded-full px-3 text-xs font-medium text-white transition-colors
+  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400
+  focus-visible:ring-offset-2
+  disabled:cursor-default disabled:opacity-50
+  dark:focus-visible:ring-offset-zinc-900
+`;
+
+const VOTE_STATUS_CLASS = `
+  inline-flex h-7.5 items-center gap-1.5
+  text-xs font-normal text-zinc-500 dark:text-zinc-400
+`;
 
 function getSessionKey(
   sessionDate: ReturnType<typeof getVotingWindow>["predictionFor"],
@@ -447,9 +458,9 @@ export function MarketVoteButton({
             : null;
 
   return (
-    <div className="flex min-h-7 w-full justify-end">
+    <div className="flex min-h-7.5 w-full justify-end">
       {votingWindow.isMarketOpen ? (
-        <span className="inline-flex h-7.5 items-center gap-1.5 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+        <span className={VOTE_STATUS_CLASS}>
           <LockKeyhole
             className="size-3.5"
             strokeWidth={1.5}
@@ -458,7 +469,7 @@ export function MarketVoteButton({
           Voting closed
         </span>
       ) : direction ? (
-        <span className="inline-flex h-7.5 items-center gap-1.5 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+        <span className={VOTE_STATUS_CLASS}>
           <Check className="size-3.5" strokeWidth={1.5} aria-hidden="true" />
           Vote completed
         </span>
@@ -475,7 +486,7 @@ export function MarketVoteButton({
               onClick={(event) =>
                 handleTriggerClick("BULL", event.currentTarget)
               }
-              className={`${VOTE_BUTTON_CLASS} enabled:hover:bg-emerald-600`}
+              className={`${VOTE_BUTTON_CLASS} bg-emerald-600 enabled:hover:bg-emerald-700`}
             >
               <PiArrowFatLinesUpFill className="size-3.5" aria-hidden="true" />
               Bull
@@ -491,7 +502,7 @@ export function MarketVoteButton({
               onClick={(event) =>
                 handleTriggerClick("BEAR", event.currentTarget)
               }
-              className={`${VOTE_BUTTON_CLASS} enabled:hover:bg-[#cf0000]`}
+              className={`${VOTE_BUTTON_CLASS} bg-[#cf0000] enabled:hover:bg-[#b50000]`}
             >
               <PiArrowFatLinesUpFill
                 className="size-3.5 -scale-y-100"
@@ -517,7 +528,10 @@ export function MarketVoteButton({
                 closePopup();
               }
             }}
-            className="fixed inset-0 z-100 flex items-end justify-center bg-black/30 lg:items-center lg:p-4"
+            className="
+              fixed inset-0 z-100 flex items-end justify-center bg-black/30
+              lg:items-center lg:p-4
+            "
           >
             <div
               ref={editorRef}
@@ -526,7 +540,14 @@ export function MarketVoteButton({
               aria-modal="true"
               aria-labelledby={titleId}
               tabIndex={-1}
-              className="max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-zinc-200 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl outline-none dark:border-zinc-700 dark:bg-zinc-900 lg:max-w-lg lg:rounded-2xl"
+              className="
+                max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl
+                border border-zinc-200 bg-white p-4
+                pb-[max(1rem,env(safe-area-inset-bottom))]
+                shadow-xl outline-none
+                dark:border-zinc-700 dark:bg-zinc-900
+                lg:max-w-lg lg:rounded-2xl
+              "
             >
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2
@@ -540,7 +561,14 @@ export function MarketVoteButton({
                   type="button"
                   aria-label="Close prediction input"
                   onClick={closePopup}
-                  className="flex size-7 cursor-pointer items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
+                  className="
+                    flex size-7 cursor-pointer items-center justify-center
+                    rounded-full text-zinc-400 transition-colors
+                    hover:bg-zinc-100 hover:text-zinc-800
+                    focus-visible:outline-none focus-visible:ring-2
+                    focus-visible:ring-zinc-400
+                    dark:hover:bg-zinc-800 dark:hover:text-zinc-200
+                  "
                 >
                   <X className="size-4" aria-hidden="true" />
                 </button>
@@ -577,7 +605,10 @@ export function MarketVoteButton({
                   type="button"
                   disabled={voteButtonDisabled}
                   onClick={retryVoteLookup}
-                  className="mt-2 cursor-pointer text-xs underline underline-offset-4 disabled:cursor-default disabled:opacity-50"
+                  className="
+                    mt-2 cursor-pointer text-xs underline underline-offset-4
+                    disabled:cursor-default disabled:opacity-50
+                  "
                 >
                   Try again
                 </button>

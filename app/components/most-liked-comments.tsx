@@ -74,15 +74,12 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
               w-full
               cursor-pointer
               rounded-xl
-              bg-zinc-100/70
+              
               px-3.5
               py-3.5
               text-left
               transition-colors
-              hover:bg-zinc-200/70
-
-              dark:bg-zinc-800/45
-              dark:hover:bg-zinc-800/75
+              bg-zinc-100/50 dark:bg-zinc-800/50
             "
           >
             {/* ---------------------------------------------------------- */}

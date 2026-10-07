@@ -4,8 +4,8 @@ import { Sparkle } from "lucide-react";
 
 import { getHomeCountryBriefs } from "../actions/ai-country-brief";
 import { getHomeMarkets } from "../actions/watchlist";
-import { HomeAIBrief } from "../components/home-ai-brief";
 import { HomeMarketCarousel } from "../components/home-market-carousel";
+import { HomeAIBrief } from "../components/home-ai-brief";
 
 export default async function Home() {
   const [markets, briefs] = await Promise.all([
@@ -18,11 +18,11 @@ export default async function Home() {
       <main className="relative flex w-full min-w-0 flex-1 flex-col items-start">
         <h1 className="sr-only">Global market dashboard</h1>
 
-        <div className="w-full min-w-0 pt-4">
+        <div className="w-full min-w-0 ">
           <section aria-labelledby="home-watchlist-heading">
             <h2
               id="home-watchlist-heading"
-              className="mb-4 px-4 text-xs font-normal tracking-wider text-muted-foreground/50"
+              className="mb-4 px-4 mt-4 text-xs font-normal tracking-wider text-muted-foreground/50"
             >
               Watchlist
             </h2>
@@ -31,22 +31,28 @@ export default async function Home() {
           </section>
 
           {briefs.length > 0 && (
-            <section aria-labelledby="home-ai-brief-heading" className="mt-4">
+            <section aria-labelledby="home-ai-brief-heading" className="pt-4">
               <h2
                 id="home-ai-brief-heading"
-                className="flex translate-y-3 items-center gap-1.5 px-4 text-xs font-normal tracking-wider text-muted-foreground/50"
+                className="flex items-center gap-1.5 px-4 text-xs font-normal tracking-wider text-muted-foreground/50"
               >
                 <span>Market brief</span>{" "}
-                <Sparkle
-                  aria-hidden="true"
-                  className="h-3.5 w-3.5 shrink-0"
-                  strokeWidth={1.5}
-                />
               </h2>
 
-              <HomeAIBrief briefs={briefs} />
+              <div className="mt-2 px-4 ">
+                <HomeAIBrief briefs={briefs} />
+              </div>
             </section>
           )}
+
+          <section aria-labelledby="home-community-heading">
+            <h2
+              id="home-community-heading"
+              className="mb-4 px-4 mt-4 text-xs font-normal tracking-wider text-muted-foreground/50"
+            >
+              Community
+            </h2>
+          </section>
         </div>
       </main>
     </div>

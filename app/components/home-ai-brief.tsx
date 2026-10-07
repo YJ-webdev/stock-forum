@@ -1,19 +1,14 @@
 // app/components/home-ai-brief.tsx
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
+import { Minus, Plus } from "lucide-react";
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface HomeAIBriefItem {
   country: string;
   name: string;
-
   coverageDate: string;
 
   brief: {
@@ -32,9 +27,7 @@ interface HomeAIBriefProps {
 }
 
 function formatCoverageDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return null;
-  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
 
   const date = new Date(`${value}T00:00:00Z`);
 
@@ -72,42 +65,105 @@ function getSafeSourceUrl(value: string) {
 }
 
 export function HomeAIBrief({ briefs }: HomeAIBriefProps) {
-  const [openValues, setOpenValues] = useState<string[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  const contentId = useId();
 
   const availableBriefs = briefs.filter(
     (item) => item.brief.summary.trim().length > 0,
   );
 
-  if (availableBriefs.length === 0) {
-    return null;
-  }
+  if (availableBriefs.length === 0) return null;
+
+  const activeCountry = availableBriefs.some(
+    (item) => item.country === selectedCountry,
+  )
+    ? selectedCountry!
+    : availableBriefs[0].country;
 
   return (
-    <div className="w-full px-4 text-zinc-900 dark:text-zinc-300">
-      <Accordion
-        multiple={false}
-        value={openValues}
-        onValueChange={setOpenValues}
-        className="w-full"
+    <div className="w-full rounded-xl bg-zinc-100/50 dark:bg-zinc-800/50 px-4 md:px-5 py-3 ">
+      <Tabs
+        value={activeCountry}
+        onValueChange={(value) => {
+          setSelectedCountry(value);
+        }}
+        className="w-full gap-3"
       >
-        {availableBriefs.map((item) => {
-          const isOpen = openValues.includes(item.country);
-          const coverageLabel = formatCoverageDate(item.coverageDate);
+        {/* Tabs + expand button */}
+        <div className="flex min-w-0 items-center justify-between gap-4">
+          <div className="min-w-0 overflow-x-auto">
+            <TabsList
+              variant="line"
+              className="m-0! h-auto! w-max gap-6 rounded-none border-0 bg-transparent! p-0!"
+            >
+              {availableBriefs.map((item) => (
+                <TabsTrigger
+                  key={item.country}
+                  value={item.country}
+                  className="
+                    outfit font-normal h-auto flex-none cursor-pointer
+                    whitespace-nowrap rounded-none border-0 p-0!
+                     text-zinc-400 shadow-none
+                    before:hidden after:hidden
+                    data-[state=active]:bg-transparent
+                    data-[state=active]:text-zinc-900
+                    data-[state=active]:shadow-none
+                    dark:text-zinc-500
+                    dark:data-[state=active]:bg-transparent
+                    dark:data-[state=active]:text-zinc-300
+                    data-active:bg-transparent
+                    data-active:text-zinc-900
+                    data-active:shadow-none
+                    dark:data-active:bg-transparent
+                    dark:data-active:text-zinc-300
+                  "
+                >
+                  {item.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
+          <button
+            type="button"
+            onClick={() => setIsExpanded((open) => !open)}
+            aria-label={
+              isExpanded ? "Collapse market brief" : "Expand market brief"
+            }
+            aria-expanded={isExpanded}
+            aria-controls={`${contentId}-${activeCountry}`}
+            className="
+  relative flex size-6 shrink-0 cursor-pointer items-center justify-center
+  rounded-sm text-zinc-500 transition-colors
+  after:absolute after:-inset-2.5 after:content-['']
+  hover:text-zinc-900
+  focus-visible:outline-none focus-visible:ring-2
+  focus-visible:ring-zinc-400
+  dark:hover:text-zinc-300
+"
+          >
+            {isExpanded ? (
+              <Minus className="size-4" strokeWidth={1.5} />
+            ) : (
+              <Plus className="size-4" strokeWidth={1.5} />
+            )}
+          </button>
+        </div>
+
+        {/* Selected brief */}
+        {availableBriefs.map((item) => {
+          const coverageLabel = formatCoverageDate(item.coverageDate);
           const seenDomains = new Set<string>();
 
           const sourceLogos = item.sources.flatMap((source) => {
             const url = getSafeSourceUrl(source.url);
 
-            if (!url) {
-              return [];
-            }
+            if (!url) return [];
 
             const domain = url.hostname.toLowerCase().replace(/^www\./, "");
 
-            if (seenDomains.has(domain)) {
-              return [];
-            }
+            if (seenDomains.has(domain)) return [];
 
             seenDomains.add(domain);
 
@@ -121,104 +177,86 @@ export function HomeAIBrief({ briefs }: HomeAIBriefProps) {
           });
 
           return (
-            <AccordionItem
+            <TabsContent
               key={item.country}
               value={item.country}
-              className="grid items-start gap-4 border-zinc-200 py-6 text-zinc-800 last:border-b-0 dark:border-zinc-800 dark:font-light dark:text-zinc-300 md:grid-cols-[260px_minmax(0,1fr)] md:gap-8"
+              className="m-0 min-w-0 p-0 outfit font-[350] text-zinc-800 dark:text-zinc-300"
             >
-              {/* Country */}
-              <div className="min-w-0 pl-4">
-                <h3 className="outfit whitespace-nowrap text-[26px] font-semibold text-gray-500/50 dark:text-zinc-600">
-                  {item.name}
-                </h3>
-
-                {coverageLabel && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    As of{" "}
-                    <time dateTime={item.coverageDate}>{coverageLabel}</time>
-                  </p>
-                )}
-              </div>
-
-              {/* Brief */}
-              <div className="min-w-0">
-                {/* Two-line preview */}
-                <div aria-hidden={isOpen} className="max-h-20 overflow-hidden">
-                  <p className="m-0 px-4  whitespace-pre-line text-[15px] leading-6.5 tracking-[0.02em]">
-                    {item.brief.summary}
-                  </p>
-                </div>
-
-                {/* Expanded content — remove all default inner padding */}
-                <AccordionContent className="m-0! p-0! text-zinc-800 dark:font-light dark:text-zinc-300 [&_div]:mx-0! [&_div]:px-0!">
-                  {" "}
-                  <div className="space-y-4">
-                    <div className="overflow-hidden">
-                      <p className="m-0 -mt-20 whitespace-pre-line text-[15px] leading-6.5 tracking-[0.02em]">
-                        {item.brief.summary}
-                      </p>
-                    </div>
-
-                    {item.brief.keyFactors.length > 0 && (
-                      <ul className="space-y-2">
-                        {item.brief.keyFactors.map((factor, index) => (
-                          <li
-                            key={`${item.country}-${index}`}
-                            className="flex items-start gap-2.5 text-[15px] leading-6"
-                          >
-                            <span
-                              aria-hidden="true"
-                              className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-zinc-400 dark:bg-zinc-500"
-                            />
-
-                            <span>{factor}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </AccordionContent>
-
-                {/* Text trigger */}
-                <AccordionTrigger
-                  aria-label={`${isOpen ? "Read less" : "Read more"} about ${item.name}`}
-                  className="mt-3 flex items-center px-4 cursor-pointer py-0 justify-between text-xs font-normal text-zinc-500 hover:text-zinc-900 hover:no-underline dark:text-zinc-500 dark:hover:text-zinc-300 "
+              <div className="text-zinc-800 dark:font-light dark:text-zinc-300">
+                <p
+                  className={`
+                    m-0 text-[15px] leading-6.5 tracking-[0.02em]
+                    ${isExpanded ? "whitespace-pre-line" : "truncate"}
+                  `}
                 >
-                  {sourceLogos.length > 0 && (
-                    <div className="flex">
-                      <div className="isolate flex items-center">
-                        {sourceLogos.map((source, index) => (
-                          <a
-                            key={source.domain}
-                            href={source.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={source.title}
-                            aria-label={source.title}
-                            className={`relative z-0 block h-5 w-5 shrink-0 overflow-hidden rounded-full hover:z-10 focus-visible:z-10 ${
-                              index > 0 ? "-ml-0.75" : ""
-                            }`}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(source.domain)}&sz=64`}
-                              alt=""
-                              loading="lazy"
-                              referrerPolicy="no-referrer"
-                              className="h-full w-full object-cover"
-                            />
-                          </a>
-                        ))}
-                      </div>
+                  {item.brief.summary}
+                </p>
+
+                <div id={`${contentId}-${item.country}`} hidden={!isExpanded}>
+                  {item.brief.keyFactors.length > 0 && (
+                    <ul className="mt-4 space-y-2">
+                      {item.brief.keyFactors.map((factor, index) => (
+                        <li
+                          key={`${item.country}-${index}`}
+                          className="flex items-start gap-2.5 text-[15px] leading-6"
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="mt-2.5 size-1 shrink-0 rounded-full bg-zinc-400 dark:bg-zinc-500"
+                          />
+
+                          <span>{factor}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* Footer */}
+                  {(sourceLogos.length > 0 || coverageLabel) && (
+                    <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3 pb-1">
+                      {sourceLogos.length > 0 && (
+                        <div className="isolate flex items-center">
+                          {sourceLogos.map((source, index) => (
+                            <a
+                              key={source.domain}
+                              href={source.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={source.title}
+                              aria-label={source.title}
+                              className={`relative z-0 block size-5 shrink-0 overflow-hidden rounded-full hover:z-10 focus-visible:z-10 ${
+                                index > 0 ? "-ml-0.75" : ""
+                              }`}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(source.domain)}&sz=64`}
+                                alt=""
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                                className="size-full object-cover"
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      {coverageLabel && (
+                        <p className="text-xs text-muted-foreground">
+                          As of{" "}
+                          <time dateTime={item.coverageDate}>
+                            {coverageLabel}
+                          </time>
+                        </p>
+                      )}
                     </div>
                   )}
-                  {/* {isOpen ? "Read less" : "Read more"} */}
-                </AccordionTrigger>
+                </div>
               </div>
-            </AccordionItem>
+            </TabsContent>
           );
         })}
-      </Accordion>
+      </Tabs>
     </div>
   );
 }

@@ -88,7 +88,7 @@ export function BullBearVoteCard({
           )}
         </div>
 
-        <div className="outfit relative h-17 pt-1.5">
+        <div className="outfit relative h-16 pt-1.5">
           {market.assetType === "index" && (
             <div className="relative z-20 flex flex-col gap-2">
               <MarketSentiment symbol={market.symbol} />
