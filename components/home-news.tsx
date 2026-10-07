@@ -80,88 +80,90 @@ export const HomeNews = ({ briefs }: HomeNewsProps) => {
     }
 
     let settleTimer: ReturnType<typeof setTimeout> | undefined;
-    let animationFrame = 0;
+    let frame = 0;
     let jumping = false;
-    let moving = false;
-    let previousWidth = container.clientWidth;
-    let lastLogicalIndex = 0;
 
     const motionPreference = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     );
 
-    const getPhysicalIndex = () => {
-      const width = container.clientWidth;
+    const getArticles = () =>
+      Array.from(container.querySelectorAll<HTMLElement>("[data-news-item]"));
 
-      return width ? Math.round(container.scrollLeft / width) : 0;
+    const getPositions = () => {
+      const containerLeft = container.getBoundingClientRect().left;
+
+      return getArticles().map(
+        (article) =>
+          article.getBoundingClientRect().left -
+          containerLeft +
+          container.scrollLeft,
+      );
     };
 
-    const getLogicalIndex = (physicalIndex: number) =>
-      infinite ? (((physicalIndex - 1 + count) % count) + count) % count : 0;
+    const getClosestIndex = () => {
+      const positions = getPositions();
+      let closestIndex = 0;
+      let closestDistance = Infinity;
 
-    const jumpTo = (physicalIndex: number) => {
+      positions.forEach((position, index) => {
+        const distance = Math.abs(position - container.scrollLeft);
+
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestIndex = index;
+        }
+      });
+
+      return closestIndex;
+    };
+
+    const jumpTo = (index: number) => {
+      const position = getPositions()[index];
+
+      if (position === undefined) {
+        return;
+      }
+
       jumping = true;
       container.style.scrollSnapType = "none";
 
       container.scrollTo({
-        left: physicalIndex * container.clientWidth,
+        left: position,
         behavior: "instant",
       });
 
-      cancelAnimationFrame(animationFrame);
+      cancelAnimationFrame(frame);
 
-      animationFrame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
         container.style.scrollSnapType = "";
         jumping = false;
       });
     };
 
     const settle = () => {
-      if (jumping || pointerDownRef.current) {
+      if (!infinite || jumping || pointerDownRef.current) {
         return;
       }
 
-      const width = container.clientWidth;
-      const physicalIndex = getPhysicalIndex();
+      const index = getClosestIndex();
 
-      if (
-        !width ||
-        Math.abs(container.scrollLeft - physicalIndex * width) > 2
-      ) {
-        return;
-      }
-
-      moving = false;
-      lastLogicalIndex = getLogicalIndex(physicalIndex);
-
-      if (!infinite) {
-        return;
-      }
-
-      let targetIndex: number | null = null;
-
-      if (physicalIndex === 0) {
-        targetIndex = count;
-      } else if (physicalIndex === count + 1) {
-        targetIndex = 1;
-      }
+      const targetIndex = index === 0 ? count : index === count + 1 ? 1 : null;
 
       if (targetIndex === null) {
         return;
       }
 
-      const articles =
-        container.querySelectorAll<HTMLElement>("[data-news-item]");
-
+      const articles = getArticles();
       const activeElement = document.activeElement;
 
-      const restoreLinkFocus =
+      const restoreFocus =
         activeElement instanceof HTMLElement &&
-        Boolean(articles[physicalIndex]?.contains(activeElement));
+        articles[index]?.contains(activeElement);
 
       jumpTo(targetIndex);
 
-      if (restoreLinkFocus) {
+      if (restoreFocus) {
         articles[targetIndex]
           ?.querySelector<HTMLAnchorElement>("a")
           ?.focus({ preventScroll: true });
@@ -170,46 +172,64 @@ export const HomeNews = ({ briefs }: HomeNewsProps) => {
 
     const scheduleSettle = () => {
       clearTimeout(settleTimer);
-      settleTimer = setTimeout(settle, 180);
+      settleTimer = setTimeout(settle, 200);
     };
 
+    // Track the intended destination so repeated clicks advance correctly.
+    let destinationIndex = infinite ? 1 : 0;
+
     const move = (direction: number) => {
-      if (!infinite || jumping || moving || pointerDownRef.current) {
+      if (!infinite || pointerDownRef.current) {
         return;
       }
 
-      const width = container.clientWidth;
-      const physicalIndex = getPhysicalIndex();
+      const performMove = () => {
+        const positions = getPositions();
 
-      if (
-        !width ||
-        Math.abs(container.scrollLeft - physicalIndex * width) > 2
-      ) {
-        return;
+        destinationIndex = Math.max(
+          0,
+          Math.min(count + 1, destinationIndex + direction),
+        );
+
+        container.scrollTo({
+          left: positions[destinationIndex],
+          behavior: motionPreference.matches ? "instant" : "smooth",
+        });
+
+        scheduleSettle();
+      };
+
+      // If the destination is a clone, first move invisibly to its original.
+      if (destinationIndex === 0 || destinationIndex === count + 1) {
+        destinationIndex = destinationIndex === 0 ? count : 1;
+        jumpTo(destinationIndex);
+
+        requestAnimationFrame(performMove);
+      } else {
+        performMove();
       }
-
-      // Normalize a clone before starting another movement.
-      if (physicalIndex === 0 || physicalIndex === count + 1) {
-        settle();
-        return;
-      }
-
-      moving = true;
-
-      container.scrollTo({
-        left: (physicalIndex + direction) * width,
-        behavior: motionPreference.matches ? "instant" : "smooth",
-      });
-
-      scheduleSettle();
     };
 
     moveRef.current = move;
 
     const onScroll = () => {
       if (!jumping) {
-        moving = true;
         scheduleSettle();
+      }
+    };
+
+    const onScrollEnd = () => {
+      if (jumping || pointerDownRef.current) {
+        return;
+      }
+
+      destinationIndex = getClosestIndex();
+      settle();
+
+      if (destinationIndex === 0) {
+        destinationIndex = count;
+      } else if (destinationIndex === count + 1) {
+        destinationIndex = 1;
       }
     };
 
@@ -219,19 +239,35 @@ export const HomeNews = ({ briefs }: HomeNewsProps) => {
     };
 
     const onPointerUp = () => {
+      if (!pointerDownRef.current) {
+        return;
+      }
+
       pointerDownRef.current = false;
+      destinationIndex = getClosestIndex();
       delayAutoScroll();
       scheduleSettle();
     };
 
-    jumpTo(infinite ? 1 : 0);
+    // Fallback for browsers without scrollend.
+    const onScrollWithFallback = () => {
+      onScroll();
 
-    container.addEventListener("scroll", onScroll, { passive: true });
-    container.addEventListener("scrollend", settle);
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(onScrollEnd, 200);
+    };
+
+    jumpTo(destinationIndex);
+
+    container.addEventListener("scroll", onScrollWithFallback, {
+      passive: true,
+    });
+    container.addEventListener("scrollend", onScrollEnd);
     container.addEventListener("pointerdown", onPointerDown);
-
     window.addEventListener("pointerup", onPointerUp);
     window.addEventListener("pointercancel", onPointerUp);
+
+    let previousWidth = container.clientWidth;
 
     const resizeObserver = new ResizeObserver(() => {
       const width = container.clientWidth;
@@ -241,9 +277,7 @@ export const HomeNews = ({ briefs }: HomeNewsProps) => {
       }
 
       previousWidth = width;
-      moving = false;
-
-      jumpTo(infinite ? lastLogicalIndex + 1 : 0);
+      jumpTo(destinationIndex);
     });
 
     resizeObserver.observe(container);
@@ -266,13 +300,12 @@ export const HomeNews = ({ briefs }: HomeNewsProps) => {
     return () => {
       clearTimeout(settleTimer);
       window.clearInterval(interval);
-      cancelAnimationFrame(animationFrame);
+      cancelAnimationFrame(frame);
       resizeObserver.disconnect();
 
-      container.removeEventListener("scroll", onScroll);
-      container.removeEventListener("scrollend", settle);
+      container.removeEventListener("scroll", onScrollWithFallback);
+      container.removeEventListener("scrollend", onScrollEnd);
       container.removeEventListener("pointerdown", onPointerDown);
-
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("pointercancel", onPointerUp);
 
@@ -282,13 +315,8 @@ export const HomeNews = ({ briefs }: HomeNewsProps) => {
     };
   }, [contentKey, count, infinite]);
 
-  if (count === 0) {
-    return null;
-  }
-
   return (
-    <section
-      aria-label="Market headlines"
+    <div
       onMouseEnter={() => {
         hoveredRef.current = true;
       }}
@@ -409,6 +437,6 @@ export const HomeNews = ({ briefs }: HomeNewsProps) => {
           />
         </button>
       )}
-    </section>
+    </div>
   );
 };
