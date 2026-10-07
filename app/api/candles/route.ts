@@ -19,6 +19,43 @@ const PROVIDER_SYMBOLS: Record<string, string> = {
   TOPIX: "1306.T",
 };
 
+interface ChartQuery {
+  period1: Date;
+  period2?: Date;
+  interval: YahooInterval;
+  includePrePost: boolean;
+}
+
+type ValidatedChartResult = Awaited<ReturnType<typeof fetchValidatedChart>>;
+
+function fetchValidatedChart(symbol: string, query: ChartQuery) {
+  return yahoo.chart(symbol, {
+    ...query,
+    return: "array",
+  });
+}
+
+async function fetchChart(symbol: string, query: ChartQuery) {
+  if (symbol === "^STOXX50E") {
+    const result = await yahoo.chart(
+      symbol,
+      {
+        ...query,
+        return: "array",
+      },
+      {
+        validateResult: false,
+      },
+    );
+
+    // Validation is skipped only for the known null currency issue.
+    // The route still checks candle prices and timestamps.
+    return result as ValidatedChartResult;
+  }
+
+  return fetchValidatedChart(symbol, query);
+}
+
 type YahooInterval = "1m" | "2m" | "5m" | "15m" | "30m" | "60m" | "1d" | "1wk";
 
 interface MarketSession {
@@ -137,7 +174,7 @@ async function fetchYahooChart(
   range: string,
   interval: YahooInterval,
 ) {
-  return yahoo.chart(symbol, {
+  return fetchChart(symbol, {
     period1: getPeriod1(range),
     interval,
     includePrePost: false,
@@ -152,25 +189,25 @@ const getYahooQuote30Seconds = unstable_cache(
 
 const getYahooChart30Seconds = unstable_cache(
   fetchYahooChart,
-  ["yahoo-chart-30-seconds-v2"],
+  ["yahoo-chart-30-seconds-v4"],
   { revalidate: 30 },
 );
 
 const getYahooChart1Minute = unstable_cache(
   fetchYahooChart,
-  ["yahoo-chart-1-minute-v3"],
+  ["yahoo-chart-1-minute-v4"],
   { revalidate: 60 },
 );
 
 const getYahooChart5Minutes = unstable_cache(
   fetchYahooChart,
-  ["yahoo-chart-5-minutes-v2"],
+  ["yahoo-chart-5-minutes-v4"],
   { revalidate: 300 },
 );
 
 const getYahooChart30Minutes = unstable_cache(
   fetchYahooChart,
-  ["yahoo-chart-30-minutes-v2"],
+  ["yahoo-chart-30-minutes-v4"],
   { revalidate: 1_800 },
 );
 
@@ -204,14 +241,14 @@ function getCachedYahooChart(
 
 const getHolidayFallbackChart = unstable_cache(
   async (symbol: string, interval: YahooInterval, quoteTimeMs: number) => {
-    return yahoo.chart(symbol, {
+    return fetchChart(symbol, {
       period1: new Date(quoteTimeMs - 3 * DAY_MS),
       period2: new Date(Math.min(Date.now(), quoteTimeMs + DAY_MS)),
       interval,
       includePrePost: false,
     });
   },
-  ["yahoo-holiday-fallback-v1"],
+  ["yahoo-holiday-fallback-v2"],
   { revalidate: 300 },
 );
 
@@ -236,7 +273,7 @@ const getPreviousDailyClose = unstable_cache(
       ),
     );
 
-    const result = await yahoo.chart(symbol, {
+    const result = await fetchChart(symbol, {
       period1: new Date(period1),
       period2: new Date(period2),
       interval: "1d",
@@ -265,7 +302,7 @@ const getPreviousDailyClose = unstable_cache(
 
     return previousClose;
   },
-  ["yahoo-previous-daily-close-v1"],
+  ["yahoo-previous-daily-close-v2"],
   { revalidate: 300 },
 );
 
@@ -397,7 +434,7 @@ function getNextTradingDay(
 }
 
 // -----------------------------------------------------------------------------
-// LATEST TRADING SESSION
+// LATEST TRADING SESSIONS
 // -----------------------------------------------------------------------------
 
 function getLatestTradingSession(
@@ -470,6 +507,7 @@ function getLatestTradingSessions(
     );
   });
 }
+
 // -----------------------------------------------------------------------------
 // DETECT INTRADAY BREAK
 // -----------------------------------------------------------------------------
@@ -727,8 +765,25 @@ export async function GET(request: Request) {
 
   try {
     const [chartResult, quote] = await Promise.all([
-      getCachedYahooChart(symbol, range, interval),
-      getYahooQuote30Seconds(symbol),
+      getCachedYahooChart(symbol, range, interval).catch((error) => {
+        console.error("[candles] chart failed", {
+          symbol,
+          range,
+          interval,
+          error,
+        });
+
+        throw error;
+      }),
+
+      getYahooQuote30Seconds(symbol).catch((error) => {
+        console.error("[candles] quote failed", {
+          symbol,
+          error,
+        });
+
+        throw error;
+      }),
     ]);
 
     const rawQuotes: Candle[] = Array.isArray(chartResult.quotes)
