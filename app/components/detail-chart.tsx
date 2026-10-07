@@ -54,6 +54,7 @@ const chartTypeOptions: {
 export function DetailChart({
   history,
   isPositive,
+  isClosed,
   range,
   previousClose,
   lunchStartMs,
@@ -130,13 +131,55 @@ export function DetailChart({
 
   // 1D uses the entire session, even when only a few
   // minutes of actual data are available.
-  const axisStartMs = hasSessionRange ? sessionStartMs : firstTimestamp;
+  const useFullSession = hasSessionRange && !isClosed;
 
-  const axisEndMs = hasSessionRange ? sessionEndMs : lastTimestamp;
+  const axisStartMs = useFullSession ? sessionStartMs : firstTimestamp;
+
+  const axisEndMs = useFullSession ? sessionEndMs : lastTimestamp;
 
   const fullTimeRange = Math.max(axisEndMs - axisStartMs, 1);
 
   function getX(timestampMs: number) {
+    if (range === "5D") {
+      if (data.length === 1) {
+        return paddingLeft + chartWidth / 2;
+      }
+
+      // Find the surrounding candles.
+      let left = 0;
+      let right = data.length - 1;
+
+      while (left < right) {
+        const middle = Math.floor((left + right) / 2);
+
+        if (data[middle].timestampMs < timestampMs) {
+          left = middle + 1;
+        } else {
+          right = middle;
+        }
+      }
+
+      const nextIndex = left;
+      let position = nextIndex;
+
+      if (nextIndex > 0) {
+        const previousIndex = nextIndex - 1;
+        const startMs = data[previousIndex].timestampMs;
+        const endMs = data[nextIndex].timestampMs;
+
+        const fraction =
+          endMs > startMs ? (timestampMs - startMs) / (endMs - startMs) : 0;
+
+        position = previousIndex + Math.max(0, Math.min(1, fraction));
+      }
+
+      return paddingLeft + (position / (data.length - 1)) * chartWidth;
+    }
+
+    if (firstTimestamp === lastTimestamp && !useFullSession) {
+      return paddingLeft + chartWidth / 2;
+    }
+
     const ratio = (timestampMs - axisStartMs) / fullTimeRange;
 
     return paddingLeft + Math.max(0, Math.min(1, ratio)) * chartWidth;
@@ -178,9 +221,33 @@ export function DetailChart({
       ? Math.max(Math.abs(rawMin) * 0.005, 0.01)
       : rawPriceRange * 0.05;
 
-  const min = rawMin - pricePadding;
-  const max = rawMax + pricePadding;
-  const priceRange = max - min || 1;
+  function getNiceStep(value: number) {
+    const magnitude = 10 ** Math.floor(Math.log10(value));
+    const fraction = value / magnitude;
+
+    const niceFraction =
+      fraction <= 1
+        ? 1
+        : fraction <= 2
+          ? 2
+          : fraction <= 2.5
+            ? 2.5
+            : fraction <= 5
+              ? 5
+              : 10;
+
+    return niceFraction * magnitude;
+  }
+
+  const paddedMin = rawMin - pricePadding;
+  const paddedMax = rawMax + pricePadding;
+
+  const tickStep = getNiceStep((paddedMax - paddedMin) / 4);
+
+  const min = Math.floor(paddedMin / tickStep) * tickStep;
+  const max = Math.ceil(paddedMax / tickStep) * tickStep;
+
+  const priceRange = max - min || tickStep;
 
   const baselinePrice = validPreviousClose ?? data[0].price;
 
@@ -314,14 +381,30 @@ export function DetailChart({
   // Y GRID / LABELS
   // --------------------------------------------------
 
-  const yTicks = Array.from({ length: 5 }, (_, index) => {
-    const ratio = index / 4;
+  const tickCount = Math.round((max - min) / tickStep);
+
+  const yTicks = Array.from({ length: tickCount + 1 }, (_, index) => {
+    const price = Number((min + index * tickStep).toPrecision(12));
 
     return {
-      price: min + ratio * priceRange,
-      y: paddingTop + chartHeight - ratio * chartHeight,
+      price,
+      y: getY(price),
     };
   });
+
+  const yLabelDecimals =
+    tickStep >= 1
+      ? Number.isInteger(tickStep)
+        ? 0
+        : 1
+      : Math.max(0, -Math.floor(Math.log10(tickStep))) +
+        (Number.isInteger(
+          Number(
+            (tickStep / 10 ** Math.floor(Math.log10(tickStep))).toFixed(8),
+          ),
+        )
+          ? 0
+          : 1);
 
   // --------------------------------------------------
   // DATE / TIME FORMATTERS
@@ -370,13 +453,28 @@ export function DetailChart({
     x: number;
   }[] = [];
 
-  if (is1D) {
-    const ONE_MINUTE = 60 * 1000;
+  if (range === "5D") {
+    const count = Math.min(5, data.length);
+
+    xTicks = Array.from({ length: count }, (_, index) => {
+      const pointIndex =
+        count === 1 ? 0 : Math.round((index / (count - 1)) * (data.length - 1));
+
+      const point = data[pointIndex];
+
+      return {
+        label:
+          `${formatDateLabel(point.timestampMs)} ` +
+          formatTimeLabel(point.timestampMs),
+        x: getX(point.timestampMs),
+      };
+    });
+  } else if (is1D) {
+    const ONE_MINUTE = 60_000;
     const ONE_HOUR = 60 * ONE_MINUTE;
     const EDGE_MARGIN = 15 * ONE_MINUTE;
 
     const totalHours = fullTimeRange / ONE_HOUR;
-
     const tickEveryHours = totalHours >= 20 ? 4 : totalHours >= 6 ? 2 : 1;
 
     const scanStart = Math.ceil(axisStartMs / ONE_MINUTE) * ONE_MINUTE;
@@ -403,16 +501,15 @@ export function DetailChart({
       }
     }
   } else {
-    xTicks = Array.from({ length: 4 }, (_, index) => {
-      const ratio = index / 3;
+    const count = Math.min(4, data.length);
+
+    xTicks = Array.from({ length: count }, (_, index) => {
+      const ratio = count === 1 ? 0 : index / (count - 1);
       const timestampMs = axisStartMs + fullTimeRange * ratio;
 
       return {
-        label:
-          range === "5D"
-            ? `${formatDateLabel(timestampMs)} ${formatTimeLabel(timestampMs)}`
-            : formatDateLabel(timestampMs),
-        x: paddingLeft + ratio * chartWidth,
+        label: formatDateLabel(timestampMs),
+        x: getX(timestampMs),
       };
     });
   }
@@ -612,8 +709,8 @@ export function DetailChart({
             className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-300 dark:font-light"
           >
             {tick.price.toLocaleString("en-US", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
+              minimumFractionDigits: yLabelDecimals,
+              maximumFractionDigits: yLabelDecimals,
             })}
           </text>
         ))}
@@ -705,7 +802,7 @@ export function DetailChart({
                     d={path}
                     fill="none"
                     stroke={strokeColor}
-                    strokeWidth="1.25"
+                    strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
@@ -736,8 +833,8 @@ export function DetailChart({
                 x2={lunchEndPoint.x}
                 y2={lunchStartPoint.y}
                 stroke={strokeColor}
-                strokeDasharray="2.5 2.5"
-                strokeWidth="1.5"
+                strokeDasharray="2 3.5"
+                strokeWidth="1.75"
                 strokeLinecap="round"
                 opacity="0.6"
               />
@@ -746,7 +843,7 @@ export function DetailChart({
                 x={(lunchStartPoint.x + lunchEndPoint.x) / 2}
                 y={(lunchStartPoint.y + lunchEndPoint.y) / 2 - 10}
                 textAnchor="middle"
-                className="fill-zinc-700 text-[15px] font-medium tracking-wide dark:fill-zinc-400"
+                className="outfit fill-zinc-600 text-[14px] font-[450] dark:fill-zinc-400"
               >
                 Lunch Break
               </text>

@@ -137,6 +137,7 @@ async function fetchQuote(
 
       const res = await fetch(`/api/candles?${params.toString()}`, {
         signal: controller.signal,
+        cache: "no-store",
       });
 
       if (!res.ok) {
@@ -318,12 +319,17 @@ export function subscribeToMarketQuote(
     );
   }
 
-  /*
-   * Fetch only when this cache entry has no data
-   * and isn't already fetching.
-   */
-  if (!entry.data && !entry.fetchPromise) {
-    fetchQuote(symbol, name, range, displaySymbol, assetType, chartInterval);
+  // Refresh when the first subscriber mounts, including cached entries.
+  // Additional subscribers share the existing data and request.
+  if (!entry.fetchPromise && (!entry.data || entry.subscribers === 1)) {
+    void fetchQuote(
+      symbol,
+      name,
+      range,
+      displaySymbol,
+      assetType,
+      chartInterval,
+    );
   }
 
   return () => {

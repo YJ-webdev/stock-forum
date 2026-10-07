@@ -187,6 +187,69 @@ function getCachedYahooChart(
   }
 }
 
+// Cache fallback requests during long holidays.
+const getHolidayFallbackChart = unstable_cache(
+  async (symbol: string, interval: YahooInterval, quoteTimeMs: number) => {
+    const DAY_MS = 24 * 60 * 60 * 1000;
+
+    return yahoo.chart(symbol, {
+      period1: new Date(quoteTimeMs - 3 * DAY_MS),
+      period2: new Date(Math.min(Date.now(), quoteTimeMs + DAY_MS)),
+      interval,
+      includePrePost: false,
+    });
+  },
+  ["yahoo-holiday-fallback-v1"],
+  { revalidate: 300 },
+);
+
+const getPreviousDailyClose = unstable_cache(
+  async (
+    symbol: string,
+    quoteDate: string,
+    timezone: string,
+  ): Promise<number | null> => {
+    const period1 = getTimestampForMarketTime(
+      addCalendarDays(quoteDate, -60),
+      "00:00",
+      timezone,
+    );
+
+    const period2 = Math.min(
+      Date.now(),
+      getTimestampForMarketTime(
+        addCalendarDays(quoteDate, 1),
+        "00:00",
+        timezone,
+      ),
+    );
+
+    const result = await yahoo.chart(symbol, {
+      period1: new Date(period1),
+      period2: new Date(period2),
+      interval: "1d",
+      includePrePost: false,
+    });
+
+    const previousCandles = (Array.isArray(result.quotes) ? result.quotes : [])
+      .filter((candle) => {
+        const timestamp = new Date(candle.date).getTime();
+
+        return (
+          Number.isFinite(timestamp) &&
+          typeof candle.close === "number" &&
+          Number.isFinite(candle.close) &&
+          candle.close > 0 &&
+          getExchangeDate(new Date(timestamp), timezone) < quoteDate
+        );
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    return previousCandles.at(-1)?.close ?? null;
+  },
+  ["yahoo-previous-daily-close-v1"],
+  { revalidate: 300 },
+);
 // -----------------------------------------------------------------------------
 // INTL FORMATTER CACHE
 // -----------------------------------------------------------------------------
@@ -742,14 +805,74 @@ export async function GET(request: Request) {
     let sessionQuotes = rawQuotes;
 
     if (range === "1D") {
-      /*
-       * Keep the complete latest trading session.
-       *
-       * Do NOT slice the last X hours because that
-       * breaks charts after market close.
-       */
       sessionQuotes = getLatestTradingSession(rawQuotes, exchangeTimezone);
+
+      // When the rolling window contains no candles,
+      // look around the date of the last available quote.
+      const quoteTimeMs = quote.regularMarketTime
+        ? new Date(quote.regularMarketTime).getTime()
+        : NaN;
+
+      const hasValidCandle = sessionQuotes.some(
+        (candle: any) =>
+          candle?.close != null &&
+          Number.isFinite(Number(candle.close)) &&
+          Number.isFinite(new Date(candle.date).getTime()),
+      );
+
+      if (!hasValidCandle && Number.isFinite(quoteTimeMs)) {
+        // Older 1m data may be unavailable.
+        // Try coarser intraday candles if needed.
+        const fallbackIntervals = Array.from(
+          new Set<YahooInterval>([interval, "5m", "15m"]),
+        );
+
+        for (const fallbackInterval of fallbackIntervals) {
+          try {
+            const fallback = await getHolidayFallbackChart(
+              symbol,
+              fallbackInterval,
+              quoteTimeMs,
+            );
+
+            const fallbackQuotes = getLatestTradingSession(
+              Array.isArray(fallback.quotes) ? fallback.quotes : [],
+              exchangeTimezone,
+            );
+
+            const hasFallbackCandle = fallbackQuotes.some(
+              (candle: any) =>
+                candle?.close != null &&
+                Number.isFinite(Number(candle.close)) &&
+                Number.isFinite(new Date(candle.date).getTime()),
+            );
+
+            if (hasFallbackCandle) {
+              sessionQuotes = fallbackQuotes;
+              break;
+            }
+          } catch (error) {
+            console.warn(
+              `[candles] Holiday fallback failed: ${symbol}/${fallbackInterval}`,
+              error instanceof Error ? error.message : String(error),
+            );
+          }
+        }
+      }
     }
+
+    // Keep candles ordered before detecting gaps or selecting endpoints.
+    sessionQuotes = sessionQuotes
+      .filter(
+        (candle: any) =>
+          candle?.date != null &&
+          Number.isFinite(new Date(candle.date).getTime()),
+      )
+      .slice()
+      .sort(
+        (a: any, b: any) =>
+          new Date(a.date).getTime() - new Date(b.date).getTime(),
+      );
 
     /*
      * Determine previous close once and reuse it
@@ -758,17 +881,105 @@ export async function GET(request: Request) {
      * For 1D, prefer the final valid candle before
      * the latest trading session.
      */
-    const previousClose =
-      typeof quote.regularMarketPreviousClose === "number"
-        ? quote.regularMarketPreviousClose
-        : typeof meta.chartPreviousClose === "number"
-          ? meta.chartPreviousClose
-          : typeof meta.previousClose === "number"
-            ? meta.previousClose
-            : typeof meta.regularMarketPrice === "number"
-              ? meta.regularMarketPrice
-              : 0;
+    const isValidPrice = (value: unknown): value is number =>
+      typeof value === "number" && Number.isFinite(value) && value > 0;
 
+    // Daily lookup failure falls back to the quote's previous close.
+    // Do not use the current price or a multi-day chart's starting baseline.
+    let previousClose = isValidPrice(quote.regularMarketPreviousClose)
+      ? quote.regularMarketPreviousClose
+      : isValidPrice(meta.previousClose)
+        ? meta.previousClose
+        : 0;
+
+    const quoteTimeMs = quote.regularMarketTime
+      ? new Date(quote.regularMarketTime).getTime()
+      : NaN;
+
+    const shouldCheckDailyClose =
+      market?.assetType === "index" || market?.assetType === "stock";
+
+    if (
+      shouldCheckDailyClose &&
+      exchangeTimezone &&
+      Number.isFinite(quoteTimeMs)
+    ) {
+      const quoteDate = getExchangeDate(
+        new Date(quoteTimeMs),
+        exchangeTimezone,
+      );
+
+      try {
+        const dailyPreviousClose = await getPreviousDailyClose(
+          symbol,
+          quoteDate,
+          exchangeTimezone,
+        );
+
+        if (isValidPrice(dailyPreviousClose)) {
+          previousClose = dailyPreviousClose;
+        }
+      } catch (error) {
+        console.warn(
+          `[candles] Previous daily close lookup failed: ${symbol}`,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    }
+
+    console.log("[candles] previous close", {
+      symbol,
+      quotePreviousClose: quote.regularMarketPreviousClose,
+      selectedPreviousClose: previousClose,
+    });
+
+    const availablePrice =
+      typeof quote.regularMarketPrice === "number" &&
+      Number.isFinite(quote.regularMarketPrice)
+        ? quote.regularMarketPrice
+        : typeof meta.regularMarketPrice === "number" &&
+            Number.isFinite(meta.regularMarketPrice)
+          ? meta.regularMarketPrice
+          : 0;
+
+    const availableDailyChangePercent =
+      previousClose > 0 && availablePrice > 0
+        ? ((availablePrice - previousClose) / previousClose) * 100
+        : 0;
+
+    const availableUpdatedAt = quote.regularMarketTime
+      ? new Date(quote.regularMarketTime).getTime()
+      : meta.regularMarketTime
+        ? new Date(meta.regularMarketTime).getTime()
+        : null;
+
+    function emptyChartResponse() {
+      return NextResponse.json({
+        points: [],
+
+        currentPrice: availablePrice,
+        previousClose,
+
+        dailyChangePercent: availableDailyChangePercent,
+        rangeChangePercent: range === "1D" ? availableDailyChangePercent : null,
+
+        isClosed,
+        marketOpenMs,
+        marketCloseMs,
+
+        requestedSymbol: rawSymbol,
+        providerSymbol: symbol,
+        exchangeTimezone,
+
+        updatedAt:
+          availableUpdatedAt !== null && Number.isFinite(availableUpdatedAt)
+            ? availableUpdatedAt
+            : null,
+
+        lunchStartMs: null,
+        lunchEndMs: null,
+      });
+    }
     let lunchStartMs: number | null = null;
     let lunchEndMs: number | null = null;
 
@@ -780,34 +991,7 @@ export async function GET(request: Request) {
     }
 
     if (sessionQuotes.length === 0) {
-      return NextResponse.json({
-        points: [],
-
-        currentPrice: meta.regularMarketPrice ?? 0,
-
-        previousClose,
-
-        dailyChangePercent: 0,
-        rangeChangePercent: 0,
-
-        isClosed,
-
-        marketOpenMs,
-        marketCloseMs,
-
-        requestedSymbol: rawSymbol,
-
-        providerSymbol: symbol,
-
-        exchangeTimezone,
-
-        updatedAt: meta.regularMarketTime
-          ? new Date(meta.regularMarketTime).getTime()
-          : Date.now(),
-
-        lunchStartMs,
-        lunchEndMs,
-      });
+      return emptyChartResponse();
     }
 
     const points = sessionQuotes
@@ -822,7 +1006,6 @@ export async function GET(request: Request) {
 
         return {
           timestampMs: new Date(quote.date).getTime(),
-
           price: normalizedClose,
 
           open:
@@ -845,34 +1028,7 @@ export async function GET(request: Request) {
       });
 
     if (points.length === 0) {
-      return NextResponse.json({
-        points: [],
-
-        currentPrice: meta.regularMarketPrice ?? 0,
-
-        previousClose,
-
-        dailyChangePercent: 0,
-        rangeChangePercent: 0,
-
-        isClosed,
-
-        marketOpenMs,
-        marketCloseMs,
-
-        requestedSymbol: rawSymbol,
-
-        providerSymbol: symbol,
-
-        exchangeTimezone,
-
-        updatedAt: meta.regularMarketTime
-          ? new Date(meta.regularMarketTime).getTime()
-          : Date.now(),
-
-        lunchStartMs,
-        lunchEndMs,
-      });
+      return emptyChartResponse();
     }
 
     const currentPrice =

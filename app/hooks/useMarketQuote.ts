@@ -92,7 +92,7 @@ export function useMarketQuote(
   range: ChartRange = "1D",
   displaySymbol: string = symbol,
   assetType: AssetType = "index",
-  pollingInterval = 0,
+  pollingInterval = 60_000,
   chartInterval?: ChartInterval,
 ) {
   /*
