@@ -17,6 +17,17 @@ export default async function Home() {
         <h1 className="sr-only">Global market dashboard</h1>
 
         <div className="w-full min-w-0">
+          <section
+            aria-labelledby="home-watchlist-heading"
+            className="mt-4 mb-4"
+          >
+            <h2 id="home-watchlist-heading" className="sr-only">
+              Watchlist
+            </h2>
+
+            <HomeMarketCarousel markets={markets} />
+          </section>
+
           {briefs.length > 0 && (
             <section aria-labelledby="home-news-heading">
               <h2 id="home-news-heading" className="sr-only">
@@ -26,14 +37,6 @@ export default async function Home() {
               <HomeNews briefs={briefs} />
             </section>
           )}
-
-          <section aria-labelledby="home-watchlist-heading" className="mt-4">
-            <h2 id="home-watchlist-heading" className="sr-only">
-              Watchlist
-            </h2>
-
-            <HomeMarketCarousel markets={markets} />
-          </section>
 
           <section aria-labelledby="home-community-heading" className="mt-4">
             <h2 id="home-community-heading" className="sr-only">
