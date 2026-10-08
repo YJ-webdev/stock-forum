@@ -215,7 +215,7 @@ function NumberSkeleton({ className = "w-20" }: { className?: string }) {
 function SparklineSkeleton() {
   return (
     <div className="flex h-10 w-full items-center justify-center px-3">
-      <MarketSkeleton className="h-6 w-full max-w-[120px]" />
+      <MarketSkeleton className="h-6 w-full max-w-30" />
     </div>
   );
 }
@@ -343,7 +343,7 @@ export function RelativeStocks({
   }, [selectedIndex]);
 
   return (
-    <div className="flex max-h-[calc(100vh-230px)] w-full flex-col overflow-y-auto">
+    <div className="flex max-h-[calc(100vh-230px)] w-full flex-col overflow-y-auto ">
       <div className="w-full bg-zinc-100 dark:bg-zinc-800 md:rounded-lg md:bg-white">
         <table className="w-full table-fixed">
           <thead className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-800 md:bg-white">
@@ -351,8 +351,8 @@ export function RelativeStocks({
               <th
                 className={
                   showVotingColumns
-                    ? "w-[25%] py-3 pl-4 text-left md:w-[calc(94%/7)]"
-                    : "w-[25%] py-3 pl-4 text-left md:w-[20%]"
+                    ? "w-[25%] py-3 pl-4 text-left md:w-[10%]"
+                    : "w-[calc(100%/6)] py-3 pl-4 text-left md:w-[10%]"
                 }
               >
                 Asset
@@ -361,8 +361,8 @@ export function RelativeStocks({
               <th
                 className={
                   showVotingColumns
-                    ? "hidden pl-2 text-center md:table-cell"
-                    : "hidden text-center md:table-cell md:w-[15%]"
+                    ? "hidden text-center md:table-cell md:w-[10%]"
+                    : "hidden text-center md:table-cell md:w-[10%]"
                 }
               >
                 Trend
@@ -371,8 +371,8 @@ export function RelativeStocks({
               <th
                 className={
                   showVotingColumns
-                    ? "w-[25%] pr-2 text-right md:w-[calc(94%/7)]"
-                    : "w-[25%] text-right md:w-[15%]"
+                    ? "w-[25%] pr-2 text-right md:w-[10%]"
+                    : "w-[25%] pr-2 text-right md:w-[10%]"
                 }
               >
                 Today
@@ -381,8 +381,8 @@ export function RelativeStocks({
               <th
                 className={
                   showVotingColumns
-                    ? "hidden py-3.5 text-right md:table-cell md:w-[calc(94%/7)] md:py-3"
-                    : "w-[25%] py-3.5 text-right md:w-[17%] md:py-3"
+                    ? "hidden py-3.5 text-right md:table-cell md:w-[10%] md:py-3"
+                    : "w-[25%] py-3.5 text-right md:w-[10%] md:py-3"
                 }
               >
                 Prev
@@ -391,8 +391,8 @@ export function RelativeStocks({
               <th
                 className={
                   showVotingColumns
-                    ? "hidden truncate py-3 text-right md:table-cell md:w-[calc(94%/7)]"
-                    : "hidden truncate py-3 text-right md:table-cell md:w-[16.5%]"
+                    ? "hidden truncate py-3 text-right md:table-cell md:w-[10%]"
+                    : "hidden truncate py-3 text-right md:table-cell md:w-[10%]"
                 }
               >
                 24h %
@@ -401,8 +401,8 @@ export function RelativeStocks({
               <th
                 className={
                   showVotingColumns
-                    ? "hidden py-3 text-right md:table-cell md:w-[calc(94%/7)]"
-                    : "w-[25%] py-3 pr-4 text-right md:w-[16.5%]"
+                    ? "hidden py-3 text-right md:table-cell md:w-[10%]"
+                    : "w-[25%] py-3 pr-4 text-right md:w-[10%]"
                 }
               >
                 Change
@@ -410,9 +410,9 @@ export function RelativeStocks({
 
               {showVotingColumns && (
                 <>
-                  <th className="w-[30%] pl-2 md:w-[calc(94%/7)]">Statistic</th>
+                  <th className="w-[30%] pl-4 md:w-[10%]">Statistic</th>
 
-                  <th className="w-[15%] py-3 pr-4 text-right md:w-[6%]">
+                  <th className="w-[15%] py-3 pr-4 text-right md:w-[5%]">
                     Vote
                   </th>
                 </>
@@ -555,7 +555,7 @@ function RelativeStockRow({
         className={`
           whitespace-nowrap align-middle text-right
           font-medium dark:font-normal
-          ${showVotingColumns ? "pr-2" : ""}
+          ${showVotingColumns ? "pr-2" : "pr-2"}
         `}
       >
         <div className="flex h-5 w-full items-center justify-end">
@@ -634,7 +634,7 @@ function RelativeStockRow({
 
       {showVotingColumns && (
         <>
-          <td className="pl-4 pr-3 align-middle">
+          <td className="pl-4 align-middle">
             {eligibleForVoting ? (
               <div
                 role={voteStats ? "img" : undefined}

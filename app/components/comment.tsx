@@ -1,51 +1,57 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { RiHeartFill } from "react-icons/ri";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
-import { useCurrentUser } from "@/app/context/user-context";
 import {
   deleteComment,
   getCommentReplies,
   getMarketComments,
   hideComment,
-  MarketPageComments,
   reportComment,
   restoreComment,
+  type MarketPageComments,
 } from "@/app/actions/post";
+import { toggleCommentLike } from "@/app/actions/like";
+import { useCurrentUser } from "@/app/context/user-context";
+import type { PredictionDirection } from "@/generated/prisma/enums";
 
-import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatTimeAgo } from "@/lib/utils/format-time-ago";
+import { isDeletedPredictionContent } from "@/lib/utils/is-deleted-prediction-content";
 
-import { PredictionCommentInput } from "./prediction-comment-input";
+import { CommentContent } from "./comment-content";
+import { CommentEditInput } from "./comment-edit-input";
 import { CommentOnlyInput } from "./comment-only-input";
+import { ContentActionsMenu } from "./content-actions-menu";
+import { PredictionCommentInput } from "./prediction-comment-input";
+import { ReplyInput } from "./reply-input";
+import { ReplyItem } from "./reply-item";
 import type { GifResult } from "./gif-picker";
 
-import { ReplyInput } from "./reply-input";
-import { ContentActionsMenu } from "./content-actions-menu";
-import { ReplyItem } from "./reply-item";
-import { CommentEditInput } from "./comment-edit-input";
-
-import { toggleCommentLike } from "../actions/like";
-import { PredictionDirection } from "@/generated/prisma/enums";
-import { useSearchParams } from "next/navigation";
-import { isDeletedPredictionContent } from "@/lib/utils/is-deleted-prediction-content";
-import { formatTimeAgo } from "@/lib/utils/format-time-ago";
-import { CommentContent } from "./comment-content";
+type CommentCursor = NonNullable<
+  Awaited<ReturnType<typeof getMarketComments>>["nextCursor"]
+>;
 
 export interface MarketReply {
   id: string;
-
   commentId: string;
   parentId: string | null;
-
   content: string;
   gifUrl: string | null;
-
   createdAt: Date;
   updatedAt: Date;
-
   editedAt: Date | null;
   moderatedAt: Date | null;
 
@@ -63,15 +69,15 @@ export interface MarketReply {
 
 interface MarketCommentsProps {
   assetSymbol: string;
+  currentSessionStartMs: number | null;
 
   prediction: {
     selectedVote: PredictionDirection | null;
     isMarketOpen: boolean;
     isPending: boolean;
     userPoints: number;
-
     betAmount: number;
-    setBetAmount: React.Dispatch<React.SetStateAction<number>>;
+    setBetAmount: Dispatch<SetStateAction<number>>;
 
     handleVote: (
       direction: PredictionDirection,
@@ -85,8 +91,6 @@ interface MarketCommentsProps {
     countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
     showCountdown: boolean;
   } | null;
-
-  currentSessionStartMs: number | null;
 }
 
 export function MarketComments({
@@ -99,81 +103,142 @@ export function MarketComments({
 
   const targetCommentId = searchParams.get("comment");
   const targetReplyId = searchParams.get("reply");
-
   const from = searchParams.get("from");
 
   const highlightTargetComment =
-    (from === "most-liked" || from === "report") && Boolean(targetCommentId);
-
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-
-  // ---------------------------------------------------------------------------
-  // Prediction-only local state
-  // ---------------------------------------------------------------------------
+    Boolean(targetCommentId) && (from === "most-liked" || from === "report");
 
   const [direction, setDirection] = useState<PredictionDirection | null>(null);
 
-  // ---------------------------------------------------------------------------
-  // Comments state
-  // ---------------------------------------------------------------------------
-
   const [comments, setComments] = useState<MarketPageComments>([]);
-
-  const [nextCursor, setNextCursor] = useState<{
-    createdAt: Date;
-    id: string;
-  } | null>(null);
-
+  const [nextCursor, setNextCursor] = useState<CommentCursor | null>(null);
   const [totalCount, setTotalCount] = useState(0);
-
   const [commentsLoading, setCommentsLoading] = useState(true);
-
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // ---------------------------------------------------------------------------
-  // LOAD MORE COMMENTS
-  // ---------------------------------------------------------------------------
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const loadingMoreRef = useRef(false);
+  const requestVersionRef = useRef(0);
+  const knownCommentIdsRef = useRef(new Set<string>());
+
+  const viewerId = user?.id ?? null;
+
+  // Initial load and reset when the market, session, or viewer changes.
+  useEffect(() => {
+    const requestVersion = ++requestVersionRef.current;
+    let cancelled = false;
+
+    loadingMoreRef.current = false;
+    knownCommentIdsRef.current.clear();
+
+    setDirection(null);
+    setComments([]);
+    setNextCursor(null);
+    setTotalCount(0);
+    setCommentsLoading(true);
+    setIsLoadingMore(false);
+
+    const isCurrentRequest = () =>
+      !cancelled && requestVersionRef.current === requestVersion;
+
+    async function loadInitialComments() {
+      try {
+        const result = await getMarketComments(
+          assetSymbol,
+          null,
+          currentSessionStartMs,
+        );
+
+        if (!isCurrentRequest()) return;
+
+        // Preserve comments created while the initial request was loading.
+        const previouslyKnownIds = new Set(knownCommentIdsRef.current);
+        const resultIds = new Set(result.comments.map((comment) => comment.id));
+
+        const addedDuringLoadCount = [...previouslyKnownIds].filter(
+          (id) => !resultIds.has(id),
+        ).length;
+
+        for (const id of resultIds) {
+          knownCommentIdsRef.current.add(id);
+        }
+
+        setComments((current) => [
+          ...current.filter((comment) => !resultIds.has(comment.id)),
+          ...result.comments,
+        ]);
+
+        setNextCursor(result.nextCursor);
+        setTotalCount(result.totalCount + addedDuringLoadCount);
+      } catch (error) {
+        if (!isCurrentRequest()) return;
+
+        console.error("Failed to load comments:", error);
+        toast.error("Failed to load comments.");
+      } finally {
+        if (isCurrentRequest()) {
+          setCommentsLoading(false);
+        }
+      }
+    }
+
+    void loadInitialComments();
+
+    return () => {
+      cancelled = true;
+
+      // Invalidate pending pagination requests as well.
+      if (requestVersionRef.current === requestVersion) {
+        requestVersionRef.current += 1;
+      }
+    };
+  }, [assetSymbol, currentSessionStartMs, viewerId]);
 
   const loadMoreComments = useCallback(async () => {
-    if (!nextCursor || isLoadingMore) {
+    if (!nextCursor || commentsLoading || loadingMoreRef.current) {
       return;
     }
 
-    try {
-      setIsLoadingMore(true);
+    const requestVersion = requestVersionRef.current;
 
-      const minimumLoadingTime = new Promise((resolve) =>
-        setTimeout(resolve, 1000),
+    loadingMoreRef.current = true;
+    setIsLoadingMore(true);
+
+    try {
+      const result = await getMarketComments(
+        assetSymbol,
+        nextCursor,
+        currentSessionStartMs,
       );
 
-      const [result] = await Promise.all([
-        getMarketComments(assetSymbol, nextCursor),
-        minimumLoadingTime,
-      ]);
+      if (requestVersionRef.current !== requestVersion) return;
+
+      for (const comment of result.comments) {
+        knownCommentIdsRef.current.add(comment.id);
+      }
 
       setComments((current) => {
         const existingIds = new Set(current.map((comment) => comment.id));
 
-        const newComments = result.comments.filter(
-          (comment) => !existingIds.has(comment.id),
-        );
-
-        return [...current, ...newComments];
+        return [
+          ...current,
+          ...result.comments.filter((comment) => !existingIds.has(comment.id)),
+        ];
       });
 
       setNextCursor(result.nextCursor);
     } catch (error) {
-      console.error("Failed to load more comments:", error);
+      if (requestVersionRef.current !== requestVersion) return;
 
+      console.error("Failed to load more comments:", error);
       toast.error("Failed to load more comments.");
     } finally {
-      setIsLoadingMore(false);
+      if (requestVersionRef.current === requestVersion) {
+        loadingMoreRef.current = false;
+        setIsLoadingMore(false);
+      }
     }
-  }, [assetSymbol, nextCursor, isLoadingMore]);
-
-  // ---------------------------------------------------------------------------
-  // UPDATE COMMENT
-  // ---------------------------------------------------------------------------
+  }, [assetSymbol, nextCursor, commentsLoading, currentSessionStartMs]);
 
   const updateComment = useCallback(
     (
@@ -191,11 +256,9 @@ export function MarketComments({
     [],
   );
 
-  // ---------------------------------------------------------------------------
-  // REMOVE COMMENT
-  // ---------------------------------------------------------------------------
-
   const removeComment = useCallback((commentId: string) => {
+    if (!knownCommentIdsRef.current.delete(commentId)) return;
+
     setComments((current) =>
       current.filter((comment) => comment.id !== commentId),
     );
@@ -203,33 +266,41 @@ export function MarketComments({
     setTotalCount((current) => Math.max(0, current - 1));
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // ADD COMMENT
-  // ---------------------------------------------------------------------------
-
   const addComment = useCallback((comment: MarketPageComments[number]) => {
-    setComments((current) => {
-      if (current.some((existing) => existing.id === comment.id)) {
-        return current;
-      }
+    if (knownCommentIdsRef.current.has(comment.id)) return;
 
-      setTotalCount((count) => count + 1);
+    knownCommentIdsRef.current.add(comment.id);
 
-      return [comment, ...current].slice(0, 20);
-    });
+    setComments((current) => [comment, ...current]);
+    setTotalCount((current) => current + 1);
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // SUBMIT PREDICTION
-  //
-  // This function only does anything when prediction exists.
-  // Non-prediction assets never enter prediction submission logic.
-  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const element = loadMoreRef.current;
 
-  const submitVote = (comment: string, gif: GifResult | null) => {
-    if (!prediction) {
+    if (!element || !nextCursor || commentsLoading || isLoadingMore) {
       return;
     }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          void loadMoreComments();
+        }
+      },
+      {
+        rootMargin: "600px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, [nextCursor, commentsLoading, isLoadingMore, loadMoreComments]);
+
+  const submitVote = (comment: string, gif: GifResult | null) => {
+    if (!prediction || prediction.isPending) return;
 
     if (!user) {
       toast.error("Log in to make your prediction.");
@@ -241,22 +312,9 @@ export function MarketComments({
       return;
     }
 
-    const {
-      selectedVote,
+    if (prediction.isMarketOpen) return;
 
-      isMarketOpen,
-      userPoints,
-      betAmount,
-      handleVote,
-    } = prediction;
-
-    const buttonDisabled = isMarketOpen;
-
-    if (buttonDisabled) {
-      return;
-    }
-
-    if (selectedVote !== null) {
+    if (prediction.selectedVote !== null) {
       toast.error("You have already voted for this round.");
       return;
     }
@@ -266,126 +324,30 @@ export function MarketComments({
       return;
     }
 
+    const { betAmount, userPoints, handleVote } = prediction;
     const maxBet = Math.min(500, userPoints);
 
-    if (betAmount < 50) {
+    if (!Number.isInteger(betAmount) || betAmount < 50) {
       toast.error("Minimum prediction is 50 points.");
       return;
     }
 
     if (betAmount > maxBet) {
       toast.error(`You can predict up to ${maxBet.toLocaleString()} points.`);
-
       return;
     }
 
     handleVote(direction, betAmount, comment, gif, addComment);
   };
 
-  // ---------------------------------------------------------------------------
-  // RESET COMMENTS WHEN SERVER DATA CHANGES
-  // ---------------------------------------------------------------------------
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadInitialComments() {
-      setCommentsLoading(true);
-
-      try {
-        const result = await getMarketComments(assetSymbol);
-
-        if (cancelled) return;
-
-        setComments(result.comments);
-        setNextCursor(result.nextCursor);
-        setTotalCount(result.totalCount);
-      } catch (error) {
-        console.error("Failed to load comments:", error);
-
-        if (!cancelled) {
-          toast.error("Failed to load comments.");
-        }
-      } finally {
-        if (!cancelled) {
-          setCommentsLoading(false);
-        }
-      }
-    }
-
-    void loadInitialComments();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [assetSymbol]);
-
-  // ---------------------------------------------------------------------------
-  // RESET LOCAL PREDICTION DIRECTION
-  //
-  // Important when navigating between assets without a full page reload.
-  // ---------------------------------------------------------------------------
-
-  useEffect(() => {
-    setDirection(null);
-  }, [assetSymbol]);
-
-  // ---------------------------------------------------------------------------
-  // INFINITE SCROLL
-  // ---------------------------------------------------------------------------
-
-  useEffect(() => {
-    const element = loadMoreRef.current;
-
-    if (!element || !nextCursor) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !isLoadingMore) {
-          void loadMoreComments();
-        }
-      },
-      {
-        root: null,
-        rootMargin: "600px 0px",
-        threshold: 0,
-      },
-    );
-
-    observer.observe(element);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [nextCursor, isLoadingMore, loadMoreComments]);
-
-  // ---------------------------------------------------------------------------
-  // PREDICTION UI STATE
-  //
-  // Only calculate prediction-specific values when prediction exists.
-  // ---------------------------------------------------------------------------
-
-  const hasAlreadyVoted =
-    prediction?.selectedVote !== null && prediction?.selectedVote !== undefined;
-
+  const hasAlreadyVoted = prediction?.selectedVote != null;
   const maxBet = prediction ? Math.min(500, prediction.userPoints) : 0;
 
-  const buttonDisabled = prediction ? prediction.isMarketOpen : false;
-
-  const showPredictionInput = prediction
-    ? !hasAlreadyVoted && !prediction.isMarketOpen
-    : false;
-
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
+  const showPredictionInput =
+    prediction !== null && !hasAlreadyVoted && !prediction.isMarketOpen;
 
   return (
     <section className="w-full">
-      {/* Comment count */}
-
       <div className="mb-3 flex items-center gap-2">
         <h2 className="text-[13px] text-zinc-600 dark:text-zinc-500">
           Comment
@@ -393,10 +355,6 @@ export function MarketComments({
 
         <span className="jakarta text-sm text-zinc-500">{totalCount}</span>
       </div>
-
-      {/* --------------------------------------------------------------- */}
-      {/* INPUT                                                           */}
-      {/* --------------------------------------------------------------- */}
 
       {prediction && showPredictionInput ? (
         <PredictionCommentInput
@@ -408,7 +366,7 @@ export function MarketComments({
           maxBet={maxBet}
           currentUser={user}
           isMarketOpen={prediction.isMarketOpen}
-          buttonDisabled={buttonDisabled}
+          buttonDisabled={prediction.isMarketOpen || prediction.isPending}
           submitVote={submitVote}
           targetMs={prediction.targetMs}
           countdownType={prediction.countdownType}
@@ -416,22 +374,6 @@ export function MarketComments({
           isPending={prediction.isPending}
         />
       ) : (
-        /*
-         * Two cases use CommentOnlyInput:
-         *
-         * 1. Prediction asset:
-         *    - already voted
-         *    - market is open
-         *    - prediction is loading
-         *
-         * 2. Non-prediction asset:
-         *    - crypto
-         *    - currency
-         *    - commodity
-         *    - etc.
-         *
-         * For case #2, all prediction-related values are neutral.
-         */
         <CommentOnlyInput
           assetSymbol={assetSymbol}
           targetMs={prediction?.targetMs ?? null}
@@ -443,17 +385,13 @@ export function MarketComments({
         />
       )}
 
-      {/* --------------------------------------------------------------- */}
-      {/* COMMENTS                                                        */}
-      {/* --------------------------------------------------------------- */}
-
-      <div className=" space-y-3">
+      <div className="space-y-3">
         {commentsLoading ? (
-          <div className=" text-center text-sm text-zinc-400 pt-4">
+          <div className="pt-4 text-center text-sm text-zinc-400">
             Loading comments...
           </div>
         ) : comments.length === 0 ? (
-          <div className=" text-center text-sm text-zinc-500 pt-4">
+          <div className="pt-4 text-center text-sm text-zinc-500">
             No comments yet.
           </div>
         ) : (
@@ -466,7 +404,7 @@ export function MarketComments({
 
             const previousIsCurrentSession =
               currentSessionStartMs !== null &&
-              previousComment != null &&
+              previousComment !== undefined &&
               new Date(previousComment.createdAt).getTime() >=
                 currentSessionStartMs;
 
@@ -474,7 +412,7 @@ export function MarketComments({
               index > 0 && previousIsCurrentSession && !isCurrentSession;
 
             return (
-              <div key={comment.id} className=" dark:bg-zinc-900">
+              <div key={comment.id} className="dark:bg-zinc-900">
                 {showSessionBoundary && (
                   <div className="mb-2 border-t border-dashed border-zinc-200 dark:border-zinc-800" />
                 )}
@@ -497,24 +435,20 @@ export function MarketComments({
         )}
       </div>
 
-      {/* --------------------------------------------------------------- */}
-      {/* INFINITE SCROLL                                                 */}
-      {/* --------------------------------------------------------------- */}
-
-      {nextCursor && (
+      {!commentsLoading && nextCursor && (
         <div
           ref={loadMoreRef}
           className="flex h-20 items-center justify-center"
         >
           {isLoadingMore && (
-            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-              <div className="flex items-center gap-1">
-                <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
-
-                <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
-
-                <span className="size-1 animate-bounce rounded-full bg-current" />
-              </div>
+            <div
+              role="status"
+              className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400"
+            >
+              <span className="sr-only">Loading more comments...</span>
+              <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
+              <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
+              <span className="size-1 animate-bounce rounded-full bg-current" />
             </div>
           )}
         </div>
@@ -522,10 +456,6 @@ export function MarketComments({
     </section>
   );
 }
-
-// -----------------------------------------------------------------------------
-// Everything below here stays exactly as it is in your current file.
-// -----------------------------------------------------------------------------
 
 type Comment = MarketPageComments[number];
 

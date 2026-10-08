@@ -258,7 +258,7 @@ export default function UserMenu({
 
               <AvatarFallback
                 className="
-                  bg-zinc-200 text-xs font-semibold
+                  bg-zinc-200 text-lg font-semibold
                   dark:bg-zinc-800
                 "
               >

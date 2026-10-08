@@ -1940,6 +1940,7 @@ export const CommentScalarFieldEnum = {
   id: 'id',
   content: 'content',
   visibility: 'visibility',
+  hasContent: 'hasContent',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   editedAt: 'editedAt',
@@ -2300,6 +2301,13 @@ export type ListEnumContentVisibilityFieldRefInput<$PrismaModel> = FieldRefInput
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'ModerationActionType'
  */
 export type EnumModerationActionTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ModerationActionType'>
@@ -2352,13 +2360,6 @@ export type EnumPredictionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
  * Reference to a field of type 'PredictionStatus[]'
  */
 export type ListEnumPredictionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PredictionStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 

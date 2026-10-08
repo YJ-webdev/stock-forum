@@ -148,6 +148,7 @@ export const CommentScalarFieldEnum = {
   id: 'id',
   content: 'content',
   visibility: 'visibility',
+  hasContent: 'hasContent',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   editedAt: 'editedAt',

@@ -22,12 +22,6 @@ type PredictionInput = {
   sessionDate: Date;
 };
 
-type CreateCommentInput = {
-  content?: JSONContent | null;
-  assetSymbols: string[];
-  prediction?: PredictionInput | null;
-};
-
 async function getCommentById(commentId: string, userId: string) {
   const comment = await prisma.comment.findUnique({
     where: {
@@ -98,6 +92,12 @@ async function getCommentById(commentId: string, userId: string) {
   };
 }
 
+type CreateCommentInput = {
+  content?: JSONContent | null;
+  assetSymbols: string[];
+  prediction?: PredictionInput | null;
+};
+
 export async function createComment({
   content = null,
   assetSymbols,
@@ -164,10 +164,11 @@ export async function createComment({
   // CONTENT
   // ---------------------------------------------------------------------------
 
-  const hasContent =
-    content !== null &&
-    Array.isArray(content.content) &&
-    content.content.length > 0;
+  const hasContent = content !== null && hasEditorContent(content);
+
+  if (!hasContent && !prediction) {
+    throw new Error("Please write a comment or select a GIF.");
+  }
 
   const plainContent = hasContent
     ? (JSON.parse(JSON.stringify(content)) as Prisma.InputJsonValue)
@@ -189,7 +190,8 @@ export async function createComment({
   // The author receives the created comment normally regardless of visibility.
   // ---------------------------------------------------------------------------
 
-  const moderationText = hasContent ? getContentText(content) : "";
+  const moderationText =
+    hasContent && content !== null ? getContentText(content) : "";
 
   const moderationResult = moderateContent(moderationText);
 
@@ -426,15 +428,9 @@ export async function createComment({
       createdComment = await tx.comment.create({
         data: {
           content: commentContent,
-
+          hasContent,
           authorId: userId,
-
           predictionId: createdPrediction?.id ?? null,
-
-          // -------------------------------------------------------------------
-          // AUTO MODERATION VISIBILITY
-          // -------------------------------------------------------------------
-
           visibility: commentVisibility,
 
           assets: {
@@ -511,249 +507,235 @@ export async function getMarketComments(
   cursor?: {
     createdAt: Date;
     id: string;
+    priority: "CONTENT" | "VOTE_ONLY" | "PREVIOUS";
   } | null,
+  currentSessionStartMs: number | null = null,
 ) {
   const session = await auth();
 
   const userId = session?.user?.id ?? null;
   const isAdmin = session?.user?.role === "ADMIN";
 
-  // ---------------------------------------------------------------------------
-  // VISIBILITY
-  //
-  // ADMIN
-  // - all PUBLIC comments
-  // - all PRIVATE comments
-  //
-  // LOGGED-IN USER
-  // - all PUBLIC comments
-  // - their own PRIVATE comments
-  //
-  // GUEST
-  // - PUBLIC comments only
-  // ---------------------------------------------------------------------------
-
-  const commentVisibilityWhere = isAdmin
+  const visibilityWhere = isAdmin
     ? {}
     : userId
       ? {
           OR: [
-            {
-              visibility: "PUBLIC" as const,
-            },
+            { visibility: "PUBLIC" as const },
             {
               visibility: "PRIVATE" as const,
               authorId: userId,
             },
           ],
         }
-      : {
-          visibility: "PUBLIC" as const,
-        };
+      : { visibility: "PUBLIC" as const };
 
-  // ---------------------------------------------------------------------------
-  // REPLY VISIBILITY
-  //
-  // Used for reply counts so PRIVATE replies do not leak through
-  // "{n} replies" to users who cannot see them.
-  // ---------------------------------------------------------------------------
-
-  const replyVisibilityWhere = isAdmin
-    ? {}
-    : userId
-      ? {
-          OR: [
-            {
-              visibility: "PUBLIC" as const,
-            },
-            {
-              visibility: "PRIVATE" as const,
-              authorId: userId,
-            },
-          ],
-        }
-      : {
-          visibility: "PUBLIC" as const,
-        };
-
-  // ---------------------------------------------------------------------------
-  // BASE WHERE
-  // ---------------------------------------------------------------------------
-
-  const baseWhere = {
+  const baseWhere: Prisma.CommentWhereInput = {
     assets: {
-      some: {
-        assetSymbol,
+      some: { assetSymbol },
+    },
+    ...visibilityWhere,
+  };
+
+  const select = {
+    id: true,
+    content: true,
+
+    createdAt: true,
+    updatedAt: true,
+    editedAt: true,
+    withdrawnAt: true,
+    moderatedAt: true,
+
+    author: {
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        nationality: true,
       },
     },
 
-    ...commentVisibilityWhere,
+    prediction: {
+      select: {
+        direction: true,
+        pointsBet: true,
+        status: true,
+      },
+    },
+
+    likes: {
+      where: userId ? { userId } : { userId: { in: [] as string[] } },
+      select: { id: true },
+    },
+
+    _count: {
+      select: {
+        likes: true,
+        replies: {
+          where: visibilityWhere,
+        },
+      },
+    },
+  } satisfies Prisma.CommentSelect;
+
+  type SelectedComment = Prisma.CommentGetPayload<{
+    select: typeof select;
+  }>;
+
+  type Priority = "CONTENT" | "VOTE_ONLY" | "PREVIOUS";
+
+  const orderBy: Prisma.CommentOrderByWithRelationInput[] = [
+    { createdAt: "desc" },
+    { id: "desc" },
+  ];
+
+  const sessionStart =
+    currentSessionStartMs === null ? null : new Date(currentSessionStartMs);
+
+  if (sessionStart && !Number.isFinite(sessionStart.getTime())) {
+    throw new Error("Invalid session start.");
+  }
+
+  const cursorDate = cursor ? new Date(cursor.createdAt) : null;
+
+  if (cursorDate && !Number.isFinite(cursorDate.getTime())) {
+    throw new Error("Invalid comment cursor.");
+  }
+
+  const olderThanCursorWhere: Prisma.CommentWhereInput =
+    cursor && cursorDate
+      ? {
+          OR: [
+            { createdAt: { lt: cursorDate } },
+            {
+              createdAt: cursorDate,
+              id: { lt: cursor.id },
+            },
+          ],
+        }
+      : {};
+
+  const groups: {
+    priority: Priority;
+    where: Prisma.CommentWhereInput;
+  }[] = sessionStart
+    ? [
+        {
+          priority: "CONTENT",
+          where: {
+            createdAt: { gte: sessionStart },
+            OR: [
+              { hasContent: true },
+              { predictionId: null },
+              ...(userId ? [{ authorId: userId }] : []),
+            ],
+          },
+        },
+        {
+          priority: "VOTE_ONLY",
+          where: {
+            createdAt: { gte: sessionStart },
+            hasContent: false,
+            predictionId: { not: null },
+            ...(userId ? { authorId: { not: userId } } : {}),
+          },
+        },
+        {
+          priority: "PREVIOUS",
+          where: {
+            createdAt: { lt: sessionStart },
+          },
+        },
+      ]
+    : [
+        {
+          priority: "PREVIOUS",
+          where: {},
+        },
+      ];
+
+  const fetchComments = async () => {
+    const take = MARKET_COMMENTS_PAGE_SIZE + 1;
+
+    const startIndex = cursor
+      ? groups.findIndex((group) => group.priority === cursor.priority)
+      : 0;
+
+    if (startIndex < 0) {
+      throw new Error("Invalid comment cursor. Reload comments.");
+    }
+
+    const items: {
+      comment: SelectedComment;
+      priority: Priority;
+    }[] = [];
+
+    for (let index = startIndex; index < groups.length; index++) {
+      const group = groups[index];
+
+      const comments = await prisma.comment.findMany({
+        where: {
+          AND: [
+            baseWhere,
+            group.where,
+
+            ...(cursor && index === startIndex ? [olderThanCursorWhere] : []),
+          ],
+        },
+        orderBy,
+        take: take - items.length,
+        select,
+      });
+
+      items.push(
+        ...comments.map((comment) => ({
+          comment,
+          priority: group.priority,
+        })),
+      );
+
+      if (items.length >= take) {
+        break;
+      }
+    }
+
+    return items;
   };
 
-  // ---------------------------------------------------------------------------
-  // QUERY
-  // ---------------------------------------------------------------------------
-
-  const [comments, totalCount] = await Promise.all([
-    prisma.comment.findMany({
-      where: {
-        ...baseWhere,
-
-        ...(cursor
-          ? {
-              AND: [
-                {
-                  OR: [
-                    {
-                      createdAt: {
-                        lt: cursor.createdAt,
-                      },
-                    },
-                    {
-                      createdAt: cursor.createdAt,
-
-                      id: {
-                        lt: cursor.id,
-                      },
-                    },
-                  ],
-                },
-              ],
-            }
-          : {}),
-      },
-
-      orderBy: [
-        {
-          createdAt: "desc",
-        },
-        {
-          id: "desc",
-        },
-      ],
-
-      take: MARKET_COMMENTS_PAGE_SIZE + 1,
-
-      select: {
-        id: true,
-        content: true,
-
-        createdAt: true,
-        updatedAt: true,
-
-        editedAt: true,
-        withdrawnAt: true,
-        moderatedAt: true,
-
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-            nationality: true,
-          },
-        },
-
-        prediction: {
-          select: {
-            direction: true,
-            pointsBet: true,
-            status: true,
-          },
-        },
-
-        // ---------------------------------------------------------------------
-        // CURRENT USER'S LIKE
-        // ---------------------------------------------------------------------
-
-        likes: userId
-          ? {
-              where: {
-                userId,
-              },
-
-              select: {
-                id: true,
-              },
-            }
-          : false,
-
-        // ---------------------------------------------------------------------
-        // COUNTS
-        // ---------------------------------------------------------------------
-
-        _count: {
-          select: {
-            likes: true,
-
-            replies: {
-              where: replyVisibilityWhere,
-            },
-          },
-        },
-      },
-    }),
-
-    // -------------------------------------------------------------------------
-    // TOTAL COUNT
-    //
-    // IMPORTANT:
-    // Uses the same visibility rules as the actual comment query.
-    //
-    // This prevents PRIVATE comments from leaking through the total count.
-    // -------------------------------------------------------------------------
-
+  const [items, totalCount] = await Promise.all([
+    fetchComments(),
     prisma.comment.count({
       where: baseWhere,
     }),
   ]);
 
-  // ---------------------------------------------------------------------------
-  // PAGINATION
-  // ---------------------------------------------------------------------------
+  const hasMore = items.length > MARKET_COMMENTS_PAGE_SIZE;
 
-  const hasMore = comments.length > MARKET_COMMENTS_PAGE_SIZE;
+  const page = hasMore ? items.slice(0, MARKET_COMMENTS_PAGE_SIZE) : items;
 
-  const page = hasMore
-    ? comments.slice(0, MARKET_COMMENTS_PAGE_SIZE)
-    : comments;
+  const lastItem = page.at(-1);
 
-  // ---------------------------------------------------------------------------
-  // NORMALIZE
-  // ---------------------------------------------------------------------------
+  const nextCursor =
+    hasMore && lastItem
+      ? {
+          createdAt: lastItem.comment.createdAt,
+          id: lastItem.comment.id,
+          priority: lastItem.priority,
+        }
+      : null;
 
-  const normalizedComments = page.map((comment) => {
+  const normalizedComments = page.map(({ comment }) => {
     const { _count, likes, ...rest } = comment;
 
     return {
       ...rest,
-
       content: comment.content as JSONContent,
-
       likeCount: _count.likes,
       replyCount: _count.replies,
-
-      likedByMe: Array.isArray(likes) && likes.length > 0,
+      likedByMe: likes.length > 0,
     };
   });
-
-  // ---------------------------------------------------------------------------
-  // NEXT CURSOR
-  // ---------------------------------------------------------------------------
-
-  const lastComment = normalizedComments.at(-1);
-
-  const nextCursor =
-    hasMore && lastComment
-      ? {
-          createdAt: lastComment.createdAt,
-          id: lastComment.id,
-        }
-      : null;
-
-  // ---------------------------------------------------------------------------
-  // RESULT
-  // ---------------------------------------------------------------------------
 
   return {
     comments: normalizedComments,
@@ -773,18 +755,11 @@ export async function deleteComment(commentId: string) {
   }
 
   const comment = await prisma.comment.findUnique({
-    where: {
-      id: commentId,
-    },
-
+    where: { id: commentId },
     select: {
-      id: true,
       authorId: true,
       predictionId: true,
       content: true,
-
-      withdrawnAt: true,
-      moderatedAt: true,
     },
   });
 
@@ -796,10 +771,7 @@ export async function deleteComment(commentId: string) {
     throw new Error("You don't have permission to delete this comment.");
   }
 
-  // ---------------------------------------------------------------------------
-  // PREDICTION COMMENT
-  // ---------------------------------------------------------------------------
-
+  // Keep the prediction and remove only the comment content.
   if (comment.predictionId) {
     const deletedContent: JSONContent = {
       type: "doc",
@@ -825,40 +797,29 @@ export async function deleteComment(commentId: string) {
         .join("")
         .trim() ?? "";
 
-    if (currentText === "Comment deleted by user") {
-      return {
-        success: true,
-        action: "ALREADY_CONTENT_REMOVED" as const,
-        content: deletedContent,
-      };
-    }
+    const alreadyRemoved = currentText === "Comment deleted by user";
 
+    // Also correct hasContent on previously deleted comments.
     await prisma.comment.update({
-      where: {
-        id: commentId,
-      },
-
+      where: { id: commentId },
       data: {
-        content: deletedContent,
+        content: deletedContent as Prisma.InputJsonValue,
+        hasContent: false,
         editedAt: null,
       },
     });
 
     return {
       success: true,
-      action: "CONTENT_REMOVED" as const,
+      action: alreadyRemoved
+        ? ("ALREADY_CONTENT_REMOVED" as const)
+        : ("CONTENT_REMOVED" as const),
       content: deletedContent,
     };
   }
 
-  // ---------------------------------------------------------------------------
-  // NORMAL COMMENT
-  // ---------------------------------------------------------------------------
-
   await prisma.comment.delete({
-    where: {
-      id: commentId,
-    },
+    where: { id: commentId },
   });
 
   return {
@@ -880,17 +841,11 @@ export async function editComment({
     throw new Error("You must be logged in.");
   }
 
-  if (!hasEditorContent(content)) {
-    throw new Error("Comment cannot be empty.");
-  }
-
   const comment = await prisma.comment.findUnique({
-    where: {
-      id: commentId,
-    },
-
+    where: { id: commentId },
     select: {
       authorId: true,
+      predictionId: true,
       withdrawnAt: true,
       moderatedAt: true,
     },
@@ -908,22 +863,31 @@ export async function editComment({
     throw new Error("This comment can no longer be edited.");
   }
 
+  // hasEditorContent must recognize both text and GIF/image nodes.
+  const hasContent = hasEditorContent(content);
+
+  if (!hasContent && !comment.predictionId) {
+    throw new Error("Comment cannot be empty.");
+  }
+
+  const updatedContent: JSONContent = hasContent
+    ? content
+    : { type: "doc", content: [] };
+
   const editedAt = new Date();
 
   await prisma.comment.update({
-    where: {
-      id: commentId,
-    },
-
+    where: { id: commentId },
     data: {
-      content: content as Prisma.InputJsonValue,
+      content: updatedContent as Prisma.InputJsonValue,
+      hasContent,
       editedAt,
     },
   });
 
   return {
     success: true,
-    content,
+    content: updatedContent,
     editedAt,
   };
 }
@@ -1699,6 +1663,12 @@ export async function getCommentReplies(commentId: string) {
 }
 
 export async function reportComment(commentId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Log in to report.");
+  }
+
   const comment = await prisma.comment.findUnique({
     where: {
       id: commentId,
@@ -1765,6 +1735,12 @@ export async function reportComment(commentId: string) {
 }
 
 export async function reportReply(replyId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Log in to report.");
+  }
+
   const reply = await prisma.reply.findUnique({
     where: {
       id: replyId,

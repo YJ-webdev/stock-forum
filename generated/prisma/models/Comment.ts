@@ -27,6 +27,7 @@ export type AggregateComment = {
 export type CommentMinAggregateOutputType = {
   id: string | null
   visibility: $Enums.ContentVisibility | null
+  hasContent: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
   editedAt: Date | null
@@ -39,6 +40,7 @@ export type CommentMinAggregateOutputType = {
 export type CommentMaxAggregateOutputType = {
   id: string | null
   visibility: $Enums.ContentVisibility | null
+  hasContent: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
   editedAt: Date | null
@@ -52,6 +54,7 @@ export type CommentCountAggregateOutputType = {
   id: number
   content: number
   visibility: number
+  hasContent: number
   createdAt: number
   updatedAt: number
   editedAt: number
@@ -66,6 +69,7 @@ export type CommentCountAggregateOutputType = {
 export type CommentMinAggregateInputType = {
   id?: true
   visibility?: true
+  hasContent?: true
   createdAt?: true
   updatedAt?: true
   editedAt?: true
@@ -78,6 +82,7 @@ export type CommentMinAggregateInputType = {
 export type CommentMaxAggregateInputType = {
   id?: true
   visibility?: true
+  hasContent?: true
   createdAt?: true
   updatedAt?: true
   editedAt?: true
@@ -91,6 +96,7 @@ export type CommentCountAggregateInputType = {
   id?: true
   content?: true
   visibility?: true
+  hasContent?: true
   createdAt?: true
   updatedAt?: true
   editedAt?: true
@@ -177,6 +183,7 @@ export type CommentGroupByOutputType = {
   id: string
   content: runtime.JsonValue
   visibility: $Enums.ContentVisibility
+  hasContent: boolean
   createdAt: Date
   updatedAt: Date
   editedAt: Date | null
@@ -211,6 +218,7 @@ export type CommentWhereInput = {
   id?: Prisma.StringFilter<"Comment"> | string
   content?: Prisma.JsonFilter<"Comment">
   visibility?: Prisma.EnumContentVisibilityFilter<"Comment"> | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFilter<"Comment"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Comment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Comment"> | Date | string
   editedAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
@@ -231,6 +239,7 @@ export type CommentOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  hasContent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   editedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -255,6 +264,7 @@ export type CommentWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.CommentWhereInput | Prisma.CommentWhereInput[]
   content?: Prisma.JsonFilter<"Comment">
   visibility?: Prisma.EnumContentVisibilityFilter<"Comment"> | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFilter<"Comment"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Comment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Comment"> | Date | string
   editedAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
@@ -274,6 +284,7 @@ export type CommentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  hasContent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   editedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -293,6 +304,7 @@ export type CommentScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Comment"> | string
   content?: Prisma.JsonWithAggregatesFilter<"Comment">
   visibility?: Prisma.EnumContentVisibilityWithAggregatesFilter<"Comment"> | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolWithAggregatesFilter<"Comment"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Comment"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Comment"> | Date | string
   editedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Comment"> | Date | string | null
@@ -306,6 +318,7 @@ export type CommentCreateInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -324,6 +337,7 @@ export type CommentUncheckedCreateInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -342,6 +356,7 @@ export type CommentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -360,6 +375,7 @@ export type CommentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -378,6 +394,7 @@ export type CommentCreateManyInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -391,6 +408,7 @@ export type CommentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -402,6 +420,7 @@ export type CommentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -425,6 +444,7 @@ export type CommentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  hasContent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   editedAt?: Prisma.SortOrder
@@ -437,6 +457,7 @@ export type CommentCountOrderByAggregateInput = {
 export type CommentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  hasContent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   editedAt?: Prisma.SortOrder
@@ -449,6 +470,7 @@ export type CommentMaxOrderByAggregateInput = {
 export type CommentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  hasContent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   editedAt?: Prisma.SortOrder
@@ -512,6 +534,10 @@ export type CommentUncheckedUpdateManyWithoutAuthorNestedInput = {
 
 export type EnumContentVisibilityFieldUpdateOperationsInput = {
   set?: $Enums.ContentVisibility
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type CommentCreateNestedOneWithoutModerationActionsInput = {
@@ -624,6 +650,7 @@ export type CommentCreateWithoutAuthorInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -641,6 +668,7 @@ export type CommentUncheckedCreateWithoutAuthorInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -687,6 +715,7 @@ export type CommentScalarWhereInput = {
   id?: Prisma.StringFilter<"Comment"> | string
   content?: Prisma.JsonFilter<"Comment">
   visibility?: Prisma.EnumContentVisibilityFilter<"Comment"> | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFilter<"Comment"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Comment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Comment"> | Date | string
   editedAt?: Prisma.DateTimeNullableFilter<"Comment"> | Date | string | null
@@ -700,6 +729,7 @@ export type CommentCreateWithoutModerationActionsInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -717,6 +747,7 @@ export type CommentUncheckedCreateWithoutModerationActionsInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -750,6 +781,7 @@ export type CommentUpdateWithoutModerationActionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -767,6 +799,7 @@ export type CommentUncheckedUpdateWithoutModerationActionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -784,6 +817,7 @@ export type CommentCreateWithoutPredictionInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -801,6 +835,7 @@ export type CommentUncheckedCreateWithoutPredictionInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -834,6 +869,7 @@ export type CommentUpdateWithoutPredictionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -851,6 +887,7 @@ export type CommentUncheckedUpdateWithoutPredictionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -868,6 +905,7 @@ export type CommentCreateWithoutAssetsInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -885,6 +923,7 @@ export type CommentUncheckedCreateWithoutAssetsInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -918,6 +957,7 @@ export type CommentUpdateWithoutAssetsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -935,6 +975,7 @@ export type CommentUncheckedUpdateWithoutAssetsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -952,6 +993,7 @@ export type CommentCreateWithoutRepliesInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -969,6 +1011,7 @@ export type CommentUncheckedCreateWithoutRepliesInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -1002,6 +1045,7 @@ export type CommentUpdateWithoutRepliesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1019,6 +1063,7 @@ export type CommentUncheckedUpdateWithoutRepliesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1036,6 +1081,7 @@ export type CommentCreateWithoutLikesInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -1053,6 +1099,7 @@ export type CommentUncheckedCreateWithoutLikesInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -1086,6 +1133,7 @@ export type CommentUpdateWithoutLikesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1103,6 +1151,7 @@ export type CommentUncheckedUpdateWithoutLikesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1120,6 +1169,7 @@ export type CommentCreateWithoutNotificationsInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -1137,6 +1187,7 @@ export type CommentUncheckedCreateWithoutNotificationsInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -1170,6 +1221,7 @@ export type CommentUpdateWithoutNotificationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1187,6 +1239,7 @@ export type CommentUncheckedUpdateWithoutNotificationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1204,6 +1257,7 @@ export type CommentCreateManyAuthorInput = {
   id?: string
   content: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: $Enums.ContentVisibility
+  hasContent?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   editedAt?: Date | string | null
@@ -1216,6 +1270,7 @@ export type CommentUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1233,6 +1288,7 @@ export type CommentUncheckedUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1250,6 +1306,7 @@ export type CommentUncheckedUpdateManyWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
+  hasContent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1329,6 +1386,7 @@ export type CommentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   id?: boolean
   content?: boolean
   visibility?: boolean
+  hasContent?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   editedAt?: boolean
@@ -1350,6 +1408,7 @@ export type CommentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   id?: boolean
   content?: boolean
   visibility?: boolean
+  hasContent?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   editedAt?: boolean
@@ -1365,6 +1424,7 @@ export type CommentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   id?: boolean
   content?: boolean
   visibility?: boolean
+  hasContent?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   editedAt?: boolean
@@ -1380,6 +1440,7 @@ export type CommentSelectScalar = {
   id?: boolean
   content?: boolean
   visibility?: boolean
+  hasContent?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   editedAt?: boolean
@@ -1389,7 +1450,7 @@ export type CommentSelectScalar = {
   predictionId?: boolean
 }
 
-export type CommentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "visibility" | "createdAt" | "updatedAt" | "editedAt" | "withdrawnAt" | "moderatedAt" | "authorId" | "predictionId", ExtArgs["result"]["comment"]>
+export type CommentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "visibility" | "hasContent" | "createdAt" | "updatedAt" | "editedAt" | "withdrawnAt" | "moderatedAt" | "authorId" | "predictionId", ExtArgs["result"]["comment"]>
 export type CommentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   prediction?: boolean | Prisma.Comment$predictionArgs<ExtArgs>
@@ -1424,6 +1485,7 @@ export type $CommentPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     id: string
     content: runtime.JsonValue
     visibility: $Enums.ContentVisibility
+    hasContent: boolean
     createdAt: Date
     updatedAt: Date
     editedAt: Date | null
@@ -1864,6 +1926,7 @@ export interface CommentFieldRefs {
   readonly id: Prisma.FieldRef<"Comment", 'String'>
   readonly content: Prisma.FieldRef<"Comment", 'Json'>
   readonly visibility: Prisma.FieldRef<"Comment", 'ContentVisibility'>
+  readonly hasContent: Prisma.FieldRef<"Comment", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Comment", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Comment", 'DateTime'>
   readonly editedAt: Prisma.FieldRef<"Comment", 'DateTime'>

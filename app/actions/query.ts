@@ -19,34 +19,6 @@ export interface PopularBoard {
   newCommentCount: number;
 }
 
-export interface MostLikedComment {
-  id: string;
-  content: JSONContent;
-
-  createdAt: Date;
-  updatedAt: Date;
-
-  author: {
-    id: string;
-    name: string | null;
-    image: string | null;
-    nationality: string | null;
-  };
-
-  assets: {
-    asset: {
-      name: string;
-      symbol: string;
-      displaySymbol: string | null;
-    };
-  }[];
-
-  _count: {
-    likes: number;
-    replies: number;
-  };
-}
-
 export interface PanelLeftData {
   comments: MostLikedComment[];
   popularBoards: PopularBoard[];
@@ -223,6 +195,34 @@ export async function getPopularBoards(limit = 7): Promise<PopularBoard[]> {
 // Most liked comments
 // -----------------------------------------------------------------------------
 
+export interface MostLikedComment {
+  id: string;
+  content: JSONContent;
+
+  createdAt: Date;
+  updatedAt: Date;
+
+  author: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    nationality: string | null;
+  };
+
+  assets: {
+    asset: {
+      name: string;
+      symbol: string;
+      displaySymbol: string | null;
+    };
+  }[];
+
+  _count: {
+    likes: number;
+    replies: number;
+  };
+}
+
 export async function getMostLikedComments(
   limit = 5,
 ): Promise<MostLikedComment[]> {
@@ -232,6 +232,8 @@ export async function getMostLikedComments(
 
   const comments = await prisma.comment.findMany({
     where: {
+      hasContent: true,
+      visibility: "PUBLIC",
       withdrawnAt: null,
       moderatedAt: null,
 
