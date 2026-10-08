@@ -213,8 +213,7 @@ export default function MarketPageClient({
 
   const canPredict = selectedAssetType === "index";
 
-  const chartInterval =
-    activeRange === "1D" ? (showDetailChart ? "1m" : "15m") : undefined;
+  const chartInterval = activeRange === "1D" ? "1m" : undefined;
 
   const { data, error } = useMarketQuote(
     selectedSymbol,
@@ -620,7 +619,7 @@ export default function MarketPageClient({
         <div className="relative mt-4 w-full space-y-2 px-4 pb-2">
           <div className="mb-2 flex w-full flex-col gap-2">
             <Skeleton className="h-8 w-44 rounded-xl" />
-            <Skeleton className="h-5 w-36 rounded-full" />
+            <Skeleton className="h-4 w-36 rounded-full" />
           </div>
         </div>
       )}
