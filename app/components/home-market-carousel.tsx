@@ -15,8 +15,6 @@ import {
   ChevronLast,
   ChevronLeft,
   ChevronRight,
-  Plus,
-  Pin,
 } from "lucide-react";
 import { PiPlusMinus } from "react-icons/pi";
 
@@ -288,49 +286,26 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
       <div className="group/markets relative mt-4 min-h-[254.5px] w-full min-w-0">
         {isEmpty ? (
           <div className="h-[254.5px] w-full px-4">
-            <div className="outfit flex h-full w-full items-center justify-center rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50/60 dark:border-zinc-700 dark:bg-zinc-800/20">
-              <div className="flex flex-col items-center text-center">
-                <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-                  <Pin
-                    className="size-5 text-zinc-500 dark:text-zinc-400"
-                    strokeWidth={1.5}
-                    aria-hidden="true"
-                  />
-                </div>
-
-                <p className="text-[18px] font-normal text-zinc-900 dark:text-zinc-300">
-                  Your markets, all in one place
-                </p>
-
-                <p className="mt-1 text-xs font-light text-zinc-500 dark:text-zinc-400">
-                  Add markets to follow prices and community sentiment.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={openPicker}
-                  aria-haspopup="dialog"
-                  className="
-                    mt-4 inline-flex h-9 cursor-pointer
-                    items-center justify-center gap-1.5
-                    rounded-md border border-zinc-200 bg-white px-3
-                    text-sm font-normal text-zinc-900 transition-colors
-                    hover:bg-zinc-100
-                    focus-visible:outline-none focus-visible:ring-2
-                    focus-visible:ring-zinc-400
-                    dark:border-zinc-700 dark:bg-zinc-900
-                    dark:text-zinc-300 dark:hover:bg-zinc-800
-                  "
-                >
-                  <Plus
-                    className="size-4"
-                    strokeWidth={1.5}
-                    aria-hidden="true"
-                  />
-                  Add markets
-                </button>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={openPicker}
+              aria-haspopup="dialog"
+              className="
+                      outfit flex h-60 w-full shrink-0 cursor-pointer
+                      flex-col items-center justify-center gap-2
+                      rounded-xl border-2 border-dashed border-zinc-200
+                      bg-zinc-50/60 text-sm text-zinc-500 transition-colors
+                     
+                      focus-visible:outline-none focus-visible:ring-2
+                      focus-visible:ring-zinc-400
+                      dark:border-zinc-700 dark:bg-zinc-800/20
+                      dark:text-zinc-400 
+                    "
+            >
+              {" "}
+              <PiPlusMinus className="size-5 shrink-0" aria-hidden="true" />
+              Manage watchlist
+            </button>
           </div>
         ) : (
           <>
