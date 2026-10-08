@@ -230,7 +230,7 @@ export default function UserMenu({
         }
       >
         {unreadCount > 0 && (
-          <div className="absolute rounded-full w-2.5 h-2.5 bg-yellow-200  top-1.5 -left-1 size-5" />
+          <div className="absolute z-10 rounded-full w-2.5 h-2.5 bg-yellow-200  top-1.5 -left-1 size-5" />
         )}
 
         <div className="relative flex items-center gap-2">
