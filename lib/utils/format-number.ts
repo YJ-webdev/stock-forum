@@ -41,3 +41,16 @@ export function formatPercentChange(changePercent: number): string {
   const sign = changePercent > 0 ? "+" : "";
   return `${sign}${changePercent.toFixed(2)}%`;
 }
+
+export function formatChange(value: string) {
+  const number = Number(value.replaceAll(",", ""));
+
+  if (!Number.isFinite(number)) {
+    return value;
+  }
+
+  return `${number >= 0 ? "+" : ""}${number.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}

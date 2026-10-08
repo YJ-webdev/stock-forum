@@ -14,6 +14,7 @@ import { MarketVoteButton } from "./market-vote-button";
 import { MarketSentiment } from "./market-sentiment";
 import { RollingPrice } from "./rolling-price";
 import { SparklineLoading } from "./sparkline-loading";
+import { formatChange } from "@/lib/utils/format-number";
 
 interface BullBearVoteCardProps {
   market: HomeMarketItem;
@@ -176,7 +177,7 @@ export function BullBearVoteCard({
           className={`jakarta min-h-5 pl-3 text-sm font-medium dark:font-[450] tabular-nums ${changeColor}`}
         >
           {data ? (
-            `${data.change} (${data.percent})`
+            `${formatChange(data.change)} (${data.percent})`
           ) : loading ? (
             <RollingPrice />
           ) : (
