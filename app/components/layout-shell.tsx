@@ -95,7 +95,7 @@ export default function LayoutShell({
   }, [pathname]);
 
   useEffect(() => {
-    const media = window.matchMedia("(min-width: 768px)");
+    const media = window.matchMedia("(min-width: 1024px)");
 
     function updateSectionB() {
       panelBRef.current?.resize(media.matches ? "30%" : "0%");
@@ -121,7 +121,7 @@ export default function LayoutShell({
   }, []);
 
   function handleToggleLeftPanel() {
-    if (window.innerWidth >= 1280) {
+    if (window.innerWidth >= 640) {
       setIsDesktopPanelOpen((current) => !current);
       return;
     }
@@ -137,7 +137,7 @@ export default function LayoutShell({
   function resetPanelB() {
     setIsMobilePanelOpen(false);
 
-    if (window.innerWidth >= 768) {
+    if (window.matchMedia("(min-width: 1024px)").matches) {
       panelBRef.current?.resize("30%");
     }
   }
@@ -226,14 +226,14 @@ export default function LayoutShell({
 
           {/* Navbar 아래의 남은 높이를 모든 패널이 공유 */}
           <div
-            className={`min-h-0 min-w-0 flex-1 overflow-hidden xl:grid xl:transition-[grid-template-columns] xl:duration-300 xl:ease-out ${
+            className={`min-h-0 min-w-0 flex-1 overflow-hidden sm:grid sm:transition-[grid-template-columns] sm:duration-300 sm:ease-out ${
               isDesktopPanelOpen
-                ? "xl:grid-cols-[320px_minmax(0,1fr)]"
-                : "xl:grid-cols-[0px_minmax(0,1fr)]"
+                ? "sm:grid-cols-[320px_minmax(0,1fr)]"
+                : "sm:grid-cols-[0px_minmax(0,1fr)]"
             }`}
           >
             {/* Desktop PanelLeft: 기존 grid 토글 유지 */}
-            <div className="hidden h-full min-h-0 min-w-0 overflow-hidden xl:block">
+            <div className="hidden h-full min-h-0 min-w-0 overflow-hidden sm:block">
               <Suspense fallback={<SideDataLoading />}>
                 <PanelLeftStream sideDataPromise={sideDataPromise} />
               </Suspense>
@@ -260,7 +260,7 @@ export default function LayoutShell({
                   </section>
                 </ResizablePanel>
 
-                <ResizableHandle className="hidden w-0 border-gray-50 md:flex" />
+                <ResizableHandle className="hidden w-0 border-gray-50 lg:flex" />
 
                 <ResizablePanel
                   panelRef={panelBRef}
@@ -268,7 +268,7 @@ export default function LayoutShell({
                   minSize="0%"
                   className="z-2 min-h-0 min-w-0 overflow-hidden border-l border-gray-100 bg-white dark:border-zinc-800 dark:bg-zinc-900"
                 >
-                  <div className="hidden h-full min-h-0 min-w-0 flex-col overflow-hidden md:flex">
+                  <div className="hidden h-full min-h-0 min-w-0 flex-col overflow-hidden lg:flex">
                     {/* 오른쪽 콘텐츠만 스크롤 */}
                     <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
                       {user && onWrite && (
@@ -309,7 +309,16 @@ export default function LayoutShell({
           </div>
 
           {mobilePanelOpen && (
-            <div className="fixed inset-x-0 bottom-0 top-18 z-40 flex min-h-0 flex-col overflow-hidden bg-white md:hidden dark:bg-zinc-900">
+            <div
+              className="
+    fixed inset-x-0 bottom-0 top-18 z-40
+    flex min-h-0 flex-col overflow-hidden
+    bg-white dark:bg-zinc-900
+    sm:left-auto sm:w-3/5 sm:shadow-2xl
+    lg:hidden
+  "
+            >
+              {" "}
               <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
                 {user && onWrite && <PostEditor setOnWrite={setOnWrite} />}
 
@@ -328,7 +337,6 @@ export default function LayoutShell({
                   <WatchlistPanel setOnFavotites={setOnFavotites} />
                 )}
               </div>
-
               <Footer />
             </div>
           )}

@@ -39,7 +39,7 @@ export default function PanelLeftMobile({
         border-r border-zinc-100 bg-white
         transition-transform duration-300 ease-out
         dark:border-zinc-800 dark:bg-zinc-900
-        xl:hidden
+        sm:hidden
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
       `}
     >

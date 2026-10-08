@@ -321,9 +321,8 @@ export default function UserMenu({
         </DropdownMenuGroup>
 
         {/* ModeToggle already renders its own button. */}
-        <div className="flex h-11 items-center px-2 text-[15px] sm:hidden">
-          <ModeToggle />
-          <span>Mode</span>
+        <div className="flex h-11 w-full items-center  text-[15px] sm:hidden">
+          <ModeToggle text="Mode" />
         </div>
 
         <DropdownMenuSeparator />

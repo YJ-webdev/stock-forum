@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 
 import type { SelectedRange } from "../hooks/useMarketQuote";
 
@@ -27,7 +33,7 @@ export default function MarketOverview({
   onSearchResultsChange,
   onNavigate,
 }: MarketOverviewProps) {
-  const MARKET_CATEGORIES: Record<string, MarketSymbolItem[]> = useMemo(
+  const marketCategories: Record<string, MarketSymbolItem[]> = useMemo(
     () => ({
       ...MARKET_SYMBOLS,
       Crypto: CRYPTO_SYMBOLS,
@@ -37,11 +43,14 @@ export default function MarketOverview({
     [],
   );
 
-  const categories = Object.keys(MARKET_CATEGORIES);
+  const categories = Object.keys(marketCategories);
 
   const [activeTab, setActiveTab] = useState("America");
   const [isBrowsingCategory, setIsBrowsingCategory] = useState(false);
   const [, setActiveRange] = useState<SelectedRange>("1D");
+
+  const overviewRef = useRef<HTMLDivElement>(null);
+  const categoriesRef = useRef<HTMLDivElement>(null);
 
   const categoryHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -62,39 +71,29 @@ export default function MarketOverview({
 
     const seen = new Set<string>();
 
-    for (const [category, items] of Object.entries(MARKET_CATEGORIES)) {
+    for (const [category, items] of Object.entries(marketCategories)) {
       for (const item of items) {
         if (seen.has(item.symbol)) {
           continue;
         }
 
-        const symbol = item.symbol.toLowerCase();
-        const displaySymbol = item.displaySymbol?.toLowerCase() ?? "";
-        const name = item.name.toLowerCase();
-
-        const matches =
-          symbol.includes(normalizedQuery) ||
-          displaySymbol.includes(normalizedQuery) ||
-          name.includes(normalizedQuery);
+        const matches = [item.symbol, item.displaySymbol ?? "", item.name].some(
+          (value) => value.toLowerCase().includes(normalizedQuery),
+        );
 
         if (!matches) {
           continue;
         }
 
         seen.add(item.symbol);
-
-        results.push({
-          item,
-          category,
-        });
+        results.push({ item, category });
       }
     }
 
     return results;
-  }, [MARKET_CATEGORIES, normalizedQuery]);
+  }, [marketCategories, normalizedQuery]);
 
   const matchedCategory = searchResults[0]?.category ?? null;
-
   const isSearching = hasQuery && !isBrowsingCategory;
 
   useEffect(() => {
@@ -102,49 +101,67 @@ export default function MarketOverview({
   }, [normalizedQuery]);
 
   useEffect(() => {
-    if (!isSearching || !matchedCategory) {
-      return;
+    if (isSearching && matchedCategory) {
+      setActiveTab(matchedCategory);
     }
-
-    setActiveTab(matchedCategory);
   }, [isSearching, matchedCategory]);
 
   useEffect(() => {
-    if (!onSearchResultsChange) {
-      return;
-    }
-
-    if (!isSearching) {
-      onSearchResultsChange([]);
-      return;
-    }
-
-    onSearchResultsChange(searchResults.map((result) => result.item.symbol));
+    onSearchResultsChange?.(
+      isSearching ? searchResults.map((result) => result.item.symbol) : [],
+    );
   }, [isSearching, searchResults, onSearchResultsChange]);
+
+  // Reveal the active category without moving the page vertically.
+  useEffect(() => {
+    const container = categoriesRef.current;
+    const activeButton = container?.querySelector<HTMLButtonElement>(
+      '[data-active-category="true"]',
+    );
+
+    if (!container || !activeButton) {
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeButton.getBoundingClientRect();
+    const padding = 12;
+
+    if (buttonRect.left < containerRect.left + padding) {
+      container.scrollLeft -= containerRect.left + padding - buttonRect.left;
+    } else if (buttonRect.right > containerRect.right - padding) {
+      container.scrollLeft += buttonRect.right - containerRect.right + padding;
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     return () => {
-      if (categoryHoverTimerRef.current) {
+      if (categoryHoverTimerRef.current !== null) {
         clearTimeout(categoryHoverTimerRef.current);
       }
     };
   }, []);
 
-  const handleCategorySelect = (category: string) => {
-    if (categoryHoverTimerRef.current) {
+  function clearCategoryHoverTimer() {
+    if (categoryHoverTimerRef.current !== null) {
       clearTimeout(categoryHoverTimerRef.current);
       categoryHoverTimerRef.current = null;
     }
+  }
 
+  function handleCategorySelect(category: string) {
+    clearCategoryHoverTimer();
     setActiveTab(category);
     setIsBrowsingCategory(true);
-  };
+  }
 
-  const handleCategoryMouseEnter = (category: string) => {
-    if (categoryHoverTimerRef.current) {
-      clearTimeout(categoryHoverTimerRef.current);
-      categoryHoverTimerRef.current = null;
+  function handleCategoryMouseEnter(category: string) {
+    // Touch devices select categories by tapping.
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      return;
     }
+
+    clearCategoryHoverTimer();
 
     if (!hasQuery) {
       setActiveTab(category);
@@ -156,26 +173,15 @@ export default function MarketOverview({
       setIsBrowsingCategory(true);
       categoryHoverTimerRef.current = null;
     }, 1000);
-  };
+  }
 
-  const handleCategoryMouseLeave = () => {
-    if (categoryHoverTimerRef.current) {
-      clearTimeout(categoryHoverTimerRef.current);
-      categoryHoverTimerRef.current = null;
-    }
-  };
-
-  const handleCategoryKeyDown = (
-    event: React.KeyboardEvent<HTMLButtonElement>,
-  ) => {
+  function handleCategoryKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key === "ArrowUp") {
       event.preventDefault();
 
-      const searchInput = document.querySelector<HTMLInputElement>(
-        "#market-search-input",
-      );
-
-      searchInput?.focus();
+      document
+        .querySelector<HTMLInputElement>("#market-search-input")
+        ?.focus({ preventScroll: true });
 
       return;
     }
@@ -183,98 +189,161 @@ export default function MarketOverview({
     if (event.key === "ArrowDown") {
       event.preventDefault();
 
-      const firstRow = document.querySelector<HTMLTableRowElement>(
-        '[data-market-row="true"]',
-      );
-
-      firstRow?.focus();
+      overviewRef.current
+        ?.querySelector<HTMLTableRowElement>('[data-market-row="true"]')
+        ?.focus({ preventScroll: true });
 
       return;
     }
 
-    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-      event.preventDefault();
-
-      const categoryButtons = Array.from(
-        document.querySelectorAll<HTMLButtonElement>(
-          '[data-market-category="true"]',
-        ),
-      );
-
-      const currentIndex = categoryButtons.indexOf(event.currentTarget);
-
-      if (currentIndex === -1) {
-        return;
-      }
-
-      const nextIndex =
-        event.key === "ArrowRight"
-          ? (currentIndex + 1) % categoryButtons.length
-          : (currentIndex - 1 + categoryButtons.length) %
-            categoryButtons.length;
-
-      categoryButtons[nextIndex]?.focus();
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+      return;
     }
-  };
+
+    event.preventDefault();
+
+    const buttons = Array.from(
+      categoriesRef.current?.querySelectorAll<HTMLButtonElement>(
+        '[data-market-category="true"]',
+      ) ?? [],
+    );
+
+    const currentIndex = buttons.indexOf(event.currentTarget);
+
+    if (currentIndex === -1 || buttons.length === 0) {
+      return;
+    }
+
+    const direction = event.key === "ArrowRight" ? 1 : -1;
+    const nextIndex =
+      (currentIndex + direction + buttons.length) % buttons.length;
+
+    const nextButton = buttons[nextIndex];
+
+    nextButton?.focus({ preventScroll: true });
+
+    const container = categoriesRef.current;
+
+    if (container && nextButton) {
+      const containerRect = container.getBoundingClientRect();
+      const buttonRect = nextButton.getBoundingClientRect();
+
+      if (buttonRect.left < containerRect.left) {
+        container.scrollLeft -= containerRect.left - buttonRect.left + 12;
+      } else if (buttonRect.right > containerRect.right) {
+        container.scrollLeft += buttonRect.right - containerRect.right + 12;
+      }
+    }
+  }
 
   const displayedItems = isSearching
     ? searchResults.map((result) => result.item)
-    : (MARKET_CATEGORIES[activeTab] ?? []);
+    : (marketCategories[activeTab] ?? []);
 
   return (
-    <div className="mx-auto w-full max-w-6xl bg-zinc-100 md:bg-white dark:bg-zinc-800">
-      <div className="flex flex-col gap-3 md:mx-4">
-        <div className="flex flex-wrap justify-start gap-2 px-2 md:space-x-0 md:px-0">
-          {categories.map((category) => {
-            const isActive = activeTab === category;
+    <div
+      ref={overviewRef}
+      className="
+        mx-auto w-full min-w-0 max-w-6xl
+        bg-zinc-100 md:bg-white dark:bg-zinc-800
+      "
+    >
+      <div className="flex min-w-0 flex-col gap-3 md:mx-4">
+        <div
+          className="
+            sticky top-0 z-10
+            bg-zinc-100 pb-2
+            md:static md:bg-white md:pb-0
+            dark:bg-zinc-800
+          "
+        >
+          <div
+            ref={categoriesRef}
+            role="group"
+            aria-label="Market categories"
+            className="
+              flex min-w-0 flex-nowrap items-center gap-1
+              overflow-x-auto overscroll-x-contain
+              px-3
+              scrollbar-none
+              [&::-webkit-scrollbar]:hidden
+              md:flex-wrap md:gap-2 md:overflow-visible md:px-0
+            "
+          >
+            {categories.map((category) => {
+              const isActive = activeTab === category;
 
-            return (
-              <button
-                key={category}
-                type="button"
-                data-market-category="true"
-                data-active-category={isActive ? "true" : "false"}
-                onMouseEnter={() => handleCategoryMouseEnter(category)}
-                onMouseLeave={handleCategoryMouseLeave}
-                onClick={() => handleCategorySelect(category)}
-                onKeyDown={handleCategoryKeyDown}
-                className={`
-                  cursor-pointer rounded-full
-                  px-2 py-1 md:py-1.75
-                  text-sm font-medium uppercase
-                  transition-all
-                  md:px-4
-                  
-                  ${
-                    isActive
-                      ? `
-                        text-black
-                        dark:text-zinc-100
-                      `
-                      : `
-                        text-zinc-500
-                        dark:text-zinc-400
-                      `
-                  }
-                `}
-              >
-                {category.replaceAll("_", " ")}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  data-market-category="true"
+                  data-active-category={isActive ? "true" : "false"}
+                  aria-pressed={isActive}
+                  onMouseEnter={() => handleCategoryMouseEnter(category)}
+                  onMouseLeave={clearCategoryHoverTimer}
+                  onClick={() => handleCategorySelect(category)}
+                  onKeyDown={handleCategoryKeyDown}
+                  className={`
+                    flex min-h-11 shrink-0 cursor-pointer
+                    items-center justify-center
+                    whitespace-nowrap rounded-full
+                    px-3 text-sm font-medium uppercase
+                    transition-colors
+                    focus-visible:outline-none
+                    focus-visible:ring-2
+                    focus-visible:ring-inset
+                    focus-visible:ring-zinc-400
+                    md:min-h-10 md:px-4
+                    ${
+                      isActive
+                        ? `
+                          bg-zinc-200/80 text-zinc-950
+                          md:bg-transparent
+                          dark:bg-zinc-700/70 dark:text-zinc-100
+                          dark:md:bg-transparent
+                        `
+                        : `
+                          text-zinc-500
+                          hover:text-zinc-900
+                          dark:text-zinc-400
+                          dark:hover:text-zinc-100
+                        `
+                    }
+                  `}
+                >
+                  {category.replaceAll("_", " ")}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {isSearching && displayedItems.length === 0 ? (
-          <div className="flex min-h-32 items-center justify-center px-4 text-sm text-zinc-500 dark:text-zinc-400">
-            No markets found
+          <div
+            role="status"
+            className="
+              flex min-h-40 flex-col items-center justify-center
+              gap-1 px-5 text-center
+            "
+          >
+            <p className="text-[15px] font-medium text-zinc-700 dark:text-zinc-200">
+              No markets found
+            </p>
+
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Try another market name or symbol.
+            </p>
           </div>
         ) : (
-          <RelativeStocks
-            items={displayedItems}
-            setActiveRange={setActiveRange}
-            selectedIndex={isSearching ? selectedIndex : -1}
-            onNavigate={onNavigate}
-          />
+          <div className="min-w-0 pb-[env(safe-area-inset-bottom)] md:pb-0">
+            <RelativeStocks
+              items={displayedItems}
+              setActiveRange={setActiveRange}
+              selectedIndex={isSearching ? selectedIndex : -1}
+              onNavigate={onNavigate}
+            />
+          </div>
         )}
       </div>
     </div>

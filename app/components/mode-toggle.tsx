@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 const emptySubscribe = () => () => {};
 
-export function ModeToggle() {
+export function ModeToggle({ text }: { text?: string }) {
   const { setTheme, resolvedTheme } = useTheme();
   // Returns true on the client after mount, false on the server
   const mounted = React.useSyncExternalStore(
@@ -26,7 +26,7 @@ export function ModeToggle() {
     <Button
       variant="default"
       onClick={toggleTheme}
-      className="flex items-center text-auto bg-transparent hover:bg-transparent cursor-pointer"
+      className="flex items-center w-full justify-end text-auto bg-transparent hover:bg-transparent cursor-pointer"
     >
       {!mounted ? (
         // Placeholder to prevent hydration shift
@@ -42,7 +42,10 @@ export function ModeToggle() {
           strokeWidth={1.75}
         />
       )}
-      <span className="sr-only">Toggle theme</span>
+
+      {text && (
+        <span className="mr-auto pl-2.5 text-[15px] font-normal">{text}</span>
+      )}
     </Button>
   );
 }

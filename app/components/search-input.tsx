@@ -179,7 +179,7 @@ export default function SearchInput({
 
       const panelTop = panel.getBoundingClientRect().top;
 
-      setPanelMaxHeight(Math.max(0, Math.floor(visibleBottom - panelTop - 8)));
+      setPanelMaxHeight(Math.max(0, Math.floor(visibleBottom - panelTop)));
     }
 
     function schedulePanelUpdate() {
@@ -371,10 +371,15 @@ export default function SearchInput({
           <div
             ref={searchPanelRef}
             id="market-search-results"
-            style={{
-              maxHeight: panelMaxHeight ?? undefined,
-            }}
+            style={
+              {
+                maxHeight: panelMaxHeight ?? undefined,
+                "--search-panel-height":
+                  panelMaxHeight !== null ? `${panelMaxHeight}px` : undefined,
+              } as React.CSSProperties
+            }
             className="
+            h-(--search-panel-height) md:h-auto
               fixed inset-x-0 bottom-0 top-18
               z-40! flex min-h-0 flex-col
               overflow-hidden overscroll-contain
