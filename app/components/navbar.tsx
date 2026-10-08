@@ -245,7 +245,7 @@ export default function UserMenu({
         <div className="relative flex items-center gap-2">
           <div className="flex items-center justify-center">
             <Avatar
-              className={`h-12 w-12 ${
+              className={`h-12 w-12 hover:grayscale-0 ${
                 isUserMenuOpen ? "grayscale-0" : "grayscale"
               }`}
             >
