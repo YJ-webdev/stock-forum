@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/resizable";
 
 import { Navbar } from "./navbar";
-import { Footer } from "./footer";
 import { BreadCrumbs } from "./breadcrumbs";
 import { SideDataLoading } from "./side-data-loading";
 import PanelLeftStream from "./panel-left-stream";
@@ -72,7 +71,7 @@ export default function LayoutShell({
   const pathname = usePathname();
 
   const panelBRef = useRef<PanelImperativeHandle>(null);
-  const mainScrollRef = useRef<HTMLElement>(null);
+  const mainScrollRef = useRef<HTMLDivElement>(null);
 
   const [layoutReady, setLayoutReady] = useState(false);
 
@@ -185,7 +184,7 @@ export default function LayoutShell({
     if (!user) return null;
 
     if (onWrite) {
-      return <PostEditor setOnWrite={setOnWrite} />;
+      return <PostEditor userId={user.id} setOnWrite={setOnWrite} />;
     }
 
     if (onAccount) {
@@ -199,10 +198,6 @@ export default function LayoutShell({
           setOnNotification={setOnNotification}
         />
       );
-    }
-
-    if (onFavotites) {
-      return <WatchlistPanel setOnFavotites={setOnFavotites} />;
     }
 
     return null;
@@ -275,19 +270,23 @@ export default function LayoutShell({
                   minSize="30%"
                   className="min-h-0 min-w-0 overflow-hidden"
                 >
-                  <section
+                  <div
                     ref={mainScrollRef}
                     className="
-                      h-full min-h-0 w-full min-w-0
-                      overflow-x-hidden overflow-y-auto
-                      bg-white pb-14 dark:bg-zinc-900
-                    "
+    h-full min-h-0 w-full min-w-0
+    overflow-x-hidden overflow-y-auto
+    bg-white dark:bg-zinc-900
+  "
                   >
-                    <div className="min-h-full">
+                    <div
+                      className={`min-h-full ${
+                        pathname === "/" ? "flex flex-col" : "pb-14"
+                      }`}
+                    >
                       {pathname !== "/" && <BreadCrumbs />}
                       {children}
                     </div>
-                  </section>
+                  </div>
                 </ResizablePanel>
 
                 <ResizableHandle className="hidden w-0 border-gray-50 lg:flex" />
@@ -315,8 +314,6 @@ export default function LayoutShell({
                         </Suspense>
                       )}
                     </div>
-
-                    <Footer />
                   </div>
                 </ResizablePanel>
               </ResizablePanelGroup>
@@ -336,8 +333,6 @@ export default function LayoutShell({
               <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
                 {renderActivePanel()}
               </div>
-
-              <Footer />
             </div>
           )}
         </div>

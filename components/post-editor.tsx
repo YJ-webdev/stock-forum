@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { JSONContent } from "@tiptap/react";
 import { Search, X } from "lucide-react";
@@ -14,73 +22,134 @@ import {
   ALL_MARKET_SYMBOLS,
   type MarketSymbolItem,
 } from "@/lib/data/market-symbols";
+import { hasEditorContent } from "@/lib/utils/tiptap-utils";
 
 interface PostEditorProps {
-  setOnWrite: React.Dispatch<React.SetStateAction<boolean>>;
+  userId: string;
+  setOnWrite: Dispatch<SetStateAction<boolean>>;
+}
+
+interface PostDraft {
+  version: 1;
+  content: JSONContent;
+  assetSymbols: string[];
 }
 
 const RECENT_ASSETS_KEY = "recent-post-assets";
 const MAX_RECENT_ASSETS = 5;
 
-export function PostEditor({ setOnWrite }: PostEditorProps) {
-  const params = useParams<{ symbol: string }>();
-
-  const symbol = params.symbol ? decodeURIComponent(params.symbol) : "";
-
-  const topicRef = useRef<HTMLDivElement>(null);
-
-  const [content, setContent] = useState<JSONContent>({
+function createEmptyContent(): JSONContent {
+  return {
     type: "doc",
     content: [{ type: "paragraph" }],
-  });
+  };
+}
 
+function isEditorDocument(value: unknown): value is JSONContent {
+  if (!value || typeof value !== "object") return false;
+
+  const node = value as Record<string, unknown>;
+
+  return node.type === "doc" && Array.isArray(node.content);
+}
+
+export function PostEditor({ userId, setOnWrite }: PostEditorProps) {
+  const params = useParams<{ symbol?: string }>();
+  const router = useRouter();
+
+  const symbol = params.symbol ? decodeURIComponent(params.symbol) : "";
+  const draftKey = `post-comment-draft:v1:${userId}`;
+
+  const topicRef = useRef<HTMLDivElement>(null);
+  const submittingRef = useRef(false);
+
+  const [draftReady, setDraftReady] = useState(false);
+  const [content, setContent] = useState<JSONContent>(createEmptyContent);
   const [editorKey, setEditorKey] = useState(0);
+
   const [assetQuery, setAssetQuery] = useState("");
   const [assetSelectorOpen, setAssetSelectorOpen] = useState(false);
   const [highlightedAssetIndex, setHighlightedAssetIndex] = useState(-1);
   const [selectedAssets, setSelectedAssets] = useState<MarketSymbolItem[]>([]);
   const [recentAssetSymbols, setRecentAssetSymbols] = useState<string[]>([]);
-  const [isPending, startTransition] = useTransition();
 
-  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const currentAsset = useMemo(() => {
     if (!symbol) return null;
 
     return (
-      ALL_MARKET_SYMBOLS.find((asset) => asset.symbol === symbol) ??
-      ALL_MARKET_SYMBOLS.find((asset) => asset.displaySymbol === symbol) ??
-      null
+      ALL_MARKET_SYMBOLS.find(
+        (asset) => asset.symbol === symbol || asset.displaySymbol === symbol,
+      ) ?? null
     );
   }, [symbol]);
 
   useEffect(() => {
+    setDraftReady(false);
+
+    let restoredContent = createEmptyContent();
+    let restoredAssets: MarketSymbolItem[] = [];
+
+    try {
+      const stored = localStorage.getItem(draftKey);
+
+      if (stored) {
+        const draft = JSON.parse(stored) as Partial<PostDraft> | null;
+
+        if (
+          draft?.version === 1 &&
+          isEditorDocument(draft.content) &&
+          Array.isArray(draft.assetSymbols)
+        ) {
+          restoredContent = draft.content;
+
+          restoredAssets = ALL_MARKET_SYMBOLS.filter((asset) =>
+            draft.assetSymbols!.includes(asset.symbol),
+          ).slice(0, 1);
+        }
+      }
+    } catch {
+      // Invalid or unavailable storage does not block the editor.
+    }
+
+    setContent(restoredContent);
+    setSelectedAssets(restoredAssets);
+    setAssetQuery("");
+    setAssetSelectorOpen(false);
+    setHighlightedAssetIndex(-1);
+    setEditorKey((current) => current + 1);
+    setDraftReady(true);
+  }, [draftKey]);
+
+  useEffect(() => {
     try {
       const stored = localStorage.getItem(RECENT_ASSETS_KEY);
-
       if (!stored) return;
 
-      const parsed = JSON.parse(stored);
+      const parsed: unknown = JSON.parse(stored);
 
       if (Array.isArray(parsed)) {
         setRecentAssetSymbols(
-          parsed.filter((item): item is string => typeof item === "string"),
+          parsed
+            .filter((item): item is string => typeof item === "string")
+            .slice(0, MAX_RECENT_ASSETS),
         );
       }
     } catch {
-      // Ignore invalid localStorage data.
+      // Ignore unavailable storage.
     }
   }, []);
 
   useEffect(() => {
-    const handlePointerDown = (event: PointerEvent) => {
+    function handlePointerDown(event: PointerEvent) {
       if (
-        topicRef.current &&
-        !topicRef.current.contains(event.target as Node)
+        event.target instanceof Node &&
+        !topicRef.current?.contains(event.target)
       ) {
         setAssetSelectorOpen(false);
       }
-    };
+    }
 
     document.addEventListener("pointerdown", handlePointerDown);
 
@@ -89,68 +158,84 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
     };
   }, []);
 
-  const recentAssets = useMemo(() => {
-    return recentAssetSymbols
-      .map((recentSymbol) =>
-        ALL_MARKET_SYMBOLS.find((asset) => asset.symbol === recentSymbol),
-      )
-      .filter((asset): asset is MarketSymbolItem => Boolean(asset));
-  }, [recentAssetSymbols]);
+  const recentAssets = useMemo(
+    () =>
+      recentAssetSymbols
+        .map((recentSymbol) =>
+          ALL_MARKET_SYMBOLS.find((asset) => asset.symbol === recentSymbol),
+        )
+        .filter((asset): asset is MarketSymbolItem => Boolean(asset)),
+    [recentAssetSymbols],
+  );
 
   const suggestedAssets = useMemo(() => {
-    const suggestions: MarketSymbolItem[] = [];
-
-    if (currentAsset) {
-      suggestions.push(currentAsset);
-    }
+    const assets = currentAsset ? [currentAsset] : [];
 
     for (const asset of recentAssets) {
-      if (
-        !suggestions.some((suggestion) => suggestion.symbol === asset.symbol)
-      ) {
-        suggestions.push(asset);
+      if (!assets.some((item) => item.symbol === asset.symbol)) {
+        assets.push(asset);
       }
     }
 
-    return suggestions.slice(0, MAX_RECENT_ASSETS + 1);
+    return assets.slice(0, MAX_RECENT_ASSETS + 1);
   }, [currentAsset, recentAssets]);
 
   const searchResults = useMemo(() => {
     const query = assetQuery.trim().toLowerCase();
-
     if (!query) return [];
 
-    return ALL_MARKET_SYMBOLS.filter((asset) => {
-      return (
+    return ALL_MARKET_SYMBOLS.filter(
+      (asset) =>
         asset.name.toLowerCase().includes(query) ||
         asset.displaySymbol.toLowerCase().includes(query) ||
-        asset.symbol.toLowerCase().includes(query)
-      );
-    }).slice(0, 10);
+        asset.symbol.toLowerCase().includes(query),
+    ).slice(0, 10);
   }, [assetQuery]);
 
-  const visibleAssets =
-    assetQuery.trim().length > 0 ? searchResults : suggestedAssets;
+  const isSearching = assetQuery.trim().length > 0;
+  const visibleAssets = isSearching ? searchResults : suggestedAssets;
+  const canPost = draftReady && hasEditorContent(content);
 
-  const isAssetSelected = (asset: MarketSymbolItem) => {
-    return selectedAssets.some((selected) => selected.symbol === asset.symbol);
-  };
+  function saveDraft(nextContent: JSONContent, nextAssets: MarketSymbolItem[]) {
+    const draft: PostDraft = {
+      version: 1,
+      content: nextContent,
+      assetSymbols: nextAssets.map((asset) => asset.symbol),
+    };
 
-  const MAX_SELECTED_ASSETS = 1;
+    try {
+      if (!hasEditorContent(nextContent) && nextAssets.length === 0) {
+        localStorage.removeItem(draftKey);
+      } else {
+        localStorage.setItem(draftKey, JSON.stringify(draft));
+      }
+    } catch {
+      // Keep editing even if browser storage is unavailable or full.
+    }
+  }
 
-  const toggleAsset = (asset: MarketSymbolItem) => {
-    setSelectedAssets((prev) =>
-      prev[0]?.symbol === asset.symbol ? [] : [asset],
-    );
+  function handleContentChange(nextContent: JSONContent) {
+    if (!draftReady || submittingRef.current) return;
+
+    setContent(nextContent);
+    saveDraft(nextContent, selectedAssets);
+  }
+
+  function toggleAsset(asset: MarketSymbolItem) {
+    if (submittingRef.current) return;
+
+    const nextAssets =
+      selectedAssets[0]?.symbol === asset.symbol ? [] : [asset];
+
+    setSelectedAssets(nextAssets);
+    saveDraft(content, nextAssets);
 
     setAssetQuery("");
     setAssetSelectorOpen(false);
     setHighlightedAssetIndex(-1);
-  };
+  }
 
-  const saveRecentAssets = (assets: MarketSymbolItem[]) => {
-    if (assets.length === 0) return;
-
+  function saveRecentAssets(assets: MarketSymbolItem[]) {
     const selectedSymbols = assets.map((asset) => asset.symbol);
 
     const next = [
@@ -165,24 +250,26 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
     try {
       localStorage.setItem(RECENT_ASSETS_KEY, JSON.stringify(next));
     } catch {
-      // Ignore localStorage errors.
+      // Ignore unavailable storage.
     }
-  };
+  }
 
-  const hasEditorContent = (node: JSONContent): boolean => {
-    if (node.text?.trim()) {
-      return true;
-    }
+  function handleClose() {
+    if (submittingRef.current) return;
 
-    if (node.type === "image") {
-      return true;
+    if (draftReady) {
+      saveDraft(content, selectedAssets);
     }
 
-    return node.content?.some(hasEditorContent) ?? false;
-  };
+    setOnWrite(false);
+  }
 
-  const handleSubmit = () => {
-    if (selectedAssets.length === 0) {
+  function handleSubmit() {
+    if (!draftReady || submittingRef.current) return;
+
+    const targetAsset = selectedAssets[0];
+
+    if (!targetAsset) {
       toast.error("Please select a board.");
       return;
     }
@@ -191,6 +278,8 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
       toast.error("Please write something.");
       return;
     }
+
+    submittingRef.current = true;
 
     startTransition(async () => {
       try {
@@ -207,312 +296,188 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
 
         saveRecentAssets(selectedAssets);
 
-        setContent({
-          type: "doc",
-          content: [{ type: "paragraph" }],
-        });
+        try {
+          localStorage.removeItem(draftKey);
+        } catch {
+          // Posting succeeded even if storage cleanup fails.
+        }
 
+        setContent(createEmptyContent());
         setSelectedAssets([]);
         setAssetQuery("");
         setAssetSelectorOpen(false);
-
-        setEditorKey((prev) => prev + 1);
+        setHighlightedAssetIndex(-1);
+        setEditorKey((current) => current + 1);
 
         setOnWrite(false);
-
         toast.success("Comment posted.");
 
-        const targetUrl = `/market/${encodeURIComponent(
-          selectedAssets[0]?.symbol ?? symbol,
-        )}?comment=${encodeURIComponent(result.commentId)}`;
-
-        router.push(targetUrl);
+        router.push(
+          `/market/${encodeURIComponent(targetAsset.symbol)}?comment=${encodeURIComponent(result.commentId)}`,
+        );
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to post comment.",
         );
+      } finally {
+        submittingRef.current = false;
       }
     });
-  };
-
-  useEffect(() => {
-    setHighlightedAssetIndex(-1);
-  }, [assetQuery]);
+  }
 
   return (
-    <div className="flex h-full min-h-0 w-full space-y-2 flex-col px-4 pt-2">
-      <div
-        className="
-            flex shrink-0 items-center justify-between
-            pt-1
-           
-          "
-      >
-        <p className="text-xs -translate-y-1 font-normal tracking-wider text-muted-foreground/50">
-          Write a comment
-        </p>
-        <div className="shrink-0">
-          <div className="flex items-center justify-between">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setOnWrite(false)}
-              className="size-8 ml-auto"
-              aria-label="Close account"
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
+    <section
+      aria-labelledby="post-editor-heading"
+      className="flex h-full min-h-0 w-full flex-col space-y-2 px-5 pt-5"
+    >
+      <h2 id="post-editor-heading" className="sr-only">
+        Write a post
+      </h2>
       <div
         ref={topicRef}
-        className="relative flex flex-wrap gap-4 items-center shrink-0 mb-4"
+        className="relative mb-4 flex shrink-0 flex-wrap items-center gap-4"
       >
-        {selectedAssets.length > 0 && (
+        {selectedAssets.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {selectedAssets.map((asset) => (
               <button
                 key={asset.symbol}
                 type="button"
+                disabled={isPending}
                 onClick={() => toggleAsset(asset)}
                 title={`Remove ${asset.name}`}
                 className="
-    inline-flex cursor-pointer rounded-full
-    px-2.5 py-1 border border-zinc-400 dark:border-zinc-600
-    text-[12px] font-medium text-zinc-600
-     dark:text-zinc-300 bg-transparent
-  "
+                  inline-flex cursor-pointer rounded-full
+                  border border-zinc-400 bg-transparent px-2.5 py-1
+                  text-[12px] font-medium text-zinc-600
+                  disabled:cursor-default disabled:opacity-50
+                  dark:border-zinc-600 dark:text-zinc-300
+                "
               >
                 {asset.displaySymbol}
               </button>
             ))}
           </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Search className="size-4 shrink-0 text-gray-500/50 dark:text-zinc-700" />
+
+            <input
+              type="text"
+              value={assetQuery}
+              disabled={!draftReady || isPending}
+              onFocus={() => setAssetSelectorOpen(true)}
+              onChange={(event) => {
+                setAssetQuery(event.target.value);
+                setAssetSelectorOpen(true);
+                setHighlightedAssetIndex(-1);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setAssetSelectorOpen(false);
+                  setHighlightedAssetIndex(-1);
+                  return;
+                }
+
+                if (!assetSelectorOpen || visibleAssets.length === 0) {
+                  return;
+                }
+
+                if (event.key === "ArrowDown") {
+                  event.preventDefault();
+                  setHighlightedAssetIndex((current) =>
+                    current < visibleAssets.length - 1 ? current + 1 : 0,
+                  );
+                } else if (event.key === "ArrowUp") {
+                  event.preventDefault();
+                  setHighlightedAssetIndex((current) =>
+                    current > 0 ? current - 1 : visibleAssets.length - 1,
+                  );
+                } else if (event.key === "Enter") {
+                  event.preventDefault();
+
+                  const asset =
+                    visibleAssets[Math.max(highlightedAssetIndex, 0)];
+
+                  if (asset) toggleAsset(asset);
+                }
+              }}
+              placeholder="Search assets..."
+              autoComplete="off"
+              className="
+                w-full bg-transparent text-[15px] text-zinc-800 outline-none
+                placeholder:text-gray-500/50
+                dark:text-zinc-300 dark:placeholder:text-zinc-700
+              "
+            />
+          </div>
         )}
-
-        <div
-          className="
-            flex items-center gap-2
-          "
-        >
-          {selectedAssets.length === 0 && (
-            <div className="flex items-center gap-2">
-              <Search
-                className="
-              h-4 w-4 shrink-0
-              text-gray-500/50 dark:text-zinc-700
-            "
-              />
-              <input
-                type="text"
-                value={assetQuery}
-                onFocus={() => setAssetSelectorOpen(true)}
-                onChange={(e) => {
-                  setAssetQuery(e.target.value);
-                  setAssetSelectorOpen(true);
-                }}
-                onKeyDown={(e) => {
-                  if (!assetSelectorOpen || visibleAssets.length === 0) {
-                    return;
-                  }
-
-                  if (e.key === "ArrowDown") {
-                    e.preventDefault();
-
-                    setHighlightedAssetIndex((prev) =>
-                      prev < visibleAssets.length - 1 ? prev + 1 : 0,
-                    );
-
-                    return;
-                  }
-
-                  if (e.key === "ArrowUp") {
-                    e.preventDefault();
-
-                    setHighlightedAssetIndex((prev) =>
-                      prev > 0 ? prev - 1 : visibleAssets.length - 1,
-                    );
-
-                    return;
-                  }
-
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-
-                    const asset =
-                      visibleAssets[
-                        highlightedAssetIndex >= 0 ? highlightedAssetIndex : 0
-                      ];
-
-                    if (asset) {
-                      toggleAsset(asset);
-                      setHighlightedAssetIndex(-1);
-                    }
-
-                    return;
-                  }
-
-                  if (e.key === "Escape") {
-                    e.preventDefault();
-
-                    setAssetSelectorOpen(false);
-                    setHighlightedAssetIndex(-1);
-                  }
-                }}
-                placeholder="Search assets..."
-                autoComplete="off"
-                className="
-    placeholder:text-gray-500/50
-    dark:placeholder:text-zinc-700
-    text-zinc-800
-    dark:text-zinc-300
-    w-full
-    bg-transparent
-    text-[15px]
-    outline-none
-  "
-              />{" "}
-            </div>
-          )}
-        </div>
 
         {selectedAssets.length === 0 && assetSelectorOpen && (
           <div
             className="
-              absolute left-0 right-0 top-full z-50
-              max-h-75
-              overflow-y-auto
-              rounded-xl
-              p-1.5
-              shadow-lg
-              bg-white
+              absolute inset-x-0 top-full z-50 max-h-75
+              overflow-y-auto rounded-xl bg-white p-1.5 shadow-lg
               dark:bg-black
             "
           >
-            {!assetQuery.trim() && (
-              <>
-                {currentAsset && (
+            {visibleAssets.map((asset, index) => {
+              const showRecentLabel =
+                !isSearching &&
+                asset.symbol !== currentAsset?.symbol &&
+                index === (currentAsset ? 1 : 0);
+
+              return (
+                <div key={asset.symbol}>
+                  {showRecentLabel && (
+                    <p className="mt-1 px-2 pt-2 pb-1 text-[11px] font-medium tracking-wide text-zinc-400 uppercase">
+                      Recent
+                    </p>
+                  )}
+
                   <AssetOption
-                    asset={currentAsset}
-                    selected={isAssetSelected(currentAsset)}
-                    onClick={() => toggleAsset(currentAsset)}
-                    onMouseEnter={() => setHighlightedAssetIndex(0)}
-                    highlighted={highlightedAssetIndex === 0}
+                    asset={asset}
+                    highlighted={highlightedAssetIndex === index}
+                    onMouseEnter={() => setHighlightedAssetIndex(index)}
+                    onClick={() => toggleAsset(asset)}
                   />
-                )}
+                </div>
+              );
+            })}
 
-                {recentAssets.some(
-                  (asset) => asset.symbol !== currentAsset?.symbol,
-                ) && (
-                  <p
-                    className="
-                      mt-1
-                      px-2 pb-1 pt-2
-                      text-[11px] font-medium
-                      uppercase tracking-wide
-                      text-zinc-400 cursor-pointer
-                    "
-                  >
-                    Recent
-                  </p>
-                )}
-
-                {recentAssets
-                  .filter((asset) => asset.symbol !== currentAsset?.symbol)
-                  .slice(0, MAX_RECENT_ASSETS)
-                  .map((asset, index) => {
-                    const optionIndex = index + 1;
-
-                    return (
-                      <AssetOption
-                        key={asset.symbol}
-                        asset={asset}
-                        selected={isAssetSelected(asset)}
-                        onClick={() => toggleAsset(asset)}
-                        onMouseEnter={() =>
-                          setHighlightedAssetIndex(optionIndex)
-                        }
-                        highlighted={highlightedAssetIndex === optionIndex}
-                      />
-                    );
-                  })}
-
-                {visibleAssets.length === 0 && (
-                  <div
-                    className="
-                      px-3 py-4
-                      text-center text-[13px]
-                      text-zinc-400
-                    "
-                  >
-                    Start typing to search assets
-                  </div>
-                )}
-              </>
-            )}
-
-            {assetQuery.trim() && (
-              <>
-                {searchResults.length > 0 ? (
-                  searchResults.map((asset, index) => (
-                    <AssetOption
-                      key={asset.symbol}
-                      asset={asset}
-                      selected={isAssetSelected(asset)}
-                      highlighted={highlightedAssetIndex === index}
-                      onMouseEnter={() => setHighlightedAssetIndex(index)}
-                      onClick={() => {
-                        toggleAsset(asset);
-                        setHighlightedAssetIndex(-1);
-                      }}
-                    />
-                  ))
-                ) : (
-                  <div
-                    className="
-                      px-3 py-4
-                      text-center text-[13px]
-                      text-zinc-400
-                    "
-                  >
-                    No assets found
-                  </div>
-                )}
-              </>
+            {visibleAssets.length === 0 && (
+              <div className="px-3 py-4 text-center text-[13px] text-zinc-400">
+                {isSearching
+                  ? "No assets found"
+                  : "Start typing to search assets"}
+              </div>
             )}
           </div>
         )}
       </div>
 
       <div className="hide-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto">
-        {isPending ? (
+        {!draftReady || isPending ? (
           <div className="flex h-full items-center justify-center">
-            <div
-              className="
-          size-5
-          animate-spin
-          rounded-full
-          border-2
-          border-zinc-200
-          border-t-zinc-700
-          dark:border-zinc-700
-          dark:border-t-zinc-200
-        "
-            />
+            <div className="size-5 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-700 dark:border-zinc-700 dark:border-t-zinc-200" />
           </div>
         ) : (
-          <Tiptap key={editorKey} content={content} onChange={setContent} />
+          <Tiptap
+            key={`${draftKey}:${editorKey}`}
+            content={content}
+            onChange={handleContentChange}
+          />
         )}
       </div>
 
-      <div className="ml-auto pb-4 flex shrink-0 gap-2">
+      <div className="ml-auto flex shrink-0 gap-2 pb-4">
         <Button
           type="button"
           variant="outline"
           className="text-[15px]"
-          disabled={isPending}
-          onClick={() => setOnWrite(false)}
+          disabled={!draftReady || isPending}
+          onClick={handleClose}
         >
           Cancel
         </Button>
@@ -520,28 +485,26 @@ export function PostEditor({ setOnWrite }: PostEditorProps) {
         <Button
           type="button"
           className="w-18 text-[15px]"
-          disabled={isPending || !hasEditorContent(content)}
+          disabled={isPending || !canPost}
           onClick={handleSubmit}
         >
           {isPending ? "Posting..." : "Post"}
         </Button>
       </div>
-    </div>
+    </section>
   );
 }
 
 function AssetOption({
   asset,
-  selected,
   highlighted,
   onClick,
   onMouseEnter,
 }: {
   asset: MarketSymbolItem;
-  selected: boolean;
   highlighted: boolean;
   onClick: () => void;
-  onMouseEnter?: () => void;
+  onMouseEnter: () => void;
 }) {
   return (
     <button
@@ -550,54 +513,22 @@ function AssetOption({
       onMouseEnter={onMouseEnter}
       title={asset.name}
       className={`
-        flex w-full
-        items-center
-        rounded-lg
-        px-2.5 py-2
-        text-left
-        cursor-pointer
-        transition-colors
-
+        flex w-full cursor-pointer items-center rounded-lg
+        px-2.5 py-2 text-left transition-colors
         ${
-          selected || highlighted
+          highlighted
             ? "bg-zinc-100 dark:bg-zinc-800"
             : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
         }
       `}
     >
-      <span
-        className="
-          min-w-19
-          text-[14px] font-semibold
-          text-zinc-900
-          dark:text-zinc-100
-        "
-      >
+      <span className="min-w-19 text-[14px] font-semibold text-zinc-900 dark:text-zinc-100">
         {asset.displaySymbol}
       </span>
 
-      <span
-        className="
-          min-w-0 flex-1 truncate
-          text-[13px]
-          text-zinc-500
-          dark:text-zinc-400
-        "
-      >
+      <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-500 dark:text-zinc-400">
         {asset.name}
       </span>
-
-      {selected && (
-        <span
-          className="
-            ml-3 shrink-0
-            text-[12px] font-medium
-            text-zinc-500
-          "
-        >
-          Selected
-        </span>
-      )}
     </button>
   );
 }

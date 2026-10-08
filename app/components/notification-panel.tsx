@@ -338,115 +338,89 @@ export function NotificationPanel({
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      {loading ? (
-        <NotificationLoader />
-      ) : (
-        <>
-          {/* ------------------------------------------------------------------- */}
-          {/* HEADER                                                              */}
-          {/* ------------------------------------------------------------------- */}
+    <section
+      aria-labelledby="notifications-heading"
+      className="flex h-full min-h-0 w-full flex-col"
+    >
+      <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-2">
+        <h2
+          id="notifications-heading"
+          className="text-xs font-normal tracking-wider text-muted-foreground/50"
+        >
+          Notifications
+        </h2>
 
-          <div
+        <div className="flex shrink-0 items-center gap-3">
+          {!loading && hasUnreadNotifications && (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={handleMarkAllRead}
+              className="
+              flex cursor-pointer items-center gap-1.5
+              text-xs text-zinc-500 transition-colors
+              hover:text-zinc-900
+              disabled:cursor-default disabled:opacity-50
+              dark:text-zinc-400 dark:hover:text-zinc-100
+            "
+            >
+              <CheckCheck className="size-3.5" aria-hidden="true" />
+              Mark all read
+            </button>
+          )}
+
+          {!loading && hasSocialNotifications && (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={handleDeleteAllSocial}
+              className="
+              flex cursor-pointer items-center gap-1.5
+              text-xs text-zinc-500 transition-colors
+              hover:text-rose-600
+              disabled:cursor-default disabled:opacity-50
+              dark:text-zinc-400 dark:hover:text-rose-400
+            "
+            >
+              <Trash2 className="size-3.5" aria-hidden="true" />
+              Clear
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setOnNotification(false)}
+            aria-label="Close notifications"
             className="
-            flex shrink-0 items-center justify-between
-            px-4 py-3
-           
+            flex size-8 cursor-pointer items-center justify-center
+            rounded-md text-zinc-500 transition-colors
+            hover:bg-zinc-100 hover:text-zinc-900
+            dark:text-zinc-400 dark:hover:bg-zinc-800
+            dark:hover:text-zinc-100
           "
           >
-            <p className="-mt-2 text-xs font-normal tracking-wider text-muted-foreground/50">
-              Notifications
-            </p>
-            <div className="flex items-center gap-3 ml-auto">
-              {/* Mark all read */}
+            <X className="size-4" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
 
-              {hasUnreadNotifications && (
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={handleMarkAllRead}
-                  className="
-                  flex cursor-pointer items-center gap-1.5
-                  text-xs text-zinc-500
-                  transition-colors
-                  hover:text-zinc-900
-                  disabled:cursor-default
-                  disabled:opacity-50
-                  dark:text-zinc-400
-                  dark:hover:text-zinc-100
-                "
-                >
-                  <CheckCheck className="h-3.5 w-3.5" />
-                  Mark all read
-                </button>
-              )}
-
-              {/* Clear social notifications */}
-
-              {hasSocialNotifications && (
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={handleDeleteAllSocial}
-                  className="
-                  flex cursor-pointer items-center gap-1.5
-                  text-xs text-zinc-500
-                  transition-colors
-                  hover:text-rose-600
-                  disabled:cursor-default
-                  disabled:opacity-50
-                  dark:text-zinc-400
-                  dark:hover:text-rose-400
-                "
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Clear
-                </button>
-              )}
-
-              {/* Close */}
-
-              <button
-                type="button"
-                onClick={() => setOnNotification(false)}
-                aria-label="Close notifications"
-                title="Close notifications"
-                className="
-                flex size-8
-                cursor-pointer
-                items-center justify-center
-                rounded-md
-                transition-colors
-                hover:bg-zinc-100
-                dark:hover:bg-zinc-800
-              "
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* ------------------------------------------------------------------- */}
-          {/* CONTENT                                                             */}
-          {/* ------------------------------------------------------------------- */}
-
-          <div className="min-h-0 flex-1 -translate-y-2 overflow-y-auto pb-10">
-            {notifications.length === 0 ? (
-              <EmptyNotifications />
-            ) : (
-              notifications.map((notification) => (
-                <NotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onClick={() => handleNotificationClick(notification)}
-                  onDelete={() => handleDeleteNotification(notification.id)}
-                />
-              ))
-            )}
-          </div>
-        </>
-      )}
-    </div>
+      <div className="min-h-0 flex-1 overflow-y-auto pb-4">
+        {loading ? (
+          <NotificationLoader />
+        ) : notifications.length === 0 ? (
+          <EmptyNotifications />
+        ) : (
+          notifications.map((notification) => (
+            <NotificationItem
+              key={notification.id}
+              notification={notification}
+              onClick={() => handleNotificationClick(notification)}
+              onDelete={() => handleDeleteNotification(notification.id)}
+            />
+          ))
+        )}
+      </div>
+    </section>
   );
 }
 

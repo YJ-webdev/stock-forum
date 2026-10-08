@@ -14,10 +14,16 @@ function getInitials(name: string) {
 
 export function LeaderBoard({ traders, user }: LeaderBoardProps) {
   return (
-    <div className="flex w-full flex-col">
-      <p className="mb-2 truncate px-4 pt-4 text-xs font-normal tracking-wider text-muted-foreground/50">
+    <section
+      aria-labelledby="leaderboard-heading"
+      className="flex w-full flex-col"
+    >
+      <h2
+        id="leaderboard-heading"
+        className="mb-2 truncate px-4 pt-4 text-xs font-normal tracking-wider text-muted-foreground/50"
+      >
         Leaderboard
-      </p>
+      </h2>
 
       <div className="flex w-full flex-col px-2">
         {traders.map((trader) => {
@@ -27,7 +33,7 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
             <div
               key={trader.id}
               className={`
-                group flex items-center gap-3 rounded-lg py-1.5
+                group flex items-center gap-3 rounded-lg py-1.75
                 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800
                 ${isMe ? "bg-zinc-100 dark:bg-zinc-800" : ""}
               `}
@@ -95,6 +101,6 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

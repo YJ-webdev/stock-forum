@@ -215,26 +215,28 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col p-4 pt-3">
-      <div className="flex justify-between">
-        {/* HEADER */}
-        <p className="mt-1 text-xs font-normal tracking-wider text-muted-foreground/50">
+    <section
+      aria-labelledby="account-settings-heading"
+      className="flex h-full min-h-0 w-full flex-col px-5 pt-3 pb-4"
+    >
+      <div className="flex shrink-0 items-start justify-between">
+        <h2
+          id="account-settings-heading"
+          className="mt-1 text-xs font-normal tracking-wider text-muted-foreground/50"
+        >
           Settings
-        </p>
-        <div className="shrink-0">
-          <div className="flex items-center justify-between">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setOnAccount(false)}
-              className="size-8 ml-auto"
-              aria-label="Close account"
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
-        </div>
+        </h2>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => setOnAccount(false)}
+          className="size-8"
+          aria-label="Close settings"
+        >
+          <X className="size-4" />
+        </Button>
       </div>
 
       {/* CONTENT */}
@@ -484,6 +486,6 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
           )}
         </Button>
       </div>
-    </div>
+    </section>
   );
 }
