@@ -137,29 +137,7 @@
   }
 }
 
-/* Replace the old keyframe lines at the bottom of your global CSS file with this: */
-@theme {
-  --animate-bell-ring: bell-ring 0.5s ease-in-out;
-
-  @keyframes bell-ring {
-    0%,
-    100% {
-      transform: rotate(0deg);
-    }
-    20% {
-      transform: rotate(15deg);
-    }
-    40% {
-      transform: rotate(-12deg);
-    }
-    60% {
-      transform: rotate(8deg);
-    }
-    80% {
-      transform: rotate(-5deg);
-    }
-  }
-}
+/* 
 
 @keyframes flash-green {
   0% {
@@ -181,13 +159,6 @@
   }
 }
 
-/* .hide-scrollbar {
-  scrollbar-width: none;
-}
-
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-} */
 
 .animate-flash-green {
   animation: flash-green 1s cubic-bezier(0, 0, 0.2, 1) forwards;
@@ -195,7 +166,7 @@
 
 .animate-flash-red {
   animation: flash-red 1s cubic-bezier(0, 0, 0.2, 1) forwards;
-}
+} */
 
 @theme {
   --roboto-mono: var(--font-roboto-mono);
