@@ -217,7 +217,7 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
   return (
     <section
       aria-labelledby="account-settings-heading"
-      className="flex h-full min-h-0 w-full flex-col px-5 pt-3 pb-4"
+      className="flex h-full min-h-0 w-full flex-col px-4 pt-3 pb-4"
     >
       <div className="flex shrink-0 items-start justify-between">
         <h2
@@ -240,7 +240,7 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
       </div>
 
       {/* CONTENT */}
-      <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto">
+      <div className="px-1 hide-scrollbar min-h-0 flex-1 overflow-y-auto">
         <div className="">
           {/* PROFILE */}
           <div className="">
