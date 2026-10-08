@@ -221,6 +221,7 @@ export default function LayoutShell({
               sideDataPromise={sideDataPromise}
               isOpen={isMobilePanelOpen}
               setIsOpen={setIsMobilePanelOpen}
+              user={user}
             />
           </Suspense>
 

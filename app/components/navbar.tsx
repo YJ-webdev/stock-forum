@@ -11,11 +11,9 @@ import {
   TextAlignJustify as MenuButton,
   Settings,
   ShieldCogCorner,
-  Megaphone,
 } from "lucide-react";
 
 import { TbUser } from "react-icons/tb";
-import { FaBell } from "react-icons/fa6";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -116,9 +114,11 @@ export function Navbar({
           user={user}
         />
 
-        <div className="hidden items-center sm:flex">
-          <ModeToggle />
-        </div>
+        {!user && (
+          <div className="hidden items-center sm:flex">
+            <ModeToggle />
+          </div>
+        )}
       </div>
 
       <LoginDialog isOpen={isLoginOpen} setIsOpen={setIsLoginOpen} />
@@ -136,13 +136,14 @@ export default function UserMenu({
 }: UserMenuProps) {
   const [isPending, startTransition] = useTransition();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const router = useRouter();
   const userId = user?.id;
 
-  // All Hooks must run before the logged-out early return.
   useEffect(() => {
     setUnreadCount(0);
+    setIsUserMenuOpen(false);
 
     if (!userId) return;
 
@@ -212,17 +213,18 @@ export default function UserMenu({
   function handleSignOutClick() {
     startTransition(async () => {
       await onSignOut?.();
+      setIsUserMenuOpen(false);
       router.refresh();
     });
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
       <DropdownMenuTrigger
         className="
-          relative isolate flex cursor-pointer
-          items-center gap-2 rounded-full
-        "
+    relative isolate flex cursor-pointer
+    items-center gap-2 rounded-full md:mr-2
+  "
         aria-label={
           unreadCount > 0
             ? `User menu, ${unreadCount} unread notifications`
@@ -230,12 +232,23 @@ export default function UserMenu({
         }
       >
         {unreadCount > 0 && (
-          <div className="absolute z-10 rounded-full w-2.5 h-2.5 bg-yellow-200  top-1.5 -left-1 size-5" />
+          <div
+            aria-hidden="true"
+            className="
+              absolute top-1.5 -left-1 z-10
+              size-2.5 rounded-full bg-[#2474ed]! grayscale-0!
+              outline-3 outline-white dark:outline-zinc-900
+            "
+          />
         )}
 
         <div className="relative flex items-center gap-2">
-          <div className="flex items-center justify-center sm:hidden">
-            <Avatar className="h-12 w-12">
+          <div className="flex items-center justify-center">
+            <Avatar
+              className={`h-12 w-12 ${
+                isUserMenuOpen ? "grayscale-0" : "grayscale"
+              }`}
+            >
               {user.image && (
                 <AvatarImage
                   src={user.image}
@@ -252,25 +265,11 @@ export default function UserMenu({
                 {user.image ? (
                   initials
                 ) : (
-                  <UserIcon
-                    className="
-                      h-4 w-4 text-zinc-600
-                      dark:text-zinc-300
-                    "
-                  />
+                  <UserIcon className="h-4 w-4 text-zinc-600 dark:text-zinc-300" />
                 )}
               </AvatarFallback>
             </Avatar>
           </div>
-
-          <p
-            className="
-              hidden rounded-full px-2 py-2.75
-              text-zinc-900 sm:inline dark:text-zinc-100
-            "
-          >
-            {`Hi, ${user.name || user.email || "User"}`}
-          </p>
         </div>
       </DropdownMenuTrigger>
 
@@ -294,12 +293,7 @@ export default function UserMenu({
             <BellIcon className="mr-2 size-4.5" strokeWidth={1.5} />
             Notifications
             {unreadCount > 0 && (
-              <span
-                className="
-                  ml-auto text-xs tabular-nums
-                  text-zinc-500 dark:text-zinc-400
-                "
-              >
+              <span className="ml-auto text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
@@ -312,12 +306,10 @@ export default function UserMenu({
             <Settings className="mr-2 size-4.5" strokeWidth={1.5} />
             Settings
           </DropdownMenuItem>
+          <DropdownMenuItem className="h-11 cursor-pointer text-[15px] py-0 px-0">
+            <ModeToggle text="Mode" />
+          </DropdownMenuItem>
         </DropdownMenuGroup>
-
-        {/* ModeToggle already renders its own button. */}
-        <div className="flex h-11 w-full items-center  text-[15px] sm:hidden">
-          <ModeToggle text="Mode" />
-        </div>
 
         <DropdownMenuSeparator />
 
@@ -330,7 +322,6 @@ export default function UserMenu({
           className="cursor-pointer text-[15px]"
         >
           <LogOutIcon className="mr-2 size-4.5" strokeWidth={1.5} />
-
           {isPending ? "Signing out..." : "Sign Out"}
         </DropdownMenuItem>
 

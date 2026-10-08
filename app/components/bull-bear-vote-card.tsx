@@ -12,8 +12,7 @@ import { Numeric } from "./numeric";
 import { TrendSparkline } from "./trend-sparkline";
 import { MarketVoteButton } from "./market-vote-button";
 import { MarketSentiment } from "./market-sentiment";
-import { RollingPrice } from "./rolling-price";
-import { SparklineLoading } from "./sparkline-loading";
+
 import { formatChange } from "@/lib/utils/format-number";
 
 interface BullBearVoteCardProps {
@@ -169,23 +168,45 @@ export function BullBearVoteCard({
       </header>
 
       <div className="pb-2">
-        <Numeric className="pl-3 text-[18px] font-extrabold tracking-normal tabular-nums text-zinc-700 dark:text-zinc-300">
-          {data ? data.value : loading ? <RollingPrice /> : "—"}
-        </Numeric>
-
-        <p
-          className={`jakarta min-h-5 pl-3 text-sm font-medium dark:font-[450] tabular-nums ${changeColor}`}
-        >
+        <div className="flex h-7 items-center pl-3">
           {data ? (
-            `${formatChange(data.change)} (${data.percent})`
+            <Numeric className="text-[18px] font-extrabold tracking-normal tabular-nums text-zinc-700 dark:text-zinc-300">
+              {data.value}
+            </Numeric>
           ) : loading ? (
-            <RollingPrice />
+            <span
+              aria-hidden="true"
+              className="h-[18px] w-24 animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
+            />
           ) : (
-            "—"
+            <span className="text-[18px] text-zinc-400 dark:text-zinc-500">
+              —
+            </span>
           )}
-        </p>
+        </div>
 
-        <div className="mt-2 flex h-16 items-center justify-center">
+        <div className="flex h-5 items-center pl-3">
+          {data ? (
+            <p
+              className={`jakarta text-sm font-medium tabular-nums dark:font-[450] ${changeColor}`}
+            >
+              {formatChange(data.change)} ({data.percent})
+            </p>
+          ) : loading ? (
+            <span
+              aria-hidden="true"
+              className="h-3 w-28 animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
+            />
+          ) : (
+            <span className="text-sm text-zinc-400 dark:text-zinc-500">—</span>
+          )}
+        </div>
+
+        <div
+          className="mt-2 flex h-16 items-center justify-center"
+          role={loading && !data ? "status" : undefined}
+          aria-label={loading && !data ? "Loading market data" : undefined}
+        >
           {data && hasChartData ? (
             <TrendSparkline
               data={data.history}
@@ -198,7 +219,12 @@ export function BullBearVoteCard({
               lunchEndMs={data.lunchEndMs}
             />
           ) : loading && !data ? (
-            <SparklineLoading width={174} height={64} />
+            <div className="flex h-full w-full items-center px-3">
+              <span
+                aria-hidden="true"
+                className="h-10 w-full animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
+              />
+            </div>
           ) : (
             <span className="text-xs text-zinc-400 dark:text-zinc-500">
               {error ? "Data unavailable" : "Chart unavailable"}
@@ -206,7 +232,7 @@ export function BullBearVoteCard({
           )}
         </div>
 
-        <div className="outfit relative h-16 pt-1.5 ">
+        <div className="outfit relative h-16 pt-1.5">
           {market.assetType === "index" && (
             <div className="relative z-20 flex flex-col gap-2">
               <MarketSentiment symbol={market.symbol} />

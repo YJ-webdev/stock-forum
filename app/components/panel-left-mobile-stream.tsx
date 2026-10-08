@@ -12,12 +12,14 @@ interface PanelLeftMobileStreamProps {
   isOpen: boolean;
 
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  user: { id: string } | null;
 }
 
 export default function PanelLeftMobileStream({
   sideDataPromise,
   isOpen,
   setIsOpen,
+  user,
 }: PanelLeftMobileStreamProps) {
   const { comments, popularBoards } = use(sideDataPromise);
 
@@ -27,6 +29,7 @@ export default function PanelLeftMobileStream({
       setIsOpen={setIsOpen}
       comments={comments}
       popularBoards={popularBoards}
+      user={user}
     />
   );
 }

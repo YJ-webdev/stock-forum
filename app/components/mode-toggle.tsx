@@ -26,25 +26,27 @@ export function ModeToggle({ text }: { text?: string }) {
     <Button
       variant="default"
       onClick={toggleTheme}
-      className="flex items-center w-full justify-end text-auto bg-transparent hover:bg-transparent cursor-pointer"
+      className="flex -ml-0.5 items-center w-full justify-end text-auto bg-transparent hover:bg-transparent cursor-pointer"
     >
       {!mounted ? (
         // Placeholder to prevent hydration shift
         <span className="size-6" />
       ) : resolvedTheme === "dark" ? (
-        <BsMoon
-          className="size-4.5 transition-all text-zinc-700 dark:text-zinc-200"
-          strokeWidth={0.25}
+        <Sun
+          className="size-4.75 transition-all text-zinc-800 dark:text-zinc-200"
+          strokeWidth={1.75}
         />
       ) : (
-        <Sun
-          className="size-5 transition-all text-zinc-700 dark:text-zinc-200"
-          strokeWidth={1.75}
+        <BsMoon
+          className="size-3.75 mx-0.5 transition-all text-zinc-800 dark:text-zinc-200"
+          strokeWidth={0.25}
         />
       )}
 
       {text && (
-        <span className="mr-auto pl-2.5 text-[15px] font-normal">{text}</span>
+        <span className="mr-auto pl-3 text-[15px] font-normal">
+          {resolvedTheme === "dark" ? "Light" : "Dark"} mode
+        </span>
       )}
     </Button>
   );

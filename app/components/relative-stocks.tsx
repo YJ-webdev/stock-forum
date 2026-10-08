@@ -1,3 +1,5 @@
+// app/components/relative-stocks.tsx
+
 "use client";
 
 import {
@@ -12,7 +14,6 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { TZDate } from "@date-fns/tz";
-import { Vote } from "lucide-react";
 
 import {
   TRADING_HOURS,
@@ -36,8 +37,8 @@ import {
 
 import { TrendSparkline } from "./trend-sparkline";
 import { Numeric } from "./numeric";
-import { RollingPrice } from "./rolling-price";
-import { SparklineLoading } from "./sparkline-loading";
+import { MarketSkeleton } from "./market-skeleton";
+import { Vote } from "lucide-react";
 
 interface RelativeStocksProps {
   items: MarketSymbolItem[];
@@ -203,6 +204,22 @@ function formatSigned(value: number | null, decimals = 2) {
   return `${value >= 0 ? "+" : ""}${value.toFixed(decimals)}`;
 }
 
+function NumberSkeleton({ className = "w-20" }: { className?: string }) {
+  return (
+    <div className="flex h-5 w-full items-center justify-end overflow-hidden">
+      <MarketSkeleton className={`h-3 max-w-full ${className}`} />
+    </div>
+  );
+}
+
+function SparklineSkeleton() {
+  return (
+    <div className="flex h-10 w-full items-center justify-center px-3">
+      <MarketSkeleton className="h-6 w-full max-w-[120px]" />
+    </div>
+  );
+}
+
 export function RelativeStocks({
   items,
   setActiveRange,
@@ -236,12 +253,12 @@ export function RelativeStocks({
   const votingStatuses = useMemo(
     () =>
       items.filter(isVotingAsset).map((item) => {
-        const window = getVotingWindow(item.symbol, now);
+        const votingWindow = getVotingWindow(item.symbol, now);
 
         return {
           symbol: item.symbol,
-          canVote: window.canVote,
-          predictionFor: window.predictionFor,
+          canVote: votingWindow.canVote,
+          predictionFor: votingWindow.predictionFor,
         };
       }),
     [items, now],
@@ -364,7 +381,7 @@ export function RelativeStocks({
               <th
                 className={
                   showVotingColumns
-                    ? "hidden py-3.5 pr-2 text-right md:table-cell md:w-[calc(94%/7)] md:py-3 md:pr-0"
+                    ? "hidden py-3.5 text-right md:table-cell md:w-[calc(94%/7)] md:py-3"
                     : "w-[25%] py-3.5 text-right md:w-[17%] md:py-3"
                 }
               >
@@ -444,9 +461,7 @@ function RelativeStockRow({
   quotesLoading,
 }: RelativeStockRowProps) {
   const router = useRouter();
-
   const decimals = 2;
-  const priceTemplate = "00,000.00";
   const isInitialLoading = !priceQuote && quotesLoading;
 
   const formattedPrice = priceQuote
@@ -518,13 +533,7 @@ function RelativeStockRow({
         ${isSelected ? "bg-zinc-100 dark:bg-zinc-700/60" : ""}
       `}
     >
-      <td
-        className={
-          showVotingColumns
-            ? "w-[37%] overflow-hidden py-3 leading-snug md:w-[calc(94%/7)]"
-            : "w-[37%] overflow-hidden py-3 leading-snug md:w-[20%]"
-        }
-      >
+      <td className="overflow-hidden py-3 align-middle leading-snug">
         <div className="ml-4 min-w-0">
           <div className="truncate text-[16px] font-medium leading-4.5 md:text-[17px]">
             {item.displaySymbol ?? item.symbol}
@@ -536,123 +545,169 @@ function RelativeStockRow({
         </div>
       </td>
 
-      <td
-        className={
-          showVotingColumns
-            ? "hidden w-fit overflow-hidden align-middle md:table-cell"
-            : "hidden overflow-hidden align-middle md:table-cell md:w-[15%]"
-        }
-      >
+      <td className="hidden overflow-hidden align-middle md:table-cell">
         <div className="flex w-full justify-center overflow-hidden">
           <RelativeSparkline item={item} />
         </div>
       </td>
 
       <td
-        className={
-          showVotingColumns
-            ? "w-[27%] whitespace-nowrap pr-2 text-right font-medium dark:font-normal"
-            : "w-[37%] whitespace-nowrap text-right font-medium dark:font-normal md:w-[15%]"
-        }
+        className={`
+          whitespace-nowrap align-middle text-right
+          font-medium dark:font-normal
+          ${showVotingColumns ? "pr-2" : ""}
+        `}
       >
-        <Numeric decimals={decimals}>
-          {formattedPrice ??
-            (isInitialLoading ? (
-              <RollingPrice template={priceTemplate} />
-            ) : (
-              "—"
-            ))}
-        </Numeric>
+        <div className="flex h-5 w-full items-center justify-end">
+          {isInitialLoading ? (
+            <NumberSkeleton className="w-24" />
+          ) : (
+            <Numeric decimals={decimals}>{formattedPrice ?? "—"}</Numeric>
+          )}
+        </div>
 
-        <span
+        <div
           className={`
-            mt-0.5 block text-[12px] font-medium leading-4
+            mt-0.5 flex h-4 w-full items-center justify-end
+            text-[12px] font-medium leading-4
             md:hidden ${priceColor}
           `}
         >
-          {formattedPercent ??
-            (isInitialLoading ? <RollingPrice template="0.00%" /> : "—")}
-        </span>
-      </td>
-
-      <td
-        className={
-          showVotingColumns
-            ? "hidden whitespace-nowrap py-3 text-right font-medium text-zinc-500 dark:text-zinc-400 md:table-cell md:w-[calc(94%/7)] md:pr-0"
-            : "w-[37%] whitespace-nowrap py-3 text-right font-medium text-zinc-500 dark:text-zinc-400 md:w-[17%]"
-        }
-      >
-        <Numeric decimals={decimals}>
-          {priceQuote?.previousClose ??
-            (isInitialLoading ? (
-              <RollingPrice template={priceTemplate} />
-            ) : (
-              "—"
-            ))}
-        </Numeric>
+          {isInitialLoading ? (
+            <MarketSkeleton className="h-2.5 w-14 max-w-full" />
+          ) : (
+            <span>{formattedPercent ?? "—"}</span>
+          )}
+        </div>
       </td>
 
       <td
         className={`
-          hidden whitespace-nowrap py-3.5
+          whitespace-nowrap py-3 align-middle text-right
+          font-medium text-zinc-500 dark:text-zinc-400
+          ${showVotingColumns ? "hidden md:table-cell" : ""}
+        `}
+      >
+        <div className="flex h-5 w-full items-center justify-end">
+          {isInitialLoading ? (
+            <NumberSkeleton className="w-24" />
+          ) : (
+            <Numeric decimals={decimals}>
+              {priceQuote?.previousClose ?? "—"}
+            </Numeric>
+          )}
+        </div>
+      </td>
+
+      <td
+        className={`
+          hidden whitespace-nowrap py-3.5 align-middle
           text-right font-medium dark:font-semibold md:table-cell
-          ${showVotingColumns ? "md:w-[37%]" : "md:w-[16.5%]"}
           ${priceColor}
         `}
       >
-        <Numeric>
-          {formattedPercent ??
-            (isInitialLoading ? <RollingPrice template="0.00%" /> : "—")}
-        </Numeric>
+        <div className="flex h-5 w-full items-center justify-end">
+          {isInitialLoading ? (
+            <NumberSkeleton className="w-14" />
+          ) : (
+            <Numeric>{formattedPercent ?? "—"}</Numeric>
+          )}
+        </div>
       </td>
 
       <td
         className={`
-          whitespace-nowrap py-3.5 text-right font-medium
-          dark:font-semibold
-          ${
-            showVotingColumns
-              ? "hidden md:table-cell md:w-[37%]"
-              : "w-1/6 pr-4 md:w-[16.5%]"
-          }
+          whitespace-nowrap py-3.5 align-middle text-right
+          font-medium dark:font-semibold
+          ${showVotingColumns ? "hidden md:table-cell" : "pr-4"}
           ${priceColor}
         `}
       >
-        <Numeric decimals={decimals}>
-          {formattedChange ??
-            (isInitialLoading ? <RollingPrice template="00.00" /> : "—")}
-        </Numeric>
+        <div className="flex h-5 w-full items-center justify-end">
+          {isInitialLoading ? (
+            <NumberSkeleton className="w-16" />
+          ) : (
+            <Numeric decimals={decimals}>{formattedChange ?? "—"}</Numeric>
+          )}
+        </div>
       </td>
 
       {showVotingColumns && (
         <>
-          <td className="w-[37%] pl-5 pr-3 md:w-[20%]">
+          <td className="pl-4 pr-3 align-middle">
             {eligibleForVoting ? (
               <div
-                title={
-                  voteStats === undefined
-                    ? "Vote statistics unavailable"
-                    : hasVotes
-                      ? `${voteStats.bullVotes} Bull / ${voteStats.bearVotes} Bear`
+                role={voteStats ? "img" : undefined}
+                aria-label={
+                  voteStats
+                    ? hasVotes
+                      ? `Bull ${bullPercent} percent, Bear ${bearPercent} percent, ${voteStats.totalVotes} votes`
                       : "No votes yet"
+                    : "Vote statistics unavailable"
+                }
+                title={
+                  voteStats
+                    ? `${voteStats.bullVotes} Bull / ${voteStats.bearVotes} Bear`
+                    : undefined
                 }
                 className="
-                  flex h-3 w-full overflow-hidden
-                  bg-zinc-200 dark:bg-zinc-700
-                "
+        outfit relative mx-auto flex h-7 w-full max-w-28
+        items-center overflow-hidden
+        bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)]
+        bg-size-[3px_3px]
+        text-zinc-200 dark:text-zinc-600/50
+      "
               >
+                <div
+                  aria-hidden="true"
+                  className="flex w-full items-center justify-around text-[12px] leading-none tabular-nums"
+                >
+                  {hasVotes ? (
+                    <>
+                      {bullPercent > 0 && (
+                        <span className="font-normal text-zinc-800 dark:text-zinc-100">
+                          {bullPercent}%
+                        </span>
+                      )}
+
+                      {bearPercent > 0 && (
+                        <span className="font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
+                          {bearPercent}%
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-[11px] font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
+                      {voteStats === undefined ? "" : "No vote yet"}
+                    </span>
+                  )}
+                </div>
+
                 {hasVotes && (
-                  <>
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-x-0 bottom-0 flex h-[1.5px]"
+                  >
                     <div
-                      className="bg-emerald-600 transition-[width] duration-300"
+                      className="
+              h-full bg-emerald-600
+              transition-[width] duration-300
+              motion-reduce:transition-none
+              dark:bg-emerald-400
+            "
                       style={{ width: `${bullPercent}%` }}
                     />
 
                     <div
-                      className="bg-rose-600 transition-[width] duration-300"
+                      className="
+              h-full bg-[#cf0000]
+              transition-[width] duration-300
+              motion-reduce:transition-none
+              dark:bg-[#ff4545]
+            "
                       style={{ width: `${bearPercent}%` }}
                     />
-                  </>
+                  </div>
                 )}
               </div>
             ) : (
@@ -660,9 +715,17 @@ function RelativeStockRow({
             )}
           </td>
 
-          <td className="w-[5%] text-center md:w-[6%]">
+          <td className="text-center align-middle">
             {eligibleForVoting ? (
-              <div
+              <span
+                role="img"
+                aria-label={
+                  myPrediction
+                    ? `You voted ${myPrediction.direction}`
+                    : canVote
+                      ? "Voting is open"
+                      : "Voting is closed"
+                }
                 title={
                   myPrediction
                     ? `You voted ${myPrediction.direction} · ${myPrediction.pointsBet} pts`
@@ -670,46 +733,39 @@ function RelativeStockRow({
                       ? "Voting is open"
                       : "Voting is closed"
                 }
-                className="relative mx-auto w-fit items-center"
+                className="relative mx-auto flex size-5 items-center justify-center"
               >
-                <Vote
-                  strokeWidth={1.75}
-                  className={`
-                    h-5 w-5 self-center transition-colors
-                    ${
-                      canVote
-                        ? "text-zinc-700 dark:text-zinc-300"
-                        : "text-zinc-400 dark:text-zinc-600"
-                    }
-                  `}
-                />
-
                 {myPrediction ? (
                   <span
-                    className={`
-                      absolute -right-2 -top-2
-                      flex h-4 w-4 items-center justify-center
-                      ${
-                        myPrediction.direction === "BULL"
-                          ? "text-emerald-500"
-                          : "text-rose-500"
-                      }
-                    `}
+                    aria-hidden="true"
+                    className={`text-base leading-none ${
+                      myPrediction.direction === "BULL"
+                        ? "text-emerald-500"
+                        : "text-rose-500"
+                    }`}
                   >
                     ✘
                   </span>
                 ) : (
-                  canVote && (
+                  <>
+                    {canVote && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute size-2 animate-ping rounded-full bg-emerald-500/50 motion-reduce:animate-none"
+                      />
+                    )}
+
                     <span
-                      className="
-                        pulse-animation absolute -right-1 -top-1
-                        h-2 w-2 rounded-full bg-emerald-500
-                        ring-2 ring-white dark:ring-zinc-900
-                      "
+                      aria-hidden="true"
+                      className={`relative size-2 rounded-full ${
+                        canVote
+                          ? "bg-emerald-500"
+                          : "bg-zinc-300 dark:bg-zinc-600"
+                      }`}
                     />
-                  )
+                  </>
                 )}
-              </div>
+              </span>
             ) : (
               <span className="text-zinc-400">—</span>
             )}
@@ -731,7 +787,6 @@ function RelativeSparkline({ item }: { item: MarketSymbolItem }) {
 
     update();
 
-    // Support older Safari as well.
     if (typeof media.addEventListener === "function") {
       media.addEventListener("change", update);
 
@@ -785,7 +840,7 @@ function RelativeSparkline({ item }: { item: MarketSymbolItem }) {
       {desktop && nearViewport ? (
         <LoadedRelativeSparkline item={item} />
       ) : (
-        <SparklineLoading />
+        <SparklineSkeleton />
       )}
     </div>
   );
@@ -808,10 +863,10 @@ function LoadedRelativeSparkline({ item }: { item: MarketSymbolItem }) {
   );
 
   if (!data && (loading || !error)) {
-    return <SparklineLoading />;
+    return <SparklineSkeleton />;
   }
 
-  if (!data) {
+  if (!data || !data.history.some((point) => Number.isFinite(point.price))) {
     return <span className="text-zinc-400">—</span>;
   }
 

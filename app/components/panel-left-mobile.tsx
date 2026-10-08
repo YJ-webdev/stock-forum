@@ -10,11 +10,16 @@ import { ModeToggle } from "./mode-toggle";
 
 import type { MostLikedComment, PopularBoard } from "../actions/query";
 
+type User = {
+  id: string;
+};
+
 interface PanelLeftMobileProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   comments: MostLikedComment[];
   popularBoards: PopularBoard[];
+  user: User | null;
 }
 
 export default function PanelLeftMobile({
@@ -22,6 +27,7 @@ export default function PanelLeftMobile({
   setIsOpen,
   comments,
   popularBoards,
+  user,
 }: PanelLeftMobileProps) {
   const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!(event.target instanceof Element)) return;
@@ -66,9 +72,11 @@ export default function PanelLeftMobile({
               )}
             </div>
 
-            <div className="mt-auto flex justify-end px-4 pt-4">
-              <ModeToggle />
-            </div>
+            {!user && (
+              <div className="mt-auto flex justify-end px-4 pt-4">
+                <ModeToggle />
+              </div>
+            )}
           </div>
         </ScrollArea>
       </div>
