@@ -176,7 +176,7 @@ export function BullBearVoteCard({
           ) : loading ? (
             <span
               aria-hidden="true"
-              className="h-[18px] w-24 animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
+              className="h-4.5 w-24 animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
             />
           ) : (
             <span className="text-[18px] text-zinc-400 dark:text-zinc-500">
