@@ -9,6 +9,8 @@ interface TrendSparklineProps {
   width?: number;
   height?: number;
 
+  previousClose?: number | null;
+
   sessionStartMs?: number | null;
   sessionEndMs?: number | null;
 
@@ -21,6 +23,7 @@ export function TrendSparkline({
   isPositive = true,
   width = 120,
   height = 40,
+  previousClose,
   sessionStartMs,
   sessionEndMs,
   lunchStartMs,
@@ -66,8 +69,16 @@ export function TrendSparkline({
 
   const prices = points.map((point) => point.price);
 
-  const minPrice = Math.min(...prices);
-  const maxPrice = Math.max(...prices);
+  const validPreviousClose =
+    typeof previousClose === "number" && Number.isFinite(previousClose)
+      ? previousClose
+      : null;
+
+  const rangePrices =
+    validPreviousClose !== null ? [...prices, validPreviousClose] : prices;
+
+  const minPrice = Math.min(...rangePrices);
+  const maxPrice = Math.max(...rangePrices);
   const priceRange = maxPrice - minPrice;
 
   function getY(price: number) {
@@ -77,6 +88,9 @@ export function TrendSparkline({
 
     return chartBottom - ((price - minPrice) / priceRange) * plotHeight;
   }
+
+  const previousCloseY =
+    validPreviousClose !== null ? getY(validPreviousClose) : null;
 
   // --------------------------------------------------
   // TIME RANGE
@@ -236,18 +250,20 @@ export function TrendSparkline({
         </linearGradient>
       </defs>
 
-      {/* BASELINE */}
+      {/* PREVIOUS CLOSE */}
 
-      <line
-        x1={paddingX}
-        y1={chartBottom}
-        x2={paddingX + plotWidth}
-        y2={chartBottom}
-        stroke="currentColor"
-        strokeDasharray="2 2"
-        strokeWidth="1.25"
-        className="text-zinc-300 dark:text-zinc-700"
-      />
+      {previousCloseY !== null && (
+        <line
+          x1={paddingX}
+          y1={previousCloseY}
+          x2={paddingX + plotWidth}
+          y2={previousCloseY}
+          stroke="currentColor"
+          strokeDasharray="2 2"
+          strokeWidth="1.25"
+          className="text-zinc-300 dark:text-zinc-700"
+        />
+      )}
 
       {/* AREA / LINE SEGMENTS */}
 

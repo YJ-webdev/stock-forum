@@ -493,6 +493,7 @@ export default function MarketPageClient({
                   <TrendSparkline
                     data={data.history}
                     isPositive={data.isPositive}
+                    previousClose={data.previousClose}
                     sessionStartMs={sessionStartMs}
                     sessionEndMs={sessionEndMs}
                     lunchStartMs={

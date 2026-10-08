@@ -873,6 +873,7 @@ function LoadedRelativeSparkline({ item }: { item: MarketSymbolItem }) {
   return (
     <TrendSparkline
       data={data.history}
+      previousClose={data.previousClose}
       isPositive={data.isPositive}
       lunchStartMs={data.lunchStartMs}
       lunchEndMs={data.lunchEndMs}
