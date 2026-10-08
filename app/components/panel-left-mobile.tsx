@@ -40,7 +40,7 @@ export default function PanelLeftMobile({
   return (
     <aside
       className={`
-        fixed top-18 left-0 z-40
+        fixed top-18 left-0 z-30
         h-[calc(100dvh-72px)] w-full
         border-r border-zinc-100 bg-white
         transition-transform duration-300 ease-out

@@ -12,12 +12,10 @@ import {
   Settings,
   ShieldCogCorner,
 } from "lucide-react";
-
 import { TbUser } from "react-icons/tb";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +35,7 @@ import { handleSignOut } from "../actions/auth";
 import { getUnreadNotificationCount } from "../actions/notification";
 
 interface NavbarProps {
+  onOpenSearch: () => void;
   onTogglePanel: () => void;
   onWrite: () => void;
   onAccount: () => void;
@@ -46,31 +45,82 @@ interface NavbarProps {
 }
 
 interface UserMenuProps {
+  user: User | null;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
   onSignOut?: () => Promise<void>;
-  onLoginClick?: () => void;
+  onLoginClick: () => void;
   onWrite: () => void;
   onAccount: () => void;
   onNotification: () => void;
-  onFavotites: () => void;
-  user: User | null;
+}
+
+function getInitials(user: User) {
+  const initials = user.name
+    ?.trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return initials || user.email?.slice(0, 2).toUpperCase() || "U";
 }
 
 export function Navbar({
+  onOpenSearch,
   onTogglePanel,
   onWrite,
   onAccount,
   onNotification,
-  onFavotites,
   user,
 }: NavbarProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  function closeNavbarOverlays() {
+    setIsSearchOpen(false);
+    setIsLoginOpen(false);
+    setIsUserMenuOpen(false);
+  }
+
+  function handleSearchOpenChange(open: boolean) {
+    if (open) {
+      onOpenSearch();
+      setIsLoginOpen(false);
+      setIsUserMenuOpen(false);
+    }
+
+    setIsSearchOpen(open);
+  }
+
+  function handleUserMenuOpenChange(open: boolean) {
+    if (open) {
+      setIsSearchOpen(false);
+      setIsLoginOpen(false);
+    }
+
+    setIsUserMenuOpen(open);
+  }
+
+  function handleLoginClick() {
+    setIsSearchOpen(false);
+    setIsUserMenuOpen(false);
+    setIsLoginOpen(true);
+  }
+
+  function handlePanelAction(action: () => void) {
+    closeNavbarOverlays();
+    action();
+  }
 
   return (
     <nav
       className="
-        fixed top-0 right-0 left-0 z-30
-        flex h-18.5 items-center justify-between
+        fixed inset-x-0 top-0 z-30
+        flex h-18 items-center justify-between
         border-b border-gray-100 bg-white
         dark:border-zinc-800 dark:bg-zinc-900
       "
@@ -79,39 +129,40 @@ export function Navbar({
         <button
           type="button"
           aria-label="Close search"
-          className="
-            absolute inset-0 z-10
-            cursor-default backdrop-blur-[1px]
-          "
-          onClick={() => setIsSearchOpen(false)}
+          className="absolute inset-0 z-10 cursor-default backdrop-blur-[1px]"
+          onClick={() => handleSearchOpenChange(false)}
         />
       )}
 
       <button
         type="button"
-        onClick={onTogglePanel}
+        onClick={() => handlePanelAction(onTogglePanel)}
         aria-label="Toggle Sidebar"
         className="
           m-2 shrink-0 cursor-pointer
           rounded-md p-2.5 transition md:m-4
         "
       >
-        <MenuButton className="h-5 w-5 text-foreground" strokeWidth={1.5} />
+        <MenuButton className="size-5 text-foreground" strokeWidth={1.5} />
       </button>
 
-      <div className="relative z-20 mx-auto max-w-xl flex-1">
-        <SearchInput isOpen={isSearchOpen} onOpenChange={setIsSearchOpen} />
+      <div className="relative z-20 mx-auto min-w-0 max-w-xl flex-1">
+        <SearchInput
+          isOpen={isSearchOpen}
+          onOpenChange={handleSearchOpenChange}
+        />
       </div>
 
       <div className="mx-4 flex shrink-0 items-center">
         <UserMenu
-          onSignOut={handleSignOut}
-          onLoginClick={() => setIsLoginOpen(true)}
-          onWrite={onWrite}
-          onAccount={onAccount}
-          onNotification={onNotification}
-          onFavotites={onFavotites}
           user={user}
+          isOpen={isUserMenuOpen}
+          onOpenChange={handleUserMenuOpenChange}
+          onSignOut={handleSignOut}
+          onLoginClick={handleLoginClick}
+          onWrite={() => handlePanelAction(onWrite)}
+          onAccount={() => handlePanelAction(onAccount)}
+          onNotification={() => handlePanelAction(onNotification)}
         />
 
         {!user && (
@@ -127,23 +178,24 @@ export function Navbar({
 }
 
 export default function UserMenu({
+  user,
+  isOpen,
+  onOpenChange,
   onSignOut,
   onLoginClick,
   onWrite,
   onAccount,
   onNotification,
-  user,
 }: UserMenuProps) {
+  const router = useRouter();
+
   const [isPending, startTransition] = useTransition();
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  const router = useRouter();
   const userId = user?.id;
 
   useEffect(() => {
     setUnreadCount(0);
-    setIsUserMenuOpen(false);
 
     if (!userId) return;
 
@@ -180,6 +232,14 @@ export default function UserMenu({
     };
   }, [userId]);
 
+  function handleSignOutClick() {
+    startTransition(async () => {
+      await onSignOut?.();
+      onOpenChange(false);
+      router.refresh();
+    });
+  }
+
   if (!user) {
     return (
       <Button
@@ -187,8 +247,7 @@ export default function UserMenu({
         onClick={onLoginClick}
         aria-label="Log in"
         className="
-          -ml-2.75 -mr-2
-          flex cursor-pointer items-center
+          -ml-2.75 -mr-2 flex cursor-pointer items-center
           bg-transparent hover:bg-transparent
         "
       >
@@ -200,31 +259,15 @@ export default function UserMenu({
     );
   }
 
-  const initials = user.name
-    ? user.name
-        .split(" ")
-        .filter(Boolean)
-        .map((part) => part[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : user.email?.slice(0, 2).toUpperCase() || "U";
-
-  function handleSignOutClick() {
-    startTransition(async () => {
-      await onSignOut?.();
-      setIsUserMenuOpen(false);
-      router.refresh();
-    });
-  }
+  const initials = getInitials(user);
 
   return (
-    <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
+    <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger
         className="
-    relative isolate flex cursor-pointer
-    items-center gap-2 rounded-full md:mr-2
-  "
+          relative isolate flex cursor-pointer
+          items-center gap-2 rounded-full md:mr-2
+        "
         aria-label={
           unreadCount > 0
             ? `User menu, ${unreadCount} unread notifications`
@@ -236,41 +279,29 @@ export default function UserMenu({
             aria-hidden="true"
             className="
               absolute top-1.5 -left-1 z-10
-              size-2.5 rounded-full bg-[#2474ed]! grayscale-0!
+              size-2.5 rounded-full bg-[#2474ed]
               outline-3 outline-white dark:outline-zinc-900
             "
           />
         )}
 
-        <div className="relative flex items-center gap-2">
-          <div className="flex items-center justify-center">
-            <Avatar
-              className={`h-12 w-12 hover:grayscale-0 ${
-                isUserMenuOpen ? "grayscale-0" : "grayscale"
-              }`}
-            >
-              {user.image && (
-                <AvatarImage
-                  src={user.image}
-                  alt={user.name || "User avatar"}
-                />
-              )}
+        <Avatar
+          className={`size-12 hover:grayscale-0 ${
+            isOpen ? "grayscale-0" : "grayscale"
+          }`}
+        >
+          {user.image && (
+            <AvatarImage src={user.image} alt={user.name || "User avatar"} />
+          )}
 
-              <AvatarFallback
-                className="
-                  bg-zinc-200 text-lg font-semibold
-                  dark:bg-zinc-800
-                "
-              >
-                {user.image ? (
-                  initials
-                ) : (
-                  <UserIcon className="h-4 w-4 text-zinc-600 dark:text-zinc-300" />
-                )}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-        </div>
+          <AvatarFallback className="bg-zinc-200 text-lg font-semibold dark:bg-zinc-800">
+            {user.image ? (
+              initials
+            ) : (
+              <UserIcon className="size-4 text-zinc-600 dark:text-zinc-300" />
+            )}
+          </AvatarFallback>
+        </Avatar>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
@@ -306,7 +337,8 @@ export default function UserMenu({
             <Settings className="mr-2 size-4.5" strokeWidth={1.5} />
             Settings
           </DropdownMenuItem>
-          <DropdownMenuItem className="h-11 cursor-pointer text-[15px] py-0 px-0">
+
+          <DropdownMenuItem className="h-11 cursor-pointer p-0 text-[15px]">
             <ModeToggle text="Mode" />
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -327,7 +359,10 @@ export default function UserMenu({
 
         {user.role === "ADMIN" && (
           <DropdownMenuItem
-            onClick={() => router.push("/admin")}
+            onClick={() => {
+              onOpenChange(false);
+              router.push("/admin");
+            }}
             className="h-11 cursor-pointer text-[15px]"
           >
             <ShieldCogCorner className="mr-2 size-4.5" strokeWidth={1.5} />

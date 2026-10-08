@@ -120,22 +120,37 @@ export default function LayoutShell({
     };
   }, []);
 
+  function setActivePanel(
+    panel: "write" | "account" | "notifications" | "watchlist" | null,
+  ) {
+    setOnWrite(panel === "write");
+    setOnAccount(panel === "account");
+    setOnNotification(panel === "notifications");
+    setOnFavotites(panel === "watchlist");
+  }
+
+  function handleOpenSearch() {
+    setIsMobilePanelOpen(false);
+    setActivePanel(null);
+  }
+
   function handleToggleLeftPanel() {
-    if (window.innerWidth >= 640) {
+    if (window.matchMedia("(min-width: 640px)").matches) {
       setIsDesktopPanelOpen((current) => !current);
       return;
     }
 
-    setOnWrite(false);
-    setOnAccount(false);
-    setOnNotification(false);
-    setOnFavotites(false);
-
+    setActivePanel(null);
     setIsMobilePanelOpen((current) => !current);
   }
 
-  function resetPanelB() {
+  function openPanel(
+    panel: "write" | "account" | "notifications" | "watchlist",
+  ) {
+    if (!user) return;
+
     setIsMobilePanelOpen(false);
+    setActivePanel(panel);
 
     if (window.matchMedia("(min-width: 1024px)").matches) {
       panelBRef.current?.resize("30%");
@@ -143,57 +158,64 @@ export default function LayoutShell({
   }
 
   function handleWrite() {
-    resetPanelB();
-
-    setOnWrite(true);
-    setOnAccount(false);
-    setOnNotification(false);
-    setOnFavotites(false);
+    openPanel("write");
   }
 
   function handleAccount() {
-    resetPanelB();
-
-    setOnWrite(false);
-    setOnAccount(true);
-    setOnNotification(false);
-    setOnFavotites(false);
+    openPanel("account");
   }
 
   function handleNotification() {
-    resetPanelB();
+    if (!user) return;
 
-    setOnWrite(false);
-    setOnAccount(false);
-    setOnNotification(true);
-    setOnFavotites(false);
-
+    openPanel("notifications");
     setNotificationRefreshKey((current) => current + 1);
   }
 
   function handleFavotites() {
-    resetPanelB();
-
-    setOnWrite(false);
-    setOnAccount(false);
-    setOnNotification(false);
-    setOnFavotites(true);
+    openPanel("watchlist");
   }
 
-  const mobilePanelOpen =
-    Boolean(user) && (onWrite || onAccount || onNotification || onFavotites);
+  const hasActivePanel = onWrite || onAccount || onNotification || onFavotites;
 
-  const showLeaderboard =
-    !onWrite && !onAccount && !onNotification && !onFavotites;
+  const mobilePanelOpen = Boolean(user) && hasActivePanel;
+  const showLeaderboard = !hasActivePanel;
+
+  function renderActivePanel() {
+    if (!user) return null;
+
+    if (onWrite) {
+      return <PostEditor setOnWrite={setOnWrite} />;
+    }
+
+    if (onAccount) {
+      return <AccountPanel setOnAccount={setOnAccount} />;
+    }
+
+    if (onNotification) {
+      return (
+        <NotificationPanel
+          refreshKey={notificationRefreshKey}
+          setOnNotification={setOnNotification}
+        />
+      );
+    }
+
+    if (onFavotites) {
+      return <WatchlistPanel setOnFavotites={setOnFavotites} />;
+    }
+
+    return null;
+  }
 
   return (
     <UserProvider user={user}>
       <PointBalanceProvider>
         <OnboardingCard />
 
-        {/* Fixed navbar 높이 72px을 여기서 한 번만 확보 */}
         <div className="relative box-border flex h-screen min-h-0 flex-col overflow-hidden pt-18 supports-[height:100dvh]:h-dvh">
           <Navbar
+            onOpenSearch={handleOpenSearch}
             onTogglePanel={handleToggleLeftPanel}
             onWrite={handleWrite}
             onAccount={handleAccount}
@@ -203,7 +225,7 @@ export default function LayoutShell({
           />
 
           {!layoutReady && (
-            <div className="fixed inset-x-0 bottom-0 top-18 z-50 flex items-center justify-center bg-white dark:bg-zinc-900">
+            <div className="fixed inset-x-0 top-18 bottom-0 z-50 flex items-center justify-center bg-white dark:bg-zinc-900">
               <div className="size-6 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-700 dark:border-zinc-700 dark:border-t-zinc-200" />
             </div>
           )}
@@ -211,7 +233,7 @@ export default function LayoutShell({
           <Suspense
             fallback={
               isMobilePanelOpen ? (
-                <div className="fixed inset-x-0 bottom-0 top-18 z-40 bg-white dark:bg-zinc-950">
+                <div className="fixed inset-x-0 top-18 bottom-0 z-40 bg-white sm:hidden dark:bg-zinc-950">
                   <SideDataLoading />
                 </div>
               ) : null
@@ -225,15 +247,18 @@ export default function LayoutShell({
             />
           </Suspense>
 
-          {/* Navbar 아래의 남은 높이를 모든 패널이 공유 */}
           <div
-            className={`min-h-0 min-w-0 flex-1 overflow-hidden sm:grid sm:transition-[grid-template-columns] sm:duration-300 sm:ease-out ${
-              isDesktopPanelOpen
-                ? "sm:grid-cols-[320px_minmax(0,1fr)]"
-                : "sm:grid-cols-[0px_minmax(0,1fr)]"
-            }`}
+            className={`
+              min-h-0 min-w-0 flex-1 overflow-hidden
+              sm:grid sm:transition-[grid-template-columns]
+              sm:duration-300 sm:ease-out
+              ${
+                isDesktopPanelOpen
+                  ? "sm:grid-cols-[320px_minmax(0,1fr)]"
+                  : "sm:grid-cols-[0px_minmax(0,1fr)]"
+              }
+            `}
           >
-            {/* Desktop PanelLeft: 기존 grid 토글 유지 */}
             <div className="hidden h-full min-h-0 min-w-0 overflow-hidden sm:block">
               <Suspense fallback={<SideDataLoading />}>
                 <PanelLeftStream sideDataPromise={sideDataPromise} />
@@ -252,7 +277,11 @@ export default function LayoutShell({
                 >
                   <section
                     ref={mainScrollRef}
-                    className="h-full min-h-0 w-full min-w-0 overflow-x-hidden overflow-y-auto bg-white pb-14 dark:bg-zinc-900"
+                    className="
+                      h-full min-h-0 w-full min-w-0
+                      overflow-x-hidden overflow-y-auto
+                      bg-white pb-14 dark:bg-zinc-900
+                    "
                   >
                     <div className="min-h-full">
                       {pathname !== "/" && <BreadCrumbs />}
@@ -267,29 +296,15 @@ export default function LayoutShell({
                   panelRef={panelBRef}
                   defaultSize="30%"
                   minSize="0%"
-                  className="z-2 min-h-0 min-w-0 overflow-hidden border-l border-gray-100 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+                  className="
+                    z-2 min-h-0 min-w-0 overflow-hidden
+                    border-l border-gray-100 bg-white
+                    dark:border-zinc-800 dark:bg-zinc-900
+                  "
                 >
                   <div className="hidden h-full min-h-0 min-w-0 flex-col overflow-hidden lg:flex">
-                    {/* 오른쪽 콘텐츠만 스크롤 */}
                     <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
-                      {user && onWrite && (
-                        <PostEditor setOnWrite={setOnWrite} />
-                      )}
-
-                      {user && onAccount && !onWrite && (
-                        <AccountPanel setOnAccount={setOnAccount} />
-                      )}
-
-                      {user && onNotification && (
-                        <NotificationPanel
-                          refreshKey={notificationRefreshKey}
-                          setOnNotification={setOnNotification}
-                        />
-                      )}
-
-                      {user && onFavotites && (
-                        <WatchlistPanel setOnFavotites={setOnFavotites} />
-                      )}
+                      {renderActivePanel()}
 
                       {showLeaderboard && (
                         <Suspense fallback={<SideDataLoading />}>
@@ -301,7 +316,6 @@ export default function LayoutShell({
                       )}
                     </div>
 
-                    {/* Footer는 스크롤 영역 밖 */}
                     <Footer />
                   </div>
                 </ResizablePanel>
@@ -312,32 +326,17 @@ export default function LayoutShell({
           {mobilePanelOpen && (
             <div
               className="
-    fixed inset-x-0 bottom-0 top-18 z-40
-    flex min-h-0 flex-col overflow-hidden
-    bg-white dark:bg-zinc-900
-    sm:left-auto sm:w-3/5 sm:shadow-2xl
-    lg:hidden
-  "
+                fixed inset-x-0 top-18 bottom-0 z-40
+                flex min-h-0 flex-col overflow-hidden
+                bg-white dark:bg-zinc-900
+                sm:left-auto sm:w-3/5 sm:shadow-2xl
+                lg:hidden
+              "
             >
-              {" "}
               <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-                {user && onWrite && <PostEditor setOnWrite={setOnWrite} />}
-
-                {user && onAccount && (
-                  <AccountPanel setOnAccount={setOnAccount} />
-                )}
-
-                {user && onNotification && (
-                  <NotificationPanel
-                    refreshKey={notificationRefreshKey}
-                    setOnNotification={setOnNotification}
-                  />
-                )}
-
-                {user && onFavotites && (
-                  <WatchlistPanel setOnFavotites={setOnFavotites} />
-                )}
+                {renderActivePanel()}
               </div>
+
               <Footer />
             </div>
           )}

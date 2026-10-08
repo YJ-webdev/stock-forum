@@ -343,7 +343,7 @@ export function RelativeStocks({
   }, [selectedIndex]);
 
   return (
-    <div className="flex max-h-[calc(100vh-230px)] w-full flex-col overflow-y-auto ">
+    <div className="flex max-h-[calc(100vh-165px)] w-full flex-col overflow-y-auto ">
       <div className="w-full bg-zinc-100 dark:bg-zinc-800 md:rounded-lg md:bg-white">
         <table className="w-full table-fixed">
           <thead className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-800 md:bg-white">
