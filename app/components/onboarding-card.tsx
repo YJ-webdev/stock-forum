@@ -56,6 +56,21 @@ export function OnboardingCard() {
   const labels = ONBOARDING_LABELS[resolveLanguage(language)];
   const siteName = process.env.NEXT_PUBLIC_SITE_NAME ?? "BullBearVote";
 
+  const countryNames = new Intl.DisplayNames([language], {
+    type: "region",
+  });
+
+  function getCountryName(value: string, fallback: string) {
+    // ISO 국가 코드(예: KR, US, JP)만 변환
+    if (!/^[A-Z]{2}$/.test(value)) return fallback;
+
+    return countryNames.of(value) ?? fallback;
+  }
+
+  const selectedCountry = NATIONALITIES.find(
+    (country) => country.value === nationality,
+  );
+
   if (!user || user.nationality) return null;
 
   function toggleMarket(symbol: string) {
@@ -113,7 +128,7 @@ export function OnboardingCard() {
       } catch (error) {
         console.error(error);
 
-        toast.error(error instanceof Error ? error.message : labels.failed);
+        toast.error(labels.failed);
       }
     });
   }
@@ -263,16 +278,19 @@ export function OnboardingCard() {
                       className="h-11 w-full"
                     >
                       <SelectValue>
-                        {NATIONALITIES.find(
-                          (country) => country.value === nationality,
-                        )?.label ?? labels.select_nationality}
+                        {selectedCountry
+                          ? getCountryName(
+                              selectedCountry.value,
+                              selectedCountry.label,
+                            )
+                          : labels.select_nationality}
                       </SelectValue>
                     </SelectTrigger>
 
                     <SelectContent className="max-h-[65dvh]">
                       {NATIONALITIES.map((country) => (
                         <SelectItem key={country.value} value={country.value}>
-                          {country.label}
+                          {getCountryName(country.value, country.label)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -375,6 +393,7 @@ export function OnboardingCard() {
                   selectedSymbols={selectedSymbols}
                   onToggle={toggleMarket}
                   disabled={isPending}
+                  language={language}
                 />
               </div>
 
