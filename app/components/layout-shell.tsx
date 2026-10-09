@@ -119,6 +119,39 @@ export default function LayoutShell({
     };
   }, []);
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (!event.ctrlKey || event.key.toLowerCase() !== "b") return;
+
+      const target = event.target;
+
+      if (
+        target instanceof HTMLElement &&
+        target.closest(
+          'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
+        )
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (window.matchMedia("(min-width: 640px)").matches) {
+        setIsDesktopPanelOpen((current) => !current);
+        return;
+      }
+
+      setActivePanel(null);
+      setIsMobilePanelOpen((current) => !current);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   function setActivePanel(
     panel: "write" | "account" | "notifications" | "watchlist" | null,
   ) {

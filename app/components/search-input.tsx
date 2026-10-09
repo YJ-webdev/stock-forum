@@ -379,19 +379,18 @@ export default function SearchInput({
               } as React.CSSProperties
             }
             className="
-            h-(--search-panel-height) md:h-auto
-              fixed inset-x-0 bottom-0 top-18
-              z-40! flex min-h-0 flex-col
-              overflow-hidden overscroll-contain
-              bg-zinc-100 pt-3
-              dark:bg-zinc-800
+  fixed inset-x-0 top-18 bottom-0
+  z-40! flex min-h-0 flex-col
+  h-(--search-panel-height)
+  overflow-hidden overscroll-contain
+  bg-zinc-100 pt-3
+  dark:bg-zinc-800
 
-              md:absolute md:left-1/2 md:right-auto
-              md:top-full md:bottom-auto md:mt-3
-              md:w-[min(72rem,calc(100vw-2rem))]
-              md:-translate-x-1/2 md:rounded-xl
-              md:bg-white md:py-4 md:shadow-2xl
-            "
+  lg:left-1/2 lg:right-auto lg:bottom-auto
+  lg:h-auto lg:w-[min(72rem,calc(100vw-2rem))]
+  lg:-translate-x-1/2 lg:rounded-xl
+  lg:bg-white lg:py-4 lg:shadow-2xl
+"
             onClick={(event) => event.stopPropagation()}
           >
             <div

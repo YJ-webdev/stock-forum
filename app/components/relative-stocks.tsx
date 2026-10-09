@@ -343,10 +343,10 @@ export function RelativeStocks({
   }, [selectedIndex]);
 
   return (
-    <div className="flex max-h-[calc(100vh-165px)] w-full flex-col overflow-y-auto ">
-      <div className="w-full bg-zinc-100 dark:bg-zinc-800 md:rounded-lg md:bg-white">
+    <div className="flex max-h-[calc(100vh-165px)] lg:max-h-[calc(100vh-270px)] w-full flex-col overflow-y-auto ">
+      <div className="w-full bg-zinc-100 dark:bg-zinc-800 md:rounded-lg lg:bg-white">
         <table className="w-full table-fixed">
-          <thead className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-800 md:bg-white">
+          <thead className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-800 lg:bg-white">
             <tr className="border-b border-zinc-200 text-[11px] uppercase tracking-wider text-zinc-400 dark:border-zinc-700/50 dark:text-zinc-500 md:text-xs">
               <th
                 className={
@@ -381,8 +381,8 @@ export function RelativeStocks({
               <th
                 className={
                   showVotingColumns
-                    ? "hidden py-3.5 text-right md:table-cell md:w-[10%] md:py-3"
-                    : "w-[25%] py-3.5 text-right md:w-[10%] md:py-3"
+                    ? "hidden  text-right md:table-cell md:w-[10%] md:py-3"
+                    : "w-[23%]  text-right md:w-[10%] md:py-3"
                 }
               >
                 Prev
@@ -391,8 +391,8 @@ export function RelativeStocks({
               <th
                 className={
                   showVotingColumns
-                    ? "hidden truncate py-3 text-right md:table-cell md:w-[10%]"
-                    : "hidden truncate py-3 text-right md:table-cell md:w-[10%]"
+                    ? "hidden truncate text-right md:table-cell md:w-[10%]"
+                    : "hidden truncate text-right md:table-cell md:w-[10%]"
                 }
               >
                 24h %
@@ -401,8 +401,8 @@ export function RelativeStocks({
               <th
                 className={
                   showVotingColumns
-                    ? "hidden py-3 text-right md:table-cell md:w-[10%]"
-                    : "w-[25%] py-3 pr-4 text-right md:w-[10%]"
+                    ? "hidden text-right md:table-cell md:w-[10%]"
+                    : "w-[23%] pr-4 text-right md:w-[10%]"
                 }
               >
                 Change
@@ -412,9 +412,7 @@ export function RelativeStocks({
                 <>
                   <th className="w-[30%] pl-4 md:w-[10%]">Statistic</th>
 
-                  <th className="w-[15%] py-3 pr-4 text-right md:w-[5%]">
-                    Vote
-                  </th>
+                  <th className="w-[15%]  pr-4 text-right md:w-[5%]">Vote</th>
                 </>
               )}
             </tr>

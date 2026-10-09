@@ -495,7 +495,10 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
       </div>
 
       <Dialog open={isPickerOpen} onOpenChange={handlePickerOpenChange}>
-        <DialogContent className="outfit flex h-[85dvh] max-h-170 flex-col gap-0 overflow-hidden rounded-xl p-0 text-zinc-900 dark:text-zinc-300 sm:max-w-lg">
+        <DialogContent
+          overlayClassName="bg-black/30 backdrop-blur-none!"
+          className="dark:border outfit flex h-[85dvh] max-h-170 flex-col gap-0 overflow-hidden rounded-xl p-0 text-zinc-900 dark:text-zinc-300 sm:max-w-lg"
+        >
           <DialogHeader className="shrink-0 px-6 pb-5 pt-7 text-left">
             <DialogTitle className="pr-6 text-xl font-medium">
               Manage your watchlist
