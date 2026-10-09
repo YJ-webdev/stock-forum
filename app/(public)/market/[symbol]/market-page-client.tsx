@@ -241,8 +241,6 @@ export default function MarketPageClient({
 
   const isMarketOpen = canPredict ? votingWindow.isMarketOpen : false;
 
-  const canVote = canPredict ? votingWindow.canVote : false;
-
   const handleVote = (
     direction: VoteDirection,
     amount: number,
@@ -270,62 +268,46 @@ export default function MarketPageClient({
       return;
     }
 
-    if (isPending) {
+    if (isPending) return;
+
+    if (
+      !Number.isInteger(amount) ||
+      (amount !== 0 && (amount < 50 || amount > 500))
+    ) {
+      toast.error("Bet amount must be 0 or between 50 and 500 points.");
       return;
     }
 
-    const sessionDate = votingWindow.predictionFor;
+    // Recheck the voting window at submission time.
+    const currentWindow = getVotingWindow(selectedSymbol, Date.now());
+    const sessionDate = currentWindow.predictionFor;
 
-    if (!canVote || !sessionDate) {
+    if (!currentWindow.canVote || !sessionDate) {
       toast.error(
-        isMarketOpen
+        currentWindow.isMarketOpen
           ? "Voting is closed while the market is open."
           : "Voting is currently unavailable.",
       );
       return;
     }
 
-    if (userPoints < 50) {
-      toast.error("Please add balance to continue voting.");
-      return;
-    }
-
-    if (amount < 50 || amount > 500 || amount > userPoints) {
-      toast.error(
-        `Bet amount must be between 50 and ${Math.min(
-          500,
-          userPoints,
-        )} points.`,
-      );
-      return;
-    }
-
-    if (!data) {
-      toast.error("Market data is unavailable.");
-      return;
-    }
-
-    const referenceClose = Number(data.rawPrice);
-
-    if (!Number.isFinite(referenceClose) || referenceClose <= 0) {
-      toast.error("Invalid market price.");
-      return;
-    }
+    // createComment determines the reference close on the server.
+    const trimmedComment = comment.trim();
 
     let content: JSONContent | null = null;
 
-    if (comment.trim() || gif) {
+    if (trimmedComment || gif) {
       content = {
         type: "doc",
         content: [
-          ...(comment.trim()
+          ...(trimmedComment
             ? [
                 {
                   type: "paragraph",
                   content: [
                     {
                       type: "text",
-                      text: comment.trim(),
+                      text: trimmedComment,
                     },
                   ],
                 },
@@ -349,6 +331,8 @@ export default function MarketPageClient({
     setSelectedVote(direction);
 
     startTransition(async () => {
+      let voteSubmitted = false;
+
       try {
         const result = await createComment({
           content,
@@ -360,34 +344,51 @@ export default function MarketPageClient({
           },
         });
 
-        if (result.points !== null) {
+        voteSubmitted = true;
+
+        if (result.points != null) {
           setUserPoints(result.points);
         }
 
-        if (result.comment) {
-          await onSuccess?.(result.comment);
-        }
-
-        const stats = await getMarketVoteStats({
-          symbol: selectedSymbol,
-          sessionDate,
-        });
-
-        setVoteStats(stats);
+        const predictionLabel = direction === "BULL" ? "Bullish" : "Bearish";
 
         toast.success(
-          direction === "BULL"
-            ? `Bullish prediction submitted with ${amount} pts.`
-            : `Bearish prediction submitted with ${amount} pts.`,
+          amount > 0
+            ? `${predictionLabel} prediction submitted with ${amount} pts.`
+            : `${predictionLabel} prediction submitted.`,
         );
-      } catch (error) {
-        setSelectedVote(null);
 
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to submit prediction.",
-        );
+        // Refresh independently: failure here does not undo the vote.
+        const refreshResults = await Promise.allSettled([
+          Promise.resolve().then(() =>
+            result.comment ? onSuccess?.(result.comment) : undefined,
+          ),
+
+          getMarketVoteStats({
+            symbol: selectedSymbol,
+            sessionDate,
+          }).then((stats) => {
+            setVoteStats(stats);
+          }),
+        ]);
+
+        for (const result of refreshResults) {
+          if (result.status === "rejected") {
+            console.error("Failed to refresh prediction UI:", result.reason);
+          }
+        }
+      } catch (error) {
+        if (!voteSubmitted) {
+          setSelectedVote(null);
+
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to submit prediction.",
+          );
+        } else {
+          console.error("Failed to update prediction UI:", error);
+        }
       }
     });
   };

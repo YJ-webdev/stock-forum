@@ -321,73 +321,33 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
   return summary;
 }
 
-// -----------------------------------------------------------------------------
-// WIN
-// -----------------------------------------------------------------------------
-
 async function settleWin({
   predictionId,
   userId,
-
   symbol,
   direction,
-
   pointsBet,
-
   referenceClose,
   settlementClose,
 }: {
   predictionId: string;
   userId: string;
-
   symbol: string;
   direction: PredictionDirection;
-
   pointsBet: number;
-
   referenceClose: number;
   settlementClose: number;
 }): Promise<boolean> {
   return prisma.$transaction(async (tx) => {
-    // -----------------------------------------------------------------------
-    // CLAIM PREDICTION
-    // -----------------------------------------------------------------------
-
-    /*
-     * Only a PENDING prediction may be settled.
-     *
-     * updateMany gives us an atomic:
-     *
-     * WHERE id = predictionId
-     * AND status = PENDING
-     *
-     * If another worker already settled it, count === 0.
-     */
-
     const claimed = await tx.prediction.updateMany({
       where: {
         id: predictionId,
         status: PredictionStatus.PENDING,
       },
-
       data: {
         status: PredictionStatus.WON,
-
         settlementClose,
-
-        /*
-         * The bet was already deducted when the prediction was created.
-         *
-         * pointsChange represents the NET result:
-         *
-         * bet 100
-         * -100 initially
-         * +200 payout
-         * ----------------
-         * net +100
-         */
         pointsChange: pointsBet,
-
         settledAt: new Date(),
       },
     });
@@ -396,127 +356,85 @@ async function settleWin({
       return false;
     }
 
-    // -----------------------------------------------------------------------
-    // PAYOUT
-    // -----------------------------------------------------------------------
+    // The original bet was deducted at submission.
+    // Return the bet plus winnings only for a positive bet.
+    if (pointsBet > 0) {
+      const payout = pointsBet * 2;
 
-    const payout = pointsBet * 2;
-
-    await tx.pointBalance.upsert({
-      where: {
-        userId,
-      },
-
-      update: {
-        points: {
-          increment: payout,
+      await tx.pointBalance.upsert({
+        where: { userId },
+        update: {
+          points: { increment: payout },
         },
-      },
+        create: {
+          userId,
+          points: 10000 + payout,
+        },
+      });
 
-      create: {
-        userId,
-        points: 10000 + payout,
-      },
-    });
+      await tx.pointTransaction.create({
+        data: {
+          userId,
+          predictionId,
+          type: "WIN_PAYOUT",
+          amount: payout,
+        },
+      });
+    }
 
-    // -----------------------------------------------------------------------
-    // LEDGER
-    // -----------------------------------------------------------------------
+    const eventKey = `prediction:${predictionId}:won`;
 
-    await tx.pointTransaction.create({
-      data: {
-        userId,
-        predictionId,
-
-        type: "WIN_PAYOUT",
-
-        amount: payout,
-      },
-    });
-
-    // -----------------------------------------------------------------------
-    // NOTIFICATION
-    // -----------------------------------------------------------------------
+    const message =
+      `Your ${direction.toLowerCase()} prediction for ${symbol} was correct. ` +
+      `${referenceClose.toFixed(2)} → ${settlementClose.toFixed(2)}.` +
+      (pointsBet > 0
+        ? ` You earned ${pointsBet.toLocaleString()} points.`
+        : "");
 
     await tx.notification.upsert({
-      where: {
-        eventKey: `prediction:${predictionId}:won`,
-      },
-
+      where: { eventKey },
       update: {},
-
       create: {
         userId,
-
         type: "PREDICTION_WON",
-
         title: "Prediction won",
-
-        message:
-          `Your ${direction.toLowerCase()} prediction for ${symbol} was correct. ` +
-          `${referenceClose.toFixed(2)} → ${settlementClose.toFixed(2)}. ` +
-          `You earned ${pointsBet.toLocaleString()} points.`,
-
+        message,
         predictionId,
-
-        eventKey: `prediction:${predictionId}:won`,
+        eventKey,
       },
     });
 
     return true;
   });
 }
-
-// -----------------------------------------------------------------------------
-// LOSS
-// -----------------------------------------------------------------------------
 
 async function settleLoss({
   predictionId,
   userId,
-
   symbol,
   direction,
-
   pointsBet,
-
   referenceClose,
   settlementClose,
 }: {
   predictionId: string;
   userId: string;
-
   symbol: string;
   direction: PredictionDirection;
-
   pointsBet: number;
-
   referenceClose: number;
   settlementClose: number;
 }): Promise<boolean> {
   return prisma.$transaction(async (tx) => {
-    // -----------------------------------------------------------------------
-    // CLAIM PREDICTION
-    // -----------------------------------------------------------------------
-
     const claimed = await tx.prediction.updateMany({
       where: {
         id: predictionId,
         status: PredictionStatus.PENDING,
       },
-
       data: {
         status: PredictionStatus.LOST,
-
         settlementClose,
-
-        /*
-         * The bet was already deducted during prediction creation.
-         *
-         * Do NOT deduct it again here.
-         */
-        pointsChange: -pointsBet,
-
+        pointsChange: pointsBet > 0 ? -pointsBet : 0,
         settledAt: new Date(),
       },
     });
@@ -525,32 +443,24 @@ async function settleLoss({
       return false;
     }
 
-    // -----------------------------------------------------------------------
-    // NOTIFICATION
-    // -----------------------------------------------------------------------
+    // The bet was already deducted at submission.
+    const eventKey = `prediction:${predictionId}:lost`;
+
+    const message =
+      `Your ${direction.toLowerCase()} prediction for ${symbol} was incorrect. ` +
+      `${referenceClose.toFixed(2)} → ${settlementClose.toFixed(2)}.` +
+      (pointsBet > 0 ? ` You lost ${pointsBet.toLocaleString()} points.` : "");
 
     await tx.notification.upsert({
-      where: {
-        eventKey: `prediction:${predictionId}:lost`,
-      },
-
+      where: { eventKey },
       update: {},
-
       create: {
         userId,
-
         type: "PREDICTION_LOST",
-
         title: "Prediction lost",
-
-        message:
-          `Your ${direction.toLowerCase()} prediction for ${symbol} was incorrect. ` +
-          `${referenceClose.toFixed(2)} → ${settlementClose.toFixed(2)}. ` +
-          `You lost ${pointsBet.toLocaleString()} points.`,
-
+        message,
         predictionId,
-
-        eventKey: `prediction:${predictionId}:lost`,
+        eventKey,
       },
     });
 
@@ -558,46 +468,29 @@ async function settleLoss({
   });
 }
 
-// -----------------------------------------------------------------------------
-// DRAW
-// -----------------------------------------------------------------------------
-
 async function settleDraw({
   predictionId,
   userId,
-
   symbol,
-
   pointsBet,
   settlementClose,
 }: {
   predictionId: string;
   userId: string;
-
   symbol: string;
-
   pointsBet: number;
   settlementClose: number;
 }): Promise<boolean> {
   return prisma.$transaction(async (tx) => {
-    // -----------------------------------------------------------------------
-    // CLAIM PREDICTION
-    // -----------------------------------------------------------------------
-
     const claimed = await tx.prediction.updateMany({
       where: {
         id: predictionId,
         status: PredictionStatus.PENDING,
       },
-
       data: {
         status: PredictionStatus.DRAW,
-
         settlementClose,
-
-        // Bet is refunded, therefore net change is zero.
         pointsChange: 0,
-
         settledAt: new Date(),
       },
     });
@@ -606,68 +499,47 @@ async function settleDraw({
       return false;
     }
 
-    // -----------------------------------------------------------------------
-    // REFUND
-    // -----------------------------------------------------------------------
-
-    await tx.pointBalance.upsert({
-      where: {
-        userId,
-      },
-
-      update: {
-        points: {
-          increment: pointsBet,
+    if (pointsBet > 0) {
+      await tx.pointBalance.upsert({
+        where: { userId },
+        update: {
+          points: { increment: pointsBet },
         },
-      },
+        create: {
+          userId,
+          points: 10000 + pointsBet,
+        },
+      });
 
-      create: {
-        userId,
-        points: 10000 + pointsBet,
-      },
-    });
+      await tx.pointTransaction.create({
+        data: {
+          userId,
+          predictionId,
+          type: "DRAW_REFUND",
+          amount: pointsBet,
+        },
+      });
+    }
 
-    // -----------------------------------------------------------------------
-    // LEDGER
-    // -----------------------------------------------------------------------
+    const eventKey = `prediction:${predictionId}:draw`;
 
-    await tx.pointTransaction.create({
-      data: {
-        userId,
-        predictionId,
-
-        type: "DRAW_REFUND",
-
-        amount: pointsBet,
-      },
-    });
-
-    // -----------------------------------------------------------------------
-    // NOTIFICATION
-    // -----------------------------------------------------------------------
+    const message =
+      `The completed ${symbol} session closed unchanged at ` +
+      `${settlementClose.toFixed(2)}.` +
+      (pointsBet > 0
+        ? ` Your ${pointsBet.toLocaleString()} point bet has been refunded.`
+        : "");
 
     await tx.notification.upsert({
-      where: {
-        eventKey: `prediction:${predictionId}:draw`,
-      },
-
+      where: { eventKey },
       update: {},
-
       create: {
         userId,
-
         type: "PREDICTION_DRAW",
-
         title: "Prediction draw",
-
-        message:
-          `The completed ${symbol} session closed unchanged at ` +
-          `${settlementClose.toFixed(2)}. ` +
-          `Your ${pointsBet.toLocaleString()} point bet has been refunded.`,
-
+        message,
         predictionId,
-
-        eventKey: `prediction:${predictionId}:draw`,
+        eventKey,
       },
     });
 

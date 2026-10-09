@@ -307,29 +307,44 @@ export async function submitMarketVote({
     throw new Error("You must be logged in to vote.");
   }
 
-  if (!nationality) {
+  const userId = session.user.id;
+
+  if (!nationality?.trim()) {
     throw new Error("Please set your nationality before voting.");
+  }
+
+  if (
+    direction !== PredictionDirection.BULL &&
+    direction !== PredictionDirection.BEAR
+  ) {
+    throw new Error("Invalid prediction direction.");
   }
 
   if (!Number.isInteger(pointsBet)) {
     throw new Error("Points must be a whole number.");
   }
 
-  if (pointsBet < 50 || pointsBet > 500) {
-    throw new Error("Bet amount must be between 50 and 500 points.");
+  // Zero means voting without a point bet.
+  if (pointsBet !== 0 && (pointsBet < 50 || pointsBet > 500)) {
+    throw new Error("Bet amount must be 0 or between 50 and 500 points.");
+  }
+
+  if (
+    !(sessionDate instanceof Date) ||
+    !Number.isFinite(sessionDate.getTime())
+  ) {
+    throw new Error("Invalid prediction session.");
   }
 
   if (!Number.isFinite(referenceClose) || referenceClose <= 0) {
     throw new Error("Invalid prediction price.");
   }
 
-  // Make sure this market actually exists.
   const asset = await prisma.marketAsset.findUnique({
-    where: {
-      symbol,
-    },
+    where: { symbol },
     select: {
       symbol: true,
+      assetType: true,
     },
   });
 
@@ -337,54 +352,84 @@ export async function submitMarketVote({
     throw new Error("Market asset not found.");
   }
 
-  // ---------------------------------------------------------------------------
-  // IMPORTANT:
-  // Do NOT use upsert here.
-  //
-  // One user gets ONE prediction for:
-  // userId + symbol + sessionDate
-  //
-  // Your Prisma @@unique constraint also enforces this at DB level.
-  // ---------------------------------------------------------------------------
+  if (asset.assetType !== "index") {
+    throw new Error("Voting is only available for indices.");
+  }
 
   const existingPrediction = await prisma.prediction.findUnique({
     where: {
       userId_symbol_sessionDate: {
-        userId: session.user.id,
+        userId,
         symbol,
         sessionDate,
       },
     },
-    select: {
-      id: true,
-    },
+    select: { id: true },
   });
 
   if (existingPrediction) {
     throw new Error("You have already voted for this market session.");
   }
 
-  const prediction = await prisma.prediction.create({
-    data: {
-      userId: session.user.id,
-      symbol,
-      direction,
-      pointsBet,
-      referenceClose,
-      sessionDate,
-      nationality,
-    },
-    select: {
-      id: true,
-      symbol: true,
-      direction: true,
-      pointsBet: true,
-      referenceClose: true,
-      sessionDate: true,
-      status: true,
-      nationality: true,
-      createdAt: true,
-    },
+  const prediction = await prisma.$transaction(async (tx) => {
+    const createdPrediction = await tx.prediction.create({
+      data: {
+        userId,
+        symbol,
+        direction,
+        pointsBet,
+        referenceClose,
+        sessionDate,
+        nationality,
+      },
+      select: {
+        id: true,
+        symbol: true,
+        direction: true,
+        pointsBet: true,
+        referenceClose: true,
+        sessionDate: true,
+        status: true,
+        nationality: true,
+        createdAt: true,
+      },
+    });
+
+    if (pointsBet > 0) {
+      await tx.pointBalance.upsert({
+        where: { userId },
+        update: {},
+        create: {
+          userId,
+          points: 10000,
+        },
+      });
+
+      const deducted = await tx.pointBalance.updateMany({
+        where: {
+          userId,
+          points: { gte: pointsBet },
+        },
+        data: {
+          points: { decrement: pointsBet },
+        },
+      });
+
+      if (deducted.count !== 1) {
+        throw new Error("You do not have enough points.");
+      }
+
+      await tx.pointTransaction.create({
+        data: {
+          userId,
+          predictionId: createdPrediction.id,
+          type: "BET",
+          amount: -pointsBet,
+        },
+      });
+    }
+
+    return createdPrediction;
   });
 
   return {

@@ -103,10 +103,7 @@ export async function createComment({
   assetSymbols,
   prediction = null,
 }: CreateCommentInput) {
-  // ---------------------------------------------------------------------------
   // AUTH
-  // ---------------------------------------------------------------------------
-
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -115,10 +112,7 @@ export async function createComment({
 
   const userId = session.user.id;
 
-  // ---------------------------------------------------------------------------
   // SELECTED MARKETS
-  // ---------------------------------------------------------------------------
-
   const uniqueSymbols = [...new Set(assetSymbols)];
 
   if (uniqueSymbols.length === 0) {
@@ -135,10 +129,7 @@ export async function createComment({
     throw new Error("No valid boards selected.");
   }
 
-  // ---------------------------------------------------------------------------
   // PREDICTION VALIDATION
-  // ---------------------------------------------------------------------------
-
   if (prediction && selectedMarkets.length !== 1) {
     throw new Error("A prediction must belong to exactly one market.");
   }
@@ -146,10 +137,10 @@ export async function createComment({
   if (prediction) {
     if (
       !Number.isInteger(prediction.pointsBet) ||
-      prediction.pointsBet < 50 ||
+      prediction.pointsBet < 0 ||
       prediction.pointsBet > 500
     ) {
-      throw new Error("Prediction must be between 50 and 500 points.");
+      throw new Error("Prediction must be between 0 and 500 points.");
     }
 
     if (
@@ -160,10 +151,7 @@ export async function createComment({
     }
   }
 
-  // ---------------------------------------------------------------------------
   // CONTENT
-  // ---------------------------------------------------------------------------
-
   const hasContent = content !== null && hasEditorContent(content);
 
   if (!hasContent && !prediction) {
@@ -174,22 +162,7 @@ export async function createComment({
     ? (JSON.parse(JSON.stringify(content)) as Prisma.InputJsonValue)
     : null;
 
-  // ---------------------------------------------------------------------------
   // AUTO MODERATION
-  //
-  // Nothing is automatically deleted.
-  //
-  // PUBLIC:
-  // - visible to everyone
-  //
-  // PRIVATE:
-  // - visible to the author
-  // - visible to admins
-  // - hidden from everyone else
-  //
-  // The author receives the created comment normally regardless of visibility.
-  // ---------------------------------------------------------------------------
-
   const moderationText =
     hasContent && content !== null ? getContentText(content) : "";
 
@@ -199,29 +172,13 @@ export async function createComment({
     ? "PRIVATE"
     : "PUBLIC";
 
-  // ---------------------------------------------------------------------------
   // PREDICTION NATIONALITY
-  //
-  // Only predictions need nationality.
-  //
-  // We intentionally read nationality directly from the database here instead
-  // of trusting the client or JWT value. This guarantees that the Prediction
-  // stores the user's current nationality at the moment the vote is submitted.
-  //
-  // Normal comments do not perform this DB query.
-  // ---------------------------------------------------------------------------
-
   let predictionNationality: string | null = null;
 
   if (prediction) {
     const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-
-      select: {
-        nationality: true,
-      },
+      where: { id: userId },
+      select: { nationality: true },
     });
 
     if (!user) {
@@ -235,20 +192,8 @@ export async function createComment({
     predictionNationality = user.nationality;
   }
 
-  // ---------------------------------------------------------------------------
   // REFERENCE CLOSE
-  //
-  // IMPORTANT:
-  // This is intentionally determined on the server.
-  //
-  // The browser must never be trusted to provide the market price used to
-  // determine whether a prediction wins or loses.
-  //
-  // This happens BEFORE the Prisma transaction because Yahoo is an external
-  // network request. We don't want to keep a DB transaction open while waiting
-  // for market data.
-  // ---------------------------------------------------------------------------
-
+  // Fetch external market data before opening the transaction.
   let referenceClose: number | null = null;
 
   if (prediction) {
@@ -264,16 +209,11 @@ export async function createComment({
     }
   }
 
-  // ---------------------------------------------------------------------------
   // ENSURE MARKET ASSETS EXIST
-  // ---------------------------------------------------------------------------
-
   await Promise.all(
     selectedMarkets.map((market) =>
       prisma.marketAsset.upsert({
-        where: {
-          symbol: market.symbol,
-        },
+        where: { symbol: market.symbol },
 
         update: {
           name: market.name,
@@ -295,18 +235,9 @@ export async function createComment({
     ),
   );
 
-  // ---------------------------------------------------------------------------
   // TRANSACTION
-  // ---------------------------------------------------------------------------
-
   const result = await prisma.$transaction(async (tx) => {
-    let createdPrediction: {
-      id: string;
-    } | null = null;
-
-    // -------------------------------------------------------------------------
-    // PREDICTION
-    // -------------------------------------------------------------------------
+    let createdPrediction: { id: string } | null = null;
 
     if (prediction) {
       const market = selectedMarkets[0];
@@ -319,105 +250,60 @@ export async function createComment({
         throw new Error("Please set your nationality before voting.");
       }
 
-      // -----------------------------------------------------------------------
-      // ENSURE POINT BALANCE EXISTS
-      // -----------------------------------------------------------------------
-
-      await tx.pointBalance.upsert({
-        where: {
-          userId,
-        },
-
-        update: {},
-
-        create: {
-          userId,
-          points: 10000,
-        },
-      });
-
-      // -----------------------------------------------------------------------
       // CREATE PREDICTION
-      // -----------------------------------------------------------------------
-
       createdPrediction = await tx.prediction.create({
         data: {
           userId,
           symbol: market.symbol,
-
           direction: prediction.direction,
-
           pointsBet: prediction.pointsBet,
-
           referenceClose,
-
           sessionDate: prediction.sessionDate,
-
-          // Snapshot of the user's current
-          // nationality at vote time.
           nationality: predictionNationality,
         },
-
-        select: {
-          id: true,
-        },
+        select: { id: true },
       });
 
-      // -----------------------------------------------------------------------
-      // DEDUCT BET
-      //
-      // updateMany + points >= pointsBet ensures the balance cannot go
-      // negative if multiple prediction requests arrive at roughly the
-      // same time.
-      //
-      // Because this happens in the same transaction as Prediction creation,
-      // failure here rolls back the Prediction as well.
-      // -----------------------------------------------------------------------
-
-      const deducted = await tx.pointBalance.updateMany({
-        where: {
-          userId,
-
-          points: {
-            gte: prediction.pointsBet,
+      // OPTIONAL POINT BET
+      if (prediction.pointsBet > 0) {
+        await tx.pointBalance.upsert({
+          where: { userId },
+          update: {},
+          create: {
+            userId,
+            points: 10000,
           },
-        },
+        });
 
-        data: {
-          points: {
-            decrement: prediction.pointsBet,
+        // Conditional deduction prevents concurrent bets
+        // from taking the balance below zero.
+        const deducted = await tx.pointBalance.updateMany({
+          where: {
+            userId,
+            points: { gte: prediction.pointsBet },
           },
-        },
-      });
+          data: {
+            points: { decrement: prediction.pointsBet },
+          },
+        });
 
-      if (deducted.count !== 1) {
-        throw new Error("You do not have enough points.");
+        if (deducted.count !== 1) {
+          throw new Error("You do not have enough points.");
+        }
+
+        await tx.pointTransaction.create({
+          data: {
+            userId,
+            predictionId: createdPrediction.id,
+            type: "BET",
+            amount: -prediction.pointsBet,
+          },
+        });
       }
-
-      // -----------------------------------------------------------------------
-      // POINT TRANSACTION
-      // -----------------------------------------------------------------------
-
-      await tx.pointTransaction.create({
-        data: {
-          userId,
-
-          predictionId: createdPrediction.id,
-
-          type: "BET",
-
-          amount: -prediction.pointsBet,
-        },
-      });
     }
 
-    // -------------------------------------------------------------------------
     // COMMENT
-    // -------------------------------------------------------------------------
-
-    let createdComment: {
-      id: string;
-    } | null = null;
+    let createdComment: { id: string } | null = null;
 
     if (hasContent || createdPrediction) {
       const commentContent: Prisma.InputJsonValue = plainContent ?? {
@@ -436,66 +322,39 @@ export async function createComment({
           assets: {
             create: selectedMarkets.map((market) => ({
               asset: {
-                connect: {
-                  symbol: market.symbol,
-                },
+                connect: { symbol: market.symbol },
               },
             })),
           },
         },
-
-        select: {
-          id: true,
-        },
+        select: { id: true },
       });
     }
 
-    // -------------------------------------------------------------------------
-    // UPDATED POINT BALANCE
-    // -------------------------------------------------------------------------
-
+    // Return an existing balance for any prediction.
+    // A zero-point vote does not create a balance.
     const pointBalance = prediction
       ? await tx.pointBalance.findUnique({
-          where: {
-            userId,
-          },
-
-          select: {
-            points: true,
-          },
+          where: { userId },
+          select: { points: true },
         })
       : null;
 
     return {
       success: true,
-
       commentId: createdComment?.id ?? null,
-
       predictionId: createdPrediction?.id ?? null,
-
       points: pointBalance?.points ?? null,
     };
   });
 
-  // ---------------------------------------------------------------------------
-  // CREATED COMMENT
-  //
-  // IMPORTANT:
-  // A PRIVATE comment is still returned to its author normally.
-  // The author should not see a different posting experience.
-  // ---------------------------------------------------------------------------
-
+  // Private comments are also returned to their author.
   const createdComment = result.commentId
     ? await getCommentById(result.commentId, userId)
     : null;
 
-  // ---------------------------------------------------------------------------
-  // RESULT
-  // ---------------------------------------------------------------------------
-
   return {
     ...result,
-
     comment: createdComment,
   };
 }

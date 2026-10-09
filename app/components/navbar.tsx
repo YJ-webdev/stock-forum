@@ -294,7 +294,7 @@ export default function UserMenu({
             <AvatarImage src={user.image} alt={user.name || "User avatar"} />
           )}
 
-          <AvatarFallback className="bg-zinc-200 text-lg font-semibold dark:bg-zinc-800">
+          <AvatarFallback className="bg-zinc-500 text-lg font-semibold text-white">
             {user.image ? (
               initials
             ) : (

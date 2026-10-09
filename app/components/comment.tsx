@@ -312,7 +312,10 @@ export function MarketComments({
       return;
     }
 
-    if (prediction.isMarketOpen) return;
+    if (prediction.isMarketOpen) {
+      toast.error("Voting is closed while the market is open.");
+      return;
+    }
 
     if (prediction.selectedVote !== null) {
       toast.error("You have already voted for this round.");
@@ -325,15 +328,17 @@ export function MarketComments({
     }
 
     const { betAmount, userPoints, handleVote } = prediction;
-    const maxBet = Math.min(500, userPoints);
 
-    if (!Number.isInteger(betAmount) || betAmount < 50) {
-      toast.error("Minimum prediction is 50 points.");
+    if (
+      !Number.isInteger(betAmount) ||
+      (betAmount !== 0 && (betAmount < 50 || betAmount > 500))
+    ) {
+      toast.error("Bet amount must be 0 or between 50 and 500 points.");
       return;
     }
 
-    if (betAmount > maxBet) {
-      toast.error(`You can predict up to ${maxBet.toLocaleString()} points.`);
+    if (betAmount > 0 && betAmount > userPoints) {
+      toast.error("You do not have enough points.");
       return;
     }
 

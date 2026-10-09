@@ -71,11 +71,6 @@ export function PredictionCommentInput({
       return;
     }
 
-    if (userPoints < 50) {
-      toast.error("Please add balance to continue voting.");
-      return;
-    }
-
     setDirection(direction);
   };
 
@@ -179,7 +174,7 @@ export function PredictionCommentInput({
                 onChange={(e) => {
                   setBetAmount(Number(e.target.value));
                 }}
-                min={50}
+                min={0}
                 max={maxBet}
                 step={50}
                 disabled={buttonDisabled || !currentUser}

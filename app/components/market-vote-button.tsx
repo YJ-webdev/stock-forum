@@ -204,7 +204,7 @@ export function MarketVoteButton({
 
     triggerRef.current = trigger;
     setDraftDirection(nextDirection);
-    setBetAmount(50);
+    setBetAmount(userPoints >= 50 ? 50 : 0);
     setNow(Date.now());
     setView("editor");
   }
@@ -235,25 +235,17 @@ export function MarketVoteButton({
       return;
     }
 
-    if (userPoints < 50) {
-      toast.error("Add points to your balance to continue voting.");
-      return;
-    }
-
-    if (
-      !Number.isInteger(betAmount) ||
-      betAmount < 50 ||
-      betAmount > maxBet ||
-      betAmount % 50 !== 0
-    ) {
-      toast.error(
-        `Choose an amount from 50 to ${maxBet.toLocaleString()} points in steps of 50.`,
-      );
-      return;
-    }
-
     const submittedDirection = draftDirection;
     const submittedAmount = betAmount;
+
+    if (
+      !Number.isInteger(submittedAmount) ||
+      (submittedAmount !== 0 && (submittedAmount < 50 || submittedAmount > 500))
+    ) {
+      toast.error("Bet amount must be 0 or between 50 and 500 points.");
+      return;
+    }
+
     const submittedLookupKey = JSON.stringify([
       userId,
       symbol,
@@ -274,7 +266,7 @@ export function MarketVoteButton({
         },
       });
 
-      if (result.points !== null) {
+      if (result.points != null) {
         setPoints(result.points);
       }
 
@@ -286,6 +278,7 @@ export function MarketVoteButton({
           lookupKey: submittedLookupKey,
           direction: submittedDirection,
         });
+
         setCheckedLookupKey(submittedLookupKey);
         setVoteLookupFailed(false);
       } else {
@@ -294,10 +287,13 @@ export function MarketVoteButton({
 
       closePopup();
 
+      const predictionLabel =
+        submittedDirection === "BULL" ? "Bullish" : "Bearish";
+
       toast.success(
-        `${
-          submittedDirection === "BULL" ? "Bullish" : "Bearish"
-        } prediction submitted with ${submittedAmount} pts.`,
+        submittedAmount > 0
+          ? `${predictionLabel} prediction submitted with ${submittedAmount} pts.`
+          : `${predictionLabel} prediction submitted.`,
       );
     } catch (error) {
       toast.error(
