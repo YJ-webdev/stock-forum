@@ -6,10 +6,14 @@ import {
   getMarketVoteStats,
   type MarketVoteStats,
 } from "@/app/actions/market-vote";
+
+import { resolveLanguage } from "@/lib/data/languages";
+import { STATISTICS_LABELS } from "@/lib/data/translations";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 
 interface MarketSentimentProps {
   symbol: string;
+  userLanguage?: string | null;
 }
 
 interface MarketSession {
@@ -37,18 +41,24 @@ const WIDTH_TRANSITION =
 const PERCENT_TEXT = "outfit font-normal text-white";
 
 function getSentimentSession(symbol: string): MarketSession {
-  const window = getVotingWindow(symbol, Date.now());
+  const votingWindow = getVotingWindow(symbol, Date.now());
 
   return {
     symbol,
-    isMarketOpen: window.isMarketOpen,
-    predictionMs: window.isMarketOpen
-      ? (window.currentSessionStartMs ?? null)
-      : (window.predictionFor?.getTime() ?? null),
+    isMarketOpen: votingWindow.isMarketOpen,
+    predictionMs: votingWindow.isMarketOpen
+      ? (votingWindow.currentSessionStartMs ?? null)
+      : (votingWindow.predictionFor?.getTime() ?? null),
   };
 }
 
-export function MarketSentiment({ symbol }: MarketSentimentProps) {
+export function MarketSentiment({
+  symbol,
+  userLanguage,
+}: MarketSentimentProps) {
+  const language = resolveLanguage(userLanguage);
+  const labels = STATISTICS_LABELS[language];
+
   const [session, setSession] = useState<MarketSession | null>(null);
   const [result, setResult] = useState<SentimentResult | null>(null);
 
@@ -170,23 +180,23 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
   const bullPercent = stats?.bullPercent ?? 0;
   const bearPercent = stats?.bearPercent ?? 0;
 
+  const ariaLabel = stats
+    ? hasVotes
+      ? `Bull ${bullPercent}%, Bear ${bearPercent}%, ${labels.votes}: ${stats.totalVotes.toLocaleString(language)}`
+      : labels.no_vote_yet
+    : undefined;
+
   return (
     <div className="outfit w-full">
       <div
         role={stats ? "img" : undefined}
-        aria-label={
-          stats
-            ? hasVotes
-              ? `Bull ${bullPercent} percent, Bear ${bearPercent} percent, ${stats.totalVotes} votes`
-              : "No votes yet"
-            : undefined
-        }
+        aria-label={ariaLabel}
         aria-hidden={stats ? undefined : true}
         className={`relative flex h-7 w-full items-center overflow-hidden bg-white dark:bg-zinc-900 ${DOT_PATTERN}`}
       >
         <div
           aria-hidden="true"
-          className="flex z-1 w-full items-center justify-around text-white text-[13px] leading-none tabular-nums"
+          className="z-1 flex w-full items-center justify-around text-[13px] leading-none text-white tabular-nums"
         >
           {hasVotes ? (
             <>
@@ -202,7 +212,7 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
             </>
           ) : (
             <span className="font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
-              No vote yet
+              {labels.no_vote_yet}
             </span>
           )}
         </div>
@@ -213,12 +223,12 @@ export function MarketSentiment({ symbol }: MarketSentimentProps) {
             className="absolute inset-x-0 bottom-0 flex h-6.5 rounded-full"
           >
             <div
-              className={`h-full bg-[#4bbd82]/50   ${WIDTH_TRANSITION}`}
+              className={`h-full bg-[#4bbd82]/50 ${WIDTH_TRANSITION}`}
               style={{ width: `${bullPercent}%` }}
             />
 
             <div
-              className={`h-full bg-[#f07197]/50   ${WIDTH_TRANSITION}`}
+              className={`h-full bg-[#f07197]/50 ${WIDTH_TRANSITION}`}
               style={{ width: `${bearPercent}%` }}
             />
           </div>

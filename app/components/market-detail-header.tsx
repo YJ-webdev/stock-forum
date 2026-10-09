@@ -1,14 +1,10 @@
 "use client";
 
-import {
-  ChevronRight,
-  ArrowUpCircle,
-  ArrowDownCircle,
-  TrendingUp,
-  TrendingDown,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
+import { TrendingUp, TrendingDown } from "lucide-react";
+
 import { Numeric } from "./numeric";
+import { resolveLanguage } from "@/lib/data/languages";
+import { MARKET_LABELS, MARKET_DETAIL_LABELS } from "@/lib/data/translations";
 
 export interface MarketDetailHeaderProps {
   rawPrice?: number;
@@ -20,6 +16,10 @@ export interface MarketDetailHeaderProps {
   updatedAt?: number | string;
   onAddToList?: () => void;
   exchangeTimezone: string;
+
+  currentUser?: {
+    language?: string | null;
+  } | null;
 }
 
 export function MarketDetailHeader({
@@ -31,10 +31,12 @@ export function MarketDetailHeader({
   selectedRange = "1D",
   updatedAt,
   exchangeTimezone,
+  currentUser,
 }: MarketDetailHeaderProps) {
-  const router = useRouter();
+  const language = resolveLanguage(currentUser?.language);
+  const marketLabels = MARKET_LABELS[language];
+  const detailLabels = MARKET_DETAIL_LABELS[language];
 
-  // Dynamically resolve price string from API value prop or raw numeric fallback
   const displayPrice =
     value ??
     (rawPrice !== undefined
@@ -44,94 +46,94 @@ export function MarketDetailHeader({
         })
       : "-");
 
+  const changeNumber = Number(change.replace(/,/g, "").trim());
+
+  const formattedChange = Number.isFinite(changeNumber)
+    ? changeNumber.toLocaleString("en-US", {
+        useGrouping: true,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        signDisplay: "exceptZero",
+      })
+    : change;
+
   const formatMarketTimestamp = (dateInput?: number | string) => {
-    const date = dateInput ? new Date(dateInput) : new Date();
+    const date = dateInput !== undefined ? new Date(dateInput) : new Date();
+
+    if (Number.isNaN(date.getTime())) return "-";
 
     try {
-      const formatter = new Intl.DateTimeFormat("en-GB", {
+      return new Intl.DateTimeFormat(language, {
         timeZone: exchangeTimezone,
-        day: "numeric",
+        calendar: "gregory",
+        numberingSystem: "latn",
         month: "short",
+        day: "numeric",
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-        hour12: false,
+        hourCycle: "h23",
         timeZoneName: "shortOffset",
-      });
-
-      const parts = formatter.formatToParts(date);
-      const day = parts.find((p) => p.type === "day")?.value;
-      const month = parts.find((p) => p.type === "month")?.value;
-      const hour = parts.find((p) => p.type === "hour")?.value;
-      const minute = parts.find((p) => p.type === "minute")?.value;
-      const second = parts.find((p) => p.type === "second")?.value;
-
-      let tz = parts.find((p) => p.type === "timeZoneName")?.value || "";
-      tz = tz.replace("GMT", "UTC");
-
-      return `${day} ${month}, ${hour}:${minute}:${second} ${tz}`;
-    } catch (_e) {
+      }).format(date);
+    } catch {
       return date.toISOString();
     }
   };
 
-  const rangeLabelMap: Record<string, string> = {
-    "1D": "Today",
-    "5D": "Past 5 Days",
-    "1M": "Past Month",
-    "3M": "Past 3 Months",
-    "6M": "Past 6 Months",
-    YTD: "Year to Date",
-    "1Y": "Past Year",
-    "5Y": "Past 5 Years",
-    MAX: "All Time",
-  };
+  const percentNumber = Number(percent.replace(/[,%]/g, "").trim());
 
-  const rangeLabel = rangeLabelMap[selectedRange] || "Today";
+  const formattedPercent = Number.isFinite(percentNumber)
+    ? `${percentNumber.toLocaleString("en-US", {
+        useGrouping: true,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        signDisplay: "exceptZero",
+      })}%`
+    : percent;
+
+  const rangeLabel =
+    detailLabels.ranges[selectedRange] ?? detailLabels.ranges["1D"];
+
   const colorClass = isPositive
     ? "text-emerald-600 dark:text-emerald-400"
     : "text-[#cf0000] dark:text-[#ff4545]";
 
   return (
-    <div className="px-4 flex items-center gap-3 min-w-0">
-      <div className="flex flex-col min-w-0">
-        <div className="flex flex-wrap sm:flex-nowrap items-baseline gap-x-3 gap-y-1 tracking-tight md:tracking-normal">
-          <Numeric className="font-extrabold text-3xl text-zinc-900 dark:text-zinc-300">
+    <div className="flex min-w-0 items-center gap-3 px-4">
+      <div className="flex min-w-0 flex-col">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 tracking-tight sm:flex-nowrap md:tracking-normal">
+          <Numeric className="text-3xl font-extrabold text-zinc-900 dark:text-zinc-300">
             {displayPrice}
           </Numeric>
 
           <div
-            className={`flex flex-wrap items-center gap-x-1.5 gap-y-1 text-lg ${colorClass} min-w-0`}
+            className={`flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-lg ${colorClass}`}
           >
             {isPositive ? (
-              <TrendingUp className="w-5 h-5 shrink-0" />
+              <TrendingUp className="size-5 shrink-0" aria-hidden="true" />
             ) : (
-              <TrendingDown className="w-5 h-5 shrink-0" />
+              <TrendingDown className="size-5 shrink-0" aria-hidden="true" />
             )}
-
-            <span className="jakarta">{percent}</span>
-
-            <span className="jakarta">({change})</span>
-
+            <span className="jakarta">{formattedPercent}</span>{" "}
+            <span className="jakarta">({formattedChange})</span>
             <span className="jakarta whitespace-nowrap text-sm">
               {rangeLabel}
             </span>
           </div>
         </div>
 
-        {/* Timestamp Display */}
-        <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 font-normal flex items-center gap-1.5">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs font-normal text-zinc-500 dark:text-zinc-400">
           <span>{formatMarketTimestamp(updatedAt)}</span>
-          <span>·</span>
-          <span>Data delayed 15m</span>
-          <span>·</span>
+          <span aria-hidden="true">·</span>
+          <span>{marketLabels.data_delayed.replace("{minutes}", "15")}</span>
+          <span aria-hidden="true">·</span>
+
           <button
-            onClick={() =>
-              alert("Market data is provided for informational purposes only.")
-            }
-            className="hover:underline cursor-pointer"
+            type="button"
+            onClick={() => alert(detailLabels.disclaimer_message)}
+            className="cursor-pointer hover:underline"
           >
-            Disclaimer
+            {marketLabels.disclaimer}
           </button>
         </div>
       </div>

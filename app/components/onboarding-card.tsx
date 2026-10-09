@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
 import {
   Select,
   SelectContent,
@@ -23,73 +22,66 @@ import {
 } from "@/components/ui/select";
 
 import { NATIONALITIES } from "@/lib/data/nationalities";
-import { LANGUAGES } from "@/lib/data/languages";
+import {
+  LANGUAGES,
+  resolveLanguage,
+  type Language,
+} from "@/lib/data/languages";
+import { ONBOARDING_LABELS } from "@/lib/data/translations";
 
 import { updateAccountPreferences } from "@/app/actions/update-account-preferences";
-
 import { useCurrentUser, useSetCurrentUser } from "../context/user-context";
 import { addMarketsToWatchlist } from "../actions/watchlist";
 import { MarketPicker } from "./market-picker";
 
 type OnboardingStep = 1 | 2;
 
-// -----------------------------------------------------------------------------
-// Component
-// -----------------------------------------------------------------------------
-
 export function OnboardingCard() {
   const user = useCurrentUser();
   const setCurrentUser = useSetCurrentUser();
+  const router = useRouter();
 
   const [step, setStep] = useState<OnboardingStep>(1);
-
   const [nationality, setNationality] = useState("");
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState<Language>("en");
 
-  const [selectedSymbols, setSelectedSymbols] = useState<string[]>([]);
+  const [selectedSymbols, setSelectedSymbols] = useState<string[]>([
+    "^GSPC",
+    "^IXIC",
+    "^DJI",
+  ]);
 
   const [isPending, startTransition] = useTransition();
 
-  if (!user || user.nationality) {
-    return null;
+  const labels = ONBOARDING_LABELS[resolveLanguage(language)];
+  const siteName = process.env.NEXT_PUBLIC_SITE_NAME ?? "BullBearVote";
+
+  if (!user || user.nationality) return null;
+
+  function toggleMarket(symbol: string) {
+    if (isPending) return;
+
+    setSelectedSymbols((previous) =>
+      previous.includes(symbol)
+        ? previous.filter((item) => item !== symbol)
+        : [...previous, symbol],
+    );
   }
 
-  const toggleMarket = (symbol: string) => {
-    setSelectedSymbols((prev) =>
-      prev.includes(symbol)
-        ? prev.filter((item) => item !== symbol)
-        : [...prev, symbol],
-    );
-  };
-
-  // ---------------------------------------------------------------------------
-  // Step navigation
-  // ---------------------------------------------------------------------------
-
-  const handleContinue = () => {
-    if (!nationality || isPending) {
-      return;
-    }
+  function handleContinue() {
+    if (!nationality || isPending) return;
 
     setStep(2);
-  };
+  }
 
-  const handleBack = () => {
-    if (isPending) {
-      return;
-    }
+  function handleBack() {
+    if (isPending) return;
 
     setStep(1);
-  };
+  }
 
-  // ---------------------------------------------------------------------------
-  // Complete onboarding
-  // ---------------------------------------------------------------------------
-
-  const handleComplete = () => {
-    if (!nationality || isPending) {
-      return;
-    }
+  function handleComplete() {
+    if (!user || !nationality || isPending) return;
 
     startTransition(async () => {
       try {
@@ -104,30 +96,27 @@ export function OnboardingCard() {
           await addMarketsToWatchlist(selectedSymbols);
         }
 
-        setCurrentUser((prev) =>
-          prev
+        setCurrentUser((previous) =>
+          previous
             ? {
-                ...prev,
+                ...previous,
                 name: updatedUser.name,
                 image: updatedUser.image,
                 nationality: updatedUser.nationality,
                 language: updatedUser.language,
               }
-            : prev,
+            : previous,
         );
 
-        toast.success("Profile setup complete.");
+        router.refresh();
+        toast.success(labels.success);
       } catch (error) {
         console.error(error);
 
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to complete profile setup.",
-        );
+        toast.error(error instanceof Error ? error.message : labels.failed);
       }
     });
-  };
+  }
 
   return (
     <Dialog open>
@@ -136,32 +125,23 @@ export function OnboardingCard() {
         className="
           flex h-dvh w-screen max-w-none flex-col
           rounded-none border-0 p-0
-          text-zinc-800
-          dark:text-zinc-300
-
+          text-zinc-800 dark:text-zinc-300
           sm:h-auto sm:w-full sm:max-w-md
           sm:rounded-xl sm:border
         "
       >
         <div
           className="
-            flex min-h-0 flex-1 flex-col
-            px-6 py-8
+            flex min-h-0 flex-1 flex-col px-6 py-8
             sm:flex-none sm:px-7 sm:py-7
           "
         >
-          {/* ---------------------------------------------------------------- */}
-          {/* Progress */}
-          {/* ---------------------------------------------------------------- */}
-
           <div className="mb-8 flex w-full shrink-0 items-center">
-            {/* Profile */}
             <div className="flex items-center gap-2">
               <div
                 className={`
                   flex size-5 shrink-0 items-center justify-center
-                  rounded-full border text-[10px]
-                  transition-colors
+                  rounded-full border text-[10px] transition-colors
                   ${
                     step === 1
                       ? `
@@ -176,7 +156,11 @@ export function OnboardingCard() {
                 `}
               >
                 {step === 2 ? (
-                  <Check className="size-3" strokeWidth={2} />
+                  <Check
+                    className="size-3"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
                 ) : (
                   "1"
                 )}
@@ -192,15 +176,13 @@ export function OnboardingCard() {
                   }
                 `}
               >
-                Profile
+                {labels.profile}
               </span>
             </div>
 
-            {/* Connector */}
             <div
               className={`
-                mx-3 h-px flex-1
-                transition-colors duration-300
+                mx-3 h-px flex-1 transition-colors duration-300
                 ${
                   step === 2
                     ? "bg-zinc-400 dark:bg-zinc-600"
@@ -209,13 +191,11 @@ export function OnboardingCard() {
               `}
             />
 
-            {/* Markets */}
             <div className="flex items-center gap-2">
               <div
                 className={`
                   flex size-5 shrink-0 items-center justify-center
-                  rounded-full border text-[10px]
-                  transition-colors
+                  rounded-full border text-[10px] transition-colors
                   ${
                     step === 2
                       ? `
@@ -242,36 +222,30 @@ export function OnboardingCard() {
                   }
                 `}
               >
-                Markets
+                {labels.markets}
               </span>
             </div>
           </div>
-
-          {/* ---------------------------------------------------------------- */}
-          {/* Step 1: Profile */}
-          {/* ---------------------------------------------------------------- */}
 
           {step === 1 && (
             <>
               <DialogHeader className="shrink-0 gap-2 text-left">
                 <DialogTitle className="text-xl font-medium">
-                  Welcome to {process.env.NEXT_PUBLIC_SITE_NAME}
+                  {labels.welcome.replace("{site}", siteName)}
                 </DialogTitle>
 
                 <DialogDescription className="text-sm leading-6">
-                  Set up your profile to get started.
+                  {labels.description}
                 </DialogDescription>
               </DialogHeader>
 
-              {/* Settings */}
               <div className="mt-8 space-y-6">
-                {/* Nationality */}
                 <div className="space-y-2">
                   <label
                     htmlFor="onboarding-nationality"
                     className="mb-2 block text-sm font-normal"
                   >
-                    Nationality
+                    {labels.nationality}
                     <span className="ml-1 text-rose-500">*</span>
                   </label>
 
@@ -291,7 +265,7 @@ export function OnboardingCard() {
                       <SelectValue>
                         {NATIONALITIES.find(
                           (country) => country.value === nationality,
-                        )?.label ?? "Select your nationality"}
+                        )?.label ?? labels.select_nationality}
                       </SelectValue>
                     </SelectTrigger>
 
@@ -305,13 +279,12 @@ export function OnboardingCard() {
                   </Select>
                 </div>
 
-                {/* Language */}
                 <div className="space-y-2">
                   <label
                     htmlFor="onboarding-language"
                     className="mb-2 block text-sm font-normal"
                   >
-                    Language
+                    {labels.language}
                   </label>
 
                   <Select
@@ -319,7 +292,7 @@ export function OnboardingCard() {
                     disabled={isPending}
                     onValueChange={(value) => {
                       if (value !== null) {
-                        setLanguage(value);
+                        setLanguage(resolveLanguage(value));
                       }
                     }}
                   >
@@ -329,7 +302,7 @@ export function OnboardingCard() {
                     >
                       <SelectValue>
                         {LANGUAGES.find((item) => item.value === language)
-                          ?.label ?? "Select your language"}
+                          ?.label ?? labels.select_language}
                       </SelectValue>
                     </SelectTrigger>
 
@@ -344,15 +317,12 @@ export function OnboardingCard() {
                 </div>
 
                 <p className="text-xs leading-5 text-muted-foreground">
-                  Your nationality is used for regional market statistics and
-                  community insights.
+                  {labels.nationality_hint}
                 </p>
               </div>
 
-              {/* Push button to bottom on mobile */}
               <div className="flex-1 sm:hidden" />
 
-              {/* Continue */}
               <div className="mt-8 shrink-0">
                 <Button
                   type="button"
@@ -361,9 +331,13 @@ export function OnboardingCard() {
                   onClick={handleContinue}
                 >
                   <span className="flex items-center gap-2">
-                    Continue
+                    {labels.continue}
                     {nationality && (
-                      <Check className="h-4 w-4" strokeWidth={2} />
+                      <Check
+                        className="size-4"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      />
                     )}
                   </span>
                 </Button>
@@ -371,35 +345,29 @@ export function OnboardingCard() {
             </>
           )}
 
-          {/* ---------------------------------------------------------------- */}
-          {/* Step 2: Markets */}
-          {/* ---------------------------------------------------------------- */}
-
           {step === 2 && (
             <>
               <DialogHeader className="shrink-0 gap-2 text-left">
                 <DialogTitle className="text-xl font-medium">
-                  Choose your markets
+                  {labels.choose_markets}
                 </DialogTitle>
 
                 <DialogDescription className="text-sm leading-6">
-                  Select the markets you'd like to follow.
+                  {labels.markets_description}
                   {selectedSymbols.length > 0 && (
                     <span className="ml-1">
-                      {selectedSymbols.length} selected.
+                      {labels.selected.replace(
+                        "{count}",
+                        selectedSymbols.length.toLocaleString(language),
+                      )}
                     </span>
                   )}
                 </DialogDescription>
               </DialogHeader>
 
-              {/* ------------------------------------------------------------ */}
-              {/* Market list */}
-              {/* ------------------------------------------------------------ */}
-
               <div
                 className="
-                  mt-7 min-h-0 flex-1
-                  overflow-y-auto pr-1
+                  mt-7 min-h-0 flex-1 overflow-y-auto pr-1
                   sm:max-h-95
                 "
               >
@@ -410,10 +378,6 @@ export function OnboardingCard() {
                 />
               </div>
 
-              {/* ------------------------------------------------------------ */}
-              {/* Actions */}
-              {/* ------------------------------------------------------------ */}
-
               <div className="mt-7 flex shrink-0 gap-3">
                 <Button
                   type="button"
@@ -422,8 +386,12 @@ export function OnboardingCard() {
                   disabled={isPending}
                   onClick={handleBack}
                 >
-                  <ArrowLeft className="mr-1 h-4 w-4" strokeWidth={1.7} />
-                  Back
+                  <ArrowLeft
+                    className="mr-1 size-4"
+                    strokeWidth={1.7}
+                    aria-hidden="true"
+                  />
+                  {labels.back}
                 </Button>
 
                 <Button
@@ -435,16 +403,16 @@ export function OnboardingCard() {
                   {isPending ? (
                     <span className="flex items-center gap-2">
                       <span
+                        aria-hidden="true"
                         className="
                           size-3.5 animate-spin rounded-full
-                          border-2 border-white/40
-                          border-t-white
+                          border-2 border-white/40 border-t-white
                         "
                       />
-                      Saving...
+                      {labels.saving}
                     </span>
                   ) : (
-                    "Finish"
+                    labels.finish
                   )}
                 </Button>
               </div>

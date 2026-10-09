@@ -11,4 +11,11 @@ export const LANGUAGES = [
   { value: "ru", label: "Русский" },
   { value: "ar", label: "العربية" },
   { value: "hi", label: "हिन्दी" },
-];
+] as const;
+
+export type Language = (typeof LANGUAGES)[number]["value"];
+
+// DB에서 가져온 문자열을 검증하고, 없거나 잘못된 값이면 영어 사용
+export function resolveLanguage(value?: string | null): Language {
+  return LANGUAGES.find((language) => language.value === value)?.value ?? "en";
+}

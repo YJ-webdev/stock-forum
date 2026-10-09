@@ -9,10 +9,14 @@ import {
   ChartLine,
   Minimize2,
 } from "lucide-react";
+import { resolveLanguage } from "@/lib/data/languages";
+import { MARKET_LABELS } from "@/lib/data/translations";
 
 export type ChartType = "line" | "area" | "candle" | "bar";
 
 export interface DetailChartProps {
+  userLanguage?: string | null;
+
   history: {
     timestampMs: number;
     price: number;
@@ -62,9 +66,12 @@ export function DetailChart({
   exchangeTimezone,
   sessionStartMs,
   sessionEndMs,
+  userLanguage,
   onClick,
 }: DetailChartProps) {
   const chartId = useId().replace(/:/g, "");
+  const language = resolveLanguage(userLanguage);
+  const marketLabels = MARKET_LABELS[language];
 
   const [chartType, setChartType] = useState<ChartType>("area");
 
@@ -421,7 +428,7 @@ export function DetailChart({
     ...timezoneOptions,
   });
 
-  const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  const dateFormatter = new Intl.DateTimeFormat(language, {
     month: "short",
     day: "numeric",
     ...timezoneOptions,
@@ -775,7 +782,7 @@ export function DetailChart({
               textAnchor="end"
               className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-300 dark:font-light"
             >
-              Prev. close{" "}
+              {marketLabels.prev_close}:{" "}
               {validPreviousClose.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,

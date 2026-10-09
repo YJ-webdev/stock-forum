@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { GifPicker, GifResult } from "./gif-picker";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { resolveLanguage } from "@/lib/data/languages";
+import { COMMENT_LABELS, VOTE_LABELS } from "@/lib/data/translations";
 
 type VoteDirection = "BULL" | "BEAR";
 
@@ -25,6 +27,7 @@ interface PredictionCommentInputProps {
   currentUser: {
     name?: string | null;
     image?: string | null;
+    language?: string | null;
   } | null;
 
   isMarketOpen: boolean;
@@ -57,6 +60,10 @@ export function PredictionCommentInput({
   showCountdown,
 }: PredictionCommentInputProps) {
   const gifButtonRef = useRef<HTMLButtonElement>(null);
+  const language = resolveLanguage(currentUser?.language);
+
+  const voteLabels = VOTE_LABELS[language];
+  const commentLabels = COMMENT_LABELS[language];
 
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
@@ -145,7 +152,7 @@ export function PredictionCommentInput({
       ${direction === "BULL" ? "text-white" : "text-zinc-500"}
     `}
               >
-                Bull
+                {voteLabels.bull}
               </button>
 
               {/* Bear */}
@@ -162,7 +169,7 @@ export function PredictionCommentInput({
       ${direction === "BEAR" ? "text-white" : "text-zinc-500"}
     `}
               >
-                Bear
+                {voteLabels.bear}
               </button>
             </div>
 
@@ -217,16 +224,14 @@ export function PredictionCommentInput({
             }}
             onClick={() => {
               if (!currentUser) {
-                toast.error("Log in to write a comment.", {
+                toast.error(commentLabels.login.replace(/\.{3}$/, ""), {
                   id: "login-required",
                 });
               }
             }}
             rows={1}
             placeholder={
-              currentUser
-                ? "Write a comment..."
-                : "Log in to make your prediction or comment..."
+              currentUser ? commentLabels.write : commentLabels.login
             }
             className={`
     min-h-11 w-full resize-none
@@ -321,13 +326,13 @@ export function PredictionCommentInput({
         cursor-pointer
         border-none
         bg-transparent
-        text-black
+        text-zinc-800
         shadow-none
         transition-colors
 
         hover:bg-transparent
         dark:bg-transparent
-        dark:text-zinc-100
+        dark:text-zinc-300
         dark:hover:bg-transparent
 
         disabled:cursor-not-allowed
@@ -346,7 +351,7 @@ export function PredictionCommentInput({
                         : ""
                   }
                 />{" "}
-                {isPending ? "Voting..." : "Vote"}
+                {isPending ? voteLabels.voting : voteLabels.vote}
               </Button>
             </div>
           </div>

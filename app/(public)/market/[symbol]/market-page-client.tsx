@@ -42,6 +42,14 @@ import { countryCodeToFlag } from "@/lib/utils/nationality-flag";
 
 import MarketNews from "@/app/components/market-news";
 import { MarketActionsMenu } from "@/app/components/market-action-menu";
+import {
+  CHART_LABELS,
+  OTHER_LABELS,
+  STATISTICS_LABELS,
+  VOTE_LABELS,
+  VOTE_TOAST_LABELS,
+} from "@/lib/data/translations";
+import { resolveLanguage } from "@/lib/data/languages";
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
@@ -167,6 +175,15 @@ export default function MarketPageClient({
   initialIsWatchlist,
 }: MarketPageClientProps) {
   const user = useCurrentUser();
+  const isLoggedIn = !!user;
+  const userLanguage = resolveLanguage(user?.language);
+  const nationality = user?.nationality ?? null;
+
+  const chartLabels = CHART_LABELS[userLanguage];
+  const statisticsLabels = STATISTICS_LABELS[userLanguage];
+  const voteLabels = VOTE_LABELS[userLanguage];
+  const otherLabel = OTHER_LABELS[userLanguage];
+  const voteToastLabels = VOTE_TOAST_LABELS[userLanguage];
 
   const { points: userPoints, setPoints: setUserPoints } = usePointBalance();
 
@@ -233,9 +250,6 @@ export default function MarketPageClient({
 
   const exchangeTimezone =
     data?.exchangeTimezone ?? symbolMeta?.timezone ?? "UTC";
-
-  const isLoggedIn = !!user;
-  const nationality = user?.nationality ?? null;
 
   const votingWindow = getVotingWindow(selectedSymbol, now);
 
@@ -350,12 +364,16 @@ export default function MarketPageClient({
           setUserPoints(result.points);
         }
 
-        const predictionLabel = direction === "BULL" ? "Bullish" : "Bearish";
+        const predictionLabel =
+          direction === "BULL" ? voteLabels.bull : voteLabels.bear;
 
         toast.success(
-          amount > 0
-            ? `${predictionLabel} prediction submitted with ${amount} pts.`
-            : `${predictionLabel} prediction submitted.`,
+          (amount > 0
+            ? voteToastLabels.success_with_points
+            : voteToastLabels.success
+          )
+            .replace("{voteDirection}", predictionLabel)
+            .replace("{points}", String(amount)),
         );
 
         // Refresh independently: failure here does not undo the vote.
@@ -482,6 +500,7 @@ export default function MarketPageClient({
               updatedAt={data.updatedAt}
               selectedRange={activeRange}
               exchangeTimezone={exchangeTimezone}
+              currentUser={user}
             />
 
             {!showDetailChart && (
@@ -560,6 +579,7 @@ export default function MarketPageClient({
                 >
                   <div className="md:mx-4">
                     <DetailChart
+                      userLanguage={userLanguage}
                       key={`${selectedSymbol}-${activeRange}`}
                       history={data.history}
                       isPositive={data.isPositive}
@@ -593,7 +613,9 @@ export default function MarketPageClient({
                             key={range}
                             type="button"
                             title={
-                              isUnavailable ? "Data unavailable" : undefined
+                              isUnavailable
+                                ? chartLabels.data_unavailable
+                                : undefined
                             }
                             disabled={isUnavailable}
                             onClick={() => handleRangeChange(range)}
@@ -605,7 +627,7 @@ export default function MarketPageClient({
                                   : "cursor-pointer bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-600/50"
                             }`}
                           >
-                            {range}
+                            {chartLabels.ranges[range] ?? range}
                           </button>
                         );
                       })}
@@ -634,8 +656,9 @@ export default function MarketPageClient({
               {/* Voter nationalities */}
 
               <div className="min-w-0">
-                <p className="text-[14px] font-medium">Voters</p>
-
+                <p className="text-[14px] font-medium">
+                  {statisticsLabels.voters}
+                </p>
                 {voteStats.totalVotes > 0 ? (
                   <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
                     {voteStats.nationalities.map((country) => (
@@ -651,7 +674,7 @@ export default function MarketPageClient({
 
                         <span>
                           {country.nationality === "OTHER"
-                            ? "Other"
+                            ? otherLabel
                             : country.nationality}
                         </span>
 
@@ -663,7 +686,7 @@ export default function MarketPageClient({
                   </div>
                 ) : (
                   <p className="mt-2 text-[13px] text-zinc-500 dark:text-zinc-400">
-                    No votes yet
+                    {statisticsLabels.no_vote_yet}
                   </p>
                 )}
               </div>
@@ -675,9 +698,9 @@ export default function MarketPageClient({
                   <span>
                     {voteStats.totalVotes > 0
                       ? voteStats.bullPercent >= voteStats.bearPercent
-                        ? "Bullish"
-                        : "Bearish"
-                      : "No sentiment"}
+                        ? voteLabels.bull
+                        : voteLabels.bear
+                      : statisticsLabels.no_vote_yet}
                   </span>
 
                   <span>
@@ -705,7 +728,9 @@ export default function MarketPageClient({
 
                 <p className="mt-2 text-end text-[14px] font-medium">
                   {voteStats.totalVotes}{" "}
-                  {voteStats.totalVotes === 1 ? "vote" : "votes"}
+                  {userLanguage === "en" && voteStats.totalVotes === 1
+                    ? "vote"
+                    : statisticsLabels.votes}
                 </p>
               </div>
             </div>

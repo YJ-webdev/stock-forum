@@ -1,4 +1,3 @@
-// app/components/home-market-carousel.tsx
 "use client";
 
 import {
@@ -10,6 +9,8 @@ import {
   type PointerEvent,
 } from "react";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ChevronFirst,
   ChevronLast,
@@ -17,9 +18,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { PiPlusMinus } from "react-icons/pi";
-
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -35,12 +33,14 @@ import {
   addMarketsToWatchlist,
   removeMarketsFromWatchlist,
 } from "@/app/actions/watchlist";
-import type { HomeMarketEntry } from "@/types/home-market";
 import { MAX_WATCHLIST_MARKETS } from "@/lib/constants/watchlist";
+import { resolveLanguage } from "@/lib/data/languages";
+import { WATCHLIST_LABELS } from "@/lib/data/translations";
+import type { HomeMarketEntry } from "@/types/home-market";
 
+import { useCurrentUser } from "../context/user-context";
 import { BullBearVoteCard } from "./bull-bear-vote-card";
 import { MarketPicker } from "./market-picker";
-import { useCurrentUser } from "../context/user-context";
 
 interface HomeMarketCarouselProps {
   markets: HomeMarketEntry[];
@@ -53,9 +53,39 @@ interface DragState {
   active: boolean;
 }
 
+function formatLabel(
+  template: string,
+  values: Record<string, string | number>,
+): string {
+  return template.replace(/\{(\w+)\}/g, (placeholder, key: string) =>
+    values[key] !== undefined ? String(values[key]) : placeholder,
+  );
+}
+
+const MANAGE_BUTTON_CLASS =
+  "outfit flex h-60 shrink-0 cursor-pointer " +
+  "flex-col items-center justify-center gap-2 " +
+  "rounded-xl border-2 border-dashed border-zinc-200 " +
+  "bg-zinc-50/60 text-sm text-zinc-500 transition-colors " +
+  "focus-visible:outline-none focus-visible:ring-2 " +
+  "focus-visible:ring-zinc-400 " +
+  "dark:border-zinc-700 dark:bg-zinc-800/20 dark:text-zinc-400";
+
+const SCROLL_BUTTON_CLASS =
+  "absolute top-1/2 flex size-9 -translate-y-1/2 " +
+  "items-center justify-center rounded-full " +
+  "border border-zinc-200 bg-white shadow-sm " +
+  "opacity-0 transition-opacity duration-150 " +
+  "group-hover/markets:opacity-100! focus-visible:opacity-100! " +
+  "focus-visible:outline-none focus-visible:ring-2 " +
+  "focus-visible:ring-zinc-400 " +
+  "dark:border-zinc-700 dark:bg-zinc-900";
+
 export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
   const router = useRouter();
   const user = useCurrentUser();
+  const userLanguage = resolveLanguage(user?.language);
+  const labels = WATCHLIST_LABELS[userLanguage];
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -65,7 +95,6 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [selectedSymbols, setSelectedSymbols] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
@@ -82,8 +111,11 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
   );
 
   const totalWatchlistCount = new Set(selectedSymbols).size;
-
   const hasChanges = symbolsToAdd.length > 0 || symbolsToRemove.length > 0;
+
+  const limitLabel = formatLabel(labels.limit, {
+    max: MAX_WATCHLIST_MARKETS,
+  });
 
   const updateScrollButtons = useCallback(() => {
     const element = scrollRef.current;
@@ -119,8 +151,10 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
   }, [markets, updateScrollButtons]);
 
   function openPicker() {
+    if (savingRef.current) return;
+
     if (!user) {
-      toast.error("Log in to manage your watchlist.");
+      toast.error(labels.login);
       return;
     }
 
@@ -158,12 +192,12 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
     if (savingRef.current || !hasChanges) return;
 
     if (!user) {
-      toast.error("Log in to manage your watchlist.");
+      toast.error(labels.login);
       return;
     }
 
     if (totalWatchlistCount > MAX_WATCHLIST_MARKETS) {
-      toast.error(`You can follow up to ${MAX_WATCHLIST_MARKETS} markets.`);
+      toast.error(limitLabel);
       return;
     }
 
@@ -189,20 +223,18 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
         setIsPickerOpen(false);
         setSelectedSymbols([]);
 
-        toast.success("Watchlist updated.");
+        toast.success(labels.updated);
         router.refresh();
-      } catch (error) {
+      } catch {
         if (removed) {
+          // Reflect successful removals if additions failed.
+          setSelectedSymbols((previous) =>
+            previous.filter((symbol) => !additions.includes(symbol)),
+          );
           router.refresh();
         }
 
-        toast.error(
-          removed
-            ? "Markets were removed, but new markets could not be added. Please try again."
-            : error instanceof Error
-              ? error.message
-              : "Failed to update your watchlist.",
-        );
+        toast.error(removed ? labels.partial_failure : labels.failed);
       } finally {
         savingRef.current = false;
       }
@@ -264,7 +296,6 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
     }
 
     event.preventDefault();
-
     event.currentTarget.scrollLeft = drag.startScrollLeft - distance;
   }
 
@@ -290,21 +321,10 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
               type="button"
               onClick={openPicker}
               aria-haspopup="dialog"
-              className="
-                      outfit flex h-60 w-full shrink-0 cursor-pointer
-                      flex-col items-center justify-center gap-2
-                      rounded-xl border-2 border-dashed border-zinc-200
-                      bg-zinc-50/60 text-sm text-zinc-500 transition-colors
-                     
-                      focus-visible:outline-none focus-visible:ring-2
-                      focus-visible:ring-zinc-400
-                      dark:border-zinc-700 dark:bg-zinc-800/20
-                      dark:text-zinc-400 
-                    "
+              className={`${MANAGE_BUTTON_CLASS} w-full`}
             >
-              {" "}
               <PiPlusMinus className="size-5 shrink-0" aria-hidden="true" />
-              Manage watchlist
+              {labels.manage}
             </button>
           </div>
         ) : (
@@ -312,7 +332,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
             <div
               ref={scrollRef}
               role="region"
-              aria-label="My markets"
+              aria-label={labels.my_markets}
               tabIndex={0}
               onScroll={updateScrollButtons}
               onPointerDown={handlePointerDown}
@@ -341,9 +361,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 if (event.key === "ArrowLeft") {
                   event.preventDefault();
                   scrollByCard(-1);
-                }
-
-                if (event.key === "ArrowRight") {
+                } else if (event.key === "ArrowRight") {
                   event.preventDefault();
                   scrollByCard(1);
                 }
@@ -371,7 +389,9 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                     >
                       <Link
                         href={`/market/${encodeURIComponent(market.symbol)}`}
-                        aria-label={`View ${market.name}`}
+                        aria-label={formatLabel(labels.view_market, {
+                          market: market.name,
+                        })}
                         draggable={false}
                         className="
                           absolute inset-0 z-10 cursor-pointer rounded-lg
@@ -385,6 +405,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                         initialIsWatchlist={initialIsWatchlist}
                         initialVote={initialVote}
                         initialVoteSessionKey={initialVoteSessionKey}
+                        userLanguage={userLanguage}
                       />
                     </div>
                   ),
@@ -395,23 +416,13 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                     type="button"
                     onClick={openPicker}
                     aria-haspopup="dialog"
-                    className="
-                      outfit flex h-60 w-44 shrink-0 cursor-pointer
-                      flex-col items-center justify-center gap-2
-                      rounded-xl border-2 border-dashed border-zinc-200
-                      bg-zinc-50/60 text-sm text-zinc-500 transition-colors
-                     
-                      focus-visible:outline-none focus-visible:ring-2
-                      focus-visible:ring-zinc-400
-                      dark:border-zinc-700 dark:bg-zinc-800/20
-                      dark:text-zinc-400 
-                    "
+                    className={`${MANAGE_BUTTON_CLASS} w-44`}
                   >
                     <PiPlusMinus
                       className="size-5 shrink-0"
                       aria-hidden="true"
                     />
-                    Manage watchlist
+                    <span className="px-3 text-center">{labels.manage}</span>
                   </button>
                 )}
               </div>
@@ -419,7 +430,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
 
             <button
               type="button"
-              aria-label="Previous markets"
+              aria-label={labels.previous}
               aria-disabled={!canScrollLeft}
               onClick={(event) => {
                 event.preventDefault();
@@ -428,15 +439,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 if (canScrollLeft) scrollByCard(-1);
               }}
               className={`
-                absolute left-2 top-1/2 flex size-9
-                -translate-y-1/2 items-center justify-center
-                rounded-full border border-zinc-200 bg-white shadow-sm
-                opacity-0 transition-opacity duration-150
-                group-hover/markets:opacity-100!
-                focus-visible:opacity-100!
-                focus-visible:outline-none focus-visible:ring-2
-                focus-visible:ring-zinc-400
-                dark:border-zinc-700 dark:bg-zinc-900
+                ${SCROLL_BUTTON_CLASS} left-2
                 ${
                   canScrollLeft
                     ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -448,15 +451,20 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 <ChevronLeft
                   className="size-5 text-zinc-800 dark:text-zinc-300"
                   strokeWidth={1.75}
+                  aria-hidden="true"
                 />
               ) : (
-                <ChevronFirst className="size-5" strokeWidth={1.75} />
+                <ChevronFirst
+                  className="size-5"
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
               )}
             </button>
 
             <button
               type="button"
-              aria-label="Next markets"
+              aria-label={labels.next}
               aria-disabled={!canScrollRight}
               onClick={(event) => {
                 event.preventDefault();
@@ -465,15 +473,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 if (canScrollRight) scrollByCard(1);
               }}
               className={`
-                absolute right-2 top-1/2 flex size-9
-                -translate-y-1/2 items-center justify-center
-                rounded-full border border-zinc-200 bg-white shadow-sm
-                opacity-0 transition-opacity duration-150
-                group-hover/markets:opacity-100!
-                focus-visible:opacity-100!
-                focus-visible:outline-none focus-visible:ring-2
-                focus-visible:ring-zinc-400
-                dark:border-zinc-700 dark:bg-zinc-900
+                ${SCROLL_BUTTON_CLASS} right-2
                 ${
                   canScrollRight
                     ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -485,9 +485,14 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 <ChevronRight
                   className="size-5 text-zinc-800 dark:text-zinc-300"
                   strokeWidth={1.75}
+                  aria-hidden="true"
                 />
               ) : (
-                <ChevronLast className="size-5" strokeWidth={1.75} />
+                <ChevronLast
+                  className="size-5"
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
               )}
             </button>
           </>
@@ -497,17 +502,26 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
       <Dialog open={isPickerOpen} onOpenChange={handlePickerOpenChange}>
         <DialogContent
           overlayClassName="bg-black/30 backdrop-blur-none!"
-          className="dark:border outfit flex h-[85dvh] max-h-170 flex-col gap-0 overflow-hidden rounded-xl p-0 text-zinc-900 dark:text-zinc-300 sm:max-w-lg"
+          className="
+            outfit flex h-[85dvh] max-h-170 flex-col gap-0
+            overflow-hidden rounded-xl p-0 text-zinc-900
+            dark:border dark:text-zinc-300 sm:max-w-lg
+          "
         >
-          <DialogHeader className="shrink-0 px-6 pb-5 pt-7 text-left">
+          <DialogHeader className="shrink-0 px-6 pt-7 pb-5 text-left">
             <DialogTitle className="pr-6 text-xl font-medium">
-              Manage your watchlist
+              {labels.title}
             </DialogTitle>
 
             <DialogDescription className="text-sm leading-6">
-              Select up to {MAX_WATCHLIST_MARKETS} markets you'd like to follow.
-              <span className="ml-1">
-                {selectedSymbols.length} / {MAX_WATCHLIST_MARKETS} selected.
+              {formatLabel(labels.description, {
+                max: MAX_WATCHLIST_MARKETS,
+              })}{" "}
+              <span>
+                {formatLabel(labels.selected, {
+                  count: selectedSymbols.length,
+                  max: MAX_WATCHLIST_MARKETS,
+                })}
               </span>
             </DialogDescription>
           </DialogHeader>
@@ -527,7 +541,10 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 className="text-sm text-zinc-500 dark:text-zinc-400"
                 aria-live="polite"
               >
-                {totalWatchlistCount} / {MAX_WATCHLIST_MARKETS} markets
+                {formatLabel(labels.market_count, {
+                  count: totalWatchlistCount,
+                  max: MAX_WATCHLIST_MARKETS,
+                })}
               </span>
 
               <Button
@@ -540,12 +557,12 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 }
                 onClick={handleSaveMarkets}
               >
-                {isPending ? "Saving..." : "Save changes"}
+                {isPending ? labels.saving : labels.save}
               </Button>
             </div>
 
             <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-              You can follow up to {MAX_WATCHLIST_MARKETS} markets.
+              {limitLabel}
             </p>
           </div>
         </DialogContent>

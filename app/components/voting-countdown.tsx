@@ -1,5 +1,8 @@
 "use client";
 
+import { resolveLanguage } from "@/lib/data/languages";
+import { VOTING_COUNTDOWN_LABELS } from "@/lib/data/translations";
+
 import { useCountdown } from "../hooks/useCountdown";
 
 interface VotingCountdownProps {
@@ -9,6 +12,7 @@ interface VotingCountdownProps {
   isMarketOpen: boolean;
   onExpire?: () => void;
   selectedVote?: "BULL" | "BEAR" | null;
+  userLanguage?: string | null;
 }
 
 export function VotingCountdown({
@@ -17,51 +21,50 @@ export function VotingCountdown({
   showCountdown,
   isMarketOpen,
   onExpire,
-  selectedVote,
+  userLanguage,
 }: VotingCountdownProps) {
+  const language = resolveLanguage(userLanguage);
+  const labels = VOTING_COUNTDOWN_LABELS[language];
+
   const { hours, minutes, seconds } = useCountdown(targetMs, onExpire);
+
+  const countdown = `${hours}:${minutes}:${seconds}`;
 
   const isExpired =
     Number(hours) === 0 && Number(minutes) === 0 && Number(seconds) === 0;
 
   const shouldShowCountdown =
-    !!targetMs &&
-    !!type &&
+    targetMs !== null &&
+    type !== null &&
     (type === "VOTING_OPENS" || (type === "VOTING_CLOSES" && showCountdown));
 
   if (!shouldShowCountdown) {
     return (
       <div className="mr-2 text-[12px] text-zinc-500 dark:text-zinc-400">
-        {isMarketOpen ? "Voting closed" : ""}
+        {isMarketOpen ? labels.closed : ""}
       </div>
     );
   }
 
+  const countdownLabel = (
+    type === "VOTING_OPENS" ? labels.opens_in : labels.closes_in
+  ).replace("{countdown}", countdown);
+
   return (
     <div
       className="
-      hidden shrink-0 items-center gap-1
-      whitespace-nowrap
-      text-[12px] text-zinc-500
-      dark:text-zinc-400
-      sm:flex
-    "
+        hidden shrink-0 items-center gap-1
+        whitespace-nowrap text-[12px] text-zinc-500
+        dark:text-zinc-400 sm:flex
+      "
     >
-      {isExpired ? (
-        <span>
-          {type === "VOTING_OPENS" ? "Voting is now open" : "Voting closed"}
-        </span>
-      ) : (
-        <>
-          <span>
-            {type === "VOTING_OPENS" ? "Voting opens in" : "Voting closes in"}
-          </span>
-
-          <span className="tabular-nums">
-            {hours}:{minutes}:{seconds}
-          </span>
-        </>
-      )}
+      <span className="tabular-nums">
+        {isExpired
+          ? type === "VOTING_OPENS"
+            ? labels.now_open
+            : labels.closed
+          : countdownLabel}
+      </span>
     </div>
   );
 }

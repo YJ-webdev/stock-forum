@@ -7,18 +7,27 @@ export function Numeric({
   className?: string;
   decimals?: number;
 }) {
-  const formatNumber = (value: React.ReactNode) => {
+  const formatNumber = (value: React.ReactNode): React.ReactNode => {
     if (value === null || value === undefined || value === "") {
+      return "-";
+    }
+
+    if (typeof value !== "number" && typeof value !== "string") {
+      return value;
+    }
+
+    if (typeof value === "string" && value.trim() === "") {
       return "-";
     }
 
     const num = Number(value);
 
-    if (Number.isNaN(num)) {
-      return value;
+    if (!Number.isFinite(num)) {
+      return typeof value === "number" ? "-" : value;
     }
 
     return num.toLocaleString("en-US", {
+      useGrouping: true,
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     });

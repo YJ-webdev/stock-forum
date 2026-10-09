@@ -1,7 +1,10 @@
 "use server";
 
+import { cookies } from "next/headers";
+
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { LANGUAGES } from "@/lib/data/languages";
 
 interface UpdateAccountPreferencesInput {
   name: string;
@@ -36,22 +39,20 @@ export async function updateAccountPreferences({
     throw new Error("Nationality is required.");
   }
 
-  if (!language) {
-    throw new Error("Language is required.");
+  if (!LANGUAGES.some((item) => item.value === language)) {
+    throw new Error("Unsupported language.");
   }
 
-  return prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: {
       id: session.user.id,
     },
-
     data: {
       name: trimmedName,
       image: image ?? null,
       nationality,
       language,
     },
-
     select: {
       id: true,
       name: true,
@@ -60,4 +61,16 @@ export async function updateAccountPreferences({
       language: true,
     },
   });
+
+  const cookieStore = await cookies();
+
+  cookieStore.set("site-language", updatedUser.language, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+
+  return updatedUser;
 }

@@ -23,6 +23,7 @@ import { updateAccountPreferences } from "@/app/actions/update-account-preferenc
 import { uploadAvatar } from "@/app/actions/upload-avatar";
 
 import { useCurrentUser, useSetCurrentUser } from "../context/user-context";
+import { useRouter } from "next/navigation";
 
 interface AccountPanelProps {
   setOnAccount: React.Dispatch<React.SetStateAction<boolean>>;
@@ -31,6 +32,7 @@ interface AccountPanelProps {
 export function AccountPanel({ setOnAccount }: AccountPanelProps) {
   const user = useCurrentUser();
   const setCurrentUser = useSetCurrentUser();
+  const router = useRouter();
 
   if (!user) {
     return null;
@@ -203,6 +205,7 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
             : prev,
         );
 
+        router.refresh();
         toast.success("Account updated.");
       } catch (error) {
         console.error(error);

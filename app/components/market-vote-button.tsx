@@ -1,4 +1,3 @@
-// app/components/market-vote-button.tsx
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
@@ -12,7 +11,17 @@ import { getMarketVote, type VoteDirection } from "@/app/actions/market-vote";
 import { createComment } from "@/app/actions/post";
 import { useCurrentUser } from "@/app/context/user-context";
 import { usePointBalance } from "@/app/context/point-balance-context";
+
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
+import { resolveLanguage } from "@/lib/data/languages";
+import {
+  PREDICTION_LABELS,
+  STATISTICS_LABELS,
+  VOTE_INTERFACE_LABELS,
+  VOTE_LABELS,
+  VOTE_TOAST_LABELS,
+  VOTING_COUNTDOWN_LABELS,
+} from "@/lib/data/translations";
 
 import { PredictionCommentInput } from "./prediction-comment-input";
 import type { GifResult } from "./gif-picker";
@@ -34,7 +43,7 @@ interface VoteState {
 const VOTE_BUTTON_CLASS = `
   inline-flex h-8 min-w-0 flex-1 cursor-pointer
   items-center justify-center gap-1.5
-  rounded-full px-3 text-xs font-medium text-white transition-colors
+  rounded-full px-3 text-[14px] font-normal text-white transition-colors
   focus-visible:outline-none
   focus-visible:ring-2 focus-visible:ring-zinc-400
   focus-visible:ring-offset-2 focus-visible:ring-offset-white
@@ -91,6 +100,15 @@ export function MarketVoteButton({
 }: MarketVoteButtonProps) {
   const user = useCurrentUser();
   const userId = user?.id ?? null;
+  const language = resolveLanguage(user?.language);
+
+  const voteLabels = VOTE_LABELS[language];
+  const toastLabels = VOTE_TOAST_LABELS[language];
+  const interfaceLabels = VOTE_INTERFACE_LABELS[language];
+  const statisticsLabels = STATISTICS_LABELS[language];
+  const countdownLabels = VOTING_COUNTDOWN_LABELS[language];
+  const predictionLabel = PREDICTION_LABELS[language];
+
   const { points: userPoints, setPoints } = usePointBalance();
 
   const popupId = useId();
@@ -148,6 +166,13 @@ export function MarketVoteButton({
   const isOpen = view === "editor";
   const maxBet = Math.floor(Math.min(500, userPoints) / 50) * 50;
 
+  const votedLabel = direction
+    ? statisticsLabels.you_voted.replace(
+        "{voteDirection}",
+        direction === "BULL" ? voteLabels.bull : voteLabels.bear,
+      )
+    : "";
+
   function closePopup() {
     setView("closed");
     triggerRef.current?.focus();
@@ -162,7 +187,7 @@ export function MarketVoteButton({
   function requireLogin() {
     if (user) return true;
 
-    toast.error("Log in to make your prediction.");
+    toast.error(toastLabels.login);
     return false;
   }
 
@@ -174,18 +199,18 @@ export function MarketVoteButton({
 
     if (!currentWindow.canVote || !currentSessionKey) {
       message = currentWindow.isMarketOpen
-        ? "Voting is closed while the market is open."
-        : "Voting is currently unavailable.";
+        ? toastLabels.market_open
+        : toastLabels.unavailable;
     } else if (currentSessionKey !== sessionKey || isVoteLoading) {
-      message = "Checking your prediction. Please try again.";
+      message = interfaceLabels.checking;
     } else if (voteLookupFailed) {
-      message = "Could not check your prediction. Please try again.";
+      message = interfaceLabels.lookup_failed;
 
       if (showMessage) {
         retryVoteLookup();
       }
     } else if (direction) {
-      message = "You have already voted for this round.";
+      message = toastLabels.already_voted;
     }
 
     if (message && showMessage) {
@@ -214,12 +239,12 @@ export function MarketVoteButton({
     if (!requireLogin() || !canStartPrediction()) return;
 
     if (!user?.nationality) {
-      toast.error("Please set your nationality before voting.");
+      toast.error(toastLabels.nationality_required);
       return;
     }
 
     if (!draftDirection) {
-      toast.error("Please choose Bull or Bear.");
+      toast.error(interfaceLabels.choose_direction);
       return;
     }
 
@@ -229,8 +254,8 @@ export function MarketVoteButton({
     if (!currentWindow.canVote || !sessionDate) {
       toast.error(
         currentWindow.isMarketOpen
-          ? "Voting is closed while the market is open."
-          : "Voting is currently unavailable.",
+          ? toastLabels.market_open
+          : toastLabels.unavailable,
       );
       return;
     }
@@ -242,7 +267,7 @@ export function MarketVoteButton({
       !Number.isInteger(submittedAmount) ||
       (submittedAmount !== 0 && (submittedAmount < 50 || submittedAmount > 500))
     ) {
-      toast.error("Bet amount must be 0 or between 50 and 500 points.");
+      toast.error(toastLabels.invalid_amount);
       return;
     }
 
@@ -287,18 +312,21 @@ export function MarketVoteButton({
 
       closePopup();
 
-      const predictionLabel =
-        submittedDirection === "BULL" ? "Bullish" : "Bearish";
+      const directionLabel =
+        submittedDirection === "BULL" ? voteLabels.bull : voteLabels.bear;
+
+      const successMessage =
+        submittedAmount > 0
+          ? toastLabels.success_with_points
+          : toastLabels.success;
 
       toast.success(
-        submittedAmount > 0
-          ? `${predictionLabel} prediction submitted with ${submittedAmount} pts.`
-          : `${predictionLabel} prediction submitted.`,
+        successMessage
+          .replace("{voteDirection}", directionLabel)
+          .replace("{points}", submittedAmount.toLocaleString(language)),
       );
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to submit prediction.",
-      );
+      toast.error(error instanceof Error ? error.message : toastLabels.failed);
 
       retryVoteLookup();
     } finally {
@@ -307,7 +335,7 @@ export function MarketVoteButton({
     }
   }
 
-  // Update market time. Refresh in the background when returning.
+  // Update market time and refresh when returning to the page.
   useEffect(() => {
     const interval = window.setInterval(() => {
       setNow(Date.now());
@@ -320,9 +348,7 @@ export function MarketVoteButton({
       setNow(currentTime);
 
       // Focus and visibilitychange can fire for the same return.
-      if (currentTime - lastFocusRefreshRef.current < 1000) {
-        return;
-      }
+      if (currentTime - lastFocusRefreshRef.current < 1000) return;
 
       lastFocusRefreshRef.current = currentTime;
       setRefreshVersion((current) => current + 1);
@@ -362,7 +388,7 @@ export function MarketVoteButton({
       return;
     }
 
-    // Do not reuse the initial snapshot after changing user/session.
+    // Do not reuse initial data after changing user or session.
     if (initialSnapshot.lookupKey !== lookupKey) {
       initialVoteSnapshotRef.current = {
         lookupKey: null,
@@ -422,9 +448,7 @@ export function MarketVoteButton({
     if (!isOpen) return;
 
     function handleEscape(event: KeyboardEvent) {
-      if (event.key !== "Escape" || event.defaultPrevented) {
-        return;
-      }
+      if (event.key !== "Escape" || event.defaultPrevented) return;
 
       setView("closed");
       triggerRef.current?.focus();
@@ -444,15 +468,15 @@ export function MarketVoteButton({
     !votingWindow.canVote;
 
   const editorMessage = direction
-    ? "You have already voted for this round."
+    ? toastLabels.already_voted
     : votingWindow.isMarketOpen
-      ? "Voting is closed while the market is open."
+      ? toastLabels.market_open
       : !votingWindow.canVote
-        ? "Voting is currently unavailable."
+        ? toastLabels.unavailable
         : voteLookupFailed
-          ? "Could not check your prediction."
+          ? interfaceLabels.lookup_failed
           : isVoteLoading
-            ? "Checking your prediction…"
+            ? interfaceLabels.checking
             : null;
 
   return (
@@ -464,12 +488,12 @@ export function MarketVoteButton({
             strokeWidth={1.5}
             aria-hidden="true"
           />
-          Voting closed
+          {countdownLabels.closed}
         </span>
       ) : direction ? (
         <span className={VOTE_STATUS_CLASS}>
           <Check className="size-3.5" strokeWidth={1.5} aria-hidden="true" />
-          You've voted {direction.toLowerCase()}
+          {votedLabel}
         </span>
       ) : (
         votingWindow.canVote && (
@@ -479,7 +503,7 @@ export function MarketVoteButton({
               disabled={voteButtonDisabled}
               aria-expanded={isOpen}
               aria-controls={isOpen ? popupId : undefined}
-              aria-label={`${marketName}: Bull`}
+              aria-label={`${marketName}: ${voteLabels.bull}`}
               aria-busy={voteButtonDisabled}
               onClick={(event) =>
                 handleTriggerClick("BULL", event.currentTarget)
@@ -487,7 +511,7 @@ export function MarketVoteButton({
               className={`${VOTE_BUTTON_CLASS} bg-[#09b374] enabled:hover:bg-emerald-700`}
             >
               <PiArrowFatLinesUpFill className="size-3.5" aria-hidden="true" />
-              Bull
+              {voteLabels.bull}
             </button>
 
             <button
@@ -495,27 +519,25 @@ export function MarketVoteButton({
               disabled={voteButtonDisabled}
               aria-expanded={isOpen}
               aria-controls={isOpen ? popupId : undefined}
-              aria-label={`${marketName}: Bear`}
+              aria-label={`${marketName}: ${voteLabels.bear}`}
               aria-busy={voteButtonDisabled}
               onClick={(event) =>
                 handleTriggerClick("BEAR", event.currentTarget)
               }
-              className={`${VOTE_BUTTON_CLASS} bg-[#e83149] dark:bg-[#ed1838] enabled:hover:bg-[#b50000] dark:enabled:hover:bg-[#cb112d] `}
+              className={`${VOTE_BUTTON_CLASS} bg-[#e83149] enabled:hover:bg-[#b50000] dark:bg-[#ed1838] dark:enabled:hover:bg-[#cb112d]`}
             >
               <PiArrowFatLinesUpFill
                 className="size-3.5 -scale-y-100"
                 aria-hidden="true"
               />
-              Bear
+              {voteLabels.bear}
             </button>
           </div>
         )
       )}
 
       <p role="status" className="sr-only">
-        {direction
-          ? `${direction === "BULL" ? "Bullish" : "Bearish"} selected`
-          : ""}
+        {votedLabel}
       </p>
 
       {isOpen &&
@@ -552,12 +574,12 @@ export function MarketVoteButton({
                   id={titleId}
                   className="text-sm font-medium text-zinc-700 dark:text-zinc-200"
                 >
-                  {marketName} prediction
+                  {predictionLabel.replace("{market}", marketName)}
                 </h2>
 
                 <button
                   type="button"
-                  aria-label="Close prediction input"
+                  aria-label={interfaceLabels.close}
                   onClick={closePopup}
                   className="
                     flex size-7 cursor-pointer items-center justify-center
@@ -580,7 +602,7 @@ export function MarketVoteButton({
                 setBetAmount={setBetAmount}
                 userPoints={userPoints}
                 maxBet={maxBet}
-                currentUser={user}
+                currentUser={user ?? null}
                 isMarketOpen={votingWindow.isMarketOpen}
                 isPending={isSubmitting}
                 buttonDisabled={inputDisabled}
@@ -608,7 +630,7 @@ export function MarketVoteButton({
                     disabled:cursor-default disabled:opacity-50
                   "
                 >
-                  Try again
+                  {interfaceLabels.retry}
                 </button>
               )}
             </div>
