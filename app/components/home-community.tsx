@@ -20,6 +20,13 @@ import { resolveLanguage } from "@/lib/data/languages";
 import { HOME_COMMUNITY_LABELS } from "@/lib/data/translations";
 
 import { CommentItem } from "./comment";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface HomeCommunityProps {
   initialComments: HomeComments;
@@ -299,35 +306,40 @@ export function HomeCommunity({
         </div>
 
         <div className="relative ml-auto shrink-0">
-          <select
-            aria-label={labels.sort_discussions}
+          <Select
             value={sort}
-            onChange={(event) =>
-              changeSort(event.target.value as HomeCommentSort)
-            }
-            className="
-              cursor-pointer appearance-none rounded-full
-              border border-zinc-300 bg-white
-              py-1.5 pr-9 pl-3.5 text-sm text-zinc-600
-              focus-visible:outline-none
-              focus-visible:ring-2
-              focus-visible:ring-zinc-400
-              dark:border-zinc-700 dark:bg-zinc-900
-              dark:text-zinc-300
-            "
+            onValueChange={(value) => changeSort(value as HomeCommentSort)}
           >
-            <option value="latest">{labels.latest}</option>
-            <option value="most-liked">{labels.most_liked}</option>
-          </select>
+            <SelectTrigger
+              aria-label={labels.sort_discussions}
+              className="
+  
+    "
+            >
+              <SelectValue>
+                {sort === "latest" ? labels.latest : labels.most_liked}
+              </SelectValue>
+            </SelectTrigger>
 
-          <ChevronDown
-            aria-hidden="true"
-            strokeWidth={1.5}
-            className="
-              pointer-events-none absolute top-1/2 right-3
-              size-3.5 -translate-y-1/2 text-zinc-500
-            "
-          />
+            <SelectContent
+              align="end"
+              className="
+      rounded-xl border-zinc-200 bg-white
+      dark:border-zinc-700 dark:bg-zinc-900
+    "
+            >
+              <SelectItem value="latest" className="cursor-pointer rounded-lg">
+                {labels.latest}
+              </SelectItem>
+
+              <SelectItem
+                value="most-liked"
+                className="cursor-pointer rounded-lg"
+              >
+                {labels.most_liked}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

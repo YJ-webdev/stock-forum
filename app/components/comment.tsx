@@ -663,9 +663,7 @@ export function CommentItem({
   };
 
   useEffect(() => {
-    if (!shouldOpenReplies) {
-      return;
-    }
+    if (!shouldOpenReplies) return;
 
     setShowReplies(true);
 
@@ -675,14 +673,35 @@ export function CommentItem({
   }, [shouldOpenReplies, repliesLoaded, loadReplies]);
 
   useEffect(() => {
-    if (targetCommentId !== comment.id) {
-      return;
-    }
+    if (targetCommentId !== comment.id) return;
 
     const frame = requestAnimationFrame(() => {
-      commentRef.current?.scrollIntoView({
+      const element = commentRef.current;
+      if (!element) return;
+
+      let scrollContainer = element.parentElement;
+
+      while (scrollContainer) {
+        const { overflowY } = getComputedStyle(scrollContainer);
+
+        if (
+          /^(auto|scroll|overlay)$/.test(overflowY) &&
+          scrollContainer.scrollHeight > scrollContainer.clientHeight
+        ) {
+          break;
+        }
+
+        scrollContainer = scrollContainer.parentElement;
+      }
+
+      const height = scrollContainer?.clientHeight ?? window.innerHeight;
+
+      element.style.scrollMarginTop = `${height * 0.25}px`;
+
+      element.scrollIntoView({
         behavior: "smooth",
         block: "start",
+        inline: "nearest",
       });
     });
 

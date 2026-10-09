@@ -5238,3 +5238,356 @@ export const REPLY_EDIT_LABELS: Record<
     update_failed: "जवाब अपडेट नहीं हो सका।",
   },
 };
+
+export const MARKET_ACTION_LABELS: Record<
+  Language,
+  {
+    options: string;
+    login_required: string;
+    updating: string;
+    add_watchlist: string;
+    remove_watchlist: string;
+    added: string;
+    removed: string;
+    update_failed: string;
+    share: string;
+    copy_link: string;
+    link_copied: string;
+    copy_failed: string;
+  }
+> = {
+  en: {
+    options: "Options for {market}",
+    login_required: "Log in to manage your watchlist.",
+    updating: "Updating...",
+    add_watchlist: "Add to watchlist",
+    remove_watchlist: "Remove from watchlist",
+    added: "{market} added to your watchlist.",
+    removed: "{market} removed from your watchlist.",
+    update_failed: "Failed to update watchlist.",
+    share: "Share",
+    copy_link: "Copy link",
+    link_copied: "Link copied.",
+    copy_failed: "Could not copy the link.",
+  },
+  ko: {
+    options: "{market} 옵션",
+    login_required: "관심 목록을 관리하려면 로그인해주세요.",
+    updating: "변경 중...",
+    add_watchlist: "관심 목록에 추가",
+    remove_watchlist: "관심 목록에서 제거",
+    added: "{market} 관심 목록에 추가되었습니다.",
+    removed: "{market} 관심 목록에서 제거되었습니다.",
+    update_failed: "관심 목록을 변경하지 못했습니다.",
+    share: "공유",
+    copy_link: "링크 복사",
+    link_copied: "링크가 복사되었습니다.",
+    copy_failed: "링크를 복사하지 못했습니다.",
+  },
+  ja: {
+    options: "{market}のオプション",
+    login_required: "ウォッチリストを管理するにはログインしてください。",
+    updating: "更新中...",
+    add_watchlist: "ウォッチリストに追加",
+    remove_watchlist: "ウォッチリストから削除",
+    added: "{market}をウォッチリストに追加しました。",
+    removed: "{market}をウォッチリストから削除しました。",
+    update_failed: "ウォッチリストを更新できませんでした。",
+    share: "共有",
+    copy_link: "リンクをコピー",
+    link_copied: "リンクをコピーしました。",
+    copy_failed: "リンクをコピーできませんでした。",
+  },
+  zh: {
+    options: "{market} 选项",
+    login_required: "请登录以管理自选列表。",
+    updating: "更新中...",
+    add_watchlist: "添加到自选列表",
+    remove_watchlist: "从自选列表移除",
+    added: "已将 {market} 添加到自选列表。",
+    removed: "已将 {market} 从自选列表移除。",
+    update_failed: "自选列表更新失败。",
+    share: "分享",
+    copy_link: "复制链接",
+    link_copied: "链接已复制。",
+    copy_failed: "无法复制链接。",
+  },
+  de: {
+    options: "Optionen für {market}",
+    login_required: "Melde dich an, um deine Watchlist zu verwalten.",
+    updating: "Wird aktualisiert...",
+    add_watchlist: "Zur Watchlist hinzufügen",
+    remove_watchlist: "Aus der Watchlist entfernen",
+    added: "{market} wurde deiner Watchlist hinzugefügt.",
+    removed: "{market} wurde aus deiner Watchlist entfernt.",
+    update_failed: "Die Watchlist konnte nicht aktualisiert werden.",
+    share: "Teilen",
+    copy_link: "Link kopieren",
+    link_copied: "Link kopiert.",
+    copy_failed: "Der Link konnte nicht kopiert werden.",
+  },
+  fr: {
+    options: "Options pour {market}",
+    login_required: "Connectez-vous pour gérer votre liste de suivi.",
+    updating: "Mise à jour...",
+    add_watchlist: "Ajouter à la liste de suivi",
+    remove_watchlist: "Retirer de la liste de suivi",
+    added: "{market} a été ajouté à votre liste de suivi.",
+    removed: "{market} a été retiré de votre liste de suivi.",
+    update_failed: "Impossible de mettre à jour la liste de suivi.",
+    share: "Partager",
+    copy_link: "Copier le lien",
+    link_copied: "Lien copié.",
+    copy_failed: "Impossible de copier le lien.",
+  },
+  es: {
+    options: "Opciones de {market}",
+    login_required: "Inicia sesión para gestionar tu lista de seguimiento.",
+    updating: "Actualizando...",
+    add_watchlist: "Añadir a la lista de seguimiento",
+    remove_watchlist: "Quitar de la lista de seguimiento",
+    added: "{market} se añadió a tu lista de seguimiento.",
+    removed: "{market} se quitó de tu lista de seguimiento.",
+    update_failed: "No se pudo actualizar la lista de seguimiento.",
+    share: "Compartir",
+    copy_link: "Copiar enlace",
+    link_copied: "Enlace copiado.",
+    copy_failed: "No se pudo copiar el enlace.",
+  },
+  pt: {
+    options: "Opções de {market}",
+    login_required: "Entre para gerenciar sua lista de acompanhamento.",
+    updating: "Atualizando...",
+    add_watchlist: "Adicionar à lista de acompanhamento",
+    remove_watchlist: "Remover da lista de acompanhamento",
+    added: "{market} foi adicionado à sua lista de acompanhamento.",
+    removed: "{market} foi removido da sua lista de acompanhamento.",
+    update_failed: "Não foi possível atualizar a lista de acompanhamento.",
+    share: "Compartilhar",
+    copy_link: "Copiar link",
+    link_copied: "Link copiado.",
+    copy_failed: "Não foi possível copiar o link.",
+  },
+  it: {
+    options: "Opzioni per {market}",
+    login_required: "Accedi per gestire la tua lista di monitoraggio.",
+    updating: "Aggiornamento...",
+    add_watchlist: "Aggiungi alla lista di monitoraggio",
+    remove_watchlist: "Rimuovi dalla lista di monitoraggio",
+    added: "{market} è stato aggiunto alla tua lista di monitoraggio.",
+    removed: "{market} è stato rimosso dalla tua lista di monitoraggio.",
+    update_failed: "Impossibile aggiornare la lista di monitoraggio.",
+    share: "Condividi",
+    copy_link: "Copia link",
+    link_copied: "Link copiato.",
+    copy_failed: "Impossibile copiare il link.",
+  },
+  ru: {
+    options: "Настройки для {market}",
+    login_required: "Войдите, чтобы управлять списком наблюдения.",
+    updating: "Обновление...",
+    add_watchlist: "Добавить в список наблюдения",
+    remove_watchlist: "Удалить из списка наблюдения",
+    added: "{market} добавлен в ваш список наблюдения.",
+    removed: "{market} удалён из вашего списка наблюдения.",
+    update_failed: "Не удалось обновить список наблюдения.",
+    share: "Поделиться",
+    copy_link: "Копировать ссылку",
+    link_copied: "Ссылка скопирована.",
+    copy_failed: "Не удалось скопировать ссылку.",
+  },
+  ar: {
+    options: "خيارات {market}",
+    login_required: "سجّل الدخول لإدارة قائمة المتابعة.",
+    updating: "جارٍ التحديث...",
+    add_watchlist: "إضافة إلى قائمة المتابعة",
+    remove_watchlist: "إزالة من قائمة المتابعة",
+    added: "تمت إضافة {market} إلى قائمة المتابعة.",
+    removed: "تمت إزالة {market} من قائمة المتابعة.",
+    update_failed: "تعذّر تحديث قائمة المتابعة.",
+    share: "مشاركة",
+    copy_link: "نسخ الرابط",
+    link_copied: "تم نسخ الرابط.",
+    copy_failed: "تعذّر نسخ الرابط.",
+  },
+  hi: {
+    options: "{market} के विकल्प",
+    login_required: "अपनी वॉचलिस्ट प्रबंधित करने के लिए लॉग इन करें।",
+    updating: "अपडेट हो रहा है...",
+    add_watchlist: "वॉचलिस्ट में जोड़ें",
+    remove_watchlist: "वॉचलिस्ट से हटाएँ",
+    added: "{market} आपकी वॉचलिस्ट में जोड़ दिया गया है।",
+    removed: "{market} आपकी वॉचलिस्ट से हटा दिया गया है।",
+    update_failed: "वॉचलिस्ट अपडेट नहीं हो सकी।",
+    share: "साझा करें",
+    copy_link: "लिंक कॉपी करें",
+    link_copied: "लिंक कॉपी हो गया।",
+    copy_failed: "लिंक कॉपी नहीं हो सका।",
+  },
+};
+
+export const FOOTER_LABELS: Record<
+  Language,
+  {
+    help: string;
+    feedback: string;
+    privacy_terms: string;
+    disclaimer: string;
+  }
+> = {
+  en: {
+    help: "Help",
+    feedback: "Feedback",
+    privacy_terms: "Privacy & terms",
+    disclaimer: "Disclaimer",
+  },
+  ko: {
+    help: "도움말",
+    feedback: "의견 보내기",
+    privacy_terms: "개인정보 처리방침 및 이용약관",
+    disclaimer: "면책",
+  },
+  ja: {
+    help: "ヘルプ",
+    feedback: "フィードバック",
+    privacy_terms: "プライバシー・利用規約",
+    disclaimer: "免責事項",
+  },
+  zh: {
+    help: "帮助",
+    feedback: "反馈",
+    privacy_terms: "隐私政策与使用条款",
+    disclaimer: "免责声明",
+  },
+  de: {
+    help: "Hilfe",
+    feedback: "Feedback",
+    privacy_terms: "Datenschutz & Nutzungsbedingungen",
+    disclaimer: "Haftungsausschluss",
+  },
+  fr: {
+    help: "Aide",
+    feedback: "Commentaires",
+    privacy_terms: "Confidentialité et conditions",
+    disclaimer: "Avertissement",
+  },
+  es: {
+    help: "Ayuda",
+    feedback: "Comentarios",
+    privacy_terms: "Privacidad y condiciones",
+    disclaimer: "Aviso legal",
+  },
+  pt: {
+    help: "Ajuda",
+    feedback: "Feedback",
+    privacy_terms: "Privacidade e termos",
+    disclaimer: "Aviso legal",
+  },
+  it: {
+    help: "Aiuto",
+    feedback: "Feedback",
+    privacy_terms: "Privacy e condizioni",
+    disclaimer: "Avvertenze",
+  },
+  ru: {
+    help: "Помощь",
+    feedback: "Обратная связь",
+    privacy_terms: "Конфиденциальность и условия",
+    disclaimer: "Отказ от ответственности",
+  },
+  ar: {
+    help: "المساعدة",
+    feedback: "إرسال ملاحظات",
+    privacy_terms: "الخصوصية والشروط",
+    disclaimer: "إخلاء المسؤولية",
+  },
+  hi: {
+    help: "सहायता",
+    feedback: "प्रतिक्रिया",
+    privacy_terms: "गोपनीयता और शर्तें",
+    disclaimer: "अस्वीकरण",
+  },
+};
+
+export const BREADCRUMB_LABELS: Record<
+  Language,
+  {
+    breadcrumb: string;
+    home: string;
+    news: string;
+    post: string;
+  }
+> = {
+  en: {
+    breadcrumb: "Breadcrumb",
+    home: "Home",
+    news: "News",
+    post: "Post",
+  },
+  ko: {
+    breadcrumb: "현재 위치",
+    home: "홈",
+    news: "뉴스",
+    post: "게시글",
+  },
+  ja: {
+    breadcrumb: "パンくずリスト",
+    home: "ホーム",
+    news: "ニュース",
+    post: "投稿",
+  },
+  zh: {
+    breadcrumb: "面包屑导航",
+    home: "首页",
+    news: "新闻",
+    post: "帖子",
+  },
+  de: {
+    breadcrumb: "Brotkrumennavigation",
+    home: "Startseite",
+    news: "Nachrichten",
+    post: "Beitrag",
+  },
+  fr: {
+    breadcrumb: "Fil d’Ariane",
+    home: "Accueil",
+    news: "Actualités",
+    post: "Publication",
+  },
+  es: {
+    breadcrumb: "Ruta de navegación",
+    home: "Inicio",
+    news: "Noticias",
+    post: "Publicación",
+  },
+  pt: {
+    breadcrumb: "Caminho de navegação",
+    home: "Início",
+    news: "Notícias",
+    post: "Publicação",
+  },
+  it: {
+    breadcrumb: "Percorso di navigazione",
+    home: "Home",
+    news: "Notizie",
+    post: "Post",
+  },
+  ru: {
+    breadcrumb: "Навигационная цепочка",
+    home: "Главная",
+    news: "Новости",
+    post: "Публикация",
+  },
+  ar: {
+    breadcrumb: "مسار التنقل",
+    home: "الرئيسية",
+    news: "الأخبار",
+    post: "منشور",
+  },
+  hi: {
+    breadcrumb: "नेविगेशन पथ",
+    home: "होम",
+    news: "समाचार",
+    post: "पोस्ट",
+  },
+};

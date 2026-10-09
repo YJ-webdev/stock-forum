@@ -27,6 +27,9 @@ import { toast } from "sonner";
 import { useCurrentUser } from "@/app/context/user-context";
 import { toggleMarketWatchlist } from "@/app/actions/watchlist";
 
+import { resolveLanguage } from "@/lib/data/languages";
+import { MARKET_ACTION_LABELS } from "@/lib/data/translations";
+
 type SharePlatform =
   | "X"
   | "Facebook"
@@ -57,6 +60,9 @@ export const MarketActionsMenu = ({
 }: MarketActionsMenuProps) => {
   const user = useCurrentUser();
 
+  const language = resolveLanguage(user?.language);
+  const labels = MARKET_ACTION_LABELS[language];
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [isWatchlist, setIsWatchlist] = useState(initialIsWatchlist);
 
@@ -64,6 +70,9 @@ export const MarketActionsMenu = ({
 
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const watchlistRequestRef = useRef(false);
+
+  const formatMarketLabel = (text: string) =>
+    text.replace("{market}", marketName);
 
   // ---------------------------------------------------------------------------
   // Hover menu
@@ -108,7 +117,7 @@ export const MarketActionsMenu = ({
 
   const handleToggleWatchlist = () => {
     if (!user) {
-      toast.error("Log in to manage your watchlist.");
+      toast.error(labels.login_required);
       return;
     }
 
@@ -122,33 +131,23 @@ export const MarketActionsMenu = ({
     setIsWatchlist(nextIsWatchlist);
 
     const toastId = toast.success(
-      nextIsWatchlist
-        ? `${marketName} added to your watchlist.`
-        : `${marketName} removed from your watchlist.`,
+      formatMarketLabel(nextIsWatchlist ? labels.added : labels.removed),
     );
 
     startWatchlistTransition(async () => {
       try {
-        // The server checks the limit when adding.
         const result = await toggleMarketWatchlist(symbol);
 
         setIsWatchlist(result.isWatchlist);
 
         toast.success(
-          result.isWatchlist
-            ? `${marketName} added to your watchlist.`
-            : `${marketName} removed from your watchlist.`,
+          formatMarketLabel(result.isWatchlist ? labels.added : labels.removed),
           { id: toastId },
         );
-      } catch (error) {
+      } catch {
         setIsWatchlist(previousIsWatchlist);
 
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to update watchlist.",
-          { id: toastId },
-        );
+        toast.error(labels.update_failed, { id: toastId });
       } finally {
         watchlistRequestRef.current = false;
       }
@@ -160,7 +159,8 @@ export const MarketActionsMenu = ({
   // ---------------------------------------------------------------------------
 
   const getShareUrl = () =>
-    new URL(`/${encodeURIComponent(symbol)}`, window.location.origin).href;
+    new URL(`/market/${encodeURIComponent(symbol)}`, window.location.origin)
+      .href;
 
   const handleShare = (platform: SharePlatform) => {
     const pageUrl = getShareUrl();
@@ -170,7 +170,7 @@ export const MarketActionsMenu = ({
     const text = encodeURIComponent(title);
     const message = encodeURIComponent(`${title}\n${pageUrl}`);
 
-    const shareUrls: Record<Exclude<SharePlatform, "KakaoTalk">, string> = {
+    const shareUrls: Record<SharePlatform, string> = {
       X: `https://twitter.com/intent/tweet?url=${url}&text=${text}`,
       Facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
       Reddit: `https://www.reddit.com/submit?url=${url}&title=${text}`,
@@ -186,9 +186,9 @@ export const MarketActionsMenu = ({
     try {
       await navigator.clipboard.writeText(getShareUrl());
 
-      toast.success("Link copied.");
+      toast.success(labels.link_copied);
     } catch {
-      toast.error("Could not copy the link.");
+      toast.error(labels.copy_failed);
     }
   };
 
@@ -197,81 +197,88 @@ export const MarketActionsMenu = ({
   // ---------------------------------------------------------------------------
 
   return (
-    <>
-      <DropdownMenu
-        open={menuOpen}
-        onOpenChange={(open) => {
-          cancelMenuClose();
-          setMenuOpen(open);
-        }}
-        modal={false}
+    <DropdownMenu
+      open={menuOpen}
+      onOpenChange={(open) => {
+        cancelMenuClose();
+        setMenuOpen(open);
+      }}
+      modal={false}
+    >
+      <DropdownMenuTrigger
+        aria-label={formatMarketLabel(labels.options)}
+        className="cursor-pointer"
       >
-        <DropdownMenuTrigger aria-label={`Options for ${marketName}`}>
-          <EllipsisVertical
-            className="h-5 w-5 cursor-pointer text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-300"
-            strokeWidth={1.5}
-          />
-        </DropdownMenuTrigger>
+        <EllipsisVertical
+          aria-hidden="true"
+          className="
+            h-5 w-5 text-zinc-500
+            hover:text-zinc-800
+            dark:text-zinc-400 dark:hover:text-zinc-300
+          "
+          strokeWidth={1.5}
+        />
+      </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end" className="w-fit min-w-0">
-          <DropdownMenuGroup>
-            <DropdownMenuItem
-              disabled={isWatchlistPending}
-              onClick={handleToggleWatchlist}
-              className="cursor-pointer whitespace-nowrap tracking-wide"
+      <DropdownMenuContent align="end" className="w-fit min-w-0">
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            disabled={isWatchlistPending}
+            onClick={handleToggleWatchlist}
+            className="cursor-pointer pr-6 whitespace-nowrap tracking-wide"
+          >
+            {isWatchlist ? (
+              <PinOff
+                aria-hidden="true"
+                className="h-4 w-4"
+                strokeWidth={1.5}
+              />
+            ) : (
+              <Pin aria-hidden="true" className="h-4 w-4" strokeWidth={1.5} />
+            )}
+
+            {isWatchlistPending
+              ? labels.updating
+              : isWatchlist
+                ? labels.remove_watchlist
+                : labels.add_watchlist}
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuGroup>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="cursor-pointer gap-2">
+              <PiShareFat aria-hidden="true" className="h-4 w-4" />
+              {labels.share}
+            </DropdownMenuSubTrigger>
+
+            <DropdownMenuSubContent
+              className="min-w-40"
+              onPointerEnter={handleMenuEnter}
+              onPointerLeave={handleMenuLeave}
             >
-              {isWatchlist ? (
-                <PinOff className="h-4 w-4" strokeWidth={1.5} />
-              ) : (
-                <Pin className="h-4 w-4" strokeWidth={1.5} />
-              )}
+              <DropdownMenuGroup>
+                {SHARE_PLATFORMS.map((platform) => (
+                  <DropdownMenuItem
+                    key={platform}
+                    className="cursor-pointer"
+                    onClick={() => handleShare(platform)}
+                  >
+                    {platform}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
 
-              {isWatchlistPending
-                ? "Updating..."
-                : isWatchlist
-                  ? "Remove from my watchlist"
-                  : "Add to my watchlist"}
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-
-          <DropdownMenuSeparator />
-
-          <DropdownMenuGroup>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="cursor-pointer gap-2">
-                <PiShareFat className="h-4 w-4" />
-                Share
-              </DropdownMenuSubTrigger>
-
-              <DropdownMenuSubContent
-                className="min-w-40"
-                onPointerEnter={handleMenuEnter}
-                onPointerLeave={handleMenuLeave}
-              >
-                <DropdownMenuGroup>
-                  {SHARE_PLATFORMS.map((platform) => (
-                    <DropdownMenuItem
-                      key={platform}
-                      className="cursor-pointer"
-                      onClick={() => handleShare(platform)}
-                    >
-                      {platform}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuGroup>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            <DropdownMenuItem
-              onClick={handleCopyLink}
-              className="cursor-pointer"
-            >
-              <Link className="h-4 w-4" strokeWidth={1.5} />
-              Copy link
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
+          <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer">
+            <Link aria-hidden="true" className="h-4 w-4" strokeWidth={1.5} />
+            {labels.copy_link}
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };

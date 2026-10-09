@@ -161,7 +161,7 @@ export function BullBearVoteCard({
         </h3>
       </header>
 
-      <div className="pb-2">
+      <div className="pb-2 mt-2">
         <div className="flex h-7 items-center pl-3">
           {data ? (
             <Numeric className="outfit text-[18px] font-extrabold tracking-normal text-zinc-800 tabular-nums dark:text-zinc-300">

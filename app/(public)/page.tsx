@@ -35,7 +35,7 @@ export default async function Home() {
           <p
             aria-hidden="true"
             className="
-              truncate px-4 pt-3.5 mb-1 text-xs font-normal
+              truncate px-4 pt-3.5 mb-4 text-xs font-normal
               tracking-wider text-muted-foreground/50
             "
           >
@@ -47,7 +47,7 @@ export default async function Home() {
 
         <section
           aria-labelledby="home-community-heading"
-          className="mt-6 px-3 pb-8 sm:px-4"
+          className="my-10 px-3 pb-8 sm:px-4"
         >
           <h2 id="home-community-heading" className="sr-only">
             {labels.community}

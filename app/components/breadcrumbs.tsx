@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 
+import { useCurrentUser } from "@/app/context/user-context";
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
+import { resolveLanguage } from "@/lib/data/languages";
+import { BREADCRUMB_LABELS } from "@/lib/data/translations";
 
 interface BreadcrumbItem {
   label: string;
@@ -14,6 +16,9 @@ interface BreadcrumbItem {
 export const BreadCrumbs = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const user = useCurrentUser();
+
+  const labels = BREADCRUMB_LABELS[resolveLanguage(user?.language)];
 
   const segments = pathname.split("/").filter(Boolean);
   const isMarketRoute = segments[0] === "market";
@@ -54,43 +59,47 @@ export const BreadCrumbs = () => {
 
     if (childPage === "news") {
       items.push({
-        label: "News",
+        label: labels.news,
       });
     }
 
     if (childPage === "post") {
       items.push({
-        label: "Post",
+        label: labels.post,
       });
     }
   } else if (!isMarketRoute && segments[0] === "news") {
     items.push({
-      label: "News",
+      label: labels.news,
     });
   }
 
   return (
     <div
-      className={`
+      className="
         sticky top-0 z-20
         flex w-full items-center justify-between
-         px-4 py-3
-         bg-white dark:bg-zinc-900
-        
-       
-      `}
+        bg-white px-4 py-3 dark:bg-zinc-900
+      "
     >
       <nav
-        aria-label="Breadcrumb"
-        className="flex items-center gap-2 text-sm font-medium text-zinc-500 dark:text-zinc-300"
+        aria-label={labels.breadcrumb}
+        className="
+          flex items-center gap-2
+          text-sm font-medium text-zinc-500
+          dark:text-zinc-300
+        "
       >
         <button
           type="button"
           onClick={() => router.push("/")}
           aria-current={pathname === "/" ? "page" : undefined}
-          className="cursor-pointer transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
+          className="
+            cursor-pointer transition-colors
+            hover:text-zinc-900 dark:hover:text-zinc-100
+          "
         >
-          Home
+          {labels.home}
         </button>
 
         {items.map((item, index) => {
@@ -108,7 +117,10 @@ export const BreadCrumbs = () => {
                 <button
                   type="button"
                   onClick={() => router.push(href)}
-                  className="cursor-pointer transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
+                  className="
+                    cursor-pointer transition-colors
+                    hover:text-zinc-900 dark:hover:text-zinc-100
+                  "
                 >
                   {item.label}
                 </button>
