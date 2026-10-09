@@ -32,7 +32,7 @@ interface VoteState {
 }
 
 const VOTE_BUTTON_CLASS = `
-  inline-flex h-7.5 min-w-0 flex-1 cursor-pointer
+  inline-flex h-8 min-w-0 flex-1 cursor-pointer
   items-center justify-center gap-1.5
   rounded-full px-3 text-xs font-medium text-white transition-colors
   focus-visible:outline-none
@@ -484,7 +484,7 @@ export function MarketVoteButton({
               onClick={(event) =>
                 handleTriggerClick("BULL", event.currentTarget)
               }
-              className={`${VOTE_BUTTON_CLASS} bg-emerald-600 enabled:hover:bg-emerald-700`}
+              className={`${VOTE_BUTTON_CLASS} bg-[#09b374] enabled:hover:bg-emerald-700`}
             >
               <PiArrowFatLinesUpFill className="size-3.5" aria-hidden="true" />
               Bull
@@ -500,7 +500,7 @@ export function MarketVoteButton({
               onClick={(event) =>
                 handleTriggerClick("BEAR", event.currentTarget)
               }
-              className={`${VOTE_BUTTON_CLASS} bg-[#cf0000] dark:bg-[#ed1838] enabled:hover:bg-[#b50000] dark:enabled:hover:bg-[#cb112d] `}
+              className={`${VOTE_BUTTON_CLASS} bg-[#e83149] dark:bg-[#ed1838] enabled:hover:bg-[#b50000] dark:enabled:hover:bg-[#cb112d] `}
             >
               <PiArrowFatLinesUpFill
                 className="size-3.5 -scale-y-100"

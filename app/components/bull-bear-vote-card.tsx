@@ -145,8 +145,8 @@ export function BullBearVoteCard({
   const changeColor = !data
     ? "text-zinc-400 dark:text-zinc-500"
     : data.isPositive
-      ? "text-[#047857] dark:text-emerald-400"
-      : "text-[#cf0000] dark:text-[#ff4545] dark:font-[550]";
+      ? "text-[#07b056] dark:text-emerald-400"
+      : "text-[#d94141] dark:text-[#ff4545] dark:font-[550]";
 
   const hasChartData = data?.history.some((point) =>
     Number.isFinite(point.price),
@@ -154,7 +154,7 @@ export function BullBearVoteCard({
 
   return (
     <article className="relative w-44 shrink-0 text-zinc-900 dark:text-zinc-300">
-      <header className="pb-3">
+      <header className="">
         <p className="outfit min-w-0 truncate pl-3 text-[13px] tracking-wide text-zinc-800 dark:font-light dark:text-zinc-100">
           {market.displaySymbol}
         </p>
@@ -170,7 +170,7 @@ export function BullBearVoteCard({
       <div className="pb-2">
         <div className="flex h-7 items-center pl-3">
           {data ? (
-            <Numeric className="text-[18px] font-extrabold tracking-normal tabular-nums text-zinc-700 dark:text-zinc-300">
+            <Numeric className="text-[18px] font-extrabold tracking-normal tabular-nums text-zinc-800 dark:text-zinc-300">
               {data.value}
             </Numeric>
           ) : loading ? (
@@ -201,51 +201,54 @@ export function BullBearVoteCard({
             <span className="text-sm text-zinc-400 dark:text-zinc-500">—</span>
           )}
         </div>
+        <div className="">
+          <div
+            className="mt-2 flex h-16 items-center justify-center"
+            role={loading && !data ? "status" : undefined}
+            aria-label={loading && !data ? "Loading market data" : undefined}
+          >
+            {data && hasChartData ? (
+              <div className="opacity-50">
+                <TrendSparkline
+                  data={data.history}
+                  isPositive={data.isPositive}
+                  previousClose={data.previousClose}
+                  sessionStartMs={sessionStartMs}
+                  sessionEndMs={sessionEndMs}
+                  width={174}
+                  height={64}
+                  lunchStartMs={data.lunchStartMs}
+                  lunchEndMs={data.lunchEndMs}
+                />
+              </div>
+            ) : loading && !data ? (
+              <div className="flex h-full w-full items-center px-3">
+                <span
+                  aria-hidden="true"
+                  className="h-10 w-full animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
+                />
+              </div>
+            ) : (
+              <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                {error ? "Data unavailable" : "Chart unavailable"}
+              </span>
+            )}
+          </div>
 
-        <div
-          className="mt-2 flex h-16 items-center justify-center"
-          role={loading && !data ? "status" : undefined}
-          aria-label={loading && !data ? "Loading market data" : undefined}
-        >
-          {data && hasChartData ? (
-            <TrendSparkline
-              data={data.history}
-              isPositive={data.isPositive}
-              previousClose={data.previousClose}
-              sessionStartMs={sessionStartMs}
-              sessionEndMs={sessionEndMs}
-              width={174}
-              height={64}
-              lunchStartMs={data.lunchStartMs}
-              lunchEndMs={data.lunchEndMs}
-            />
-          ) : loading && !data ? (
-            <div className="flex h-full w-full items-center px-3">
-              <span
-                aria-hidden="true"
-                className="h-10 w-full animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
-              />
-            </div>
-          ) : (
-            <span className="text-xs text-zinc-400 dark:text-zinc-500">
-              {error ? "Data unavailable" : "Chart unavailable"}
-            </span>
-          )}
-        </div>
+          <div className="outfit relative h-16 pt-1.5">
+            {market.assetType === "index" && (
+              <div className="relative z-20 flex flex-col gap-2">
+                <MarketSentiment symbol={market.symbol} />
 
-        <div className="outfit relative h-16 pt-1.5">
-          {market.assetType === "index" && (
-            <div className="relative z-20 flex flex-col gap-2">
-              <MarketSentiment symbol={market.symbol} />
-
-              <MarketVoteButton
-                marketName={market.name}
-                symbol={market.symbol}
-                initialVote={initialVote}
-                initialVoteSessionKey={initialVoteSessionKey}
-              />
-            </div>
-          )}
+                <MarketVoteButton
+                  marketName={market.name}
+                  symbol={market.symbol}
+                  initialVote={initialVote}
+                  initialVoteSessionKey={initialVoteSessionKey}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </article>

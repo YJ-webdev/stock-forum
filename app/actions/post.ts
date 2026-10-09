@@ -1668,3 +1668,327 @@ export async function reportReply(replyId: string) {
     success: true,
   };
 }
+
+export type HomeCommentSort = "latest" | "most-liked";
+
+export interface HomeCommentCursor {
+  id: string;
+  createdAt: Date;
+  likeCount: number;
+
+  // Prevent using a cursor from a different filter or sort.
+  sort: HomeCommentSort;
+  assetSymbol: string | null;
+}
+
+interface GetHomeCommentsOptions {
+  assetSymbol?: string | null;
+  sort?: HomeCommentSort;
+  cursor?: HomeCommentCursor | null;
+}
+
+const HOME_COMMENTS_PAGE_SIZE = 10;
+
+export async function getHomeComments({
+  assetSymbol = null,
+  sort = "latest",
+  cursor = null,
+}: GetHomeCommentsOptions = {}) {
+  const session = await auth();
+
+  const userId = session?.user?.id ?? null;
+  const isAdmin = session?.user?.role === "ADMIN";
+  const marketSymbol = assetSymbol?.trim() || null;
+
+  if (sort !== "latest" && sort !== "most-liked") {
+    throw new Error("Invalid comment sort.");
+  }
+
+  const visibilityWhere = isAdmin
+    ? {}
+    : userId
+      ? {
+          OR: [
+            { visibility: "PUBLIC" as const },
+            {
+              visibility: "PRIVATE" as const,
+              authorId: userId,
+            },
+          ],
+        }
+      : {
+          visibility: "PUBLIC" as const,
+        };
+
+  const baseWhere: Prisma.CommentWhereInput = {
+    AND: [
+      visibilityWhere,
+      {
+        hasContent: true,
+        withdrawnAt: null,
+        moderatedAt: null,
+      },
+      ...(marketSymbol
+        ? [
+            {
+              assets: {
+                some: {
+                  assetSymbol: marketSymbol,
+                },
+              },
+            },
+          ]
+        : []),
+    ],
+  };
+
+  const select = {
+    id: true,
+    content: true,
+
+    createdAt: true,
+    updatedAt: true,
+    editedAt: true,
+    withdrawnAt: true,
+    moderatedAt: true,
+
+    author: {
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        nationality: true,
+      },
+    },
+
+    assets: {
+      select: {
+        assetSymbol: true,
+      },
+    },
+
+    prediction: {
+      select: {
+        direction: true,
+        pointsBet: true,
+        status: true,
+      },
+    },
+
+    likes: {
+      where: userId ? { userId } : { userId: { in: [] as string[] } },
+      select: {
+        id: true,
+      },
+    },
+
+    _count: {
+      select: {
+        likes: true,
+        replies: {
+          where: visibilityWhere,
+        },
+      },
+    },
+  } satisfies Prisma.CommentSelect;
+
+  let cursorDate: Date | null = null;
+
+  if (cursor) {
+    cursorDate = new Date(cursor.createdAt);
+
+    if (
+      !Number.isFinite(cursorDate.getTime()) ||
+      !cursor.id ||
+      !Number.isSafeInteger(cursor.likeCount) ||
+      cursor.likeCount < 0 ||
+      cursor.sort !== sort ||
+      cursor.assetSymbol !== marketSymbol
+    ) {
+      throw new Error("Invalid comment cursor. Reload comments.");
+    }
+  }
+
+  const orderBy: Prisma.CommentOrderByWithRelationInput[] =
+    sort === "most-liked"
+      ? [{ likes: { _count: "desc" } }, { createdAt: "desc" }, { id: "desc" }]
+      : [{ createdAt: "desc" }, { id: "desc" }];
+
+  const olderThanCursorWhere: Prisma.CommentWhereInput =
+    cursor && cursorDate
+      ? {
+          OR: [
+            {
+              createdAt: {
+                lt: cursorDate,
+              },
+            },
+            {
+              createdAt: cursorDate,
+              id: {
+                lt: cursor.id,
+              },
+            },
+          ],
+        }
+      : {};
+
+  /*
+   * Prisma supports ordering by relation count, but its standard
+   * where input cannot express "likes count < cursor.likeCount".
+   * Use Prisma's record cursor for Most liked.
+   */
+  if (cursor && sort === "most-liked") {
+    const cursorExists = await prisma.comment.findFirst({
+      where: {
+        AND: [baseWhere, { id: cursor.id }],
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!cursorExists) {
+      throw new Error("The discussion list changed. Reload comments.");
+    }
+  }
+
+  const [items, totalCount] = await Promise.all([
+    prisma.comment.findMany({
+      where:
+        sort === "latest" && cursor
+          ? {
+              AND: [baseWhere, olderThanCursorWhere],
+            }
+          : baseWhere,
+
+      orderBy,
+
+      ...(sort === "most-liked" && cursor
+        ? {
+            cursor: {
+              id: cursor.id,
+            },
+            skip: 1,
+          }
+        : {}),
+
+      take: HOME_COMMENTS_PAGE_SIZE + 1,
+      select,
+    }),
+
+    prisma.comment.count({
+      where: baseWhere,
+    }),
+  ]);
+
+  const hasMore = items.length > HOME_COMMENTS_PAGE_SIZE;
+
+  const page = hasMore ? items.slice(0, HOME_COMMENTS_PAGE_SIZE) : items;
+
+  const lastItem = page.at(-1);
+
+  const nextCursor: HomeCommentCursor | null =
+    hasMore && lastItem
+      ? {
+          id: lastItem.id,
+          createdAt: lastItem.createdAt,
+          likeCount: lastItem._count.likes,
+          sort,
+          assetSymbol: marketSymbol,
+        }
+      : null;
+
+  const comments = page.map((comment) => {
+    const { _count, likes, ...rest } = comment;
+
+    return {
+      ...rest,
+      content: comment.content as JSONContent,
+      likeCount: _count.likes,
+      replyCount: _count.replies,
+      likedByMe: likes.length > 0,
+    };
+  });
+
+  return {
+    comments,
+    nextCursor,
+    totalCount,
+  };
+}
+
+export type HomeComments = Awaited<
+  ReturnType<typeof getHomeComments>
+>["comments"];
+
+export async function getHomeCommunityMarkets() {
+  const session = await auth();
+
+  const userId = session?.user?.id ?? null;
+  const isAdmin = session?.user?.role === "ADMIN";
+
+  const visibilityWhere: Prisma.CommentWhereInput = isAdmin
+    ? {}
+    : userId
+      ? {
+          OR: [
+            { visibility: "PUBLIC" },
+            {
+              visibility: "PRIVATE",
+              authorId: userId,
+            },
+          ],
+        }
+      : {
+          visibility: "PUBLIC",
+        };
+
+  const comments = await prisma.comment.findMany({
+    where: {
+      AND: [
+        visibilityWhere,
+        {
+          hasContent: true,
+          withdrawnAt: null,
+          moderatedAt: null,
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          },
+        },
+      ],
+    },
+    select: {
+      assets: {
+        select: {
+          assetSymbol: true,
+        },
+      },
+    },
+  });
+
+  const counts = new Map<string, number>();
+
+  for (const comment of comments) {
+    for (const { assetSymbol } of comment.assets) {
+      counts.set(assetSymbol, (counts.get(assetSymbol) ?? 0) + 1);
+    }
+  }
+
+  return [...counts.entries()]
+    .map(([symbol, commentCount]) => {
+      const market = ALL_MARKET_SYMBOLS.find((item) => item.symbol === symbol);
+
+      return {
+        symbol,
+        displaySymbol: market?.displaySymbol ?? symbol,
+        name: market?.name ?? symbol,
+        commentCount,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.commentCount - a.commentCount ||
+        a.displaySymbol.localeCompare(b.displaySymbol),
+    );
+}

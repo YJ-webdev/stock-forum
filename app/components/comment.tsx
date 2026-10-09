@@ -39,6 +39,7 @@ import { PredictionCommentInput } from "./prediction-comment-input";
 import { ReplyInput } from "./reply-input";
 import { ReplyItem } from "./reply-item";
 import type { GifResult } from "./gif-picker";
+import Link from "next/link";
 
 type CommentCursor = NonNullable<
   Awaited<ReturnType<typeof getMarketComments>>["nextCursor"]
@@ -471,7 +472,9 @@ export type CommentUser = {
   name?: string | null;
 };
 
-interface CommentItemProps {
+export interface CommentItemProps {
+  marketname?: string | null;
+  marketSymbol?: string | null;
   comment: Comment;
   currentUser: CommentUser | null;
 
@@ -486,7 +489,7 @@ interface CommentItemProps {
   onRemove: (commentId: string) => void;
 }
 
-function CommentItem({
+export function CommentItem({
   comment,
   currentUser,
   onUpdate,
@@ -495,6 +498,8 @@ function CommentItem({
   targetReplyId,
   shouldOpenReplies,
   highlightTargetComment,
+  marketname,
+  marketSymbol,
 }: CommentItemProps) {
   const commentRef = useRef<HTMLDivElement>(null);
 
@@ -802,16 +807,31 @@ function CommentItem({
             <div className="flex items-center gap-1.5">
               <span className="text-[14px] font-semibold">{username}</span>
 
+              {marketname && marketSymbol && (
+                <Link
+                  href={`/market/${marketSymbol}`}
+                  className="flex items-center gap-2"
+                >
+                  <span
+                    className={`
+                      rounded-full px-2 py-0.5
+                      text-[11px] font-medium border border-zinc-400 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200
+                    `}
+                  >
+                    {marketname}
+                  </span>
+                </Link>
+              )}
               {comment.prediction && (
                 <div className="flex items-center gap-2">
                   <span
                     className={`
-                      rounded-full px-2 py-0.5
+                      rounded-full px-2 py-0.5 border-[0.5px]
                       text-[11px] font-medium
                       ${
                         comment.prediction.direction === "BULL"
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                          : "bg-[#cf0000]/8 dark:bg-[#c10303]/20 text-[#c10303] dark:text-[#ec5a5a]"
+                          ? "bg-emerald-500/10 border-emerald-600/50 text-emerald-600 dark:text-emerald-400"
+                          : "bg-[#cf0000]/8 border-[#cf0000]/50 dark:bg-[#c10303]/20 text-[#c10303] dark:text-[#ec5a5a]"
                       }
                     `}
                   >
@@ -896,11 +916,10 @@ function CommentItem({
                   aria-pressed={likedByMe}
                   className="
                     flex cursor-pointer items-center gap-1.5
-                    text-sm text-zinc-500
-                    transition-colors
+                    text-sm text-zinc-400/50                     transition-colors
                     hover:text-zinc-900
                     disabled:cursor-default
-                    dark:text-zinc-400
+                    dark:text-zinc-600
                     dark:hover:text-zinc-100
                   "
                 >
@@ -912,7 +931,11 @@ function CommentItem({
                     }`}
                   />
 
-                  {likeCount > 0 && <span>{likeCount}</span>}
+                  {likeCount > 0 && (
+                    <span className="text-zinc-800 dark:text-zinc-200">
+                      {likeCount}
+                    </span>
+                  )}
                 </button>
 
                 <button

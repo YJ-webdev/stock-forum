@@ -130,7 +130,7 @@ export function CommentEditInput({
 
   return (
     <div className="mt-2">
-      <div className="relative rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
+      <div className="relative rounded-lg bg-zinc-200/40 px-4 dark:bg-zinc-800">
         {/* Text */}
         <textarea
           value={comment}

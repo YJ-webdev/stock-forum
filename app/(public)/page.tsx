@@ -1,15 +1,17 @@
 // app/(public)/page.tsx
 
 import { getHomeMarkets } from "../actions/watchlist";
-import { getHomeMarketHeadlines } from "../actions/news";
+import { getHomeComments, getHomeCommunityMarkets } from "../actions/post";
+
 import { HomeMarketCarousel } from "../components/home-market-carousel";
-import { HomeNews } from "@/components/home-news";
+import { HomeCommunity } from "../components/home-community";
 import { Footer } from "../components/footer";
 
 export default async function Home() {
-  const [markets, briefs] = await Promise.all([
+  const [markets, community, communityMarkets] = await Promise.all([
     getHomeMarkets(),
-    getHomeMarketHeadlines(),
+    getHomeComments({ sort: "latest" }),
+    getHomeCommunityMarkets(),
   ]);
 
   return (
@@ -17,7 +19,7 @@ export default async function Home() {
       <main className="relative flex w-full min-w-0 flex-1 flex-col">
         <h1 className="sr-only">Global market dashboard</h1>
 
-        <section aria-labelledby="home-watchlist-heading" className="mb-4">
+        <section aria-labelledby="home-watchlist-heading" className="mb-1">
           <h2 id="home-watchlist-heading" className="sr-only">
             Watchlist
           </h2>
@@ -25,20 +27,19 @@ export default async function Home() {
           <HomeMarketCarousel markets={markets} />
         </section>
 
-        {briefs.length > 0 && (
-          <section aria-labelledby="home-news-heading">
-            <h2 id="home-news-heading" className="sr-only">
-              Market news
-            </h2>
-
-            <HomeNews briefs={briefs} />
-          </section>
-        )}
-
-        <section aria-labelledby="home-community-heading" className="mt-4">
+        <section
+          aria-labelledby="home-community-heading"
+          className="mt-4 px-3 pb-8 sm:px-4 border-t border-zinc-200/50 dark:border-zinc-700/50"
+        >
           <h2 id="home-community-heading" className="sr-only">
             Community
           </h2>
+          <HomeCommunity
+            initialComments={community.comments}
+            initialNextCursor={community.nextCursor}
+            initialTotalCount={community.totalCount}
+            markets={communityMarkets}
+          />
         </section>
       </main>
 

@@ -306,16 +306,16 @@ export default function UserMenu({
 
       <DropdownMenuContent
         align="end"
-        className="z-60 mt-1 w-56 dark:bg-zinc-800"
+        className="z-60 mt-1 w-56 dark:bg-[#1f1f1f]"
       >
         <DropdownMenuGroup>
-          <DropdownMenuItem
+          {/* <DropdownMenuItem
             onClick={onWrite}
             className="h-11 cursor-pointer text-[15px]"
           >
             <SquarePen className="mr-2 size-4.5" strokeWidth={1.5} />
             Write
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
 
           <DropdownMenuItem
             onClick={onNotification}
