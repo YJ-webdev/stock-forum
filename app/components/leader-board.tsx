@@ -1,11 +1,19 @@
 "use client";
 
+import { useId } from "react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { LeaderboardUser } from "@/app/actions/leaderboard";
 
+import { resolveLanguage } from "@/lib/data/languages";
+import { LEADERBOARD_LABELS } from "@/lib/data/translations";
+
 interface LeaderBoardProps {
   traders: LeaderboardUser[];
-  user: { id: string } | null;
+  user: {
+    id: string;
+    language?: string | null;
+  } | null;
 }
 
 function getInitials(name: string) {
@@ -13,15 +21,21 @@ function getInitials(name: string) {
 }
 
 export function LeaderBoard({ traders, user }: LeaderBoardProps) {
+  const headingId = useId();
+  const language = resolveLanguage(user?.language);
+  const labels = LEADERBOARD_LABELS[language];
+
   return (
-    <section aria-label="Leaderboard" className="flex w-full flex-col">
-      <h2 className="sr-only">Leaderboard</h2>
+    <section aria-labelledby={headingId} className="flex w-full flex-col">
+      <h2 id={headingId} className="sr-only">
+        {labels.title}
+      </h2>
 
       <p
         aria-hidden="true"
-        className="mb-1 truncate px-4 pt-4 text-xs font-normal tracking-wider text-muted-foreground/50"
+        className="truncate px-4 pt-4 text-xs font-normal tracking-wider text-muted-foreground/50"
       >
-        Leaderboard
+        {labels.title}
       </p>
 
       <div className="flex w-full flex-col px-2">
@@ -44,6 +58,7 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
               </div>
 
               <Avatar
+                aria-hidden="true"
                 className={`
                   size-9 shrink-0
                   ${
@@ -53,10 +68,7 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
                   }
                 `}
               >
-                <AvatarImage
-                  src={trader.image ?? undefined}
-                  alt={trader.name}
-                />
+                <AvatarImage src={trader.image ?? undefined} alt="" />
 
                 <AvatarFallback className="text-[11px] font-semibold">
                   {getInitials(trader.name)}
@@ -69,25 +81,25 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
 
                   {isMe && (
                     <span className="ml-2 rounded-full bg-olive-700 px-1.5 py-0.5 text-[11px] text-zinc-100">
-                      Me
+                      {labels.me}
                     </span>
                   )}
                 </p>
 
                 <div className="mt-0.5 flex items-center gap-1 text-[12px] text-zinc-500">
                   <span className="truncate">
-                    {trader.winRate.toFixed(1)}% accuracy
+                    {labels.accuracy} {trader.winRate.toFixed(1)}%
                   </span>
                 </div>
               </div>
 
               <div className="mr-4 shrink-0 text-right">
                 <p className="jakarta text-[14px] font-normal text-zinc-800 dark:text-zinc-300">
-                  {trader.points.toLocaleString()}
+                  {trader.points.toLocaleString(language)}
                 </p>
 
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-600">
-                  pts
+                  {labels.points}
                 </p>
               </div>
             </div>
@@ -96,7 +108,7 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
 
         {traders.length === 0 && (
           <div className="flex h-32 items-center justify-center text-sm text-zinc-400 dark:text-zinc-600">
-            No ranked traders yet.
+            {labels.empty}
           </div>
         )}
       </div>

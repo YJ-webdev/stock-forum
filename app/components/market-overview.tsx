@@ -1,3 +1,5 @@
+// app/components/market-overview.tsx
+
 "use client";
 
 import {
@@ -9,6 +11,10 @@ import {
 } from "react";
 
 import type { SelectedRange } from "../hooks/useMarketQuote";
+
+import { useCurrentUser } from "@/app/context/user-context";
+import { resolveLanguage } from "@/lib/data/languages";
+import { MARKET_PICKER_LABELS } from "@/lib/data/translations";
 
 import {
   MARKET_SYMBOLS,
@@ -33,6 +39,10 @@ export default function MarketOverview({
   onSearchResultsChange,
   onNavigate,
 }: MarketOverviewProps) {
+  const user = useCurrentUser();
+  const language = resolveLanguage(user?.language);
+  const categoryLabels = MARKET_PICKER_LABELS[language].groups;
+
   const marketCategories: Record<string, MarketSymbolItem[]> = useMemo(
     () => ({
       ...MARKET_SYMBOLS,
@@ -132,7 +142,7 @@ export default function MarketOverview({
     } else if (buttonRect.right > containerRect.right - padding) {
       container.scrollLeft += buttonRect.right - containerRect.right + padding;
     }
-  }, [activeTab]);
+  }, [activeTab, language]);
 
   useEffect(() => {
     return () => {
@@ -251,10 +261,8 @@ export default function MarketOverview({
       <div className="flex min-w-0 flex-col gap-3 md:mx-4">
         <div
           className="
-            sticky top-0 z-50
-            bg-zinc-100
-            md:static md:bg-white
-            dark:bg-zinc-800
+            sticky top-0 z-50 bg-zinc-100
+            md:static md:bg-white dark:bg-zinc-800
           "
         >
           <div
@@ -262,16 +270,17 @@ export default function MarketOverview({
             role="group"
             aria-label="Market categories"
             className="
-    flex min-w-0 touch-pan-x flex-nowrap items-center gap-1
-    overflow-x-auto overscroll-x-contain
-    px-3
-    scrollbar-none
-    [&::-webkit-scrollbar]:hidden
-    md:flex-wrap md:gap-2 md:overflow-visible md:px-0
-  "
+              flex min-w-0 touch-pan-x flex-nowrap items-center gap-1
+              overflow-x-auto overscroll-x-contain px-3
+              scrollbar-none [&::-webkit-scrollbar]:hidden
+              md:flex-wrap md:gap-2 md:overflow-visible md:px-0
+            "
           >
             {categories.map((category) => {
               const isActive = activeTab === category;
+              const categoryName =
+                categoryLabels[category.toLowerCase()] ??
+                category.replace(/_/g, " ");
 
               return (
                 <button
@@ -304,15 +313,13 @@ export default function MarketOverview({
                           dark:md:bg-transparent
                         `
                         : `
-                          text-zinc-500
-                          hover:text-zinc-900
-                          dark:text-zinc-400
-                          dark:hover:text-zinc-100
+                          text-zinc-500 hover:text-zinc-900
+                          dark:text-zinc-400 dark:hover:text-zinc-100
                         `
                     }
                   `}
                 >
-                  {category.replaceAll("_", " ")}
+                  {categoryName}
                 </button>
               );
             })}

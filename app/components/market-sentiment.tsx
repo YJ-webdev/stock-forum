@@ -38,7 +38,7 @@ const DOT_PATTERN =
 const WIDTH_TRANSITION =
   "transition-[width] duration-300 motion-reduce:transition-none";
 
-const PERCENT_TEXT = "outfit font-normal text-white";
+const PERCENT_TEXT = " font-normal text-white";
 
 function getSentimentSession(symbol: string): MarketSession {
   const votingWindow = getVotingWindow(symbol, Date.now());
@@ -187,7 +187,7 @@ export function MarketSentiment({
     : undefined;
 
   return (
-    <div className="outfit w-full">
+    <div className=" w-full">
       <div
         role={stats ? "img" : undefined}
         aria-label={ariaLabel}

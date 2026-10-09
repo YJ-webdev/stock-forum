@@ -470,6 +470,7 @@ export type CommentUser = {
   role?: string | null;
   image?: string | null;
   name?: string | null;
+  language?: string | null;
 };
 
 export interface CommentItemProps {
@@ -847,6 +848,7 @@ export function CommentItem({
               </span>
 
               <ContentActionsMenu
+                language={currentUser?.language}
                 isAdmin={isAdmin}
                 isAuthor={isAuthor}
                 isModerated={Boolean(comment.moderatedAt)}

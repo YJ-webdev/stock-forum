@@ -852,7 +852,7 @@ export function DetailChart({
                 textAnchor="middle"
                 className="outfit fill-zinc-400 text-[15px] font-[450] dark:fill-zinc-400"
               >
-                Lunch break
+                {marketLabels.lunch_break}
               </text>
             </g>
           )}

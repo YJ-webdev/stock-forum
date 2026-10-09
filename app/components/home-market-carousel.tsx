@@ -35,7 +35,7 @@ import {
 } from "@/app/actions/watchlist";
 import { MAX_WATCHLIST_MARKETS } from "@/lib/constants/watchlist";
 import { resolveLanguage } from "@/lib/data/languages";
-import { WATCHLIST_LABELS } from "@/lib/data/translations";
+import { MARKET_NAME_LABELS, WATCHLIST_LABELS } from "@/lib/data/translations";
 import type { HomeMarketEntry } from "@/types/home-market";
 
 import { useCurrentUser } from "../context/user-context";
@@ -86,6 +86,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
   const user = useCurrentUser();
   const userLanguage = resolveLanguage(user?.language);
   const labels = WATCHLIST_LABELS[userLanguage];
+  const marketNames = MARKET_NAME_LABELS[userLanguage];
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -314,7 +315,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
 
   return (
     <>
-      <div className="group/markets relative mt-4 min-h-[254.5px] w-full min-w-0">
+      <div className="group/markets relative min-h-[254.5px] w-full min-w-0">
         {isEmpty ? (
           <div className="h-[254.5px] w-full px-4">
             <button
@@ -390,14 +391,14 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                       <Link
                         href={`/market/${encodeURIComponent(market.symbol)}`}
                         aria-label={formatLabel(labels.view_market, {
-                          market: market.name,
+                          market: marketNames[market.symbol] ?? market.name,
                         })}
                         draggable={false}
                         className="
-                          absolute inset-0 z-10 cursor-pointer rounded-lg
-                          focus-visible:outline-none focus-visible:ring-2
-                          focus-visible:ring-zinc-400
-                        "
+    absolute inset-0 z-10 cursor-pointer rounded-lg
+    focus-visible:outline-none focus-visible:ring-2
+    focus-visible:ring-zinc-400
+  "
                       />
 
                       <BullBearVoteCard
@@ -532,6 +533,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
               onToggle={toggleMarket}
               existingSymbols={existingSymbols}
               disabled={isPending}
+              language={userLanguage}
             />
           </div>
 

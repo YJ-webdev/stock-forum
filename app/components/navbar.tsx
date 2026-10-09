@@ -7,7 +7,6 @@ import {
   BellIcon,
   LogOutIcon,
   User as UserIcon,
-  SquarePen,
   TextAlignJustify as MenuButton,
   Settings,
   ShieldCogCorner,
@@ -26,8 +25,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import type { User } from "@/types/user";
+import { resolveLanguage } from "@/lib/data/languages";
+import { NAVBAR_LABELS } from "@/lib/data/translations";
 
-import { ModeToggle } from "./mode-toggle";
+import { ModeToggle, ModeToggleContent, useModeToggle } from "./mode-toggle";
 import { LoginDialog } from "./log-in-dialog";
 import SearchInput from "./search-input";
 
@@ -76,6 +77,9 @@ export function Navbar({
   onNotification,
   user,
 }: NavbarProps) {
+  const language = resolveLanguage(user?.language);
+  const labels = NAVBAR_LABELS[language];
+
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -128,7 +132,7 @@ export function Navbar({
       {isSearchOpen && (
         <button
           type="button"
-          aria-label="Close search"
+          aria-label={labels.close_search}
           className="absolute inset-0 z-10 cursor-default backdrop-blur-[1px]"
           onClick={() => handleSearchOpenChange(false)}
         />
@@ -137,13 +141,17 @@ export function Navbar({
       <button
         type="button"
         onClick={() => handlePanelAction(onTogglePanel)}
-        aria-label="Toggle Sidebar"
+        aria-label={labels.toggle_sidebar}
         className="
           m-2 shrink-0 cursor-pointer
           rounded-md p-2.5 transition md:m-4
         "
       >
-        <MenuButton className="size-5 text-foreground" strokeWidth={1.5} />
+        <MenuButton
+          className="size-5 text-foreground"
+          strokeWidth={1.5}
+          aria-hidden="true"
+        />
       </button>
 
       <div className="relative z-20 mx-auto min-w-0 max-w-xl flex-1">
@@ -183,16 +191,19 @@ export default function UserMenu({
   onOpenChange,
   onSignOut,
   onLoginClick,
-  onWrite,
   onAccount,
   onNotification,
 }: UserMenuProps) {
   const router = useRouter();
 
+  const language = resolveLanguage(user?.language);
+  const labels = NAVBAR_LABELS[language];
+
   const [isPending, startTransition] = useTransition();
   const [unreadCount, setUnreadCount] = useState(0);
 
   const userId = user?.id;
+  const mode = useModeToggle();
 
   useEffect(() => {
     setUnreadCount(0);
@@ -245,7 +256,7 @@ export default function UserMenu({
       <Button
         variant="default"
         onClick={onLoginClick}
-        aria-label="Log in"
+        aria-label={labels.login}
         className="
           -ml-2.75 -mr-2 flex cursor-pointer items-center
           bg-transparent hover:bg-transparent
@@ -254,6 +265,7 @@ export default function UserMenu({
         <TbUser
           className="size-6 text-zinc-700 dark:text-zinc-200"
           strokeWidth={1.5}
+          aria-hidden="true"
         />
       </Button>
     );
@@ -270,8 +282,11 @@ export default function UserMenu({
         "
         aria-label={
           unreadCount > 0
-            ? `User menu, ${unreadCount} unread notifications`
-            : "User menu"
+            ? labels.unread_menu.replace(
+                "{count}",
+                unreadCount.toLocaleString(language),
+              )
+            : labels.user_menu
         }
       >
         {unreadCount > 0 && (
@@ -286,19 +301,21 @@ export default function UserMenu({
         )}
 
         <Avatar
+          aria-hidden="true"
           className={`size-12 hover:grayscale-0 ${
             isOpen ? "grayscale-0" : "grayscale"
           }`}
         >
-          {user.image && (
-            <AvatarImage src={user.image} alt={user.name || "User avatar"} />
-          )}
+          {user.image && <AvatarImage src={user.image} alt="" />}
 
           <AvatarFallback className="bg-zinc-500 text-lg font-semibold text-white">
             {user.image ? (
               initials
             ) : (
-              <UserIcon className="size-4 text-zinc-600 dark:text-zinc-300" />
+              <UserIcon
+                className="size-4 text-zinc-600 dark:text-zinc-300"
+                aria-hidden="true"
+              />
             )}
           </AvatarFallback>
         </Avatar>
@@ -309,23 +326,23 @@ export default function UserMenu({
         className="z-60 mt-1 w-56 dark:bg-[#1f1f1f]"
       >
         <DropdownMenuGroup>
-          {/* <DropdownMenuItem
-            onClick={onWrite}
-            className="h-11 cursor-pointer text-[15px]"
-          >
-            <SquarePen className="mr-2 size-4.5" strokeWidth={1.5} />
-            Write
-          </DropdownMenuItem> */}
-
           <DropdownMenuItem
             onClick={onNotification}
             className="h-11 cursor-pointer text-[15px]"
           >
-            <BellIcon className="mr-2 size-4.5" strokeWidth={1.5} />
-            Notifications
+            <BellIcon
+              className="mr-2 size-4.5"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+
+            {labels.notifications}
+
             {unreadCount > 0 && (
               <span className="ml-auto text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
-                {unreadCount > 99 ? "99+" : unreadCount}
+                {unreadCount > 99
+                  ? "99+"
+                  : unreadCount.toLocaleString(language)}
               </span>
             )}
           </DropdownMenuItem>
@@ -334,12 +351,24 @@ export default function UserMenu({
             onClick={onAccount}
             className="h-11 cursor-pointer text-[15px]"
           >
-            <Settings className="mr-2 size-4.5" strokeWidth={1.5} />
-            Settings
+            <Settings
+              className="mr-2 size-4.5"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            {labels.settings}
           </DropdownMenuItem>
 
-          <DropdownMenuItem className="h-11 cursor-pointer p-0 text-[15px]">
-            <ModeToggle text="Mode" />
+          <DropdownMenuItem
+            onClick={mode.toggleTheme}
+            aria-label={mode.accessibleLabel}
+            className="h-11 cursor-pointer gap-3 text-[15px]"
+          >
+            <ModeToggleContent
+              mounted={mode.mounted}
+              isDark={mode.isDark}
+              label={mode.label}
+            />
           </DropdownMenuItem>
         </DropdownMenuGroup>
 
@@ -353,8 +382,12 @@ export default function UserMenu({
           disabled={isPending}
           className="cursor-pointer text-[15px]"
         >
-          <LogOutIcon className="mr-2 size-4.5" strokeWidth={1.5} />
-          {isPending ? "Signing out..." : "Sign Out"}
+          <LogOutIcon
+            className="mr-2 size-4.5"
+            strokeWidth={1.5}
+            aria-hidden="true"
+          />
+          {isPending ? labels.signing_out : labels.sign_out}
         </DropdownMenuItem>
 
         {user.role === "ADMIN" && (
@@ -365,8 +398,12 @@ export default function UserMenu({
             }}
             className="h-11 cursor-pointer text-[15px]"
           >
-            <ShieldCogCorner className="mr-2 size-4.5" strokeWidth={1.5} />
-            Admin
+            <ShieldCogCorner
+              className="mr-2 size-4.5"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            {labels.admin}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

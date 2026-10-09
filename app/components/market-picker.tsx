@@ -5,10 +5,7 @@ import { Check } from "lucide-react";
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { MAX_WATCHLIST_MARKETS } from "@/lib/constants/watchlist";
 import { resolveLanguage } from "@/lib/data/languages";
-import {
-  MARKET_NAME_LABELS,
-  MARKET_PICKER_LABELS,
-} from "@/lib/data/translations";
+import { MARKET_PICKER_LABELS } from "@/lib/data/translations";
 
 interface MarketPickerProps {
   selectedSymbols: string[];
@@ -43,7 +40,6 @@ export function MarketPicker({
   const resolvedLanguage = resolveLanguage(language);
 
   const labels = MARKET_PICKER_LABELS[resolvedLanguage];
-  const marketNames = MARKET_NAME_LABELS[resolvedLanguage];
 
   const existingSet = new Set(existingSymbols);
   const selectedSet = new Set(selectedSymbols);
@@ -68,8 +64,6 @@ export function MarketPicker({
                   {assets.map((asset) => {
                     const existing = existingSet.has(asset.symbol);
                     const selected = selectedSet.has(asset.symbol);
-
-                    const marketName = marketNames[asset.symbol] ?? asset.name;
 
                     const itemDisabled =
                       disabled || (limitReached && !selected);
@@ -107,8 +101,8 @@ export function MarketPicker({
                           }
                         `}
                       >
-                        <span className="min-w-0 truncate" title={marketName}>
-                          {marketName}
+                        <span className="min-w-0 truncate" title={asset.name}>
+                          {asset.name}
                         </span>
 
                         {selected && (

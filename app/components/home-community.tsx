@@ -1,10 +1,11 @@
 // app/components/home-community.tsx
+
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -15,6 +16,9 @@ import {
 } from "@/app/actions/post";
 import { useCurrentUser } from "@/app/context/user-context";
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
+import { resolveLanguage } from "@/lib/data/languages";
+import { HOME_COMMUNITY_LABELS } from "@/lib/data/translations";
+
 import { CommentItem } from "./comment";
 
 interface HomeCommunityProps {
@@ -40,13 +44,21 @@ export function HomeCommunity({
   const user = useCurrentUser();
   const searchParams = useSearchParams();
 
+  const language = resolveLanguage(user?.language);
+  const labels = HOME_COMMUNITY_LABELS[language];
+  const labelsRef = useRef(labels);
+
+  useEffect(() => {
+    labelsRef.current = labels;
+  }, [labels]);
+
   const targetCommentId = searchParams.get("comment");
   const targetReplyId = searchParams.get("reply");
   const from = searchParams.get("from");
 
   const [comments, setComments] = useState(initialComments);
   const [nextCursor, setNextCursor] = useState(initialNextCursor);
-  const [totalCount, setTotalCount] = useState(initialTotalCount);
+  const [, setTotalCount] = useState(initialTotalCount);
 
   const [assetSymbol, setAssetSymbol] = useState<string | null>(null);
   const [sort, setSort] = useState<HomeCommentSort>("latest");
@@ -73,6 +85,8 @@ export function HomeCommunity({
   );
 
   const filterMarkets = markets.slice(0, 5);
+
+  const selectedMarket = assetSymbol ? marketBySymbol.get(assetSymbol) : null;
 
   const highlightTargetComment =
     Boolean(targetCommentId) && (from === "most-liked" || from === "report");
@@ -132,13 +146,9 @@ export function HomeCommunity({
       } catch (error) {
         if (!isCurrentRequest()) return;
 
+        console.error(error);
         setLoadError(true);
-
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to load discussions.",
-        );
+        toast.error(labelsRef.current.load_failed);
       } finally {
         if (isCurrentRequest()) {
           setLoading(false);
@@ -224,11 +234,8 @@ export function HomeCommunity({
     } catch (error) {
       if (requestVersionRef.current !== requestVersion) return;
 
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to load more discussions.",
-      );
+      console.error(error);
+      toast.error(labelsRef.current.load_more_failed);
     } finally {
       if (requestVersionRef.current === requestVersion) {
         loadingMoreRef.current = false;
@@ -237,23 +244,19 @@ export function HomeCommunity({
     }
   }
 
-  const selectedMarket = assetSymbol ? marketBySymbol.get(assetSymbol) : null;
-
   return (
-    <div className="outfit w-full min-w-0">
-      <div className="flex items-baseline gap-2"></div>
-
+    <div className="outfit w-full min-w-0 ">
       <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3">
         <div
           role="group"
-          aria-label="Filter discussions by market"
-          className="flex min-w-0 flex-wrap items-center gap-2 mb-2"
+          aria-label={labels.filter_markets}
+          className="mb-2 flex min-w-0 flex-wrap items-center gap-2"
         >
           {[
             {
               symbol: null,
-              displaySymbol: "All markets",
-              name: "All markets",
+              displaySymbol: labels.all_markets,
+              name: labels.all_markets,
             },
             ...filterMarkets,
           ].map((market) => {
@@ -268,14 +271,24 @@ export function HomeCommunity({
                 onClick={() => changeMarket(market.symbol)}
                 className={`
                   shrink-0 cursor-pointer rounded-full
-                  border px-3.5 py-1.5 text-sm
+                  border px-3.5 py-1.5 text-sm font-medium
                   transition-colors
-                  focus-visible:outline-none focus-visible:ring-2
+                  focus-visible:outline-none
+                  focus-visible:ring-2
                   focus-visible:ring-zinc-400
                   ${
                     active
-                      ? "border-transparent bg-zinc-500/50 text-white font-medium  dark:bg-[#515151] dark:text-zinc-900"
-                      : "border-zinc-300 text-zinc-500 hover:border-zinc-400 font-medium  dark:border-zinc-700 dark:text-zinc-500 dark:hover:border-zinc-700 dark:hover:text-zinc-100"
+                      ? `
+                        border-transparent bg-zinc-500/50 text-white
+                        dark:bg-[#515151] dark:text-zinc-900
+                      `
+                      : `
+                        border-zinc-300 text-zinc-500
+                        hover:border-zinc-400
+                        dark:border-zinc-700 dark:text-zinc-500
+                        dark:hover:border-zinc-700
+                        dark:hover:text-zinc-100
+                      `
                   }
                 `}
               >
@@ -287,7 +300,7 @@ export function HomeCommunity({
 
         <div className="relative ml-auto shrink-0">
           <select
-            aria-label="Sort discussions"
+            aria-label={labels.sort_discussions}
             value={sort}
             onChange={(event) =>
               changeSort(event.target.value as HomeCommentSort)
@@ -296,14 +309,15 @@ export function HomeCommunity({
               cursor-pointer appearance-none rounded-full
               border border-zinc-300 bg-white
               py-1.5 pr-9 pl-3.5 text-sm text-zinc-600
-              focus-visible:outline-none focus-visible:ring-2
+              focus-visible:outline-none
+              focus-visible:ring-2
               focus-visible:ring-zinc-400
               dark:border-zinc-700 dark:bg-zinc-900
               dark:text-zinc-300
             "
           >
-            <option value="latest">Latest</option>
-            <option value="most-liked">Most liked</option>
+            <option value="latest">{labels.latest}</option>
+            <option value="most-liked">{labels.most_liked}</option>
           </select>
 
           <ChevronDown
@@ -320,7 +334,7 @@ export function HomeCommunity({
       <div aria-busy={loading} className="mt-5">
         {loading ? (
           <div role="status" className="space-y-6 py-3">
-            <span className="sr-only">Loading discussions...</span>
+            <span className="sr-only">{labels.loading_discussions}</span>
 
             {Array.from({ length: 3 }, (_, index) => (
               <div
@@ -340,7 +354,7 @@ export function HomeCommunity({
           </div>
         ) : loadError ? (
           <div className="py-10 text-center">
-            <p className="text-sm text-zinc-500">Could not load discussions.</p>
+            <p className="text-sm text-zinc-500">{labels.load_failed}</p>
 
             <button
               type="button"
@@ -348,23 +362,25 @@ export function HomeCommunity({
               className="
                 mt-3 cursor-pointer rounded-sm text-sm
                 text-zinc-700 underline underline-offset-4
-                focus-visible:outline-none focus-visible:ring-2
-                focus-visible:ring-zinc-400 dark:text-zinc-300
+                focus-visible:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-zinc-400
+                dark:text-zinc-300
               "
             >
-              Try again
+              {labels.retry}
             </button>
           </div>
         ) : comments.length === 0 ? (
           <div className="py-10 text-center">
             <p className="text-[15px] text-zinc-600 dark:text-zinc-300">
-              No discussions yet.
+              {labels.empty}
             </p>
 
             <p className="mt-1 text-sm text-zinc-400">
               {selectedMarket
-                ? `Share your view on ${selectedMarket.name}.`
-                : "Share your view and start the conversation."}
+                ? labels.share_market.replace("{market}", selectedMarket.name)
+                : labels.share_view}
             </p>
           </div>
         ) : (
@@ -418,15 +434,17 @@ export function HomeCommunity({
             className="
               inline-flex cursor-pointer items-center gap-2
               rounded-full px-4 py-2 text-sm text-zinc-500
-              transition-colors hover:bg-zinc-100 hover:text-zinc-900
-              focus-visible:outline-none focus-visible:ring-2
+              transition-colors
+              hover:bg-zinc-100 hover:text-zinc-900
+              focus-visible:outline-none
+              focus-visible:ring-2
               focus-visible:ring-zinc-400
               disabled:cursor-wait disabled:opacity-50
               dark:text-zinc-400 dark:hover:bg-zinc-800
               dark:hover:text-zinc-100
             "
           >
-            {loadingMore ? "Loading..." : "View more discussions"}
+            {loadingMore ? labels.loading : labels.view_more}
 
             <ChevronDown
               className="size-4"

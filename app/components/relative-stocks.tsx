@@ -15,20 +15,23 @@ import {
 import { useRouter } from "next/navigation";
 import { TZDate } from "@date-fns/tz";
 
+import { useCurrentUser } from "@/app/context/user-context";
 import {
   TRADING_HOURS,
   type MarketSymbolItem,
 } from "@/lib/data/market-symbols";
+import { resolveLanguage } from "@/lib/data/languages";
+import {
+  MARKET_TABLE_LABELS,
+  STATISTICS_LABELS,
+} from "@/lib/data/translations";
 
 import { useMarketQuote, type SelectedRange } from "@/app/hooks/useMarketQuote";
-
 import {
   useRelativeQuotes,
   type RelativeQuote,
 } from "@/app/hooks/useRelativeQuotes";
-
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
-
 import {
   getMarketVoteListStats,
   type MarketVoteListStats,
@@ -38,7 +41,6 @@ import {
 import { TrendSparkline } from "./trend-sparkline";
 import { Numeric } from "./numeric";
 import { MarketSkeleton } from "./market-skeleton";
-import { Vote } from "lucide-react";
 
 interface RelativeStocksProps {
   items: MarketSymbolItem[];
@@ -58,6 +60,7 @@ interface RelativeStockRowProps {
   onNavigate?: () => void;
   priceQuote?: RelativeQuote;
   quotesLoading: boolean;
+  noVoteYetLabel: string;
 }
 
 interface VotingRequest {
@@ -226,8 +229,12 @@ export function RelativeStocks({
   selectedIndex = -1,
   onNavigate,
 }: RelativeStocksProps) {
-  const [now, setNow] = useState(() => Date.now());
+  const user = useCurrentUser();
+  const language = resolveLanguage(user?.language);
+  const labels = MARKET_TABLE_LABELS[language];
+  const statisticsLabels = STATISTICS_LABELS[language];
 
+  const [now, setNow] = useState(() => Date.now());
   const [voteState, setVoteState] = useState<{
     key: string;
     stats: MarketVoteListStatsMap;
@@ -343,82 +350,77 @@ export function RelativeStocks({
   }, [selectedIndex]);
 
   return (
-    <div className="flex max-h-[calc(100vh-165px)] lg:max-h-[calc(100vh-260px)] w-full flex-col overflow-y-auto ">
-      <div className="w-full  md:rounded-lg ">
+    <div className="flex max-h-[calc(100vh-165px)] w-full flex-col overflow-y-auto lg:max-h-[calc(100vh-260px)]">
+      <div className="w-full md:rounded-lg">
         <table className="w-full table-fixed">
-          <thead className="sticky top z-10 dark:bg-zinc-800 lg:bg-white bg-zinc-100">
+          <thead className="sticky top z-10 bg-zinc-100 lg:bg-white dark:bg-zinc-800 [&_th]:font-normal">
             <tr className="border-b border-zinc-200 text-[11px] uppercase tracking-wider text-zinc-400 dark:border-zinc-700/50 dark:text-zinc-500 md:text-xs">
               <th
+                scope="col"
                 className={
                   showVotingColumns
                     ? "w-[25%] py-3 pl-4 text-left md:w-[10%]"
                     : "w-[calc(100%/6)] py-3 pl-4 text-left md:w-[10%]"
                 }
               >
-                Asset
+                {labels.asset}
               </th>
 
               <th
+                scope="col"
+                className="hidden text-center md:table-cell md:w-[10%]"
+              >
+                {labels.trend}
+              </th>
+
+              <th scope="col" className="w-[25%] pr-2 text-right md:w-[10%]">
+                {labels.today}
+              </th>
+
+              <th
+                scope="col"
                 className={
                   showVotingColumns
-                    ? "hidden text-center md:table-cell md:w-[10%]"
-                    : "hidden text-center md:table-cell md:w-[10%]"
+                    ? "hidden text-right md:table-cell md:w-[10%] md:py-3"
+                    : "w-[23%] text-right md:w-[10%] md:py-3"
                 }
               >
-                Trend
+                {labels.prev}
               </th>
 
               <th
-                className={
-                  showVotingColumns
-                    ? "w-[25%] pr-2 text-right md:w-[10%]"
-                    : "w-[25%] pr-2 text-right md:w-[10%]"
-                }
+                scope="col"
+                className="hidden truncate text-right md:table-cell md:w-[10%]"
               >
-                Today
+                {labels.percent}
               </th>
 
               <th
-                className={
-                  showVotingColumns
-                    ? "hidden  text-right md:table-cell md:w-[10%] md:py-3"
-                    : "w-[23%]  text-right md:w-[10%] md:py-3"
-                }
-              >
-                Prev
-              </th>
-
-              <th
-                className={
-                  showVotingColumns
-                    ? "hidden truncate text-right md:table-cell md:w-[10%]"
-                    : "hidden truncate text-right md:table-cell md:w-[10%]"
-                }
-              >
-                24h %
-              </th>
-
-              <th
+                scope="col"
                 className={
                   showVotingColumns
                     ? "hidden text-right md:table-cell md:w-[10%]"
                     : "w-[23%] pr-4 text-right md:w-[10%]"
                 }
               >
-                Change
+                {labels.change}
               </th>
 
               {showVotingColumns && (
                 <>
-                  <th className="w-[30%] pl-4 md:w-[10%]">Statistic</th>
+                  <th scope="col" className="w-[30%] pl-4 md:w-[10%]">
+                    {labels.statistics}
+                  </th>
 
-                  <th className="w-[15%]  pr-4 text-right md:w-[5%]">Vote</th>
+                  <th scope="col" className="w-[15%] pr-4 text-right md:w-[5%]">
+                    {labels.vote}
+                  </th>
                 </>
               )}
             </tr>
           </thead>
 
-          <tbody className="font-medium">
+          <tbody>
             {items.map((item, index) => {
               const status = votingStatusMap.get(item.symbol);
               const isSelected = selectedIndex === index;
@@ -436,6 +438,7 @@ export function RelativeStocks({
                   onNavigate={onNavigate}
                   priceQuote={quotes[item.symbol]}
                   quotesLoading={quotesLoading}
+                  noVoteYetLabel={statisticsLabels.no_vote_yet}
                 />
               );
             })}
@@ -457,6 +460,7 @@ function RelativeStockRow({
   onNavigate,
   priceQuote,
   quotesLoading,
+  noVoteYetLabel,
 }: RelativeStockRowProps) {
   const router = useRouter();
   const decimals = 2;
@@ -549,13 +553,7 @@ function RelativeStockRow({
         </div>
       </td>
 
-      <td
-        className={`
-          whitespace-nowrap align-middle text-right
-          font-medium dark:font-normal
-          ${showVotingColumns ? "pr-2" : "pr-2"}
-        `}
-      >
+      <td className="whitespace-nowrap pr-2 align-middle text-right font-medium dark:font-normal">
         <div className="flex h-5 w-full items-center justify-end">
           {isInitialLoading ? (
             <NumberSkeleton className="w-24" />
@@ -640,7 +638,7 @@ function RelativeStockRow({
                   voteStats
                     ? hasVotes
                       ? `Bull ${bullPercent} percent, Bear ${bearPercent} percent, ${voteStats.totalVotes} votes`
-                      : "No votes yet"
+                      : noVoteYetLabel
                     : "Vote statistics unavailable"
                 }
                 title={
@@ -649,12 +647,12 @@ function RelativeStockRow({
                     : undefined
                 }
                 className="
-        outfit relative mx-auto flex h-7 w-full max-w-28
-        items-center overflow-hidden
-        bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)]
-        bg-size-[3px_3px]
-        text-zinc-200 dark:text-zinc-600/50
-      "
+                  outfit relative mx-auto flex h-7 w-full max-w-28
+                  items-center overflow-hidden
+                  bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)]
+                  bg-size-[3px_3px]
+                  text-zinc-200 dark:text-zinc-600/50
+                "
               >
                 <div
                   aria-hidden="true"
@@ -676,7 +674,7 @@ function RelativeStockRow({
                     </>
                   ) : (
                     <span className="text-[11px] font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
-                      {voteStats === undefined ? "" : "No vote yet"}
+                      {voteStats === undefined ? "" : noVoteYetLabel}
                     </span>
                   )}
                 </div>
@@ -688,21 +686,21 @@ function RelativeStockRow({
                   >
                     <div
                       className="
-              h-full bg-emerald-600
-              transition-[width] duration-300
-              motion-reduce:transition-none
-              dark:bg-emerald-400
-            "
+                        h-full bg-emerald-600
+                        transition-[width] duration-300
+                        motion-reduce:transition-none
+                        dark:bg-emerald-400
+                      "
                       style={{ width: `${bullPercent}%` }}
                     />
 
                     <div
                       className="
-              h-full bg-[#cf0000]
-              transition-[width] duration-300
-              motion-reduce:transition-none
-              dark:bg-[#ff4545]
-            "
+                        h-full bg-[#cf0000]
+                        transition-[width] duration-300
+                        motion-reduce:transition-none
+                        dark:bg-[#ff4545]
+                      "
                       style={{ width: `${bearPercent}%` }}
                     />
                   </div>

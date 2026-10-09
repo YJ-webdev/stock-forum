@@ -27,6 +27,7 @@ interface ReplyItemProps {
     role?: string | null;
     image?: string | null;
     name?: string | null;
+    language?: string | null;
   } | null;
 
   onReplyUpdated: () => Promise<void>;
@@ -324,6 +325,7 @@ export function ReplyItem({
               onHide={handleHide}
               onRestore={handleRestore}
               onReport={handleReportReply}
+              language={currentUser?.language}
             />
           </div>
 

@@ -51,18 +51,18 @@ export const VOTE_LABELS: Record<
 };
 
 export const PREDICTION_LABELS: Record<Language, string> = {
-  en: "My prediction for {market}",
-  ko: "{market} 에 대한 나의 예측",
-  ja: "{market} の私の予測",
-  zh: "我对 {market} 的预测",
-  de: "Meine Prognose für {market}",
-  fr: "Ma prévision pour {market}",
-  es: "Mi predicción para {market}",
-  pt: "Minha previsão para {market}",
-  it: "La mia previsione per {market}",
-  ru: "Мой прогноз по {market}",
-  ar: "توقعي بشأن {market}",
-  hi: "{market} के लिए मेरा पूर्वानुमान",
+  en: "Prediction for {market}",
+  ko: "{market} 에 대한 예측",
+  ja: "{market} についての予測",
+  zh: "对{market} 的预测",
+  de: "Prognose für {market}",
+  fr: "Prévision pour {market}",
+  es: "Predicción para {market}",
+  pt: "Previsão para {market}",
+  it: "Previsione per {market}",
+  ru: "Прогноз по {market}",
+  ar: "توقع بشأن {market}",
+  hi: "{market} के लिए पूर्वानुमान",
 };
 
 export const COMMENT_LABELS: Record<
@@ -180,67 +180,80 @@ export const MARKET_LABELS: Record<
     data_delayed: string;
     disclaimer: string;
     prev_close: string;
+    lunch_break: string;
   }
 > = {
   en: {
     data_delayed: "Data delayed {minutes}m",
     disclaimer: "Disclaimer",
     prev_close: "Previous close",
+    lunch_break: "Lunch break",
   },
   ko: {
     data_delayed: "지연 {minutes}분",
     disclaimer: "면책",
     prev_close: "전일 종가",
+    lunch_break: "점심 휴장",
   },
   ja: {
     data_delayed: "{minutes}分遅延",
     disclaimer: "免責",
     prev_close: "前日終値",
+    lunch_break: "昼休み",
   },
   zh: {
     data_delayed: "延迟{minutes}分钟",
     disclaimer: "免责",
     prev_close: "前收盘价",
+    lunch_break: "午间休市",
   },
   de: {
     data_delayed: "{minutes} Min. verzögert",
     disclaimer: "Haftungsausschluss",
     prev_close: "Vorheriger Schlusskurs",
+    lunch_break: "Mittagspause",
   },
   fr: {
     data_delayed: "Retard de {minutes} min",
     disclaimer: "Avertissement",
     prev_close: "Clôture précédente",
+    lunch_break: "Pause déjeuner",
   },
   es: {
     data_delayed: "Retraso de {minutes} min",
     disclaimer: "Aviso legal",
     prev_close: "Cierre anterior",
+    lunch_break: "Pausa de almuerzo",
   },
   pt: {
     data_delayed: "Atraso de {minutes} min",
     disclaimer: "Aviso legal",
     prev_close: "Fechamento anterior",
+    lunch_break: "Intervalo de almoço",
   },
   it: {
     data_delayed: "Ritardo di {minutes} min",
     disclaimer: "Avvertenze",
     prev_close: "Chiusura precedente",
+    lunch_break: "Pausa pranzo",
   },
   ru: {
     data_delayed: "Задержка {minutes} мин",
     disclaimer: "Отказ от ответственности",
     prev_close: "Предыдущее закрытие",
+    lunch_break: "Обеденный перерыв",
   },
   ar: {
     data_delayed: "تأخير {minutes} دقيقة",
     disclaimer: "إخلاء المسؤولية",
     prev_close: "الإغلاق السابق",
+    lunch_break: "استراحة الغداء",
   },
   hi: {
     data_delayed: "{minutes} मिनट की देरी",
     disclaimer: "अस्वीकरण",
     prev_close: "पिछला बंद भाव",
+    lunch_break: "दोपहर का अवकाश",
   },
 };
 
@@ -254,76 +267,76 @@ export const STATISTICS_LABELS: Record<
   }
 > = {
   en: {
-    no_vote_yet: "No vote yet",
+    no_vote_yet: "No votes",
     voters: "Voters",
     votes: "Votes",
-    you_voted: "You've voted {voteDirection}",
+    you_voted: "Voted {voteDirection}",
   },
   ko: {
-    no_vote_yet: "아직 투표가 없습니다",
+    no_vote_yet: "투표 없음",
     voters: "투표자",
     votes: "투표 수",
-    you_voted: "{voteDirection}에 투표했습니다",
+    you_voted: "{voteDirection} 투표 완료",
   },
   ja: {
-    no_vote_yet: "まだ投票がありません",
+    no_vote_yet: "投票なし",
     voters: "投票者",
-    votes: "投票数",
-    you_voted: "{voteDirection}に投票しました",
+    votes: "票数",
+    you_voted: "{voteDirection}に投票済み",
   },
   zh: {
     no_vote_yet: "暂无投票",
     voters: "投票人数",
     votes: "票数",
-    you_voted: "你已选择{voteDirection}",
+    you_voted: "已投{voteDirection}",
   },
   de: {
-    no_vote_yet: "Noch keine Stimmen",
+    no_vote_yet: "Keine Stimmen",
     voters: "Abstimmende",
     votes: "Stimmen",
-    you_voted: "Du hast für {voteDirection} gestimmt",
+    you_voted: "Für {voteDirection} gestimmt",
   },
   fr: {
-    no_vote_yet: "Aucun vote pour le moment",
+    no_vote_yet: "Aucun vote",
     voters: "Votants",
     votes: "Votes",
-    you_voted: "Vous avez voté pour {voteDirection}",
+    you_voted: "Vote : {voteDirection}",
   },
   es: {
-    no_vote_yet: "Aún no hay votos",
+    no_vote_yet: "Sin votos",
     voters: "Votantes",
     votes: "Votos",
-    you_voted: "Has votado por {voteDirection}",
+    you_voted: "Votaste {voteDirection}",
   },
   pt: {
-    no_vote_yet: "Ainda não há votos",
+    no_vote_yet: "Sem votos",
     voters: "Votantes",
     votes: "Votos",
-    you_voted: "Você votou em {voteDirection}",
+    you_voted: "Votou em {voteDirection}",
   },
   it: {
-    no_vote_yet: "Nessun voto per ora",
+    no_vote_yet: "Nessun voto",
     voters: "Votanti",
     votes: "Voti",
-    you_voted: "Hai votato per {voteDirection}",
+    you_voted: "Hai votato {voteDirection}",
   },
   ru: {
-    no_vote_yet: "Пока нет голосов",
+    no_vote_yet: "Нет голосов",
     voters: "Участники",
     votes: "Голоса",
-    you_voted: "Вы проголосовали за {voteDirection}",
+    you_voted: "Ваш голос: {voteDirection}",
   },
   ar: {
-    no_vote_yet: "لا توجد أصوات بعد",
+    no_vote_yet: "لا أصوات",
     voters: "المصوّتون",
     votes: "الأصوات",
-    you_voted: "لقد صوّتّ لصالح {voteDirection}",
+    you_voted: "صوّتّ لـ{voteDirection}",
   },
   hi: {
-    no_vote_yet: "अभी तक कोई वोट नहीं",
+    no_vote_yet: "कोई वोट नहीं",
     voters: "मतदाता",
     votes: "वोट",
-    you_voted: "आपने {voteDirection} के लिए वोट दिया है",
+    you_voted: "{voteDirection} को वोट दिया",
   },
 };
 
@@ -2159,5 +2172,1118 @@ export const MARKET_PICKER_LABELS: Record<
       currency: "मुद्राएँ",
       commodity: "कमोडिटी",
     },
+  },
+};
+
+export const HOME_COMMUNITY_LABELS: Record<
+  Language,
+  {
+    all_markets: string;
+    filter_markets: string;
+    sort_discussions: string;
+    latest: string;
+    most_liked: string;
+    loading: string;
+    loading_discussions: string;
+    load_failed: string;
+    load_more_failed: string;
+    retry: string;
+    empty: string;
+    share_market: string;
+    share_view: string;
+    view_more: string;
+  }
+> = {
+  en: {
+    all_markets: "All markets",
+    filter_markets: "Filter discussions by market",
+    sort_discussions: "Sort discussions",
+    latest: "Latest",
+    most_liked: "Most liked",
+    loading: "Loading...",
+    loading_discussions: "Loading discussions...",
+    load_failed: "Could not load discussions.",
+    load_more_failed: "Could not load more discussions.",
+    retry: "Try again",
+    empty: "No discussions yet.",
+    share_market: "Share your view on {market}.",
+    share_view: "Share your view and start the conversation.",
+    view_more: "View more discussions",
+  },
+  ko: {
+    all_markets: "전체 시장",
+    filter_markets: "시장별 게시글 필터",
+    sort_discussions: "게시글 정렬",
+    latest: "최신순",
+    most_liked: "좋아요순",
+    loading: "불러오는 중...",
+    loading_discussions: "게시글을 불러오는 중...",
+    load_failed: "게시글을 불러오지 못했습니다.",
+    load_more_failed: "추가 게시글을 불러오지 못했습니다.",
+    retry: "다시 시도",
+    empty: "아직 게시글이 없습니다.",
+    share_market: "{market}에 대한 의견을 남겨보세요.",
+    share_view: "의견을 남기고 대화를 시작해보세요.",
+    view_more: "게시글 더 보기",
+  },
+  ja: {
+    all_markets: "すべての市場",
+    filter_markets: "市場別に投稿を絞り込む",
+    sort_discussions: "投稿の並び替え",
+    latest: "新着順",
+    most_liked: "いいね順",
+    loading: "読み込み中...",
+    loading_discussions: "投稿を読み込み中...",
+    load_failed: "投稿を読み込めませんでした。",
+    load_more_failed: "追加の投稿を読み込めませんでした。",
+    retry: "再試行",
+    empty: "まだ投稿がありません。",
+    share_market: "{market}について意見を投稿しましょう。",
+    share_view: "意見を投稿して会話を始めましょう。",
+    view_more: "投稿をもっと見る",
+  },
+  zh: {
+    all_markets: "全部市场",
+    filter_markets: "按市场筛选帖子",
+    sort_discussions: "帖子排序",
+    latest: "最新",
+    most_liked: "最多点赞",
+    loading: "加载中...",
+    loading_discussions: "正在加载帖子...",
+    load_failed: "无法加载帖子。",
+    load_more_failed: "无法加载更多帖子。",
+    retry: "重试",
+    empty: "暂无帖子。",
+    share_market: "分享你对{market}的看法。",
+    share_view: "分享你的看法，开启讨论。",
+    view_more: "查看更多帖子",
+  },
+  de: {
+    all_markets: "Alle Märkte",
+    filter_markets: "Beiträge nach Markt filtern",
+    sort_discussions: "Beiträge sortieren",
+    latest: "Neueste",
+    most_liked: "Meiste Likes",
+    loading: "Wird geladen...",
+    loading_discussions: "Beiträge werden geladen...",
+    load_failed: "Beiträge konnten nicht geladen werden.",
+    load_more_failed: "Weitere Beiträge konnten nicht geladen werden.",
+    retry: "Erneut versuchen",
+    empty: "Noch keine Beiträge.",
+    share_market: "Teile deine Meinung zu {market}.",
+    share_view: "Teile deine Meinung und starte eine Diskussion.",
+    view_more: "Weitere Beiträge anzeigen",
+  },
+  fr: {
+    all_markets: "Tous les marchés",
+    filter_markets: "Filtrer les publications par marché",
+    sort_discussions: "Trier les publications",
+    latest: "Plus récentes",
+    most_liked: "Plus aimées",
+    loading: "Chargement...",
+    loading_discussions: "Chargement des publications...",
+    load_failed: "Impossible de charger les publications.",
+    load_more_failed: "Impossible de charger davantage de publications.",
+    retry: "Réessayer",
+    empty: "Aucune publication pour le moment.",
+    share_market: "Partagez votre avis sur {market}.",
+    share_view: "Partagez votre avis et lancez la discussion.",
+    view_more: "Voir plus de publications",
+  },
+  es: {
+    all_markets: "Todos los mercados",
+    filter_markets: "Filtrar publicaciones por mercado",
+    sort_discussions: "Ordenar publicaciones",
+    latest: "Más recientes",
+    most_liked: "Más Me gusta",
+    loading: "Cargando...",
+    loading_discussions: "Cargando publicaciones...",
+    load_failed: "No se pudieron cargar las publicaciones.",
+    load_more_failed: "No se pudieron cargar más publicaciones.",
+    retry: "Reintentar",
+    empty: "Aún no hay publicaciones.",
+    share_market: "Comparte tu opinión sobre {market}.",
+    share_view: "Comparte tu opinión e inicia la conversación.",
+    view_more: "Ver más publicaciones",
+  },
+  pt: {
+    all_markets: "Todos os mercados",
+    filter_markets: "Filtrar publicações por mercado",
+    sort_discussions: "Ordenar publicações",
+    latest: "Mais recentes",
+    most_liked: "Mais curtidas",
+    loading: "Carregando...",
+    loading_discussions: "Carregando publicações...",
+    load_failed: "Não foi possível carregar as publicações.",
+    load_more_failed: "Não foi possível carregar mais publicações.",
+    retry: "Tentar novamente",
+    empty: "Ainda não há publicações.",
+    share_market: "Compartilhe sua opinião sobre {market}.",
+    share_view: "Compartilhe sua opinião e inicie a conversa.",
+    view_more: "Ver mais publicações",
+  },
+  it: {
+    all_markets: "Tutti i mercati",
+    filter_markets: "Filtra i post per mercato",
+    sort_discussions: "Ordina i post",
+    latest: "Più recenti",
+    most_liked: "Più apprezzati",
+    loading: "Caricamento...",
+    loading_discussions: "Caricamento dei post...",
+    load_failed: "Impossibile caricare i post.",
+    load_more_failed: "Impossibile caricare altri post.",
+    retry: "Riprova",
+    empty: "Ancora nessun post.",
+    share_market: "Condividi la tua opinione su {market}.",
+    share_view: "Condividi la tua opinione e avvia la conversazione.",
+    view_more: "Mostra altri post",
+  },
+  ru: {
+    all_markets: "Все рынки",
+    filter_markets: "Фильтровать публикации по рынку",
+    sort_discussions: "Сортировать публикации",
+    latest: "Новые",
+    most_liked: "Больше лайков",
+    loading: "Загрузка...",
+    loading_discussions: "Загрузка публикаций...",
+    load_failed: "Не удалось загрузить публикации.",
+    load_more_failed: "Не удалось загрузить больше публикаций.",
+    retry: "Повторить",
+    empty: "Публикаций пока нет.",
+    share_market: "Поделитесь мнением о {market}.",
+    share_view: "Поделитесь мнением и начните обсуждение.",
+    view_more: "Показать больше публикаций",
+  },
+  ar: {
+    all_markets: "جميع الأسواق",
+    filter_markets: "تصفية المنشورات حسب السوق",
+    sort_discussions: "ترتيب المنشورات",
+    latest: "الأحدث",
+    most_liked: "الأكثر إعجابًا",
+    loading: "جارٍ التحميل...",
+    loading_discussions: "جارٍ تحميل المنشورات...",
+    load_failed: "تعذّر تحميل المنشورات.",
+    load_more_failed: "تعذّر تحميل المزيد من المنشورات.",
+    retry: "حاول مرة أخرى",
+    empty: "لا توجد منشورات بعد.",
+    share_market: "شارك رأيك حول {market}.",
+    share_view: "شارك رأيك وابدأ النقاش.",
+    view_more: "عرض المزيد من المنشورات",
+  },
+  hi: {
+    all_markets: "सभी बाज़ार",
+    filter_markets: "बाज़ार के अनुसार पोस्ट फ़िल्टर करें",
+    sort_discussions: "पोस्ट क्रमबद्ध करें",
+    latest: "नवीनतम",
+    most_liked: "सबसे अधिक पसंद",
+    loading: "लोड हो रहा है...",
+    loading_discussions: "पोस्ट लोड हो रही हैं...",
+    load_failed: "पोस्ट लोड नहीं हो सकीं।",
+    load_more_failed: "और पोस्ट लोड नहीं हो सकीं।",
+    retry: "फिर से कोशिश करें",
+    empty: "अभी तक कोई पोस्ट नहीं है।",
+    share_market: "{market} पर अपनी राय साझा करें।",
+    share_view: "अपनी राय साझा करें और बातचीत शुरू करें।",
+    view_more: "और पोस्ट देखें",
+  },
+};
+
+export const HOME_LABELS: Record<
+  Language,
+  {
+    dashboard: string;
+    watchlist: string;
+    community: string;
+    predict: string;
+    share_view: string;
+  }
+> = {
+  en: {
+    dashboard: "Global market dashboard",
+    watchlist: "Watchlist",
+    community: "Community",
+    predict: "Make accurate predictions and climb the leaderboard.",
+    share_view: "Share your view and start the conversation",
+  },
+  ko: {
+    dashboard: "글로벌 시장 대시보드",
+    watchlist: "관심 목록",
+    community: "커뮤니티",
+    predict: "예측을 맞히고 리더보드 상위권에 도전하세요.",
+    share_view: "의견을 남기고 대화를 시작해보세요",
+  },
+  ja: {
+    dashboard: "世界の市場ダッシュボード",
+    watchlist: "ウォッチリスト",
+    community: "コミュニティ",
+    predict: "予測を的中させて、リーダーボードの上位を目指しましょう。",
+    share_view: "意見を投稿して会話を始めましょう",
+  },
+  zh: {
+    dashboard: "全球市场看板",
+    watchlist: "自选列表",
+    community: "社区",
+    predict: "准确预测，向排行榜前列发起挑战。",
+    share_view: "分享你的看法，开启讨论",
+  },
+  de: {
+    dashboard: "Globale Marktübersicht",
+    watchlist: "Watchlist",
+    community: "Community",
+    predict: "Triff richtige Prognosen und steige in der Rangliste auf.",
+    share_view: "Teile deine Meinung und starte eine Diskussion",
+  },
+  fr: {
+    dashboard: "Tableau de bord des marchés mondiaux",
+    watchlist: "Liste de suivi",
+    community: "Communauté",
+    predict: "Faites des prévisions justes et grimpez dans le classement.",
+    share_view: "Partagez votre avis et lancez la discussion",
+  },
+  es: {
+    dashboard: "Panel de mercados globales",
+    watchlist: "Lista de seguimiento",
+    community: "Comunidad",
+    predict: "Acierta tus predicciones y sube en la clasificación.",
+    share_view: "Comparte tu opinión e inicia la conversación",
+  },
+  pt: {
+    dashboard: "Painel de mercados globais",
+    watchlist: "Lista de acompanhamento",
+    community: "Comunidade",
+    predict: "Acerte suas previsões e suba no ranking.",
+    share_view: "Compartilhe sua opinião e inicie a conversa",
+  },
+  it: {
+    dashboard: "Panoramica dei mercati globali",
+    watchlist: "Lista di monitoraggio",
+    community: "Community",
+    predict: "Fai previsioni corrette e scala la classifica.",
+    share_view: "Condividi la tua opinione e avvia la conversazione",
+  },
+  ru: {
+    dashboard: "Обзор мировых рынков",
+    watchlist: "Список наблюдения",
+    community: "Сообщество",
+    predict: "Делайте точные прогнозы и поднимайтесь в рейтинге.",
+    share_view: "Поделитесь мнением и начните обсуждение",
+  },
+  ar: {
+    dashboard: "لوحة الأسواق العالمية",
+    watchlist: "قائمة المتابعة",
+    community: "المجتمع",
+    predict: "قدّم توقعات دقيقة وتقدّم في لوحة المتصدرين.",
+    share_view: "شارك رأيك وابدأ النقاش",
+  },
+  hi: {
+    dashboard: "वैश्विक बाज़ार डैशबोर्ड",
+    watchlist: "वॉचलिस्ट",
+    community: "समुदाय",
+    predict: "सही पूर्वानुमान लगाएँ और लीडरबोर्ड में ऊपर बढ़ें।",
+    share_view: "अपनी राय साझा करें और बातचीत शुरू करें",
+  },
+};
+
+export const SEARCH_LABELS: Record<
+  Language,
+  {
+    placeholder: string;
+    search_markets: string;
+    results: string;
+  }
+> = {
+  en: {
+    placeholder: "Search...",
+    search_markets: "Search markets",
+    results: "Market search results",
+  },
+  ko: {
+    placeholder: "검색...",
+    search_markets: "시장 검색",
+    results: "시장 검색 결과",
+  },
+  ja: {
+    placeholder: "検索...",
+    search_markets: "市場を検索",
+    results: "市場の検索結果",
+  },
+  zh: {
+    placeholder: "搜索...",
+    search_markets: "搜索市场",
+    results: "市场搜索结果",
+  },
+  de: {
+    placeholder: "Suchen...",
+    search_markets: "Märkte suchen",
+    results: "Marktsuchergebnisse",
+  },
+  fr: {
+    placeholder: "Rechercher...",
+    search_markets: "Rechercher des marchés",
+    results: "Résultats de recherche des marchés",
+  },
+  es: {
+    placeholder: "Buscar...",
+    search_markets: "Buscar mercados",
+    results: "Resultados de búsqueda de mercados",
+  },
+  pt: {
+    placeholder: "Pesquisar...",
+    search_markets: "Pesquisar mercados",
+    results: "Resultados da pesquisa de mercados",
+  },
+  it: {
+    placeholder: "Cerca...",
+    search_markets: "Cerca mercati",
+    results: "Risultati della ricerca dei mercati",
+  },
+  ru: {
+    placeholder: "Поиск...",
+    search_markets: "Поиск рынков",
+    results: "Результаты поиска рынков",
+  },
+  ar: {
+    placeholder: "بحث...",
+    search_markets: "البحث عن الأسواق",
+    results: "نتائج البحث عن الأسواق",
+  },
+  hi: {
+    placeholder: "खोजें...",
+    search_markets: "बाज़ार खोजें",
+    results: "बाज़ार खोज परिणाम",
+  },
+};
+
+export const MARKET_TABLE_LABELS: Record<
+  Language,
+  {
+    asset: string;
+    trend: string;
+    today: string;
+    prev: string;
+    percent: string;
+    change: string;
+    statistics: string;
+    vote: string;
+  }
+> = {
+  en: {
+    asset: "Asset",
+    trend: "Trend",
+    today: "Today",
+    prev: "Prev",
+    percent: "24h %",
+    change: "Change",
+    statistics: "Statistics",
+    vote: "Vote",
+  },
+  ko: {
+    asset: "자산",
+    trend: "추세",
+    today: "현재가",
+    prev: "전일 종가",
+    percent: "24시간 %",
+    change: "등락",
+    statistics: "통계",
+    vote: "투표",
+  },
+  ja: {
+    asset: "資産",
+    trend: "推移",
+    today: "現在値",
+    prev: "前日終値",
+    percent: "24時間 %",
+    change: "前日比",
+    statistics: "統計",
+    vote: "投票",
+  },
+  zh: {
+    asset: "资产",
+    trend: "走势",
+    today: "现价",
+    prev: "前收盘",
+    percent: "24小时 %",
+    change: "涨跌",
+    statistics: "统计",
+    vote: "投票",
+  },
+  de: {
+    asset: "Anlage",
+    trend: "Trend",
+    today: "Heute",
+    prev: "Vortag",
+    percent: "24 Std. %",
+    change: "Änderung",
+    statistics: "Statistik",
+    vote: "Abstimmung",
+  },
+  fr: {
+    asset: "Actif",
+    trend: "Tendance",
+    today: "Aujourd’hui",
+    prev: "Clôture préc.",
+    percent: "24 h %",
+    change: "Variation",
+    statistics: "Statistiques",
+    vote: "Vote",
+  },
+  es: {
+    asset: "Activo",
+    trend: "Tendencia",
+    today: "Hoy",
+    prev: "Cierre ant.",
+    percent: "24 h %",
+    change: "Cambio",
+    statistics: "Estadísticas",
+    vote: "Voto",
+  },
+  pt: {
+    asset: "Ativo",
+    trend: "Tendência",
+    today: "Hoje",
+    prev: "Fech. ant.",
+    percent: "24 h %",
+    change: "Variação",
+    statistics: "Estatísticas",
+    vote: "Voto",
+  },
+  it: {
+    asset: "Attività",
+    trend: "Andamento",
+    today: "Oggi",
+    prev: "Chiusura prec.",
+    percent: "24 h %",
+    change: "Variazione",
+    statistics: "Statistiche",
+    vote: "Voto",
+  },
+  ru: {
+    asset: "Актив",
+    trend: "Тренд",
+    today: "Сегодня",
+    prev: "Пред. закр.",
+    percent: "24 ч %",
+    change: "Изменение",
+    statistics: "Статистика",
+    vote: "Голосование",
+  },
+  ar: {
+    asset: "الأصل",
+    trend: "الاتجاه",
+    today: "اليوم",
+    prev: "الإغلاق السابق",
+    percent: "24 ساعة %",
+    change: "التغير",
+    statistics: "الإحصاءات",
+    vote: "التصويت",
+  },
+  hi: {
+    asset: "परिसंपत्ति",
+    trend: "रुझान",
+    today: "आज",
+    prev: "पिछला बंद",
+    percent: "24 घंटे %",
+    change: "बदलाव",
+    statistics: "आँकड़े",
+    vote: "मतदान",
+  },
+};
+
+export const PANEL_LEFT_LABELS: Record<
+  Language,
+  {
+    popular_boards: string;
+    most_liked_comments: string;
+    no_comments: string;
+  }
+> = {
+  en: {
+    popular_boards: "Popular boards",
+    most_liked_comments: "Most liked comments",
+    no_comments: "No comments yet.",
+  },
+  ko: {
+    popular_boards: "인기 게시판",
+    most_liked_comments: "인기 댓글",
+    no_comments: "댓글 없음",
+  },
+  ja: {
+    popular_boards: "人気の掲示板",
+    most_liked_comments: "人気のコメント",
+    no_comments: "コメントなし",
+  },
+  zh: {
+    popular_boards: "热门讨论区",
+    most_liked_comments: "热门评论",
+    no_comments: "暂无评论",
+  },
+  de: {
+    popular_boards: "Beliebte Foren",
+    most_liked_comments: "Beliebte Kommentare",
+    no_comments: "Keine Kommentare",
+  },
+  fr: {
+    popular_boards: "Forums populaires",
+    most_liked_comments: "Commentaires populaires",
+    no_comments: "Aucun commentaire",
+  },
+  es: {
+    popular_boards: "Foros populares",
+    most_liked_comments: "Comentarios populares",
+    no_comments: "Sin comentarios",
+  },
+  pt: {
+    popular_boards: "Fóruns populares",
+    most_liked_comments: "Comentários populares",
+    no_comments: "Sem comentários",
+  },
+  it: {
+    popular_boards: "Forum popolari",
+    most_liked_comments: "Commenti popolari",
+    no_comments: "Nessun commento",
+  },
+  ru: {
+    popular_boards: "Популярные форумы",
+    most_liked_comments: "Популярные комментарии",
+    no_comments: "Нет комментариев",
+  },
+  ar: {
+    popular_boards: "المنتديات الرائجة",
+    most_liked_comments: "التعليقات الرائجة",
+    no_comments: "لا تعليقات",
+  },
+  hi: {
+    popular_boards: "लोकप्रिय फ़ोरम",
+    most_liked_comments: "लोकप्रिय टिप्पणियाँ",
+    no_comments: "कोई टिप्पणी नहीं",
+  },
+};
+
+export const NAVBAR_LABELS: Record<
+  Language,
+  {
+    close_search: string;
+    toggle_sidebar: string;
+    login: string;
+    user_menu: string;
+    unread_menu: string;
+    notifications: string;
+    settings: string;
+    mode: string;
+    signing_out: string;
+    sign_out: string;
+    admin: string;
+  }
+> = {
+  en: {
+    close_search: "Close search",
+    toggle_sidebar: "Toggle sidebar",
+    login: "Log in",
+    user_menu: "User menu",
+    unread_menu: "User menu, {count} unread notifications",
+    notifications: "Notifications",
+    settings: "Settings",
+    mode: "Mode",
+    signing_out: "Signing out...",
+    sign_out: "Sign out",
+    admin: "Admin",
+  },
+  ko: {
+    close_search: "검색 닫기",
+    toggle_sidebar: "사이드바 열기 또는 닫기",
+    login: "로그인",
+    user_menu: "사용자 메뉴",
+    unread_menu: "사용자 메뉴, 읽지 않은 알림 {count}개",
+    notifications: "알림",
+    settings: "설정",
+    mode: "화면 모드",
+    signing_out: "로그아웃 중...",
+    sign_out: "로그아웃",
+    admin: "관리자",
+  },
+  ja: {
+    close_search: "検索を閉じる",
+    toggle_sidebar: "サイドバーの開閉",
+    login: "ログイン",
+    user_menu: "ユーザーメニュー",
+    unread_menu: "ユーザーメニュー、未読通知{count}件",
+    notifications: "通知",
+    settings: "設定",
+    mode: "表示モード",
+    signing_out: "ログアウト中...",
+    sign_out: "ログアウト",
+    admin: "管理者",
+  },
+  zh: {
+    close_search: "关闭搜索",
+    toggle_sidebar: "展开或收起侧栏",
+    login: "登录",
+    user_menu: "用户菜单",
+    unread_menu: "用户菜单，{count}条未读通知",
+    notifications: "通知",
+    settings: "设置",
+    mode: "显示模式",
+    signing_out: "正在退出...",
+    sign_out: "退出登录",
+    admin: "管理",
+  },
+  de: {
+    close_search: "Suche schließen",
+    toggle_sidebar: "Seitenleiste ein-/ausblenden",
+    login: "Anmelden",
+    user_menu: "Benutzermenü",
+    unread_menu: "Benutzermenü, {count} ungelesene Benachrichtigungen",
+    notifications: "Benachrichtigungen",
+    settings: "Einstellungen",
+    mode: "Darstellung",
+    signing_out: "Abmelden...",
+    sign_out: "Abmelden",
+    admin: "Verwaltung",
+  },
+  fr: {
+    close_search: "Fermer la recherche",
+    toggle_sidebar: "Afficher ou masquer le panneau latéral",
+    login: "Connexion",
+    user_menu: "Menu utilisateur",
+    unread_menu: "Menu utilisateur, {count} notifications non lues",
+    notifications: "Notifications",
+    settings: "Paramètres",
+    mode: "Apparence",
+    signing_out: "Déconnexion...",
+    sign_out: "Déconnexion",
+    admin: "Administration",
+  },
+  es: {
+    close_search: "Cerrar búsqueda",
+    toggle_sidebar: "Mostrar u ocultar la barra lateral",
+    login: "Iniciar sesión",
+    user_menu: "Menú de usuario",
+    unread_menu: "Menú de usuario, {count} notificaciones sin leer",
+    notifications: "Notificaciones",
+    settings: "Ajustes",
+    mode: "Apariencia",
+    signing_out: "Cerrando sesión...",
+    sign_out: "Cerrar sesión",
+    admin: "Administración",
+  },
+  pt: {
+    close_search: "Fechar pesquisa",
+    toggle_sidebar: "Mostrar ou ocultar a barra lateral",
+    login: "Entrar",
+    user_menu: "Menu do usuário",
+    unread_menu: "Menu do usuário, {count} notificações não lidas",
+    notifications: "Notificações",
+    settings: "Configurações",
+    mode: "Aparência",
+    signing_out: "Saindo...",
+    sign_out: "Sair",
+    admin: "Administração",
+  },
+  it: {
+    close_search: "Chiudi ricerca",
+    toggle_sidebar: "Mostra o nascondi la barra laterale",
+    login: "Accedi",
+    user_menu: "Menu utente",
+    unread_menu: "Menu utente, {count} notifiche non lette",
+    notifications: "Notifiche",
+    settings: "Impostazioni",
+    mode: "Aspetto",
+    signing_out: "Disconnessione...",
+    sign_out: "Esci",
+    admin: "Amministrazione",
+  },
+  ru: {
+    close_search: "Закрыть поиск",
+    toggle_sidebar: "Показать или скрыть боковую панель",
+    login: "Войти",
+    user_menu: "Меню пользователя",
+    unread_menu: "Меню пользователя, непрочитанных уведомлений: {count}",
+    notifications: "Уведомления",
+    settings: "Настройки",
+    mode: "Оформление",
+    signing_out: "Выход...",
+    sign_out: "Выйти",
+    admin: "Администрирование",
+  },
+  ar: {
+    close_search: "إغلاق البحث",
+    toggle_sidebar: "إظهار أو إخفاء الشريط الجانبي",
+    login: "تسجيل الدخول",
+    user_menu: "قائمة المستخدم",
+    unread_menu: "قائمة المستخدم، {count} إشعارات غير مقروءة",
+    notifications: "الإشعارات",
+    settings: "الإعدادات",
+    mode: "المظهر",
+    signing_out: "جارٍ تسجيل الخروج...",
+    sign_out: "تسجيل الخروج",
+    admin: "الإدارة",
+  },
+  hi: {
+    close_search: "खोज बंद करें",
+    toggle_sidebar: "साइडबार दिखाएँ या छिपाएँ",
+    login: "लॉग इन",
+    user_menu: "उपयोगकर्ता मेनू",
+    unread_menu: "उपयोगकर्ता मेनू, {count} अपठित सूचनाएँ",
+    notifications: "सूचनाएँ",
+    settings: "सेटिंग्स",
+    mode: "दिखावट",
+    signing_out: "लॉग आउट हो रहा है...",
+    sign_out: "लॉग आउट",
+    admin: "प्रशासन",
+  },
+};
+
+export const THEME_LABELS: Record<
+  Language,
+  {
+    light: string;
+    dark: string;
+    toggle: string;
+    switch_light: string;
+    switch_dark: string;
+  }
+> = {
+  en: {
+    light: "Light mode",
+    dark: "Dark mode",
+    toggle: "Toggle theme",
+    switch_light: "Switch to light mode",
+    switch_dark: "Switch to dark mode",
+  },
+  ko: {
+    light: "라이트 모드",
+    dark: "다크 모드",
+    toggle: "테마 변경",
+    switch_light: "라이트 모드로 변경",
+    switch_dark: "다크 모드로 변경",
+  },
+  ja: {
+    light: "ライトモード",
+    dark: "ダークモード",
+    toggle: "テーマを切り替える",
+    switch_light: "ライトモードに切り替える",
+    switch_dark: "ダークモードに切り替える",
+  },
+  zh: {
+    light: "浅色模式",
+    dark: "深色模式",
+    toggle: "切换主题",
+    switch_light: "切换到浅色模式",
+    switch_dark: "切换到深色模式",
+  },
+  de: {
+    light: "Heller Modus",
+    dark: "Dunkler Modus",
+    toggle: "Design wechseln",
+    switch_light: "Zum hellen Modus wechseln",
+    switch_dark: "Zum dunklen Modus wechseln",
+  },
+  fr: {
+    light: "Mode clair",
+    dark: "Mode sombre",
+    toggle: "Changer de thème",
+    switch_light: "Passer au mode clair",
+    switch_dark: "Passer au mode sombre",
+  },
+  es: {
+    light: "Modo claro",
+    dark: "Modo oscuro",
+    toggle: "Cambiar tema",
+    switch_light: "Cambiar al modo claro",
+    switch_dark: "Cambiar al modo oscuro",
+  },
+  pt: {
+    light: "Modo claro",
+    dark: "Modo escuro",
+    toggle: "Alterar tema",
+    switch_light: "Mudar para o modo claro",
+    switch_dark: "Mudar para o modo escuro",
+  },
+  it: {
+    light: "Modalità chiara",
+    dark: "Modalità scura",
+    toggle: "Cambia tema",
+    switch_light: "Passa alla modalità chiara",
+    switch_dark: "Passa alla modalità scura",
+  },
+  ru: {
+    light: "Светлая тема",
+    dark: "Тёмная тема",
+    toggle: "Сменить тему",
+    switch_light: "Включить светлую тему",
+    switch_dark: "Включить тёмную тему",
+  },
+  ar: {
+    light: "الوضع الفاتح",
+    dark: "الوضع الداكن",
+    toggle: "تبديل المظهر",
+    switch_light: "التبديل إلى الوضع الفاتح",
+    switch_dark: "التبديل إلى الوضع الداكن",
+  },
+  hi: {
+    light: "लाइट मोड",
+    dark: "डार्क मोड",
+    toggle: "थीम बदलें",
+    switch_light: "लाइट मोड में बदलें",
+    switch_dark: "डार्क मोड में बदलें",
+  },
+};
+
+export const LEADERBOARD_LABELS: Record<
+  Language,
+  {
+    title: string;
+    me: string;
+    accuracy: string;
+    points: string;
+    empty: string;
+  }
+> = {
+  en: {
+    title: "Leaderboard",
+    me: "Me",
+    accuracy: "Accuracy",
+    points: "pts",
+    empty: "No ranked traders yet.",
+  },
+  ko: {
+    title: "리더보드",
+    me: "나",
+    accuracy: "적중률",
+    points: "포인트",
+    empty: "아직 순위가 없습니다.",
+  },
+  ja: {
+    title: "リーダーボード",
+    me: "自分",
+    accuracy: "的中率",
+    points: "ポイント",
+    empty: "まだランキングがありません。",
+  },
+  zh: {
+    title: "排行榜",
+    me: "我",
+    accuracy: "准确率",
+    points: "积分",
+    empty: "暂无排名。",
+  },
+  de: {
+    title: "Leaderboard",
+    me: "Ich",
+    accuracy: "Trefferquote",
+    points: "Pkt.",
+    empty: "Noch keine Platzierungen.",
+  },
+  fr: {
+    title: "Classement",
+    me: "Moi",
+    accuracy: "Précision",
+    points: "pts",
+    empty: "Aucun classement pour le moment.",
+  },
+  es: {
+    title: "Clasificación",
+    me: "Yo",
+    accuracy: "Aciertos",
+    points: "pts",
+    empty: "Aún no hay clasificación.",
+  },
+  pt: {
+    title: "Leaderboard",
+    me: "Eu",
+    accuracy: "Acertos",
+    points: "pts",
+    empty: "Ainda não há classificação.",
+  },
+  it: {
+    title: "Leaderboard",
+    me: "Io",
+    accuracy: "Precisione",
+    points: "pti",
+    empty: "Nessuna classifica per ora.",
+  },
+  ru: {
+    title: "Таблица лидеров",
+    me: "Я",
+    accuracy: "Точность",
+    points: "очки",
+    empty: "Пока нет рейтинга.",
+  },
+  ar: {
+    title: "لوحة المتصدرين",
+    me: "أنا",
+    accuracy: "الدقة",
+    points: "نقاط",
+    empty: "لا يوجد ترتيب بعد.",
+  },
+  hi: {
+    title: "लीडरबोर्ड",
+    me: "मैं",
+    accuracy: "सटीकता",
+    points: "अंक",
+    empty: "अभी कोई रैंकिंग नहीं है।",
+  },
+};
+
+// lib/data/translations.ts
+
+export const CONTENT_ACTION_LABELS: Record<
+  Language,
+  {
+    actions: string;
+    edit: string;
+    delete: string;
+    deleting: string;
+    report: string;
+    reporting: string;
+    hide: string;
+    hiding: string;
+    restore: string;
+    restoring: string;
+  }
+> = {
+  en: {
+    actions: "More options",
+    edit: "Edit",
+    delete: "Delete",
+    deleting: "Deleting...",
+    report: "Report",
+    reporting: "Reporting...",
+    hide: "Hide",
+    hiding: "Hiding...",
+    restore: "Restore",
+    restoring: "Restoring...",
+  },
+  ko: {
+    actions: "더 보기",
+    edit: "수정",
+    delete: "삭제",
+    deleting: "삭제 중...",
+    report: "신고",
+    reporting: "신고 중...",
+    hide: "숨기기",
+    hiding: "숨기는 중...",
+    restore: "복원",
+    restoring: "복원 중...",
+  },
+  ja: {
+    actions: "その他の操作",
+    edit: "編集",
+    delete: "削除",
+    deleting: "削除中...",
+    report: "通報",
+    reporting: "通報中...",
+    hide: "非表示",
+    hiding: "非表示にしています...",
+    restore: "復元",
+    restoring: "復元中...",
+  },
+  zh: {
+    actions: "更多选项",
+    edit: "编辑",
+    delete: "删除",
+    deleting: "删除中...",
+    report: "举报",
+    reporting: "举报中...",
+    hide: "隐藏",
+    hiding: "隐藏中...",
+    restore: "恢复",
+    restoring: "恢复中...",
+  },
+  de: {
+    actions: "Weitere Optionen",
+    edit: "Bearbeiten",
+    delete: "Löschen",
+    deleting: "Wird gelöscht...",
+    report: "Melden",
+    reporting: "Wird gemeldet...",
+    hide: "Ausblenden",
+    hiding: "Wird ausgeblendet...",
+    restore: "Wiederherstellen",
+    restoring: "Wird wiederhergestellt...",
+  },
+  fr: {
+    actions: "Plus d’options",
+    edit: "Modifier",
+    delete: "Supprimer",
+    deleting: "Suppression...",
+    report: "Signaler",
+    reporting: "Signalement...",
+    hide: "Masquer",
+    hiding: "Masquage...",
+    restore: "Restaurer",
+    restoring: "Restauration...",
+  },
+  es: {
+    actions: "Más opciones",
+    edit: "Editar",
+    delete: "Eliminar",
+    deleting: "Eliminando...",
+    report: "Denunciar",
+    reporting: "Denunciando...",
+    hide: "Ocultar",
+    hiding: "Ocultando...",
+    restore: "Restaurar",
+    restoring: "Restaurando...",
+  },
+  pt: {
+    actions: "Mais opções",
+    edit: "Editar",
+    delete: "Excluir",
+    deleting: "Excluindo...",
+    report: "Denunciar",
+    reporting: "Denunciando...",
+    hide: "Ocultar",
+    hiding: "Ocultando...",
+    restore: "Restaurar",
+    restoring: "Restaurando...",
+  },
+  it: {
+    actions: "Altre opzioni",
+    edit: "Modifica",
+    delete: "Elimina",
+    deleting: "Eliminazione...",
+    report: "Segnala",
+    reporting: "Segnalazione...",
+    hide: "Nascondi",
+    hiding: "Occultamento...",
+    restore: "Ripristina",
+    restoring: "Ripristino...",
+  },
+  ru: {
+    actions: "Дополнительные действия",
+    edit: "Редактировать",
+    delete: "Удалить",
+    deleting: "Удаление...",
+    report: "Пожаловаться",
+    reporting: "Отправка жалобы...",
+    hide: "Скрыть",
+    hiding: "Скрытие...",
+    restore: "Восстановить",
+    restoring: "Восстановление...",
+  },
+  ar: {
+    actions: "المزيد من الخيارات",
+    edit: "تعديل",
+    delete: "حذف",
+    deleting: "جارٍ الحذف...",
+    report: "إبلاغ",
+    reporting: "جارٍ الإبلاغ...",
+    hide: "إخفاء",
+    hiding: "جارٍ الإخفاء...",
+    restore: "استعادة",
+    restoring: "جارٍ الاستعادة...",
+  },
+  hi: {
+    actions: "और विकल्प",
+    edit: "संपादित करें",
+    delete: "हटाएँ",
+    deleting: "हटाया जा रहा है...",
+    report: "रिपोर्ट करें",
+    reporting: "रिपोर्ट की जा रही है...",
+    hide: "छिपाएँ",
+    hiding: "छिपाया जा रहा है...",
+    restore: "पुनर्स्थापित करें",
+    restoring: "पुनर्स्थापित किया जा रहा है...",
   },
 };

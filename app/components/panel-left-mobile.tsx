@@ -1,8 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useCurrentUser } from "@/app/context/user-context";
+import { resolveLanguage } from "@/lib/data/languages";
+import { PANEL_LEFT_LABELS } from "@/lib/data/translations";
 
 import { MostLikedComments } from "./most-liked-comments";
 import { PopularBoards } from "./major-indices";
@@ -29,6 +32,13 @@ export default function PanelLeftMobile({
   popularBoards,
   user,
 }: PanelLeftMobileProps) {
+  const currentUser = useCurrentUser();
+  const language = resolveLanguage(currentUser?.language);
+  const labels = PANEL_LEFT_LABELS[language];
+
+  const boardsHeadingId = useId();
+  const commentsHeadingId = useId();
+
   const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!(event.target instanceof Element)) return;
 
@@ -52,27 +62,24 @@ export default function PanelLeftMobile({
       <div onClick={handlePanelClick} className="h-full w-full">
         <ScrollArea className="h-full">
           <div className="flex min-h-[calc(100dvh-72px)] flex-col py-3">
-            <section aria-label="Popular boards">
-              <h2 className="sr-only">Popular boards</h2>
+            <section aria-labelledby={boardsHeadingId}>
+              <h2 id={boardsHeadingId} className="sr-only">
+                {labels.popular_boards}
+              </h2>
 
               <PopularBoards boards={popularBoards} />
             </section>
 
-            <section aria-label="Most liked comments" className="mt-3 p-4">
-              <h2 className="sr-only">Most liked comments</h2>
-
-              {/* <p
-                aria-hidden="true"
-                className="mb-2 text-xs font-normal tracking-wider text-muted-foreground/50"
-              >
-                Most liked comments
-              </p> */}
+            <section aria-labelledby={commentsHeadingId} className="mt-3 p-4">
+              <h2 id={commentsHeadingId} className="sr-only">
+                {labels.most_liked_comments}
+              </h2>
 
               {comments.length > 0 ? (
                 <MostLikedComments comments={comments} />
               ) : (
                 <p className="py-4 text-center text-sm text-muted-foreground/50">
-                  No comments yet.
+                  {labels.no_comments}
                 </p>
               )}
             </section>

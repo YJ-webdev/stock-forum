@@ -1,4 +1,5 @@
 // app/components/search-input.tsx
+
 "use client";
 
 import {
@@ -7,10 +8,15 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type CSSProperties,
   type KeyboardEvent,
 } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+
+import { useCurrentUser } from "@/app/context/user-context";
+import { resolveLanguage } from "@/lib/data/languages";
+import { SEARCH_LABELS } from "@/lib/data/translations";
 
 import { KbdMarkup } from "./kbd-markup";
 import { SearchSparkIcon } from "./search-sparkle-icon";
@@ -26,6 +32,10 @@ export default function SearchInput({
   onOpenChange,
 }: SearchInputProps) {
   const router = useRouter();
+  const user = useCurrentUser();
+
+  const language = resolveLanguage(user?.language);
+  const labels = SEARCH_LABELS[language];
 
   const inputRef = useRef<HTMLInputElement>(null);
   const searchPanelRef = useRef<HTMLDivElement>(null);
@@ -54,7 +64,6 @@ export default function SearchInput({
       onOpenChange(true);
     }
 
-    // タッチ操作中に直接focusしてキーボードを開く。
     inputRef.current?.focus({ preventScroll: true });
   }, [isOpen, onOpenChange, resetSearchNavigation]);
 
@@ -158,7 +167,6 @@ export default function SearchInput({
 
     const previousRootOverflow = root.style.overflow;
 
-    // 背景ページの位置を固定。
     body.style.position = "fixed";
     body.style.top = `-${scrollY}px`;
     body.style.left = `-${scrollX}px`;
@@ -187,7 +195,6 @@ export default function SearchInput({
       resizeFrame = requestAnimationFrame(updatePanelHeight);
     }
 
-    // タッチ方向を記録。
     function handleTouchStart(event: TouchEvent) {
       touchYRef.current = event.touches[0]?.clientY ?? null;
     }
@@ -224,8 +231,6 @@ export default function SearchInput({
 
       const deltaY = currentY - previousY;
 
-      // 検索結果内で、その方向にスクロール可能な要素を探す。
-      // MarketOverview内部のスクロール領域にも対応。
       let element: HTMLElement | null =
         target instanceof HTMLElement ? target : target.parentElement;
 
@@ -247,10 +252,10 @@ export default function SearchInput({
         }
 
         if (element === panel) break;
+
         element = element.parentElement;
       }
 
-      // リスト端から背景へスクロールが伝わるのを防ぐ。
       preventScroll(event);
     }
 
@@ -332,26 +337,36 @@ export default function SearchInput({
 
       <div className="relative z-40 w-full">
         <div
-          className="flex h-12 w-full cursor-text items-center rounded-full bg-zinc-100 px-5 dark:bg-zinc-800"
+          className="
+            flex h-12 w-full cursor-text items-center
+            rounded-full bg-zinc-100 px-5 dark:bg-zinc-800
+          "
           onClick={handleOpen}
         >
-          <SearchSparkIcon className="mr-2.5 h-6 w-6 shrink-0 text-zinc-700 dark:text-zinc-200" />
+          <span aria-hidden="true" className="mr-2.5 shrink-0">
+            <SearchSparkIcon className="h-6 w-6 text-zinc-700 dark:text-zinc-200" />
+          </span>
 
           <input
             ref={inputRef}
             id="market-search-input"
             type="text"
             value={input}
-            placeholder="Search..."
-            aria-label="Search markets"
-            aria-expanded={isOpen}
+            placeholder={labels.placeholder}
+            aria-label={labels.search_markets}
             aria-controls={isOpen ? "market-search-results" : undefined}
             autoComplete="off"
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
             maxLength={30}
-            className="min-w-0 w-full bg-transparent text-base font-normal outline-none ring-0 placeholder:text-black focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 dark:placeholder:text-white lg:w-2xl"
+            className="
+              min-w-0 w-full bg-transparent text-base font-normal
+              outline-none ring-0 placeholder:text-black
+              focus:outline-none focus:ring-0
+              focus-visible:outline-none focus-visible:ring-0
+              dark:placeholder:text-white lg:w-2xl
+            "
             onChange={handleInputChange}
             onFocus={() => {
               if (!isOpen) {
@@ -371,26 +386,27 @@ export default function SearchInput({
           <div
             ref={searchPanelRef}
             id="market-search-results"
+            role="region"
+            aria-label={labels.results}
             style={
               {
                 maxHeight: panelMaxHeight ?? undefined,
                 "--search-panel-height":
                   panelMaxHeight !== null ? `${panelMaxHeight}px` : undefined,
-              } as React.CSSProperties
+              } as CSSProperties
             }
             className="
-  fixed inset-x-0 top-18 bottom-0
-  z-40! flex min-h-0 flex-col
-  h-(--search-panel-height)
-  overflow-hidden overscroll-contain
-  bg-zinc-100 pt-3
-  dark:bg-zinc-800
+              fixed inset-x-0 top-18 bottom-0
+              z-40! flex min-h-0 flex-col
+              h-(--search-panel-height)
+              overflow-hidden overscroll-contain
+              bg-zinc-100 pt-3 dark:bg-zinc-800
 
-  lg:left-1/2 lg:right-auto lg:bottom-auto
-  lg:h-auto lg:w-[min(72rem,calc(100vw-2rem))]
-  lg:-translate-x-1/2 lg:rounded-xl
-  lg:bg-white lg:py-4 lg:shadow-2xl
-"
+              lg:left-1/2 lg:right-auto lg:bottom-auto
+              lg:h-auto lg:w-[min(72rem,calc(100vw-2rem))]
+              lg:-translate-x-1/2 lg:rounded-xl
+              lg:bg-white lg:py-4 lg:shadow-2xl
+            "
             onClick={(event) => event.stopPropagation()}
           >
             <div
