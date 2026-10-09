@@ -69,32 +69,15 @@ export const BreadCrumbs = () => {
     });
   }
 
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 0);
-    };
-
-    handleScroll();
-
-    window.addEventListener("scroll", handleScroll, {
-      passive: true,
-    });
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
   return (
     <div
       className={`
         sticky top-0 z-20
         flex w-full items-center justify-between
-        border-zinc-100 bg-white px-4 py-3
-        dark:border-zinc-800 dark:bg-zinc-900
-        ${isScrolled ? "border-b" : ""}
+         px-4 py-3
+         bg-white dark:bg-zinc-900
+        
+       
       `}
     >
       <nav

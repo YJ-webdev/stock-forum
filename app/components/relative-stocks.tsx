@@ -343,10 +343,10 @@ export function RelativeStocks({
   }, [selectedIndex]);
 
   return (
-    <div className="flex max-h-[calc(100vh-165px)] lg:max-h-[calc(100vh-270px)] w-full flex-col overflow-y-auto ">
-      <div className="w-full bg-zinc-100 dark:bg-zinc-800 md:rounded-lg lg:bg-white">
-        <table className="w-full table-fixed">
-          <thead className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-800 lg:bg-white">
+    <div className="flex max-h-[calc(100vh-145px)] lg:max-h-[calc(100vh-260px)] w-full flex-col overflow-y-auto ">
+      <div className="w-full  md:rounded-lg ">
+        <table className="w-full table-fixed ">
+          <thead className="sticky top-0 -translate-y-1 md:translate-y-0 z-10 dark:bg-zinc-800 lg:bg-white bg-zinc-100">
             <tr className="border-b border-zinc-200 text-[11px] uppercase tracking-wider text-zinc-400 dark:border-zinc-700/50 dark:text-zinc-500 md:text-xs">
               <th
                 className={

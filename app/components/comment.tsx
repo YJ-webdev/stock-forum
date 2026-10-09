@@ -772,9 +772,12 @@ function CommentItem({
       id={`comment-${comment.id}`}
       className={`
     relative scroll-mt-0
-    py-2
-    rounded-xl
-    transition-colors duration-700
+    py-4
+   
+    transition-colors 
+    hover:bg-zinc-100/50
+    dark:hover:bg-zinc-800/50
+    -mx-4 px-4 -my-3
 
     ${isHighlighted ? "bg-amber-50/80 dark:bg-amber-950/20" : ""}
   `}

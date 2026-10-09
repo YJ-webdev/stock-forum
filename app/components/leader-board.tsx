@@ -14,16 +14,15 @@ function getInitials(name: string) {
 
 export function LeaderBoard({ traders, user }: LeaderBoardProps) {
   return (
-    <section
-      aria-labelledby="leaderboard-heading"
-      className="flex w-full flex-col"
-    >
-      <h2
-        id="leaderboard-heading"
+    <section aria-label="Leaderboard" className="flex w-full flex-col mt-2">
+      <h2 className="sr-only">Leaderboard</h2>
+
+      {/* <p
+        aria-hidden="true"
         className="mb-2 truncate px-4 pt-4 text-xs font-normal tracking-wider text-muted-foreground/50"
       >
         Leaderboard
-      </h2>
+      </p> */}
 
       <div className="flex w-full flex-col px-2">
         {traders.map((trader) => {

@@ -201,10 +201,7 @@ async function fetchQuote(
 
       // Calculate from the same base price used for the displayed change
       // when the API does not provide a valid percentage.
-      const percentVal =
-        typeof apiPercent === "number" && Number.isFinite(apiPercent)
-          ? apiPercent
-          : (changeVal / basePrice) * 100;
+      const percentVal = (changeVal / basePrice) * 100;
 
       const formattedValue = currentPrice.toLocaleString("en-US", {
         style: assetType === "crypto" ? "currency" : "decimal",

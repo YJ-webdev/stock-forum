@@ -358,7 +358,7 @@ export async function getPanelLeftData(
 export async function getLayoutSideData() {
   const [comments, popularBoards, traders] = await Promise.all([
     getMostLikedComments(3),
-    getPopularBoards(7),
+    getPopularBoards(8),
     getTopBetters(10),
   ]);
 

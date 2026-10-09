@@ -245,16 +245,16 @@ export default function MarketOverview({
       ref={overviewRef}
       className="
         mx-auto w-full min-w-0 max-w-6xl
-        bg-zinc-100 lg:bg-white dark:bg-zinc-800
+      
       "
     >
-      <div className="flex min-w-0 flex-col gap-3 md:mx-4">
+      <div className="flex min-w-0 flex-col md:mx-4">
         <div
           className="
             sticky top-0 z-10
-            bg-zinc-100 pb-2
-            lg:static lg:bg-white lg:pb-0
-            dark:bg-zinc-800
+            
+            lg:static  lg:pb-0
+          
           "
         >
           <div

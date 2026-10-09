@@ -8,46 +8,132 @@ export const dynamic = "force-dynamic";
 
 const yahoo = new YahooFinance();
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 function isPrice(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
+function getExchangeDate(date: Date, timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  return `${year}-${month}-${day}`;
+}
+
+async function getPreviousDailyClose(
+  symbol: string,
+  quoteTime: Date,
+  timezone: string,
+): Promise<number | null> {
+  const quoteDate = getExchangeDate(quoteTime, timezone);
+
+  const chart = await yahoo.chart(symbol, {
+    period1: new Date(quoteTime.getTime() - 60 * DAY_MS),
+    period2: new Date(Math.min(Date.now(), quoteTime.getTime() + DAY_MS)),
+    interval: "1d",
+    includePrePost: false,
+    return: "array",
+  });
+
+  let previousClose: number | null = null;
+  let latestTimestamp = -Infinity;
+
+  for (const candle of chart.quotes ?? []) {
+    const date = new Date(candle.date);
+    const timestamp = date.getTime();
+
+    if (
+      !Number.isFinite(timestamp) ||
+      !isPrice(candle.close) ||
+      getExchangeDate(date, timezone) >= quoteDate
+    ) {
+      continue;
+    }
+
+    if (timestamp > latestTimestamp) {
+      latestTimestamp = timestamp;
+      previousClose = candle.close;
+    }
+  }
+
+  return previousClose;
+}
+
 const getQuote = unstable_cache(
-  async (symbol: string) => {
+  async (symbol: string, isIndex: boolean, timezone: string) => {
     const quote = await yahoo.quote(symbol);
 
-    if (!isPrice(quote.regularMarketPrice)) {
+    const price = quote.regularMarketPrice;
+
+    if (!isPrice(price)) {
       throw new Error("No market price available");
     }
 
-    const previousClose = isPrice(quote.regularMarketPreviousClose)
+    // This is a guard against a near-zero denominator for indices.
+    const isUsablePreviousClose = (value: unknown): value is number =>
+      isPrice(value) && (!isIndex || value >= price * 0.01);
+
+    let previousClose: number | null = isUsablePreviousClose(
+      quote.regularMarketPreviousClose,
+    )
       ? quote.regularMarketPreviousClose
       : null;
 
-    const change =
-      previousClose !== null
-        ? quote.regularMarketPrice - previousClose
-        : typeof quote.regularMarketChange === "number" &&
-            Number.isFinite(quote.regularMarketChange)
-          ? quote.regularMarketChange
-          : null;
+    if (isIndex && previousClose === null) {
+      const quoteTime = quote.regularMarketTime
+        ? new Date(quote.regularMarketTime)
+        : null;
+
+      if (quoteTime && Number.isFinite(quoteTime.getTime())) {
+        try {
+          const dailyClose = await getPreviousDailyClose(
+            symbol,
+            quoteTime,
+            timezone,
+          );
+
+          if (isUsablePreviousClose(dailyClose)) {
+            previousClose = dailyClose;
+          }
+        } catch (error) {
+          console.warn(
+            `[market-quotes] Previous close lookup failed: ${symbol}`,
+            error instanceof Error ? error.message : String(error),
+          );
+        }
+      }
+    }
+
+    // Keep change and percent based on the same previous close.
+    const change = previousClose !== null ? price - previousClose : null;
+
+    const calculatedPercent =
+      previousClose !== null && change !== null
+        ? (change / previousClose) * 100
+        : null;
 
     const percent =
-      previousClose !== null
-        ? ((quote.regularMarketPrice - previousClose) / previousClose) * 100
-        : typeof quote.regularMarketChangePercent === "number" &&
-            Number.isFinite(quote.regularMarketChangePercent)
-          ? quote.regularMarketChangePercent
-          : null;
+      calculatedPercent !== null && Number.isFinite(calculatedPercent)
+        ? calculatedPercent
+        : null;
 
     return {
-      price: quote.regularMarketPrice,
+      price,
       previousClose,
       change,
       percent,
     };
   },
-  ["relative-market-quotes-v1"],
+  ["relative-market-quotes-v2"],
   { revalidate: 30 },
 );
 
@@ -92,7 +178,11 @@ export async function GET(request: Request) {
       try {
         return {
           symbol: item.symbol,
-          quote: await getQuote(providerSymbol),
+          quote: await getQuote(
+            providerSymbol,
+            item.assetType === "index",
+            item.timezone ?? "UTC",
+          ),
           error: null,
         };
       } catch (error) {

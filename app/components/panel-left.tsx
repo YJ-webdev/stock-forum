@@ -14,45 +14,32 @@ interface PanelLeftProps {
 
 export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
   return (
-    <div
-      className="
-      flex
-      h-full
-      w-full
-      flex-col
-      pb-2
-
-      border-r
-      border-zinc-100
-
-      bg-white
-
-      dark:border-zinc-800
-      dark:bg-zinc-900
-    "
-    >
+    <div className="flex h-full w-full flex-col border-r border-zinc-100 bg-white py-3 dark:border-zinc-800 dark:bg-zinc-900">
       <ScrollArea className="min-h-0 flex-1">
-        <div className="">
-          <p className="mb-3.5 px-4 pt-4 text-xs font-normal tracking-wider text-muted-foreground/50 truncate">
-            Popular boards
-          </p>
+        <section aria-label="Popular boards">
+          <h2 className=" sr-only">Popular boards</h2>
 
           <PopularBoards boards={popularBoards} />
+        </section>
 
-          <div className="mt-3 p-4">
-            <p className="mb-2 text-xs font-normal tracking-wider text-muted-foreground/50 truncate">
-              Most liked comments
+        <section aria-label="Most liked comments" className="mt-3 p-4">
+          <h2 className="sr-only">Most liked comments</h2>
+
+          <p
+            aria-hidden="true"
+            className="mb-2 truncate text-xs font-normal tracking-wider text-muted-foreground/50"
+          >
+            Most liked comments
+          </p>
+
+          {comments.length > 0 ? (
+            <MostLikedComments comments={comments} />
+          ) : (
+            <p className="truncate py-4 text-center text-sm text-muted-foreground/50">
+              No comments yet.
             </p>
-
-            {comments.length > 0 ? (
-              <MostLikedComments comments={comments} />
-            ) : (
-              <p className="py-4 text-center text-sm text-muted-foreground/50 truncate">
-                No comments yet.
-              </p>
-            )}
-          </div>
-        </div>
+          )}
+        </section>
       </ScrollArea>
     </div>
   );
