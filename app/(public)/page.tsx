@@ -17,7 +17,7 @@ export default async function Home() {
       <main className="relative flex w-full min-w-0 flex-1 flex-col">
         <h1 className="sr-only">Global market dashboard</h1>
 
-        <section aria-labelledby="home-watchlist-heading" className="mt-4 mb-4">
+        <section aria-labelledby="home-watchlist-heading" className="mb-4">
           <h2 id="home-watchlist-heading" className="sr-only">
             Watchlist
           </h2>

@@ -558,7 +558,7 @@ export default function MarketPageClient({
                     transformOrigin: "top right",
                   }}
                 >
-                  <div className="mx-4">
+                  <div className="md:mx-4">
                     <DetailChart
                       key={`${selectedSymbol}-${activeRange}`}
                       history={data.history}
@@ -578,7 +578,7 @@ export default function MarketPageClient({
 
                     {/* Range selector */}
 
-                    <div className="mt-4 flex flex-wrap gap-1 sm:gap-2 items-center justify-start sm:justify-start">
+                    <div className="mt-4 mx-4 md:mx-0 flex flex-wrap gap-1 sm:gap-2 items-center justify-start sm:justify-start">
                       {RANGES.map((range) => {
                         const isUnavailable =
                           unavailableRanges[selectedSymbol]?.has(
