@@ -245,16 +245,16 @@ export default function MarketOverview({
       ref={overviewRef}
       className="
         mx-auto w-full min-w-0 max-w-6xl
-      
+        bg-zinc-100 md:bg-white dark:bg-zinc-800
       "
     >
-      <div className="flex min-w-0 flex-col md:mx-4">
+      <div className="flex min-w-0 flex-col gap-3 md:mx-4">
         <div
           className="
-            sticky top-0 z-10
-            
-            lg:static  lg:pb-0
-          
+            sticky top-0 z-50
+            bg-zinc-100
+            md:static md:bg-white
+            dark:bg-zinc-800
           "
         >
           <div
@@ -262,13 +262,13 @@ export default function MarketOverview({
             role="group"
             aria-label="Market categories"
             className="
-              flex min-w-0 flex-nowrap items-center gap-2
-              overflow-x-auto overscroll-x-contain
-              px-2
-              scrollbar-none
-              [&::-webkit-scrollbar]:hidden
-               md:px-0
-            "
+    flex min-w-0 touch-pan-x flex-nowrap items-center gap-1
+    overflow-x-auto overscroll-x-contain
+    px-3
+    scrollbar-none
+    [&::-webkit-scrollbar]:hidden
+    md:flex-wrap md:gap-2 md:overflow-visible md:px-0
+  "
           >
             {categories.map((category) => {
               const isActive = activeTab === category;
@@ -299,9 +299,9 @@ export default function MarketOverview({
                       isActive
                         ? `
                           bg-zinc-200/80 text-zinc-950
-                          lg:bg-transparent
+                          md:bg-transparent
                           dark:bg-zinc-700/70 dark:text-zinc-100
-                          dark:lg:bg-transparent
+                          dark:md:bg-transparent
                         `
                         : `
                           text-zinc-500

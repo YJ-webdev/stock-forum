@@ -155,13 +155,13 @@ export function BullBearVoteCard({
   return (
     <article className="relative w-44 shrink-0 text-zinc-900 dark:text-zinc-300">
       <header className="">
-        <p className="outfit min-w-0 truncate pl-3 text-[13px] tracking-wide text-zinc-800 dark:font-light dark:text-zinc-100">
+        {/* <p className="outfit min-w-0 truncate pl-3 text-[13px] tracking-wide text-zinc-800 dark:font-light dark:text-zinc-100">
           {market.displaySymbol}
-        </p>
+        </p> */}
 
         <h3
           title={market.name}
-          className="outfit truncate pl-3 text-2xl font-semibold tracking-normal text-gray-500/50 dark:text-zinc-600"
+          className="outfit truncate pl-3 text-2xl font-bold tracking-normal text-gray-500/50 dark:text-zinc-600"
         >
           {market.name}
         </h3>
@@ -170,7 +170,7 @@ export function BullBearVoteCard({
       <div className="pb-2">
         <div className="flex h-7 items-center pl-3">
           {data ? (
-            <Numeric className="text-[18px] font-extrabold tracking-normal tabular-nums text-zinc-800 dark:text-zinc-300">
+            <Numeric className="outfit text-[18px] font-extrabold tracking-normal tabular-nums text-zinc-800 dark:text-zinc-300">
               {data.value}
             </Numeric>
           ) : loading ? (

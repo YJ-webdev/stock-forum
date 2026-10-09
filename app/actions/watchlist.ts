@@ -312,14 +312,20 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
   function getPriority(item: (typeof marketsWithVoting)[number]) {
     const { market, votingWindow } = item;
 
-    if (market.assetType !== "index") return 2;
+    if (market.assetType !== "index") return 3;
+
+    const sessionDate = votingWindow.predictionFor;
 
     const isVotingActive =
       !votingWindow.isMarketOpen &&
       votingWindow.canVote &&
-      Boolean(votingWindow.predictionFor);
+      Boolean(sessionDate);
 
-    return isVotingActive ? 0 : 1;
+    if (!isVotingActive || !sessionDate) return 2;
+
+    const hasVoted = voteDirections.has(getVoteKey(market.symbol, sessionDate));
+
+    return hasVoted ? 1 : 0;
   }
 
   function getRegionPriority(market: (typeof ALL_MARKET_SYMBOLS)[number]) {

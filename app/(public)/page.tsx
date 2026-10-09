@@ -24,16 +24,29 @@ export default async function Home() {
             Watchlist
           </h2>
 
+          <p
+            aria-hidden="true"
+            className="truncate text-xs font-normal tracking-wider text-muted-foreground/50 px-4 pt-3.5"
+          >
+            Predict the market trends
+          </p>
           <HomeMarketCarousel markets={markets} />
         </section>
 
         <section
           aria-labelledby="home-community-heading"
-          className="mt-4 px-3 pb-8 sm:px-4 border-t border-zinc-200/50 dark:border-zinc-700/50"
+          className="mt-4 px-3 pb-8 sm:px-4 "
         >
           <h2 id="home-community-heading" className="sr-only">
             Community
           </h2>
+
+          <p
+            aria-hidden="true"
+            className="truncate text-xs font-normal tracking-wider text-muted-foreground/50  pt-2"
+          >
+            Share your view and start the conversation
+          </p>
           <HomeCommunity
             initialComments={community.comments}
             initialNextCursor={community.nextCursor}

@@ -19,6 +19,12 @@ export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
         <section aria-label="Popular boards">
           <h2 className=" sr-only">Popular boards</h2>
 
+          <p
+            aria-hidden="true"
+            className="mb-2 pt-0.5 px-5 truncate text-xs font-normal tracking-wider text-muted-foreground/50"
+          >
+            Popular boards
+          </p>
           <PopularBoards boards={popularBoards} />
         </section>
 

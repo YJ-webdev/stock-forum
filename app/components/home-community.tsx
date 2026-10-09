@@ -243,11 +243,11 @@ export function HomeCommunity({
     <div className="outfit w-full min-w-0">
       <div className="flex items-baseline gap-2"></div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3">
         <div
           role="group"
           aria-label="Filter discussions by market"
-          className="flex min-w-0 flex-wrap items-center gap-2"
+          className="flex min-w-0 flex-wrap items-center gap-2 mb-2"
         >
           {[
             {

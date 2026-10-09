@@ -469,7 +469,7 @@ export function MarketVoteButton({
       ) : direction ? (
         <span className={VOTE_STATUS_CLASS}>
           <Check className="size-3.5" strokeWidth={1.5} aria-hidden="true" />
-          Vote completed
+          You've voted {direction.toLowerCase()}
         </span>
       ) : (
         votingWindow.canVote && (
