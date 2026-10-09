@@ -229,6 +229,7 @@ export default function LayoutShell({
         <NotificationPanel
           refreshKey={notificationRefreshKey}
           setOnNotification={setOnNotification}
+          currentUser={user}
         />
       );
     }

@@ -1,18 +1,27 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { toggleReplyLike } from "@/app/actions/like";
 import { RiHeartFill } from "react-icons/ri";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 import { toast } from "sonner";
 
+import { toggleReplyLike } from "@/app/actions/like";
 import {
   deleteReply,
   hideReply,
   reportReply,
   restoreReply,
 } from "@/app/actions/post";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+import { resolveLanguage, type Language } from "@/lib/data/languages";
+import {
+  COMMENT_ACTION_LABELS,
+  COMMENT_VIEW_LABELS,
+  CONTENT_RESULT_LABELS,
+  CONTENT_STATUS_LABELS,
+  REPLY_VIEW_LABELS,
+} from "@/lib/data/translations";
 
 import { ContentActionsMenu } from "./content-actions-menu";
 import { ReplyEditInput } from "./reply-edit-input";
@@ -47,9 +56,16 @@ export function ReplyItem({
   onReplyCreated,
   replies,
   depth = 0,
-  isLast = false,
   targetReplyId = null,
 }: ReplyItemProps) {
+  const language = resolveLanguage(currentUser?.language);
+
+  const labels = COMMENT_VIEW_LABELS[language];
+  const actionLabels = COMMENT_ACTION_LABELS[language];
+  const resultLabels = CONTENT_RESULT_LABELS[language];
+  const statusLabels = CONTENT_STATUS_LABELS[language];
+  const replyLabels = REPLY_VIEW_LABELS[language];
+
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isModerating, setIsModerating] = useState(false);
@@ -63,7 +79,7 @@ export function ReplyItem({
   const [likeCount, setLikeCount] = useState(reply.likeCount);
   const [isLikePending, startLikeTransition] = useTransition();
 
-  const username = reply.author.name ?? "User";
+  const username = reply.author.name ?? labels.guest;
 
   const isAuthor = currentUser?.id === reply.author.id;
   const isAdmin = currentUser?.role === "ADMIN";
@@ -73,6 +89,11 @@ export function ReplyItem({
   );
 
   const hasChild = childReplies.length > 0;
+
+  const childReplyCountLabel = labels.reply_count.replace(
+    "{count}",
+    childReplies.length.toLocaleString(language),
+  );
 
   const containsTargetReply =
     targetReplyId !== null &&
@@ -92,21 +113,22 @@ export function ReplyItem({
     onClick: () => setChildrenCollapsed(false),
   };
 
+  // ---------------------------------------------------------------------------
+  // DELETE / MODERATION
+  // ---------------------------------------------------------------------------
+
   const handleDelete = async () => {
     if (isDeleting) return;
 
+    setIsDeleting(true);
+
     try {
-      setIsDeleting(true);
-
       await deleteReply(reply.id);
-
       await onReplyUpdated();
 
-      toast.success("Reply deleted.");
+      toast.success(resultLabels.deleted);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete reply.",
-      );
+      toast.error(getErrorMessage(error, labels.action_failed));
     } finally {
       setIsDeleting(false);
     }
@@ -115,18 +137,15 @@ export function ReplyItem({
   const handleHide = async () => {
     if (isModerating) return;
 
+    setIsModerating(true);
+
     try {
-      setIsModerating(true);
-
       await hideReply(reply.id);
-
       await onReplyUpdated();
 
-      toast.success("Reply hidden.");
+      toast.success(resultLabels.hidden);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to hide reply.",
-      );
+      toast.error(getErrorMessage(error, labels.action_failed));
     } finally {
       setIsModerating(false);
     }
@@ -135,26 +154,27 @@ export function ReplyItem({
   const handleRestore = async () => {
     if (isModerating) return;
 
+    setIsModerating(true);
+
     try {
-      setIsModerating(true);
-
       await restoreReply(reply.id);
-
       await onReplyUpdated();
 
-      toast.success("Reply restored.");
+      toast.success(resultLabels.restored);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to restore reply.",
-      );
+      toast.error(getErrorMessage(error, labels.action_failed));
     } finally {
       setIsModerating(false);
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // LIKE
+  // ---------------------------------------------------------------------------
+
   const handleReplyLike = () => {
     if (!currentUser) {
-      toast.error("Please log in to like replies.");
+      toast.error(actionLabels.login_required);
       return;
     }
 
@@ -163,7 +183,6 @@ export function ReplyItem({
     const previousLiked = likedByMe;
     const previousCount = likeCount;
 
-    // Optimistic update
     setLikedByMe(!previousLiked);
 
     setLikeCount((count) =>
@@ -174,42 +193,51 @@ export function ReplyItem({
       try {
         const result = await toggleReplyLike(reply.id);
 
-        // Synchronize with actual DB result
         setLikedByMe(result.liked);
         setLikeCount(result.likeCount);
+
+        toast.success(result.liked ? labels.like : labels.unlike);
       } catch (error) {
-        // Roll back optimistic update
         setLikedByMe(previousLiked);
         setLikeCount(previousCount);
 
-        toast.error(
-          error instanceof Error ? error.message : "Could not update like.",
-        );
+        toast.error(getErrorMessage(error, labels.action_failed));
       }
     });
   };
 
+  // ---------------------------------------------------------------------------
+  // REPORT
+  // ---------------------------------------------------------------------------
+
   const handleReportReply = async () => {
+    if (!currentUser) {
+      toast.error(actionLabels.login_required);
+      return;
+    }
+
     if (isReporting) return;
 
-    try {
-      setIsReporting(true);
+    setIsReporting(true);
 
+    try {
       const result = await reportReply(reply.id);
 
       if (result.success) {
-        toast.success("Reply reported.", {
-          description: "Thank you. An administrator will review it.",
+        toast.success(statusLabels.reply_reported, {
+          description: statusLabels.reply_report_message,
         });
       }
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to report reply.",
-      );
+      toast.error(getErrorMessage(error, labels.action_failed));
     } finally {
       setIsReporting(false);
     }
   };
+
+  // ---------------------------------------------------------------------------
+  // DEEP LINK
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     if (containsTargetReply) {
@@ -218,83 +246,61 @@ export function ReplyItem({
   }, [containsTargetReply]);
 
   useEffect(() => {
-    if (targetReplyId !== reply.id) {
-      return;
-    }
+    if (targetReplyId !== reply.id) return;
 
     const timeout = window.setTimeout(() => {
-      const element = document.getElementById(`reply-${reply.id}`);
-
-      if (!element) {
-        return;
-      }
-
-      element.scrollIntoView({
+      document.getElementById(`reply-${reply.id}`)?.scrollIntoView({
         behavior: "smooth",
         block: "center",
       });
     }, 100);
 
-    return () => {
-      window.clearTimeout(timeout);
-    };
+    return () => window.clearTimeout(timeout);
   }, [targetReplyId, reply.id]);
+
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
 
   return (
     <div id={`reply-${reply.id}`} className="relative scroll-mt-0">
-      {/* ---------------------------------------------------------------
-          CURRENT REPLY
-      ---------------------------------------------------------------- */}
-
       <div className="group/reply relative flex gap-3">
         <div className="relative z-1 shrink-0">
           <Avatar className="size-8 shrink-0">
             <AvatarImage
               src={reply.author.image ?? undefined}
-              alt={username ?? "User"}
+              alt={username}
               className="object-cover"
             />
 
             <AvatarFallback className="text-sm">
-              {(currentUser?.name ?? "User").slice(0, 2).toUpperCase()}
+              {username.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
         </div>
 
         <div className="relative min-w-0 flex-1">
-          {/* -----------------------------------------------------------
-              CURRENT REPLY VERTICAL RAIL
-          ------------------------------------------------------------ */}
-
           {hasChild && (
             <button
               type="button"
               aria-label={
-                childrenCollapsed ? "Expand replies" : "Collapse replies"
+                childrenCollapsed
+                  ? labels.show_replies
+                  : labels.collapse_replies
               }
+              aria-expanded={!childrenCollapsed}
               {...(childrenCollapsed
                 ? expandThreadEvents
                 : collapseThreadEvents)}
               className="
-              z-1
-                absolute
-                -left-9
-                top-8
-                bottom-0
-                w-5
-                cursor-pointer
+                absolute -left-9 top-8 bottom-0 z-1
+                w-5 cursor-pointer
               "
             >
               <span
                 className={`
-                  pointer-events-none
-                  absolute
-                  left-2
-                  top-0
-                  -bottom-6
-                  w-px
-                  transition-colors
-
+                  pointer-events-none absolute
+                  left-2 top-0 -bottom-6 w-px transition-colors
                   ${
                     threadHovered
                       ? "bg-zinc-400 dark:bg-zinc-500"
@@ -310,10 +316,11 @@ export function ReplyItem({
             <span className="text-[14px] font-semibold">{username}</span>
 
             <span className="jakarta text-[13px] text-zinc-500">
-              {formatTimeAgo(reply.createdAt)}
+              {formatTimeAgo(reply.createdAt, language)}
             </span>
 
             <ContentActionsMenu
+              language={currentUser?.language}
               isAdmin={isAdmin}
               isAuthor={isAuthor}
               isModerated={Boolean(reply.moderatedAt)}
@@ -325,14 +332,14 @@ export function ReplyItem({
               onHide={handleHide}
               onRestore={handleRestore}
               onReport={handleReportReply}
-              language={currentUser?.language}
+              hoverGroup="reply"
             />
           </div>
 
           {/* Content */}
           {reply.moderatedAt ? (
             <p className="mt-1 text-[15px] italic text-zinc-400">
-              Reply hidden by moderation
+              {replyLabels.hidden_reply}
             </p>
           ) : isEditing ? (
             <ReplyEditInput
@@ -351,10 +358,8 @@ export function ReplyItem({
                 <p
                   className="
                     mt-0.5 whitespace-pre-wrap
-                    text-[15px] leading-6
-                    text-zinc-900
-                    dark:text-zinc-200
-                    wrap-anywhere
+                    text-[15px] leading-6 text-zinc-900
+                    wrap-anywhere dark:text-zinc-200
                   "
                 >
                   {reply.content}
@@ -366,15 +371,16 @@ export function ReplyItem({
                   src={reply.gifUrl}
                   alt="GIF"
                   className="
-                    mt-2 h-auto w-45
-                    max-w-full rounded-lg
-                    object-contain
+                    mt-2 h-auto w-45 max-w-full
+                    rounded-lg object-contain
                   "
                 />
               )}
 
               {reply.editedAt && (
-                <span className="text-[12px] text-zinc-400">(edited)</span>
+                <span className="text-[12px] text-zinc-400">
+                  {labels.edited}
+                </span>
               )}
             </>
           )}
@@ -386,19 +392,19 @@ export function ReplyItem({
                 type="button"
                 onClick={handleReplyLike}
                 disabled={isLikePending}
-                aria-label={likedByMe ? "Unlike reply" : "Like reply"}
+                aria-label={likedByMe ? labels.unlike : labels.like}
+                title={likedByMe ? labels.unlike : labels.like}
                 aria-pressed={likedByMe}
                 className="
-    flex cursor-pointer items-center gap-1.5
-    text-sm text-zinc-500
-    transition-colors
-    hover:text-zinc-900
-    disabled:cursor-default
-    dark:text-zinc-400
-    dark:hover:text-zinc-100
-  "
+                  flex cursor-pointer items-center gap-1.5
+                  text-sm text-zinc-400 transition-colors
+                  hover:text-zinc-900
+                  disabled:cursor-default
+                  dark:text-zinc-500 dark:hover:text-zinc-100
+                "
               >
                 <RiHeartFill
+                  aria-hidden="true"
                   className={`size-4 ${
                     likedByMe
                       ? "fill-current text-zinc-900 dark:text-zinc-100"
@@ -406,30 +412,31 @@ export function ReplyItem({
                   }`}
                 />
 
-                {likeCount > 0 && <span>{likeCount}</span>}
+                {likeCount > 0 && (
+                  <span>{likeCount.toLocaleString(language)}</span>
+                )}
               </button>
 
               <button
                 type="button"
                 onClick={() => {
                   if (!currentUser) {
-                    toast.error("You must log in to reply.");
+                    toast.error(actionLabels.login_required);
                     return;
                   }
 
-                  setShowReplyInput((prev) => !prev);
+                  setShowReplyInput((previous) => !previous);
                 }}
                 className="
-                  text-sm font-medium text-zinc-500
-                  hover:text-zinc-900
-                  dark:hover:text-zinc-200
-                  cursor-pointer
+                  cursor-pointer text-sm font-medium text-zinc-400 dark:text-zinc-500
+                  hover:text-zinc-900 dark:hover:text-zinc-200
                 "
               >
-                Reply
+                {labels.reply}
               </button>
             </div>
           )}
+
           {/* Reply input */}
           {!reply.moderatedAt && showReplyInput && (
             <ReplyInput
@@ -458,172 +465,109 @@ export function ReplyItem({
         </div>
       </div>
 
-      {/* ---------------------------------------------------------------
-          CHILDREN OF THIS REPLY
-      ---------------------------------------------------------------- */}
-
+      {/* Child replies */}
       {hasChild && (
         <>
           {childrenCollapsed ? (
-            /* ---------------------------------------------------------
-      COLLAPSED THREAD INDICATOR
-  ---------------------------------------------------------- */
-
             <button
               type="button"
-              aria-label="Expand replies"
+              aria-label={labels.show_replies}
+              aria-expanded={false}
               {...expandThreadEvents}
               className="
-      relative
-      ml-2 mt-6
-      block
-      h-7
-      cursor-pointer
-    "
+                relative ml-2 mt-6 block h-7 cursor-pointer
+              "
             >
               <span
                 className={`
-        pointer-events-none
-        absolute
-        left-2
-        
-        top-0
-        h-4
-        w-8
-        rounded-bl-xl
-        border-b border-l
-        transition-colors
-
-        ${
-          threadHovered
-            ? "border-zinc-400 dark:border-zinc-500"
-            : "border-zinc-200 dark:border-zinc-700"
-        }
-      `}
+                  pointer-events-none absolute left-2 top-0
+                  h-4 w-8 rounded-bl-xl border-b border-l
+                  transition-colors
+                  ${
+                    threadHovered
+                      ? "border-zinc-400 dark:border-zinc-500"
+                      : "border-zinc-200 dark:border-zinc-700"
+                  }
+                `}
               />
 
               <span
                 className="
-        ml-11
-        
-        flex h-4
-        items-end
-        whitespace-nowrap
-        text-sm font-medium
-        text-zinc-500
-        dark:text-zinc-400
-      "
+                  ml-11 flex h-4 items-end whitespace-nowrap
+                  text-sm font-medium text-zinc-500
+                  dark:text-zinc-400
+                "
               >
-                {childReplies.length}{" "}
-                {childReplies.length === 1 ? "reply" : "replies"}
+                {childReplyCountLabel}
               </span>
             </button>
           ) : (
-            /* ---------------------------------------------------------
-                EXPANDED CHILD THREAD
-            ---------------------------------------------------------- */
-
             <div className="relative mt-6">
-              <div className="">
-                {childReplies.map((childReply, index) => {
-                  const isLastChild = index === childReplies.length - 1;
+              {childReplies.map((childReply, index) => {
+                const isLastChild = index === childReplies.length - 1;
 
-                  return (
-                    <div key={childReply.id} className="relative pl-12">
-                      {/* -----------------------------------------------
-                          CHILD VERTICAL RAIL
-                      ------------------------------------------------ */}
-
-                      <button
-                        type="button"
-                        aria-label="Collapse replies"
-                        {...collapseThreadEvents}
+                return (
+                  <div key={childReply.id} className="relative pl-12">
+                    {/* Vertical rail */}
+                    <button
+                      type="button"
+                      aria-label={labels.collapse_replies}
+                      {...collapseThreadEvents}
+                      className={`
+                        absolute left-2 -top-6 z-0
+                        w-5 cursor-pointer
+                        ${isLastChild ? "h-7" : "-bottom-1"}
+                      `}
+                    >
+                      <span
                         className={`
-                          absolute
-                          left-2
-                          -top-6
-                         z-0
-                          w-5
-                          cursor-pointer
-
-                          ${isLastChild ? "h-7" : "-bottom-1"}
+                          pointer-events-none absolute
+                          left-2 -top-2 bottom-0 w-px transition-colors
+                          ${
+                            threadHovered
+                              ? "bg-zinc-400 dark:bg-zinc-500"
+                              : "bg-zinc-200 dark:bg-zinc-700"
+                          }
                         `}
-                      >
-                        <span
-                          className={`
-                            pointer-events-none
-                            absolute
-                            left-2
-                            -top-2
-                            bottom-0
-                            w-px
-                            transition-colors
-
-                            ${
-                              threadHovered
-                                ? "bg-zinc-400 dark:bg-zinc-500"
-                                : "bg-zinc-200 dark:bg-zinc-700"
-                            }
-                          `}
-                        />
-                      </button>
-
-                      {/* -----------------------------------------------
-                          CURVE INTO THIS DIRECT CHILD
-                      ------------------------------------------------ */}
-
-                      <button
-                        type="button"
-                        aria-label="Collapse replies"
-                        {...collapseThreadEvents}
-                        className="
-                          absolute
-                          left-2
-                          top-0
-                          z-0
-                          h-4
-                          w-10
-                          cursor-pointer
-                        "
-                      >
-                        <span
-                          className={`
-                            pointer-events-none
-                            absolute
-                            left-2
-                            top-0
-                            h-4
-                            w-8
-                            rounded-bl-xl
-                            border-b border-l
-                            transition-colors
-
-                            ${
-                              threadHovered
-                                ? "border-zinc-400 dark:border-zinc-500"
-                                : "border-zinc-200 dark:border-zinc-700"
-                            }
-                          `}
-                        />
-                      </button>
-
-                      {/* -----------------------------------------------
-                          CHILD REPLY
-                      ------------------------------------------------ */}
-
-                      <ReplyItem
-                        reply={childReply}
-                        replies={replies}
-                        currentUser={currentUser}
-                        onReplyUpdated={onReplyUpdated}
-                        onReplyCreated={onReplyCreated}
-                        depth={depth + 1}
-                        targetReplyId={targetReplyId}
                       />
-                    </div>
-                  );
-                })}
-              </div>
+                    </button>
+
+                    {/* Curve */}
+                    <button
+                      type="button"
+                      aria-label={labels.collapse_replies}
+                      {...collapseThreadEvents}
+                      className="
+                        absolute left-2 top-0 z-0
+                        h-4 w-10 cursor-pointer
+                      "
+                    >
+                      <span
+                        className={`
+                          pointer-events-none absolute left-2 top-0
+                          h-4 w-8 rounded-bl-xl border-b border-l
+                          transition-colors
+                          ${
+                            threadHovered
+                              ? "border-zinc-400 dark:border-zinc-500"
+                              : "border-zinc-200 dark:border-zinc-700"
+                          }
+                        `}
+                      />
+                    </button>
+
+                    <ReplyItem
+                      reply={childReply}
+                      replies={replies}
+                      currentUser={currentUser}
+                      onReplyUpdated={onReplyUpdated}
+                      onReplyCreated={onReplyCreated}
+                      depth={depth + 1}
+                      targetReplyId={targetReplyId}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
         </>
@@ -633,36 +577,48 @@ export function ReplyItem({
 }
 
 // -----------------------------------------------------------------------------
-// TIME
+// HELPERS
 // -----------------------------------------------------------------------------
 
-function formatTimeAgo(date: Date | string) {
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function formatTimeAgo(date: Date | string, language: Language): string {
   const time = new Date(date).getTime();
 
-  const diff = Math.max(0, Date.now() - time);
+  if (!Number.isFinite(time)) return "";
 
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
+  const seconds = Math.floor(Math.max(0, Date.now() - time) / 1000);
+
+  const formatter = new Intl.RelativeTimeFormat(language, {
+    numeric: "auto",
+    style: "short",
+  });
 
   if (seconds < 60) {
-    return "Just now";
+    return formatter.format(0, "second");
   }
+
+  const minutes = Math.floor(seconds / 60);
 
   if (minutes < 60) {
-    return `${minutes}m`;
+    return formatter.format(-minutes, "minute");
   }
+
+  const hours = Math.floor(minutes / 60);
 
   if (hours < 24) {
-    return `${hours}h`;
+    return formatter.format(-hours, "hour");
   }
+
+  const days = Math.floor(hours / 24);
 
   if (days < 7) {
-    return `${days}d`;
+    return formatter.format(-days, "day");
   }
 
-  return new Date(date).toLocaleDateString();
+  return new Date(time).toLocaleDateString(language);
 }
 
 function getDescendants(

@@ -11,6 +11,9 @@ import {
   type MarketSymbolItem,
 } from "@/lib/data/market-symbols";
 
+import { resolveLanguage } from "@/lib/data/languages";
+import { COMMENT_ACTION_LABELS } from "@/lib/data/translations";
+
 import { hasEditorContent } from "@/lib/utils/tiptap-utils";
 import { getReferenceClose } from "@/lib/market/yahoo";
 import { moderateContent } from "@/lib/moderation/moderate-content";
@@ -22,47 +25,128 @@ type PredictionInput = {
   sessionDate: Date;
 };
 
+type CreateCommentInput = {
+  content?: JSONContent | null;
+  assetSymbols: string[];
+  prediction?: PredictionInput | null;
+};
+
+const MARKET_COMMENTS_PAGE_SIZE = 20;
+const HOME_COMMENTS_PAGE_SIZE = 10;
+const DELETED_COMMENT_TEXT = "Comment deleted by user";
+
+const AUTHOR_SELECT = {
+  id: true,
+  name: true,
+  image: true,
+  nationality: true,
+} satisfies Prisma.UserSelect;
+
+const PREDICTION_SELECT = {
+  direction: true,
+  pointsBet: true,
+  status: true,
+} satisfies Prisma.PredictionSelect;
+
+const REPLY_SELECT = {
+  id: true,
+  commentId: true,
+  parentId: true,
+  content: true,
+  gifUrl: true,
+  createdAt: true,
+  updatedAt: true,
+  editedAt: true,
+  moderatedAt: true,
+  author: {
+    select: AUTHOR_SELECT,
+  },
+  _count: {
+    select: {
+      likes: true,
+      replies: true,
+    },
+  },
+} satisfies Prisma.ReplySelect;
+
+function getVisibilityWhere(userId: string | null, isAdmin: boolean) {
+  if (isAdmin) {
+    return {};
+  }
+
+  if (userId) {
+    return {
+      OR: [
+        { visibility: "PUBLIC" as const },
+        {
+          visibility: "PRIVATE" as const,
+          authorId: userId,
+        },
+      ],
+    };
+  }
+
+  return { visibility: "PUBLIC" as const };
+}
+
+function getCommentSelect(userId: string | null, isAdmin: boolean) {
+  return {
+    id: true,
+    content: true,
+    createdAt: true,
+    updatedAt: true,
+    editedAt: true,
+    withdrawnAt: true,
+    moderatedAt: true,
+
+    author: {
+      select: AUTHOR_SELECT,
+    },
+
+    prediction: {
+      select: PREDICTION_SELECT,
+    },
+
+    likes: {
+      where: userId ? { userId } : { userId: { in: [] as string[] } },
+      select: { id: true },
+    },
+
+    _count: {
+      select: {
+        likes: true,
+        replies: {
+          where: getVisibilityWhere(userId, isAdmin),
+        },
+      },
+    },
+  } satisfies Prisma.CommentSelect;
+}
+
 async function getCommentById(commentId: string, userId: string) {
   const comment = await prisma.comment.findUnique({
-    where: {
-      id: commentId,
-    },
+    where: { id: commentId },
 
     select: {
       id: true,
       content: true,
-
       createdAt: true,
       updatedAt: true,
-
       editedAt: true,
       withdrawnAt: true,
       moderatedAt: true,
 
       author: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          nationality: true,
-        },
+        select: AUTHOR_SELECT,
       },
 
       prediction: {
-        select: {
-          direction: true,
-          pointsBet: true,
-          status: true,
-        },
+        select: PREDICTION_SELECT,
       },
 
       likes: {
-        where: {
-          userId,
-        },
-        select: {
-          id: true,
-        },
+        where: { userId },
+        select: { id: true },
       },
 
       _count: {
@@ -82,41 +166,31 @@ async function getCommentById(commentId: string, userId: string) {
 
   return {
     ...rest,
-
     content: comment.content as JSONContent,
-
     likeCount: _count.likes,
     replyCount: _count.replies,
-
     likedByMe: likes.length > 0,
   };
 }
-
-type CreateCommentInput = {
-  content?: JSONContent | null;
-  assetSymbols: string[];
-  prediction?: PredictionInput | null;
-};
 
 export async function createComment({
   content = null,
   assetSymbols,
   prediction = null,
 }: CreateCommentInput) {
-  // AUTH
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   const userId = session.user.id;
-
-  // SELECTED MARKETS
   const uniqueSymbols = [...new Set(assetSymbols)];
 
   if (uniqueSymbols.length === 0) {
-    throw new Error("Please select at least one board.");
+    throw new Error(labels.select_board);
   }
 
   const selectedMarkets = uniqueSymbols
@@ -126,12 +200,11 @@ export async function createComment({
     .filter((market): market is MarketSymbolItem => Boolean(market));
 
   if (selectedMarkets.length === 0) {
-    throw new Error("No valid boards selected.");
+    throw new Error(labels.invalid_board);
   }
 
-  // PREDICTION VALIDATION
   if (prediction && selectedMarkets.length !== 1) {
-    throw new Error("A prediction must belong to exactly one market.");
+    throw new Error(labels.single_market);
   }
 
   if (prediction) {
@@ -140,39 +213,35 @@ export async function createComment({
       prediction.pointsBet < 0 ||
       prediction.pointsBet > 500
     ) {
-      throw new Error("Prediction must be between 0 and 500 points.");
+      throw new Error(labels.invalid_points);
     }
 
     if (
       !(prediction.sessionDate instanceof Date) ||
       Number.isNaN(prediction.sessionDate.getTime())
     ) {
-      throw new Error("Invalid prediction session.");
+      throw new Error(labels.invalid_prediction_session);
     }
   }
 
-  // CONTENT
   const hasContent = content !== null && hasEditorContent(content);
 
   if (!hasContent && !prediction) {
-    throw new Error("Please write a comment or select a GIF.");
+    throw new Error(labels.write_comment);
   }
 
   const plainContent = hasContent
     ? (JSON.parse(JSON.stringify(content)) as Prisma.InputJsonValue)
     : null;
 
-  // AUTO MODERATION
   const moderationText =
     hasContent && content !== null ? getContentText(content) : "";
 
   const moderationResult = moderateContent(moderationText);
-
   const commentVisibility = moderationResult.shouldBePrivate
     ? "PRIVATE"
     : "PUBLIC";
 
-  // PREDICTION NATIONALITY
   let predictionNationality: string | null = null;
 
   if (prediction) {
@@ -182,17 +251,16 @@ export async function createComment({
     });
 
     if (!user) {
-      throw new Error("User not found.");
+      throw new Error(labels.user_not_found);
     }
 
     if (!user.nationality) {
-      throw new Error("Please set your nationality before voting.");
+      throw new Error(labels.nationality_required);
     }
 
     predictionNationality = user.nationality;
   }
 
-  // REFERENCE CLOSE
   // Fetch external market data before opening the transaction.
   let referenceClose: number | null = null;
 
@@ -205,11 +273,10 @@ export async function createComment({
     );
 
     if (!Number.isFinite(referenceClose) || referenceClose <= 0) {
-      throw new Error("Could not determine the previous market close.");
+      throw new Error(labels.previous_close_unavailable);
     }
   }
 
-  // ENSURE MARKET ASSETS EXIST
   await Promise.all(
     selectedMarkets.map((market) =>
       prisma.marketAsset.upsert({
@@ -235,7 +302,6 @@ export async function createComment({
     ),
   );
 
-  // TRANSACTION
   const result = await prisma.$transaction(async (tx) => {
     let createdPrediction: { id: string } | null = null;
 
@@ -243,14 +309,13 @@ export async function createComment({
       const market = selectedMarkets[0];
 
       if (referenceClose === null) {
-        throw new Error("Could not determine the previous market close.");
+        throw new Error(labels.previous_close_unavailable);
       }
 
       if (!predictionNationality) {
-        throw new Error("Please set your nationality before voting.");
+        throw new Error(labels.nationality_required);
       }
 
-      // CREATE PREDICTION
       createdPrediction = await tx.prediction.create({
         data: {
           userId,
@@ -264,7 +329,6 @@ export async function createComment({
         select: { id: true },
       });
 
-      // OPTIONAL POINT BET
       if (prediction.pointsBet > 0) {
         await tx.pointBalance.upsert({
           where: { userId },
@@ -275,8 +339,6 @@ export async function createComment({
           },
         });
 
-        // Conditional deduction prevents concurrent bets
-        // from taking the balance below zero.
         const deducted = await tx.pointBalance.updateMany({
           where: {
             userId,
@@ -288,7 +350,7 @@ export async function createComment({
         });
 
         if (deducted.count !== 1) {
-          throw new Error("You do not have enough points.");
+          throw new Error(labels.insufficient_points);
         }
 
         await tx.pointTransaction.create({
@@ -302,7 +364,6 @@ export async function createComment({
       }
     }
 
-    // COMMENT
     let createdComment: { id: string } | null = null;
 
     if (hasContent || createdPrediction) {
@@ -331,8 +392,6 @@ export async function createComment({
       });
     }
 
-    // Return an existing balance for any prediction.
-    // A zero-point vote does not create a balance.
     const pointBalance = prediction
       ? await tx.pointBalance.findUnique({
           where: { userId },
@@ -348,7 +407,6 @@ export async function createComment({
     };
   });
 
-  // Private comments are also returned to their author.
   const createdComment = result.commentId
     ? await getCommentById(result.commentId, userId)
     : null;
@@ -358,8 +416,6 @@ export async function createComment({
     comment: createdComment,
   };
 }
-
-const MARKET_COMMENTS_PAGE_SIZE = 20;
 
 export async function getMarketComments(
   assetSymbol: string,
@@ -371,72 +427,20 @@ export async function getMarketComments(
   currentSessionStartMs: number | null = null,
 ) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   const userId = session?.user?.id ?? null;
   const isAdmin = session?.user?.role === "ADMIN";
-
-  const visibilityWhere = isAdmin
-    ? {}
-    : userId
-      ? {
-          OR: [
-            { visibility: "PUBLIC" as const },
-            {
-              visibility: "PRIVATE" as const,
-              authorId: userId,
-            },
-          ],
-        }
-      : { visibility: "PUBLIC" as const };
 
   const baseWhere: Prisma.CommentWhereInput = {
     assets: {
       some: { assetSymbol },
     },
-    ...visibilityWhere,
+    ...getVisibilityWhere(userId, isAdmin),
   };
 
-  const select = {
-    id: true,
-    content: true,
-
-    createdAt: true,
-    updatedAt: true,
-    editedAt: true,
-    withdrawnAt: true,
-    moderatedAt: true,
-
-    author: {
-      select: {
-        id: true,
-        name: true,
-        image: true,
-        nationality: true,
-      },
-    },
-
-    prediction: {
-      select: {
-        direction: true,
-        pointsBet: true,
-        status: true,
-      },
-    },
-
-    likes: {
-      where: userId ? { userId } : { userId: { in: [] as string[] } },
-      select: { id: true },
-    },
-
-    _count: {
-      select: {
-        likes: true,
-        replies: {
-          where: visibilityWhere,
-        },
-      },
-    },
-  } satisfies Prisma.CommentSelect;
+  const select = getCommentSelect(userId, isAdmin);
 
   type SelectedComment = Prisma.CommentGetPayload<{
     select: typeof select;
@@ -453,13 +457,13 @@ export async function getMarketComments(
     currentSessionStartMs === null ? null : new Date(currentSessionStartMs);
 
   if (sessionStart && !Number.isFinite(sessionStart.getTime())) {
-    throw new Error("Invalid session start.");
+    throw new Error(labels.invalid_session);
   }
 
   const cursorDate = cursor ? new Date(cursor.createdAt) : null;
 
   if (cursorDate && !Number.isFinite(cursorDate.getTime())) {
-    throw new Error("Invalid comment cursor.");
+    throw new Error(labels.invalid_cursor);
   }
 
   const olderThanCursorWhere: Prisma.CommentWhereInput =
@@ -522,7 +526,7 @@ export async function getMarketComments(
       : 0;
 
     if (startIndex < 0) {
-      throw new Error("Invalid comment cursor. Reload comments.");
+      throw new Error(labels.invalid_cursor);
     }
 
     const items: {
@@ -538,7 +542,6 @@ export async function getMarketComments(
           AND: [
             baseWhere,
             group.where,
-
             ...(cursor && index === startIndex ? [olderThanCursorWhere] : []),
           ],
         },
@@ -570,9 +573,7 @@ export async function getMarketComments(
   ]);
 
   const hasMore = items.length > MARKET_COMMENTS_PAGE_SIZE;
-
   const page = hasMore ? items.slice(0, MARKET_COMMENTS_PAGE_SIZE) : items;
-
   const lastItem = page.at(-1);
 
   const nextCursor =
@@ -584,7 +585,7 @@ export async function getMarketComments(
         }
       : null;
 
-  const normalizedComments = page.map(({ comment }) => {
+  const comments = page.map(({ comment }) => {
     const { _count, likes, ...rest } = comment;
 
     return {
@@ -597,7 +598,7 @@ export async function getMarketComments(
   });
 
   return {
-    comments: normalizedComments,
+    comments,
     nextCursor,
     totalCount,
   };
@@ -608,9 +609,11 @@ export type MarketPageComments = MarketCommentsPage["comments"];
 
 export async function deleteComment(commentId: string) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   const comment = await prisma.comment.findUnique({
@@ -623,14 +626,13 @@ export async function deleteComment(commentId: string) {
   });
 
   if (!comment) {
-    throw new Error("Comment not found.");
+    throw new Error(labels.comment_not_found);
   }
 
   if (comment.authorId !== session.user.id) {
-    throw new Error("You don't have permission to delete this comment.");
+    throw new Error(labels.permission_denied);
   }
 
-  // Keep the prediction and remove only the comment content.
   if (comment.predictionId) {
     const deletedContent: JSONContent = {
       type: "doc",
@@ -640,7 +642,7 @@ export async function deleteComment(commentId: string) {
           content: [
             {
               type: "text",
-              text: "Comment deleted by user",
+              text: DELETED_COMMENT_TEXT,
             },
           ],
         },
@@ -656,9 +658,8 @@ export async function deleteComment(commentId: string) {
         .join("")
         .trim() ?? "";
 
-    const alreadyRemoved = currentText === "Comment deleted by user";
+    const alreadyRemoved = currentText === DELETED_COMMENT_TEXT;
 
-    // Also correct hasContent on previously deleted comments.
     await prisma.comment.update({
       where: { id: commentId },
       data: {
@@ -695,9 +696,11 @@ export async function editComment({
   content: JSONContent;
 }) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   const comment = await prisma.comment.findUnique({
@@ -711,22 +714,21 @@ export async function editComment({
   });
 
   if (!comment) {
-    throw new Error("Comment not found.");
+    throw new Error(labels.comment_not_found);
   }
 
   if (comment.authorId !== session.user.id) {
-    throw new Error("You cannot edit this comment.");
+    throw new Error(labels.permission_denied);
   }
 
   if (comment.withdrawnAt || comment.moderatedAt) {
-    throw new Error("This comment can no longer be edited.");
+    throw new Error(labels.comment_not_editable);
   }
 
-  // hasEditorContent must recognize both text and GIF/image nodes.
   const hasContent = hasEditorContent(content);
 
   if (!hasContent && !comment.predictionId) {
-    throw new Error("Comment cannot be empty.");
+    throw new Error(labels.write_comment);
   }
 
   const updatedContent: JSONContent = hasContent
@@ -753,20 +755,19 @@ export async function editComment({
 
 export async function hideComment(commentId: string, reason?: string) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   if (session.user.role !== "ADMIN") {
-    throw new Error("You don't have permission to moderate comments.");
+    throw new Error(labels.permission_denied);
   }
 
   const comment = await prisma.comment.findUnique({
-    where: {
-      id: commentId,
-    },
-
+    where: { id: commentId },
     select: {
       id: true,
       authorId: true,
@@ -775,7 +776,7 @@ export async function hideComment(commentId: string, reason?: string) {
   });
 
   if (!comment) {
-    throw new Error("Comment not found.");
+    throw new Error(labels.comment_not_found);
   }
 
   if (comment.moderatedAt) {
@@ -790,13 +791,8 @@ export async function hideComment(commentId: string, reason?: string) {
 
   await prisma.$transaction([
     prisma.comment.update({
-      where: {
-        id: commentId,
-      },
-
-      data: {
-        moderatedAt: now,
-      },
+      where: { id: commentId },
+      data: { moderatedAt: now },
     }),
 
     prisma.moderationAction.create({
@@ -819,20 +815,19 @@ export async function hideComment(commentId: string, reason?: string) {
 
 export async function restoreComment(commentId: string, reason?: string) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   if (session.user.role !== "ADMIN") {
-    throw new Error("You don't have permission to moderate comments.");
+    throw new Error(labels.permission_denied);
   }
 
   const comment = await prisma.comment.findUnique({
-    where: {
-      id: commentId,
-    },
-
+    where: { id: commentId },
     select: {
       id: true,
       authorId: true,
@@ -841,7 +836,7 @@ export async function restoreComment(commentId: string, reason?: string) {
   });
 
   if (!comment) {
-    throw new Error("Comment not found.");
+    throw new Error(labels.comment_not_found);
   }
 
   if (!comment.moderatedAt) {
@@ -853,13 +848,8 @@ export async function restoreComment(commentId: string, reason?: string) {
 
   await prisma.$transaction([
     prisma.comment.update({
-      where: {
-        id: commentId,
-      },
-
-      data: {
-        moderatedAt: null,
-      },
+      where: { id: commentId },
+      data: { moderatedAt: null },
     }),
 
     prisma.moderationAction.create({
@@ -891,49 +881,27 @@ export async function createReply({
   gifUrl?: string | null;
 }) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   const userId = session.user.id;
   const trimmedContent = content.trim();
 
   if (!trimmedContent && !gifUrl) {
-    throw new Error("Please write a reply or select a GIF.");
+    throw new Error(labels.write_reply);
   }
 
-  // ---------------------------------------------------------------------------
-  // AUTO MODERATION
-  //
-  // Nothing is automatically deleted.
-  //
-  // PUBLIC:
-  // - visible to everyone
-  //
-  // PRIVATE:
-  // - visible to the author
-  // - visible to admins
-  // - hidden from everyone else
-  //
-  // The author receives the created reply normally regardless of visibility.
-  // ---------------------------------------------------------------------------
-
   const moderationResult = moderateContent(trimmedContent);
-
   const replyVisibility = moderationResult.shouldBePrivate
     ? "PRIVATE"
     : "PUBLIC";
 
-  // ---------------------------------------------------------------------------
-  // COMMENT
-  // ---------------------------------------------------------------------------
-
   const comment = await prisma.comment.findUnique({
-    where: {
-      id: commentId,
-    },
-
+    where: { id: commentId },
     select: {
       id: true,
       authorId: true,
@@ -943,16 +911,12 @@ export async function createReply({
   });
 
   if (!comment) {
-    throw new Error("Comment not found.");
+    throw new Error(labels.comment_not_found);
   }
 
   if (comment.withdrawnAt || comment.moderatedAt) {
-    throw new Error("You cannot reply to this comment.");
+    throw new Error(labels.cannot_reply);
   }
-
-  // ---------------------------------------------------------------------------
-  // PARENT REPLY
-  // ---------------------------------------------------------------------------
 
   let parentReply: {
     id: string;
@@ -963,10 +927,7 @@ export async function createReply({
 
   if (parentId) {
     parentReply = await prisma.reply.findUnique({
-      where: {
-        id: parentId,
-      },
-
+      where: { id: parentId },
       select: {
         id: true,
         commentId: true,
@@ -976,157 +937,62 @@ export async function createReply({
     });
 
     if (!parentReply) {
-      throw new Error("Reply not found.");
+      throw new Error(labels.reply_not_found);
     }
 
-    // Prevent connecting a reply from another comment thread.
     if (parentReply.commentId !== commentId) {
-      throw new Error("Invalid parent reply.");
+      throw new Error(labels.invalid_parent);
     }
 
     if (parentReply.moderatedAt) {
-      throw new Error("You cannot reply to a hidden reply.");
+      throw new Error(labels.cannot_reply);
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // CREATE REPLY
-  // ---------------------------------------------------------------------------
 
   const reply = await prisma.reply.create({
     data: {
       content: trimmedContent,
       gifUrl,
-
       commentId,
       authorId: userId,
-
       parentId,
-
-      // -----------------------------------------------------------------------
-      // AUTO MODERATION VISIBILITY
-      // -----------------------------------------------------------------------
-
       visibility: replyVisibility,
     },
-
-    select: {
-      id: true,
-
-      commentId: true,
-      parentId: true,
-
-      content: true,
-      gifUrl: true,
-
-      createdAt: true,
-      updatedAt: true,
-
-      editedAt: true,
-      moderatedAt: true,
-
-      author: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          nationality: true,
-        },
-      },
-
-      _count: {
-        select: {
-          likes: true,
-          replies: true,
-        },
-      },
-    },
+    select: REPLY_SELECT,
   });
 
-  // ---------------------------------------------------------------------------
-  // NOTIFICATION
-  //
-  // IMPORTANT:
-  //
-  // A PRIVATE reply must NOT send a normal social notification.
-  //
-  // Otherwise another user could receive:
-  //
-  //   "Someone replied to your comment."
-  //
-  // even though that reply is PRIVATE and should not be visible to them.
-  //
-  // The author still receives the created reply normally above.
-  // ---------------------------------------------------------------------------
-
+  // Notification text is translated in NotificationPanel.
   if (replyVisibility === "PUBLIC") {
     if (parentReply) {
-      // -----------------------------------------------------------------------
-      // REPLIED TO ANOTHER REPLY
-      // -----------------------------------------------------------------------
-
       if (parentReply.authorId !== userId) {
         await prisma.notification.create({
           data: {
-            // Recipient = author of the reply being replied to.
             userId: parentReply.authorId,
-
-            // Actor = current user who created the new reply.
             actorId: userId,
-
             type: "REPLY_REPLIED",
-
             title: "New reply",
             message: `${session.user.name ?? "Someone"} replied to your reply.`,
-
-            // IMPORTANT:
-            // Store the NEW reply, not the parent reply.
-            // This lets the notification navigate directly to the response.
+            commentId,
             replyId: reply.id,
-
             eventKey: `reply-replied:${reply.id}`,
           },
         });
       }
-    } else {
-      // -----------------------------------------------------------------------
-      // REPLIED DIRECTLY TO COMMENT
-      // -----------------------------------------------------------------------
-
-      if (comment.authorId !== userId) {
-        await prisma.notification.create({
-          data: {
-            // Recipient = author of the original comment.
-            userId: comment.authorId,
-
-            // Actor = current user who created the reply.
-            actorId: userId,
-
-            type: "COMMENT_REPLIED",
-
-            title: "New reply",
-            message: `${session.user.name ?? "Someone"} replied to your comment.`,
-
-            // IMPORTANT:
-            // Store the NEW reply here too.
-            // We can get its original comment through reply.commentId.
-            replyId: reply.id,
-
-            eventKey: `comment-replied:${reply.id}`,
-          },
-        });
-      }
+    } else if (comment.authorId !== userId) {
+      await prisma.notification.create({
+        data: {
+          userId: comment.authorId,
+          actorId: userId,
+          type: "COMMENT_REPLIED",
+          title: "New reply",
+          message: `${session.user.name ?? "Someone"} replied to your comment.`,
+          commentId,
+          replyId: reply.id,
+          eventKey: `comment-replied:${reply.id}`,
+        },
+      });
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // RESULT
-  //
-  // PUBLIC and PRIVATE replies are returned identically.
-  //
-  // Therefore the author does not get a different posting experience when
-  // automatic moderation makes the reply PRIVATE.
-  // ---------------------------------------------------------------------------
 
   return {
     success: true,
@@ -1144,22 +1010,21 @@ export async function editReply({
   gifUrl?: string | null;
 }) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   const trimmedContent = content.trim();
 
   if (!trimmedContent && !gifUrl) {
-    throw new Error("Reply cannot be empty.");
+    throw new Error(labels.write_reply);
   }
 
   const reply = await prisma.reply.findUnique({
-    where: {
-      id: replyId,
-    },
-
+    where: { id: replyId },
     select: {
       id: true,
       authorId: true,
@@ -1168,59 +1033,25 @@ export async function editReply({
   });
 
   if (!reply) {
-    throw new Error("Reply not found.");
+    throw new Error(labels.reply_not_found);
   }
 
   if (reply.authorId !== session.user.id) {
-    throw new Error("You cannot edit this reply.");
+    throw new Error(labels.permission_denied);
   }
 
   if (reply.moderatedAt) {
-    throw new Error("A hidden reply cannot be edited.");
+    throw new Error(labels.reply_not_editable);
   }
 
   const updatedReply = await prisma.reply.update({
-    where: {
-      id: replyId,
-    },
-
+    where: { id: replyId },
     data: {
       content: trimmedContent,
       gifUrl,
       editedAt: new Date(),
     },
-
-    select: {
-      id: true,
-
-      commentId: true,
-      parentId: true,
-
-      content: true,
-      gifUrl: true,
-
-      createdAt: true,
-      updatedAt: true,
-
-      editedAt: true,
-      moderatedAt: true,
-
-      author: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          nationality: true,
-        },
-      },
-
-      _count: {
-        select: {
-          likes: true,
-          replies: true,
-        },
-      },
-    },
+    select: REPLY_SELECT,
   });
 
   return {
@@ -1231,16 +1062,15 @@ export async function editReply({
 
 export async function deleteReply(replyId: string) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   const reply = await prisma.reply.findUnique({
-    where: {
-      id: replyId,
-    },
-
+    where: { id: replyId },
     select: {
       id: true,
       authorId: true,
@@ -1249,29 +1079,15 @@ export async function deleteReply(replyId: string) {
   });
 
   if (!reply) {
-    throw new Error("Reply not found.");
+    throw new Error(labels.reply_not_found);
   }
 
   if (reply.authorId !== session.user.id) {
-    throw new Error("You cannot delete this reply.");
+    throw new Error(labels.permission_denied);
   }
 
-  // Hard delete.
-  //
-  // Child replies are automatically deleted because:
-  //
-  // parent Reply
-  //   ↓ onDelete: Cascade
-  // child Reply
-  //   ↓ onDelete: Cascade
-  // descendant Reply
-  //
-  // ReplyLike rows are also deleted through their cascade relation.
-
   await prisma.reply.delete({
-    where: {
-      id: replyId,
-    },
+    where: { id: replyId },
   });
 
   return {
@@ -1281,20 +1097,19 @@ export async function deleteReply(replyId: string) {
 
 export async function hideReply(replyId: string) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   if (session.user.role !== "ADMIN") {
-    throw new Error("You don't have permission to moderate replies.");
+    throw new Error(labels.permission_denied);
   }
 
   const reply = await prisma.reply.findUnique({
-    where: {
-      id: replyId,
-    },
-
+    where: { id: replyId },
     select: {
       id: true,
       moderatedAt: true,
@@ -1302,7 +1117,7 @@ export async function hideReply(replyId: string) {
   });
 
   if (!reply) {
-    throw new Error("Reply not found.");
+    throw new Error(labels.reply_not_found);
   }
 
   if (reply.moderatedAt) {
@@ -1313,13 +1128,8 @@ export async function hideReply(replyId: string) {
   }
 
   await prisma.reply.update({
-    where: {
-      id: replyId,
-    },
-
-    data: {
-      moderatedAt: new Date(),
-    },
+    where: { id: replyId },
+    data: { moderatedAt: new Date() },
   });
 
   return {
@@ -1330,20 +1140,19 @@ export async function hideReply(replyId: string) {
 
 export async function restoreReply(replyId: string) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   if (session.user.role !== "ADMIN") {
-    throw new Error("You don't have permission to moderate replies.");
+    throw new Error(labels.permission_denied);
   }
 
   const reply = await prisma.reply.findUnique({
-    where: {
-      id: replyId,
-    },
-
+    where: { id: replyId },
     select: {
       id: true,
       moderatedAt: true,
@@ -1351,7 +1160,7 @@ export async function restoreReply(replyId: string) {
   });
 
   if (!reply) {
-    throw new Error("Reply not found.");
+    throw new Error(labels.reply_not_found);
   }
 
   if (!reply.moderatedAt) {
@@ -1362,13 +1171,8 @@ export async function restoreReply(replyId: string) {
   }
 
   await prisma.reply.update({
-    where: {
-      id: replyId,
-    },
-
-    data: {
-      moderatedAt: null,
-    },
+    where: { id: replyId },
+    data: { moderatedAt: null },
   });
 
   return {
@@ -1382,140 +1186,43 @@ export async function getCommentReplies(commentId: string) {
 
   const userId = session?.user?.id ?? null;
   const isAdmin = session?.user?.role === "ADMIN";
-
-  // ---------------------------------------------------------------------------
-  // VISIBILITY
-  //
-  // ADMIN
-  // - PUBLIC
-  // - PRIVATE
-  //
-  // LOGGED-IN USER
-  // - all PUBLIC replies
-  // - their own PRIVATE replies
-  //
-  // GUEST
-  // - PUBLIC replies only
-  // ---------------------------------------------------------------------------
-
-  const visibilityWhere = isAdmin
-    ? {}
-    : userId
-      ? {
-          OR: [
-            {
-              visibility: "PUBLIC" as const,
-            },
-            {
-              visibility: "PRIVATE" as const,
-              authorId: userId,
-            },
-          ],
-        }
-      : {
-          visibility: "PUBLIC" as const,
-        };
-
-  // ---------------------------------------------------------------------------
-  // REPLIES
-  // ---------------------------------------------------------------------------
+  const visibilityWhere = getVisibilityWhere(userId, isAdmin);
 
   const replies = await prisma.reply.findMany({
     where: {
       commentId,
-
       ...visibilityWhere,
     },
-
-    orderBy: {
-      createdAt: "asc",
-    },
+    orderBy: { createdAt: "asc" },
 
     select: {
-      id: true,
-
-      commentId: true,
-      parentId: true,
-
-      content: true,
-      gifUrl: true,
-
-      createdAt: true,
-      updatedAt: true,
-
-      editedAt: true,
-      moderatedAt: true,
-
-      author: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          nationality: true,
-        },
-      },
-
-      // -----------------------------------------------------------------------
-      // CURRENT USER'S LIKE
-      // -----------------------------------------------------------------------
+      ...REPLY_SELECT,
 
       likes: userId
         ? {
-            where: {
-              userId,
-            },
-
-            select: {
-              id: true,
-            },
+            where: { userId },
+            select: { id: true },
           }
         : false,
-
-      // -----------------------------------------------------------------------
-      // COUNTS
-      // -----------------------------------------------------------------------
 
       _count: {
         select: {
           likes: true,
-
           replies: {
-            where: isAdmin
-              ? {}
-              : userId
-                ? {
-                    OR: [
-                      {
-                        visibility: "PUBLIC",
-                      },
-                      {
-                        visibility: "PRIVATE",
-                        authorId: userId,
-                      },
-                    ],
-                  }
-                : {
-                    visibility: "PUBLIC",
-                  },
+            where: visibilityWhere,
           },
         },
       },
     },
   });
 
-  // ---------------------------------------------------------------------------
-  // NORMALIZE
-  // ---------------------------------------------------------------------------
-
   return replies.map((reply) => {
     const { _count, likes, ...rest } = reply;
 
     return {
       ...rest,
-
       likeCount: _count.likes,
       replyCount: _count.replies,
-
       likedByMe: Array.isArray(likes) && likes.length > 0,
     };
   });
@@ -1523,67 +1230,52 @@ export async function getCommentReplies(commentId: string) {
 
 export async function reportComment(commentId: string) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("Log in to report.");
+    throw new Error(labels.login_required);
   }
 
   const comment = await prisma.comment.findUnique({
-    where: {
-      id: commentId,
-    },
-    select: {
-      id: true,
-    },
+    where: { id: commentId },
+    select: { id: true },
   });
 
   if (!comment) {
-    throw new Error("Comment not found.");
+    throw new Error(labels.comment_not_found);
   }
 
   const eventKeyPrefix = `comment-report:${commentId}:`;
 
   const existingReport = await prisma.notification.findFirst({
     where: {
-      eventKey: {
-        startsWith: eventKeyPrefix,
-      },
+      eventKey: { startsWith: eventKeyPrefix },
     },
-    select: {
-      id: true,
-    },
+    select: { id: true },
   });
 
   if (existingReport) {
-    throw new Error("This comment has already been reported. Thank you.");
+    throw new Error(labels.comment_reported);
   }
 
   const admins = await prisma.user.findMany({
-    where: {
-      role: "ADMIN",
-    },
-    select: {
-      id: true,
-    },
+    where: { role: "ADMIN" },
+    select: { id: true },
   });
 
   if (admins.length === 0) {
-    throw new Error("No administrator is available.");
+    throw new Error(labels.admin_unavailable);
   }
 
   await prisma.notification.createMany({
     data: admins.map((admin) => ({
       userId: admin.id,
-
       actorId: null,
-
       type: "COMMENT_REPORTED",
-
       title: "Comment reported",
       message: "A comment has been reported for review.",
-
       commentId,
-
       eventKey: `${eventKeyPrefix}${admin.id}`,
     })),
   });
@@ -1595,15 +1287,15 @@ export async function reportComment(commentId: string) {
 
 export async function reportReply(replyId: string) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("Log in to report.");
+    throw new Error(labels.login_required);
   }
 
   const reply = await prisma.reply.findUnique({
-    where: {
-      id: replyId,
-    },
+    where: { id: replyId },
     select: {
       id: true,
       commentId: true,
@@ -1611,55 +1303,40 @@ export async function reportReply(replyId: string) {
   });
 
   if (!reply) {
-    throw new Error("Reply not found.");
+    throw new Error(labels.reply_not_found);
   }
 
   const eventKeyPrefix = `reply-report:${replyId}:`;
 
   const existingReport = await prisma.notification.findFirst({
     where: {
-      eventKey: {
-        startsWith: eventKeyPrefix,
-      },
+      eventKey: { startsWith: eventKeyPrefix },
     },
-    select: {
-      id: true,
-    },
+    select: { id: true },
   });
 
   if (existingReport) {
-    throw new Error("This reply has already been reported.");
+    throw new Error(labels.reply_reported);
   }
 
   const admins = await prisma.user.findMany({
-    where: {
-      role: "ADMIN",
-    },
-    select: {
-      id: true,
-    },
+    where: { role: "ADMIN" },
+    select: { id: true },
   });
 
   if (admins.length === 0) {
-    throw new Error("No administrator is available.");
+    throw new Error(labels.admin_unavailable);
   }
 
   await prisma.notification.createMany({
     data: admins.map((admin) => ({
       userId: admin.id,
-
-      // Guest reports have no actor.
       actorId: null,
-
       type: "REPLY_REPORTED",
-
       title: "Reply reported",
       message: "A reply has been reported for review.",
-
-      // Useful for navigating directly to the thread.
       commentId: reply.commentId,
       replyId,
-
       eventKey: `${eventKeyPrefix}${admin.id}`,
     })),
   });
@@ -1675,8 +1352,6 @@ export interface HomeCommentCursor {
   id: string;
   createdAt: Date;
   likeCount: number;
-
-  // Prevent using a cursor from a different filter or sort.
   sort: HomeCommentSort;
   assetSymbol: string | null;
 }
@@ -1687,42 +1362,26 @@ interface GetHomeCommentsOptions {
   cursor?: HomeCommentCursor | null;
 }
 
-const HOME_COMMENTS_PAGE_SIZE = 10;
-
 export async function getHomeComments({
   assetSymbol = null,
   sort = "latest",
   cursor = null,
 }: GetHomeCommentsOptions = {}) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   const userId = session?.user?.id ?? null;
   const isAdmin = session?.user?.role === "ADMIN";
   const marketSymbol = assetSymbol?.trim() || null;
 
   if (sort !== "latest" && sort !== "most-liked") {
-    throw new Error("Invalid comment sort.");
+    throw new Error(labels.invalid_sort);
   }
-
-  const visibilityWhere = isAdmin
-    ? {}
-    : userId
-      ? {
-          OR: [
-            { visibility: "PUBLIC" as const },
-            {
-              visibility: "PRIVATE" as const,
-              authorId: userId,
-            },
-          ],
-        }
-      : {
-          visibility: "PUBLIC" as const,
-        };
 
   const baseWhere: Prisma.CommentWhereInput = {
     AND: [
-      visibilityWhere,
+      getVisibilityWhere(userId, isAdmin),
       {
         hasContent: true,
         withdrawnAt: null,
@@ -1732,9 +1391,7 @@ export async function getHomeComments({
         ? [
             {
               assets: {
-                some: {
-                  assetSymbol: marketSymbol,
-                },
+                some: { assetSymbol: marketSymbol },
               },
             },
           ]
@@ -1743,52 +1400,9 @@ export async function getHomeComments({
   };
 
   const select = {
-    id: true,
-    content: true,
-
-    createdAt: true,
-    updatedAt: true,
-    editedAt: true,
-    withdrawnAt: true,
-    moderatedAt: true,
-
-    author: {
-      select: {
-        id: true,
-        name: true,
-        image: true,
-        nationality: true,
-      },
-    },
-
+    ...getCommentSelect(userId, isAdmin),
     assets: {
-      select: {
-        assetSymbol: true,
-      },
-    },
-
-    prediction: {
-      select: {
-        direction: true,
-        pointsBet: true,
-        status: true,
-      },
-    },
-
-    likes: {
-      where: userId ? { userId } : { userId: { in: [] as string[] } },
-      select: {
-        id: true,
-      },
-    },
-
-    _count: {
-      select: {
-        likes: true,
-        replies: {
-          where: visibilityWhere,
-        },
-      },
+      select: { assetSymbol: true },
     },
   } satisfies Prisma.CommentSelect;
 
@@ -1805,7 +1419,7 @@ export async function getHomeComments({
       cursor.sort !== sort ||
       cursor.assetSymbol !== marketSymbol
     ) {
-      throw new Error("Invalid comment cursor. Reload comments.");
+      throw new Error(labels.invalid_cursor);
     }
   }
 
@@ -1818,38 +1432,25 @@ export async function getHomeComments({
     cursor && cursorDate
       ? {
           OR: [
-            {
-              createdAt: {
-                lt: cursorDate,
-              },
-            },
+            { createdAt: { lt: cursorDate } },
             {
               createdAt: cursorDate,
-              id: {
-                lt: cursor.id,
-              },
+              id: { lt: cursor.id },
             },
           ],
         }
       : {};
 
-  /*
-   * Prisma supports ordering by relation count, but its standard
-   * where input cannot express "likes count < cursor.likeCount".
-   * Use Prisma's record cursor for Most liked.
-   */
   if (cursor && sort === "most-liked") {
     const cursorExists = await prisma.comment.findFirst({
       where: {
         AND: [baseWhere, { id: cursor.id }],
       },
-      select: {
-        id: true,
-      },
+      select: { id: true },
     });
 
     if (!cursorExists) {
-      throw new Error("The discussion list changed. Reload comments.");
+      throw new Error(labels.list_changed);
     }
   }
 
@@ -1866,9 +1467,7 @@ export async function getHomeComments({
 
       ...(sort === "most-liked" && cursor
         ? {
-            cursor: {
-              id: cursor.id,
-            },
+            cursor: { id: cursor.id },
             skip: 1,
           }
         : {}),
@@ -1883,9 +1482,7 @@ export async function getHomeComments({
   ]);
 
   const hasMore = items.length > HOME_COMMENTS_PAGE_SIZE;
-
   const page = hasMore ? items.slice(0, HOME_COMMENTS_PAGE_SIZE) : items;
-
   const lastItem = page.at(-1);
 
   const nextCursor: HomeCommentCursor | null =
@@ -1928,26 +1525,10 @@ export async function getHomeCommunityMarkets() {
   const userId = session?.user?.id ?? null;
   const isAdmin = session?.user?.role === "ADMIN";
 
-  const visibilityWhere: Prisma.CommentWhereInput = isAdmin
-    ? {}
-    : userId
-      ? {
-          OR: [
-            { visibility: "PUBLIC" },
-            {
-              visibility: "PRIVATE",
-              authorId: userId,
-            },
-          ],
-        }
-      : {
-          visibility: "PUBLIC",
-        };
-
   const comments = await prisma.comment.findMany({
     where: {
       AND: [
-        visibilityWhere,
+        getVisibilityWhere(userId, isAdmin),
         {
           hasContent: true,
           withdrawnAt: null,
@@ -1958,11 +1539,10 @@ export async function getHomeCommunityMarkets() {
         },
       ],
     },
+
     select: {
       assets: {
-        select: {
-          assetSymbol: true,
-        },
+        select: { assetSymbol: true },
       },
     },
   });

@@ -38,7 +38,7 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
         {labels.title}
       </p>
 
-      <div className="flex w-full flex-col px-2">
+      <div className="flex w-full flex-col px-3">
         {traders.map((trader) => {
           const isMe = trader.id === user?.id;
 
@@ -93,7 +93,7 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
                 </div>
               </div>
 
-              <div className="mr-4 shrink-0 text-right">
+              <div className="mr-3 shrink-0 text-right">
                 <p className="jakarta text-[14px] font-normal text-zinc-800 dark:text-zinc-300">
                   {trader.points.toLocaleString(language)}
                 </p>

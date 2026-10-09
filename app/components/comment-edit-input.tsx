@@ -7,7 +7,15 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { GifPicker, type GifResult } from "./gif-picker";
+
 import { editComment } from "@/app/actions/post";
+import { useCurrentUser } from "@/app/context/user-context";
+
+import { resolveLanguage } from "@/lib/data/languages";
+import {
+  COMMENT_EDIT_LABELS,
+  CONTENT_RESULT_LABELS,
+} from "@/lib/data/translations";
 
 interface CommentEditInputProps {
   commentId: string;
@@ -32,53 +40,38 @@ export function CommentEditInput({
   onCancel,
   onSaved,
 }: CommentEditInputProps) {
-  // ---------------------------------------------------------------------------
-  // INITIAL CONTENT
-  // ---------------------------------------------------------------------------
+  const user = useCurrentUser();
+  const language = resolveLanguage(user?.language);
 
-  const initial = getInitialComment(initialContent);
+  const labels = COMMENT_EDIT_LABELS[language];
+  const resultLabels = CONTENT_RESULT_LABELS[language];
 
-  const initialText = initial.text;
-  const initialGifSrc = initial.gif?.src ?? null;
-
-  // ---------------------------------------------------------------------------
-  // STATE
-  // ---------------------------------------------------------------------------
+  const [initial] = useState(() => getInitialComment(initialContent));
 
   const [comment, setComment] = useState(initial.text);
-
   const [selectedGif, setSelectedGif] = useState<EditableGif | null>(
     initial.gif,
   );
 
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
-
   const [isPending, startTransition] = useTransition();
 
-  // ---------------------------------------------------------------------------
-  // VALIDATION
-  // ---------------------------------------------------------------------------
-
   const hasChanges =
-    comment.trim() !== initialText.trim() ||
-    (selectedGif?.src ?? null) !== initialGifSrc;
+    comment.trim() !== initial.text.trim() ||
+    (selectedGif?.src ?? null) !== (initial.gif?.src ?? null);
 
   const hasContent = comment.trim().length > 0 || Boolean(selectedGif);
-
   const saveDisabled = isPending || !hasChanges || !hasContent;
 
-  // ---------------------------------------------------------------------------
-  // SAVE
-  // ---------------------------------------------------------------------------
-
   const handleSave = () => {
-    if (saveDisabled) return;
+    if (saveDisabled) {
+      return;
+    }
 
     startTransition(async () => {
       try {
         const content: JSONContent = {
           type: "doc",
-
           content: [
             ...(comment.trim()
               ? [
@@ -115,28 +108,27 @@ export function CommentEditInput({
 
         await onSaved(result);
 
-        toast.success("Comment updated.");
+        toast.success(resultLabels.edited);
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to update comment.",
+          error instanceof Error && error.message
+            ? error.message
+            : labels.update_failed,
         );
       }
     });
   };
 
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
-
   return (
     <div className="mt-2">
       <div className="relative rounded-lg bg-zinc-200/40 px-4 dark:bg-zinc-800">
-        {/* Text */}
         <textarea
           value={comment}
-          onChange={(e) => setComment(e.target.value)}
+          onChange={(event) => setComment(event.target.value)}
+          disabled={isPending}
           rows={1}
-          placeholder="Edit comment..."
+          placeholder={labels.placeholder}
+          aria-label={labels.placeholder}
           className="
             min-h-11 w-full resize-none
             bg-transparent py-3
@@ -145,7 +137,6 @@ export function CommentEditInput({
           "
         />
 
-        {/* Selected GIF */}
         {selectedGif && (
           <div className="relative mb-3 w-fit max-w-full">
             <img
@@ -161,33 +152,33 @@ export function CommentEditInput({
               type="button"
               onClick={() => setSelectedGif(null)}
               disabled={isPending}
+              aria-label={labels.remove_gif}
+              title={labels.remove_gif}
               className="
-                absolute right-2 top-2
+                absolute top-2 right-2
                 flex size-7 cursor-pointer
                 items-center justify-center
-                rounded-full
-                bg-black/60 text-white
+                rounded-full bg-black/60 text-white
                 hover:bg-black/75
                 disabled:cursor-not-allowed
                 disabled:opacity-50
               "
             >
-              <X size={15} />
+              <X size={15} aria-hidden="true" />
             </button>
           </div>
         )}
 
-        {/* Bottom actions */}
         <div className="flex items-center justify-between gap-2 pb-2">
-          {/* GIF */}
           <div className="relative">
             <button
               type="button"
               disabled={isPending}
               onClick={() => setGifPickerOpen((open) => !open)}
+              aria-label={labels.select_gif}
+              aria-expanded={gifPickerOpen}
               className="
-                cursor-pointer rounded-md
-                px-2 py-1
+                cursor-pointer rounded-md px-2 py-1
                 text-sm font-medium text-zinc-500
                 hover:bg-zinc-200
                 disabled:cursor-not-allowed
@@ -213,7 +204,6 @@ export function CommentEditInput({
             />
           </div>
 
-          {/* Cancel / Save */}
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -221,8 +211,9 @@ export function CommentEditInput({
               size="sm"
               disabled={isPending}
               onClick={onCancel}
+              className="cursor-pointer"
             >
-              Cancel
+              {labels.cancel}
             </Button>
 
             <Button
@@ -236,7 +227,7 @@ export function CommentEditInput({
                 disabled:opacity-40
               "
             >
-              {isPending ? "Saving..." : "Save"}
+              {isPending ? labels.saving : labels.save}
             </Button>
           </div>
         </div>
@@ -244,10 +235,6 @@ export function CommentEditInput({
     </div>
   );
 }
-
-// -----------------------------------------------------------------------------
-// GET INITIAL COMMENT
-// -----------------------------------------------------------------------------
 
 function getInitialComment(content: JSONContent): {
   text: string;
@@ -257,7 +244,6 @@ function getInitialComment(content: JSONContent): {
   let gif: EditableGif | null = null;
 
   for (const node of content.content ?? []) {
-    // Text
     if (node.type === "paragraph") {
       const paragraphText =
         node.content?.map((child) => child.text ?? "").join("") ?? "";
@@ -267,7 +253,6 @@ function getInitialComment(content: JSONContent): {
       }
     }
 
-    // GIF
     if (node.type === "image" && node.attrs?.src) {
       gif = {
         src: String(node.attrs.src),
@@ -277,8 +262,5 @@ function getInitialComment(content: JSONContent): {
     }
   }
 
-  return {
-    text,
-    gif,
-  };
+  return { text, gif };
 }

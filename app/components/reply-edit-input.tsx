@@ -1,11 +1,19 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition, type KeyboardEvent } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { editReply } from "@/app/actions/post";
+import { useCurrentUser } from "@/app/context/user-context";
+
+import { resolveLanguage } from "@/lib/data/languages";
+import {
+  COMMENT_EDIT_LABELS,
+  REPLY_EDIT_LABELS,
+} from "@/lib/data/translations";
+
 import { GifPicker, type GifResult } from "./gif-picker";
 
 interface ReplyEditInputProps {
@@ -25,6 +33,12 @@ export function ReplyEditInput({
   onCancel,
   onSaved,
 }: ReplyEditInputProps) {
+  const user = useCurrentUser();
+  const language = resolveLanguage(user?.language);
+
+  const labels = REPLY_EDIT_LABELS[language];
+  const editLabels = COMMENT_EDIT_LABELS[language];
+
   const [content, setContent] = useState(initialContent);
   const [gifUrl, setGifUrl] = useState<string | null>(initialGifUrl);
 
@@ -33,11 +47,15 @@ export function ReplyEditInput({
 
   const gifButtonRef = useRef<HTMLButtonElement>(null);
 
+  const hasContent = content.trim().length > 0 || Boolean(gifUrl);
+
   // ---------------------------------------------------------------------------
   // GIF
   // ---------------------------------------------------------------------------
 
   const handleGifSelect = (gif: GifResult) => {
+    if (isPending) return;
+
     setGifUrl(gif.src);
     setGifPickerOpen(false);
   };
@@ -47,10 +65,12 @@ export function ReplyEditInput({
   // ---------------------------------------------------------------------------
 
   const handleSave = () => {
+    if (isPending) return;
+
     const trimmedContent = content.trim();
 
     if (!trimmedContent && !gifUrl) {
-      toast.error("Reply cannot be empty.");
+      toast.error(labels.empty_reply);
       return;
     }
 
@@ -64,10 +84,12 @@ export function ReplyEditInput({
 
         await onSaved();
 
-        toast.success("Reply updated.");
+        toast.success(labels.updated);
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to update reply.",
+          error instanceof Error && error.message
+            ? error.message
+            : labels.update_failed,
         );
       }
     });
@@ -77,8 +99,11 @@ export function ReplyEditInput({
   // KEYBOARD
   // ---------------------------------------------------------------------------
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isPending || event.nativeEvent.isComposing) return;
+
     if (event.key === "Escape") {
+      event.preventDefault();
       onCancel();
       return;
     }
@@ -94,14 +119,7 @@ export function ReplyEditInput({
   // ---------------------------------------------------------------------------
 
   return (
-    <div
-      className="
-        mt-2 rounded-lg
-        bg-zinc-100
-        px-3
-        dark:bg-zinc-800
-      "
-    >
+    <div className="mt-2 rounded-lg bg-zinc-100 px-3 dark:bg-zinc-800">
       {/* Text */}
       <textarea
         rows={1}
@@ -109,7 +127,8 @@ export function ReplyEditInput({
         disabled={isPending}
         onChange={(event) => setContent(event.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Edit reply..."
+        placeholder={labels.placeholder}
+        aria-label={labels.placeholder}
         className="
           min-h-10 w-full resize-none
           bg-transparent py-2.5
@@ -137,6 +156,8 @@ export function ReplyEditInput({
             type="button"
             disabled={isPending}
             onClick={() => setGifUrl(null)}
+            aria-label={editLabels.remove_gif}
+            title={editLabels.remove_gif}
             className="
               absolute top-2 right-2
               flex size-7
@@ -148,22 +169,24 @@ export function ReplyEditInput({
               disabled:cursor-not-allowed
               disabled:opacity-50
             "
-            aria-label="Remove GIF"
           >
-            <X className="size-4" />
+            <X className="size-4" aria-hidden="true" />
           </button>
         </div>
       )}
 
       {/* Bottom actions */}
-      <div className="flex items-center justify-between pb-2">
+      <div className="flex items-center justify-between gap-2 pb-2">
         {/* GIF */}
-        <div>
+        <div className="relative">
           <button
             ref={gifButtonRef}
             type="button"
             disabled={isPending}
-            onClick={() => setGifPickerOpen((prev) => !prev)}
+            onClick={() => setGifPickerOpen((previous) => !previous)}
+            aria-label={editLabels.select_gif}
+            title={editLabels.select_gif}
+            aria-expanded={gifPickerOpen}
             className="
               cursor-pointer rounded-md
               px-2 py-1
@@ -194,17 +217,19 @@ export function ReplyEditInput({
             variant="ghost"
             disabled={isPending}
             onClick={onCancel}
+            className="cursor-pointer disabled:cursor-not-allowed"
           >
-            Cancel
+            {editLabels.cancel}
           </Button>
 
           <Button
             type="button"
             size="sm"
-            disabled={isPending || (!content.trim() && !gifUrl)}
+            disabled={isPending || !hasContent}
             onClick={handleSave}
+            className="cursor-pointer disabled:cursor-not-allowed"
           >
-            {isPending ? "Saving..." : "Save"}
+            {isPending ? editLabels.saving : editLabels.save}
           </Button>
         </div>
       </div>

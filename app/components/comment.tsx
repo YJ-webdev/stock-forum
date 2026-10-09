@@ -9,6 +9,8 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
+
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { RiHeartFill } from "react-icons/ri";
@@ -23,12 +25,22 @@ import {
   restoreComment,
   type MarketPageComments,
 } from "@/app/actions/post";
+
 import { toggleCommentLike } from "@/app/actions/like";
 import { useCurrentUser } from "@/app/context/user-context";
 import type { PredictionDirection } from "@/generated/prisma/enums";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatTimeAgo } from "@/lib/utils/format-time-ago";
+
+import { resolveLanguage } from "@/lib/data/languages";
+import {
+  COMMENT_ACTION_LABELS,
+  COMMENT_VIEW_LABELS,
+  CONTENT_ACTION_LABELS,
+  CONTENT_RESULT_LABELS,
+  CONTENT_STATUS_LABELS,
+} from "@/lib/data/translations";
+
 import { isDeletedPredictionContent } from "@/lib/utils/is-deleted-prediction-content";
 
 import { CommentContent } from "./comment-content";
@@ -39,7 +51,8 @@ import { PredictionCommentInput } from "./prediction-comment-input";
 import { ReplyInput } from "./reply-input";
 import { ReplyItem } from "./reply-item";
 import type { GifResult } from "./gif-picker";
-import Link from "next/link";
+
+type ResolvedLanguage = ReturnType<typeof resolveLanguage>;
 
 type CommentCursor = NonNullable<
   Awaited<ReturnType<typeof getMarketComments>>["nextCursor"]
@@ -94,12 +107,60 @@ interface MarketCommentsProps {
   } | null;
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function formatCommentTime(date: Date | string, language: ResolvedLanguage) {
+  const value = new Date(date);
+  const timestamp = value.getTime();
+
+  if (!Number.isFinite(timestamp)) {
+    return "";
+  }
+
+  const seconds = Math.max(1, Math.floor((Date.now() - timestamp) / 1000));
+
+  const formatter = new Intl.RelativeTimeFormat(language, {
+    numeric: "auto",
+    style: "short",
+  });
+
+  if (seconds < 60) {
+    return formatter.format(-seconds, "second");
+  }
+
+  if (seconds < 3600) {
+    return formatter.format(-Math.floor(seconds / 60), "minute");
+  }
+
+  if (seconds < 86400) {
+    return formatter.format(-Math.floor(seconds / 3600), "hour");
+  }
+
+  const days = Math.floor(seconds / 86400);
+
+  if (days < 7) {
+    return formatter.format(-days, "day");
+  }
+
+  return new Intl.DateTimeFormat(language, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(value);
+}
+
 export function MarketComments({
   assetSymbol,
   prediction,
   currentSessionStartMs,
 }: MarketCommentsProps) {
   const user = useCurrentUser();
+  const language = resolveLanguage(user?.language);
+  const labels = COMMENT_VIEW_LABELS[language];
+  const actionLabels = COMMENT_ACTION_LABELS[language];
+
   const searchParams = useSearchParams();
 
   const targetCommentId = searchParams.get("comment");
@@ -122,9 +183,12 @@ export function MarketComments({
   const requestVersionRef = useRef(0);
   const knownCommentIdsRef = useRef(new Set<string>());
 
+  // Keep the latest fallback without refetching when language changes.
+  const errorFallbackRef = useRef(labels.action_failed);
+  errorFallbackRef.current = labels.action_failed;
+
   const viewerId = user?.id ?? null;
 
-  // Initial load and reset when the market, session, or viewer changes.
   useEffect(() => {
     const requestVersion = ++requestVersionRef.current;
     let cancelled = false;
@@ -150,9 +214,10 @@ export function MarketComments({
           currentSessionStartMs,
         );
 
-        if (!isCurrentRequest()) return;
+        if (!isCurrentRequest()) {
+          return;
+        }
 
-        // Preserve comments created while the initial request was loading.
         const previouslyKnownIds = new Set(knownCommentIdsRef.current);
         const resultIds = new Set(result.comments.map((comment) => comment.id));
 
@@ -172,10 +237,12 @@ export function MarketComments({
         setNextCursor(result.nextCursor);
         setTotalCount(result.totalCount + addedDuringLoadCount);
       } catch (error) {
-        if (!isCurrentRequest()) return;
+        if (!isCurrentRequest()) {
+          return;
+        }
 
         console.error("Failed to load comments:", error);
-        toast.error("Failed to load comments.");
+        toast.error(getErrorMessage(error, errorFallbackRef.current));
       } finally {
         if (isCurrentRequest()) {
           setCommentsLoading(false);
@@ -188,7 +255,6 @@ export function MarketComments({
     return () => {
       cancelled = true;
 
-      // Invalidate pending pagination requests as well.
       if (requestVersionRef.current === requestVersion) {
         requestVersionRef.current += 1;
       }
@@ -212,7 +278,9 @@ export function MarketComments({
         currentSessionStartMs,
       );
 
-      if (requestVersionRef.current !== requestVersion) return;
+      if (requestVersionRef.current !== requestVersion) {
+        return;
+      }
 
       for (const comment of result.comments) {
         knownCommentIdsRef.current.add(comment.id);
@@ -229,10 +297,12 @@ export function MarketComments({
 
       setNextCursor(result.nextCursor);
     } catch (error) {
-      if (requestVersionRef.current !== requestVersion) return;
+      if (requestVersionRef.current !== requestVersion) {
+        return;
+      }
 
       console.error("Failed to load more comments:", error);
-      toast.error("Failed to load more comments.");
+      toast.error(getErrorMessage(error, errorFallbackRef.current));
     } finally {
       if (requestVersionRef.current === requestVersion) {
         loadingMoreRef.current = false;
@@ -258,7 +328,9 @@ export function MarketComments({
   );
 
   const removeComment = useCallback((commentId: string) => {
-    if (!knownCommentIdsRef.current.delete(commentId)) return;
+    if (!knownCommentIdsRef.current.delete(commentId)) {
+      return;
+    }
 
     setComments((current) =>
       current.filter((comment) => comment.id !== commentId),
@@ -268,7 +340,9 @@ export function MarketComments({
   }, []);
 
   const addComment = useCallback((comment: MarketPageComments[number]) => {
-    if (knownCommentIdsRef.current.has(comment.id)) return;
+    if (knownCommentIdsRef.current.has(comment.id)) {
+      return;
+    }
 
     knownCommentIdsRef.current.add(comment.id);
 
@@ -301,30 +375,32 @@ export function MarketComments({
   }, [nextCursor, commentsLoading, isLoadingMore, loadMoreComments]);
 
   const submitVote = (comment: string, gif: GifResult | null) => {
-    if (!prediction || prediction.isPending) return;
+    if (!prediction || prediction.isPending) {
+      return;
+    }
 
     if (!user) {
-      toast.error("Log in to make your prediction.");
+      toast.error(actionLabels.login_required);
       return;
     }
 
     if (!user.nationality) {
-      toast.error("Please set your nationality before voting.");
+      toast.error(actionLabels.nationality_required);
       return;
     }
 
     if (prediction.isMarketOpen) {
-      toast.error("Voting is closed while the market is open.");
+      toast.error(labels.voting_closed);
       return;
     }
 
     if (prediction.selectedVote !== null) {
-      toast.error("You have already voted for this round.");
+      toast.error(labels.already_voted);
       return;
     }
 
     if (!direction) {
-      toast.error("Please choose Bull or Bear.");
+      toast.error(labels.choose_direction);
       return;
     }
 
@@ -334,12 +410,12 @@ export function MarketComments({
       !Number.isInteger(betAmount) ||
       (betAmount !== 0 && (betAmount < 50 || betAmount > 500))
     ) {
-      toast.error("Bet amount must be 0 or between 50 and 500 points.");
+      toast.error(labels.invalid_bet);
       return;
     }
 
     if (betAmount > 0 && betAmount > userPoints) {
-      toast.error("You do not have enough points.");
+      toast.error(actionLabels.insufficient_points);
       return;
     }
 
@@ -356,10 +432,12 @@ export function MarketComments({
     <section className="w-full">
       <div className="mb-3 flex items-center gap-2">
         <h2 className="text-[13px] text-zinc-600 dark:text-zinc-500">
-          Comment
+          {labels.heading}
         </h2>
 
-        <span className="jakarta text-sm text-zinc-500">{totalCount}</span>
+        <span className="jakarta text-sm text-zinc-500">
+          {totalCount.toLocaleString(language)}
+        </span>
       </div>
 
       {prediction && showPredictionInput ? (
@@ -394,11 +472,11 @@ export function MarketComments({
       <div className="space-y-3">
         {commentsLoading ? (
           <div className="pt-4 text-center text-sm text-zinc-400">
-            Loading comments...
+            {labels.loading}
           </div>
         ) : comments.length === 0 ? (
           <div className="pt-4 text-center text-sm text-zinc-500">
-            No comments yet.
+            {labels.empty}
           </div>
         ) : (
           comments.map((comment, index) => {
@@ -451,10 +529,19 @@ export function MarketComments({
               role="status"
               className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400"
             >
-              <span className="sr-only">Loading more comments...</span>
-              <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
-              <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
-              <span className="size-1 animate-bounce rounded-full bg-current" />
+              <span className="sr-only">{labels.loading_more}</span>
+              <span
+                aria-hidden="true"
+                className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.3s]"
+              />
+              <span
+                aria-hidden="true"
+                className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.15s]"
+              />
+              <span
+                aria-hidden="true"
+                className="size-1 animate-bounce rounded-full bg-current"
+              />
             </div>
           )}
         </div>
@@ -482,7 +569,6 @@ export interface CommentItemProps {
   targetCommentId: string | null;
   targetReplyId: string | null;
   shouldOpenReplies: boolean;
-
   highlightTargetComment: boolean;
 
   onUpdate: (commentId: string, updater: (comment: Comment) => Comment) => void;
@@ -502,11 +588,19 @@ export function CommentItem({
   marketname,
   marketSymbol,
 }: CommentItemProps) {
+  const language = resolveLanguage(currentUser?.language);
+  const labels = COMMENT_VIEW_LABELS[language];
+  const actionLabels = COMMENT_ACTION_LABELS[language];
+  const menuLabels = CONTENT_ACTION_LABELS[language];
+  const resultLabels = CONTENT_RESULT_LABELS[language];
+  const statusLabels = CONTENT_STATUS_LABELS[language];
+
   const commentRef = useRef<HTMLDivElement>(null);
 
   const [likedByMe, setLikedByMe] = useState(comment.likedByMe);
   const [likeCount, setLikeCount] = useState(comment.likeCount);
   const [isLikePending, startLikeTransition] = useTransition();
+
   const [showReplies, setShowReplies] = useState(false);
   const [replies, setReplies] = useState<MarketReply[]>([]);
   const [repliesLoaded, setRepliesLoaded] = useState(false);
@@ -522,19 +616,18 @@ export function CommentItem({
   const isAdmin = currentUser?.role === "ADMIN";
   const isAuthor = currentUser?.id === comment.author.id;
   const replyCount = comment.replyCount;
-  const username = comment.author.name ?? "Guest";
+  const username = comment.author.name ?? labels.guest;
+
   const isHighlighted =
     highlightTargetComment && targetCommentId === comment.id;
 
   const isDeletedPredictionComment =
     !!comment.prediction && isDeletedPredictionContent(comment.content);
 
-  // ---------------------------------------------------------------------------
-  // REPLIES
-  // ---------------------------------------------------------------------------
-
   const loadReplies = useCallback(async () => {
-    if (repliesLoading) return;
+    if (repliesLoading) {
+      return;
+    }
 
     try {
       setRepliesLoading(true);
@@ -549,40 +642,30 @@ export function CommentItem({
         replyCount: result.length,
       }));
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to load replies.",
-      );
+      toast.error(getErrorMessage(error, labels.action_failed));
     } finally {
       setRepliesLoading(false);
     }
-  }, [comment.id, repliesLoading, onUpdate]);
+  }, [comment.id, repliesLoading, onUpdate, labels.action_failed]);
 
   const toggleReplies = async () => {
     if (!showReplies && !repliesLoaded) {
       await loadReplies();
     }
 
-    setShowReplies((prev) => !prev);
+    setShowReplies((previous) => !previous);
   };
-
-  // ---------------------------------------------------------------------------
-  // THREAD EVENTS
-  // ---------------------------------------------------------------------------
 
   const threadEvents = {
     onMouseEnter: () => setThreadHovered(true),
-
     onMouseLeave: () => setThreadHovered(false),
-
     onClick: toggleReplies,
   };
 
-  // ---------------------------------------------------------------------------
-  // EFFECTS
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
-    if (!shouldOpenReplies) return;
+    if (!shouldOpenReplies) {
+      return;
+    }
 
     setShowReplies(true);
 
@@ -592,14 +675,18 @@ export function CommentItem({
   }, [shouldOpenReplies, repliesLoaded, loadReplies]);
 
   useEffect(() => {
-    if (targetCommentId !== comment.id) return;
+    if (targetCommentId !== comment.id) {
+      return;
+    }
 
-    requestAnimationFrame(() => {
+    const frame = requestAnimationFrame(() => {
       commentRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
     });
+
+    return () => cancelAnimationFrame(frame);
   }, [targetCommentId, comment.id]);
 
   useEffect(() => {
@@ -607,62 +694,58 @@ export function CommentItem({
     setLikeCount(comment.likeCount);
   }, [comment.likedByMe, comment.likeCount]);
 
-  // ---------------------------------------------------------------------------
-  // ACTIONS
-  // ---------------------------------------------------------------------------
-
   const handleEdit = () => {
     setIsEditing(true);
   };
 
   const handleDelete = async () => {
-    if (isDeleting) return;
+    if (isDeleting) {
+      return;
+    }
 
     try {
       setIsDeleting(true);
 
       const result = await deleteComment(comment.id);
 
-      if (result.action === "ALREADY_CONTENT_REMOVED") {
+      if (
+        result.action === "ALREADY_CONTENT_REMOVED" ||
+        result.action === "CONTENT_REMOVED"
+      ) {
         onUpdate(comment.id, (current) => ({
           ...current,
           content: result.content,
           editedAt: null,
         }));
 
-        toast.info("Comment already deleted. Your prediction remains.");
+        const options = {
+          description: labels.prediction_remains,
+        };
 
-        return;
-      }
-
-      if (result.action === "CONTENT_REMOVED") {
-        onUpdate(comment.id, (current) => ({
-          ...current,
-          content: result.content,
-          editedAt: null,
-        }));
-
-        toast.success("Comment deleted. Your prediction remains.");
+        if (result.action === "ALREADY_CONTENT_REMOVED") {
+          toast.info(resultLabels.deleted, options);
+        } else {
+          toast.success(resultLabels.deleted, options);
+        }
 
         return;
       }
 
       if (result.action === "DELETED") {
         onRemove(comment.id);
-
-        toast.success("Comment deleted.");
+        toast.success(resultLabels.deleted);
       }
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete comment.",
-      );
+      toast.error(getErrorMessage(error, labels.action_failed));
     } finally {
       setIsDeleting(false);
     }
   };
 
   const handleHideComment = async () => {
-    if (isModerating) return;
+    if (isModerating) {
+      return;
+    }
 
     try {
       setIsModerating(true);
@@ -674,11 +757,9 @@ export function CommentItem({
         moderatedAt: result.moderatedAt,
       }));
 
-      toast.success("Comment hidden.");
+      toast.success(resultLabels.hidden);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to hide comment.",
-      );
+      toast.error(getErrorMessage(error, labels.action_failed));
     } finally {
       setIsModerating(false);
     }
@@ -694,7 +775,9 @@ export function CommentItem({
   };
 
   const handleRestoreComment = async () => {
-    if (isModerating) return;
+    if (isModerating) {
+      return;
+    }
 
     try {
       setIsModerating(true);
@@ -706,11 +789,9 @@ export function CommentItem({
         moderatedAt: null,
       }));
 
-      toast.success("Comment restored.");
+      toast.success(resultLabels.restored);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to restore comment.",
-      );
+      toast.error(getErrorMessage(error, labels.action_failed));
     } finally {
       setIsModerating(false);
     }
@@ -718,11 +799,13 @@ export function CommentItem({
 
   const handleCommentLike = () => {
     if (!currentUser) {
-      toast.error("Log in to like comments.");
+      toast.error(actionLabels.login_required);
       return;
     }
 
-    if (isLikePending) return;
+    if (isLikePending) {
+      return;
+    }
 
     const previousLiked = likedByMe;
     const previousCount = likeCount;
@@ -739,19 +822,26 @@ export function CommentItem({
 
         setLikedByMe(result.liked);
         setLikeCount(result.likeCount);
+
+        toast.success(result.liked ? labels.like : labels.unlike);
       } catch (error) {
         setLikedByMe(previousLiked);
         setLikeCount(previousCount);
 
-        toast.error(
-          error instanceof Error ? error.message : "Could not update like.",
-        );
+        toast.error(getErrorMessage(error, labels.action_failed));
       }
     });
   };
 
   const handleReportComment = async () => {
-    if (isReporting) return;
+    if (isReporting) {
+      return;
+    }
+
+    if (!currentUser) {
+      toast.error(actionLabels.login_required);
+      return;
+    }
 
     try {
       setIsReporting(true);
@@ -759,34 +849,30 @@ export function CommentItem({
       const result = await reportComment(comment.id);
 
       if (result.success) {
-        toast.success("Comment reported.", {
-          description: "Thank you. An administrator will review it.",
-        });
+        toast.success(resultLabels.reported);
       }
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to report comment.",
-      );
+      toast.error(getErrorMessage(error, labels.action_failed));
     } finally {
       setIsReporting(false);
     }
   };
+
+  const replyCountLabel = labels.reply_count.replace(
+    "{count}",
+    replyCount.toLocaleString(language),
+  );
 
   return (
     <div
       ref={commentRef}
       id={`comment-${comment.id}`}
       className={`
-    relative scroll-mt-0
-    py-4
-   
-    transition-colors 
-    hover:bg-zinc-100/50
-    dark:hover:bg-zinc-800/50
-    -mx-4 px-4 -my-3
-
-    ${isHighlighted ? "bg-amber-50/80 dark:bg-amber-950/20" : ""}
-  `}
+      relative -mx-4 -my-3 scroll-mt-0 px-4 py-4
+      transition-colors
+      hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50
+      ${isHighlighted ? "bg-amber-50/80 dark:bg-amber-950/20" : ""}
+    `}
     >
       <div className="z-1 flex gap-3">
         <Avatar className="size-9 shrink-0">
@@ -799,7 +885,7 @@ export function CommentItem({
           <AvatarFallback className="text-sm">
             {comment.author.name
               ? comment.author.name.slice(0, 2).toUpperCase()
-              : "G"}
+              : labels.guest.slice(0, 1).toUpperCase()}
           </AvatarFallback>
         </Avatar>
 
@@ -810,41 +896,44 @@ export function CommentItem({
 
               {marketname && marketSymbol && (
                 <Link
-                  href={`/market/${marketSymbol}`}
+                  href={`/market/${encodeURIComponent(marketSymbol)}`}
                   className="flex items-center gap-2"
                 >
                   <span
-                    className={`
-                      rounded-full px-2 py-0.5
-                      text-[11px] font-medium border border-zinc-400 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200
-                    `}
+                    className="
+                    rounded-full border border-zinc-400
+                    px-2 py-0.5 text-[11px] font-medium
+                    text-zinc-800
+                    dark:border-zinc-600 dark:text-zinc-200
+                  "
                   >
                     {marketname}
                   </span>
                 </Link>
               )}
+
               {comment.prediction && (
                 <div className="flex items-center gap-2">
                   <span
                     className={`
-                      rounded-full px-2 py-0.5 border-[0.5px]
-                      text-[11px] font-medium
-                      ${
-                        comment.prediction.direction === "BULL"
-                          ? "bg-emerald-500/10 border-emerald-600/50 text-emerald-600 dark:text-emerald-400"
-                          : "bg-[#cf0000]/8 border-[#cf0000]/50 dark:bg-[#c10303]/20 text-[#c10303] dark:text-[#ec5a5a]"
-                      }
-                    `}
+                    rounded-full border-[0.5px] px-2 py-0.5
+                    text-[11px] font-medium
+                    ${
+                      comment.prediction.direction === "BULL"
+                        ? "border-emerald-600/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "border-[#cf0000]/50 bg-[#cf0000]/8 text-[#c10303] dark:bg-[#c10303]/20 dark:text-[#ec5a5a]"
+                    }
+                  `}
                   >
                     {comment.prediction.direction === "BULL"
-                      ? "Bullish"
-                      : "Bearish"}
+                      ? labels.bullish
+                      : labels.bearish}
                   </span>
                 </div>
               )}
 
               <span className="text-[13px] text-zinc-500">
-                {formatTimeAgo(comment.createdAt)}
+                {formatCommentTime(comment.createdAt, language)}
               </span>
 
               <ContentActionsMenu
@@ -866,7 +955,7 @@ export function CommentItem({
 
             {comment.moderatedAt ? (
               <p className="mt-1 text-[15px] italic text-zinc-400">
-                Comment hidden by moderation
+                {labels.hidden_comment}
               </p>
             ) : isEditing ? (
               <CommentEditInput
@@ -875,11 +964,7 @@ export function CommentItem({
                   isDeletedPredictionComment
                     ? {
                         type: "doc",
-                        content: [
-                          {
-                            type: "paragraph",
-                          },
-                        ],
+                        content: [{ type: "paragraph" }],
                       }
                     : comment.content
                 }
@@ -896,14 +981,16 @@ export function CommentItem({
               />
             ) : isDeletedPredictionComment ? (
               <p className="mt-1 text-[15px] italic text-zinc-400">
-                Comment deleted by user
+                {statusLabels.deleted_comment}
               </p>
             ) : (
               <div className="mt-0.5 flex items-baseline gap-1">
                 <CommentContent content={comment.content} />
 
                 {comment.editedAt && (
-                  <span className="text-[12px] text-zinc-400">(edited)</span>
+                  <span className="text-[12px] text-zinc-400">
+                    {labels.edited}
+                  </span>
                 )}
               </div>
             )}
@@ -914,19 +1001,20 @@ export function CommentItem({
                   type="button"
                   onClick={handleCommentLike}
                   disabled={isLikePending}
-                  aria-label={likedByMe ? "Unlike comment" : "Like comment"}
+                  aria-label={likedByMe ? labels.unlike : labels.like}
+                  title={likedByMe ? labels.unlike : labels.like}
                   aria-pressed={likedByMe}
                   className="
-                    flex cursor-pointer items-center gap-1.5
-                    text-sm text-zinc-400/50                     transition-colors
-                    hover:text-zinc-900
-                    disabled:cursor-default
-                    dark:text-zinc-600
-                    dark:hover:text-zinc-100
-                  "
+                  flex cursor-pointer items-center gap-1.5
+                  text-sm text-zinc-400 transition-colors
+                  hover:text-zinc-900
+                  disabled:cursor-default
+                  dark:text-zinc-500 dark:hover:text-zinc-100
+                "
                 >
                   <RiHeartFill
-                    className={`h-4 w-4 ${
+                    aria-hidden="true"
+                    className={`size-4 ${
                       likedByMe
                         ? "fill-current text-zinc-900 dark:text-zinc-100"
                         : ""
@@ -935,7 +1023,7 @@ export function CommentItem({
 
                   {likeCount > 0 && (
                     <span className="text-zinc-800 dark:text-zinc-200">
-                      {likeCount}
+                      {likeCount.toLocaleString(language)}
                     </span>
                   )}
                 </button>
@@ -944,20 +1032,19 @@ export function CommentItem({
                   type="button"
                   onClick={() => {
                     if (!currentUser) {
-                      toast.error("You must log in to reply.");
+                      toast.error(actionLabels.login_required);
                       return;
                     }
 
-                    setReplying((prev) => !prev);
+                    setReplying((previous) => !previous);
                   }}
                   className="
-    text-sm font-medium text-zinc-500
-    hover:text-zinc-900
-    dark:hover:text-zinc-200
-    cursor-pointer
-  "
+                  cursor-pointer text-sm font-medium text-zinc-400
+                  hover:text-zinc-900
+                  dark:text-zinc-500 dark:hover:text-zinc-200
+                "
                 >
-                  Reply
+                  {labels.reply}
                 </button>
               </div>
             )}
@@ -972,7 +1059,6 @@ export function CommentItem({
                 onReplyCreated={(newReply) => {
                   setReplying(false);
                   setShowReplies(true);
-
                   handleReplyCreated(newReply);
                 }}
               />
@@ -981,34 +1067,25 @@ export function CommentItem({
             {replyCount > 0 && (
               <button
                 type="button"
-                aria-label={showReplies ? "Collapse replies" : "Show replies"}
+                aria-label={
+                  showReplies ? labels.collapse_replies : labels.show_replies
+                }
                 {...threadEvents}
                 className="
-                  absolute
-                  -left-9.5
-                  top-9
-                  -bottom-2
-                  z-0
-                  w-5
-                  cursor-pointer
-                "
+                absolute -left-9.5 top-9 -bottom-2 z-0
+                w-5 cursor-pointer
+              "
               >
                 <span
                   className={`
-                    pointer-events-none
-                    absolute
-                    left-2
-                    top-0
-                    bottom-0
-                    w-px
-                    transition-colors
-
-                    ${
-                      threadHovered
-                        ? "bg-zinc-400 dark:bg-zinc-500"
-                        : "bg-zinc-200 dark:bg-zinc-700"
-                    }
-                  `}
+                  pointer-events-none absolute
+                  left-2 top-0 bottom-0 w-px transition-colors
+                  ${
+                    threadHovered
+                      ? "bg-zinc-400 dark:bg-zinc-500"
+                      : "bg-zinc-200 dark:bg-zinc-700"
+                  }
+                `}
                 />
               </button>
             )}
@@ -1018,36 +1095,24 @@ export function CommentItem({
             <div className="relative mt-5">
               <button
                 type="button"
-                aria-label="Show replies"
+                aria-label={labels.show_replies}
                 {...threadEvents}
                 className="
-                    absolute
-                    -left-9.5
-                    -top-3
-                    z-0
-                    h-6
-                    w-10
-                    cursor-pointer
-                  "
+                absolute -left-9.5 -top-3 z-0
+                h-6 w-10 cursor-pointer
+              "
               >
                 <span
                   className={`
-                      pointer-events-none
-                      absolute
-                      left-2
-                      top-0
-                      h-6
-                      w-8
-                      rounded-bl-xl
-                      border-b border-l
-                      transition-colors
-
-                      ${
-                        threadHovered
-                          ? "border-zinc-400 dark:border-zinc-500"
-                          : "border-zinc-200 dark:border-zinc-700"
-                      }
-                    `}
+                  pointer-events-none absolute left-2 top-0
+                  h-6 w-8 rounded-bl-xl border-b border-l
+                  transition-colors
+                  ${
+                    threadHovered
+                      ? "border-zinc-400 dark:border-zinc-500"
+                      : "border-zinc-200 dark:border-zinc-700"
+                  }
+                `}
                 />
               </button>
 
@@ -1056,49 +1121,35 @@ export function CommentItem({
                 onClick={toggleReplies}
                 disabled={repliesLoading}
                 className="
-                    -translate-x-2
-                    flex items-center gap-2
-                    rounded-xl
-                    cursor-pointer
-                  
-                    px-2
-                    text-sm font-semibold
-                    text-zinc-600
-                    hover:text-zinc-900
-                    disabled:cursor-default
-                
-                    dark:text-zinc-400
-                    dark:hover:text-zinc-200
-                  "
+                flex -translate-x-2 cursor-pointer items-center gap-2
+                rounded-xl px-2 text-sm font-semibold text-zinc-600
+                hover:text-zinc-900 disabled:cursor-default
+                dark:text-zinc-400 dark:hover:text-zinc-200
+              "
               >
-                <ChevronDown className="size-4" />
+                <ChevronDown className="size-4" aria-hidden="true" />
 
-                {repliesLoading
-                  ? "Loading..."
-                  : `${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
+                {repliesLoading ? labels.loading_replies : replyCountLabel}
               </button>
             </div>
           )}
 
           {showReplies && repliesLoading && (
-            <div className="py-3 text-sm text-zinc-400">Loading replies...</div>
+            <div className="py-3 text-sm text-zinc-400">
+              {labels.loading_replies}
+            </div>
           )}
 
           {showReplies && !repliesLoading && replies.length > 0 && (
             <div className="relative mt-4 pb-3">
               <button
                 type="button"
-                aria-label="Collapse replies"
+                aria-label={labels.collapse_replies}
                 {...threadEvents}
                 className="
-                    absolute
-                    -left-9.5
-                    -top-18
-                    z-20
-                    h-16
-                    w-5
-                    cursor-pointer
-                  "
+                absolute -left-9.5 -top-18 z-20
+                h-16 w-5 cursor-pointer
+              "
               />
 
               <div className="space-y-6 py-3 pl-0">
@@ -1111,72 +1162,50 @@ export function CommentItem({
                       <div key={reply.id} className="relative">
                         <button
                           type="button"
-                          aria-label="Collapse replies"
+                          aria-label={labels.collapse_replies}
                           {...threadEvents}
                           className={`
-                                absolute
-                                -left-9.5
-                                -top-6
-                                z-0
-                                w-5
-                                cursor-pointer
-
-                                ${isLastReply ? "h-7" : "-bottom-1"}
-                              `}
+                          absolute -left-9.5 -top-6 z-0
+                          w-5 cursor-pointer
+                          ${isLastReply ? "h-7" : "-bottom-1"}
+                        `}
                         >
                           <span
                             className={`
-                                  pointer-events-none
-                                  absolute
-                                  left-2
-                                  top-0
-                                  bottom-0
-                                  w-px
-                                  transition-colors
-
-                                  ${
-                                    threadHovered
-                                      ? "bg-zinc-400 dark:bg-zinc-500"
-                                      : "bg-zinc-200 dark:bg-zinc-700"
-                                  }
-                                `}
+                            pointer-events-none absolute
+                            left-2 top-0 bottom-0 w-px transition-colors
+                            ${
+                              threadHovered
+                                ? "bg-zinc-400 dark:bg-zinc-500"
+                                : "bg-zinc-200 dark:bg-zinc-700"
+                            }
+                          `}
                           />
                         </button>
 
                         <button
                           type="button"
-                          aria-label="Collapse replies"
+                          aria-label={labels.collapse_replies}
                           {...threadEvents}
                           className="
-                                absolute
-                                -left-9.5
-                                top-0
-                                z-0
-                                h-4
-                                w-10
-                                cursor-pointer
-                              "
+                          absolute -left-9.5 top-0 z-0
+                          h-4 w-10 cursor-pointer
+                        "
                         >
                           <span
                             className={`
-                                  pointer-events-none
-                                  absolute
-                                  left-2
-                                  top-0
-                                  h-4
-                                  w-8
-                                  rounded-bl-xl
-                                  border-b border-l
-                                  transition-colors
-
-                                  ${
-                                    threadHovered
-                                      ? "border-zinc-400 dark:border-zinc-500"
-                                      : "border-zinc-200 dark:border-zinc-700"
-                                  }
-                                `}
+                            pointer-events-none absolute left-2 top-0
+                            h-4 w-8 rounded-bl-xl border-b border-l
+                            transition-colors
+                            ${
+                              threadHovered
+                                ? "border-zinc-400 dark:border-zinc-500"
+                                : "border-zinc-200 dark:border-zinc-700"
+                            }
+                          `}
                           />
                         </button>
+
                         <ReplyItem
                           reply={reply}
                           replies={replies}

@@ -3,9 +3,8 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-// -----------------------------------------------------------------------------
-// CONSTANTS
-// -----------------------------------------------------------------------------
+import { resolveLanguage } from "@/lib/data/languages";
+import { COMMENT_ACTION_LABELS } from "@/lib/data/translations";
 
 const SOCIAL_NOTIFICATION_TYPES = [
   "COMMENT_LIKED",
@@ -13,16 +12,6 @@ const SOCIAL_NOTIFICATION_TYPES = [
   "COMMENT_REPLIED",
   "REPLY_REPLIED",
 ] as const;
-
-// -----------------------------------------------------------------------------
-// HAS UNREAD NOTIFICATIONS
-//
-// Used by the navbar bell.
-//
-// We only need to know whether ONE unread notification exists.
-// findFirst() is preferable to count() here because the database can stop
-// as soon as it finds the first matching row.
-// -----------------------------------------------------------------------------
 
 export async function hasUnreadNotifications() {
   const session = await auth();
@@ -36,36 +25,11 @@ export async function hasUnreadNotifications() {
       userId: session.user.id,
       readAt: null,
     },
-
-    select: {
-      id: true,
-    },
+    select: { id: true },
   });
 
   return notification !== null;
 }
-
-// -----------------------------------------------------------------------------
-// GET NOTIFICATIONS
-//
-// Keep this query intentionally small.
-//
-// The notification panel currently needs:
-//
-// - notification metadata
-// - comment/reply content for preview
-// - one market symbol for navigation
-// - prediction symbol for navigation
-//
-// It does NOT need:
-// - actor profile
-// - asset name
-// - asset displaySymbol
-// - prediction direction
-// - prediction points
-// - prediction prices
-// - prediction status
-// -----------------------------------------------------------------------------
 
 export async function getNotifications() {
   const session = await auth();
@@ -75,27 +39,18 @@ export async function getNotifications() {
     return [];
   }
 
-  // Delete all notifications older than 30 days, including unread ones.
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   await prisma.notification.deleteMany({
     where: {
       userId,
-      createdAt: {
-        lt: cutoff,
-      },
+      createdAt: { lt: cutoff },
     },
   });
 
-  return prisma.notification.findMany({
-    where: {
-      userId,
-    },
-
-    orderBy: {
-      createdAt: "desc",
-    },
-
+  const notifications = await prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
     take: 30,
 
     select: {
@@ -106,44 +61,39 @@ export async function getNotifications() {
       readAt: true,
       createdAt: true,
 
-      // COMMENT
-      commentId: true,
+      actor: {
+        select: {
+          name: true,
+        },
+      },
 
+      commentId: true,
       comment: {
         select: {
           content: true,
-
           assets: {
             take: 1,
-
             select: {
               asset: {
-                select: {
-                  symbol: true,
-                },
+                select: { symbol: true },
               },
             },
           },
         },
       },
 
-      // REPLY
       replyId: true,
-
       reply: {
         select: {
           content: true,
-
           comment: {
             select: {
+              id: true,
               assets: {
                 take: 1,
-
                 select: {
                   asset: {
-                    select: {
-                      symbol: true,
-                    },
+                    select: { symbol: true },
                   },
                 },
               },
@@ -152,41 +102,43 @@ export async function getNotifications() {
         },
       },
 
-      // PREDICTION
       prediction: {
         select: {
           symbol: true,
+          referenceClose: true,
+          settlementClose: true,
         },
       },
     },
   });
+  return notifications.map((notification) => ({
+    ...notification,
+    prediction: notification.prediction
+      ? {
+          ...notification.prediction,
+          referenceClose: Number(notification.prediction.referenceClose),
+          settlementClose:
+            notification.prediction.settlementClose === null
+              ? null
+              : Number(notification.prediction.settlementClose),
+        }
+      : null,
+  }));
 }
-
-// -----------------------------------------------------------------------------
-// CLIENT TYPE
-// -----------------------------------------------------------------------------
-
-export type NotificationItem = Awaited<
-  ReturnType<typeof getNotifications>
->[number];
-
-// -----------------------------------------------------------------------------
-// CLIENT TYPE
-// -----------------------------------------------------------------------------
 
 export type MyNotification = Awaited<
   ReturnType<typeof getNotifications>
 >[number];
 
-// -----------------------------------------------------------------------------
-// MARK ONE AS READ
-// -----------------------------------------------------------------------------
+export type NotificationItem = MyNotification;
 
 export async function markNotificationAsRead(notificationId: string) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   await prisma.notification.updateMany({
@@ -195,22 +147,17 @@ export async function markNotificationAsRead(notificationId: string) {
       userId: session.user.id,
       readAt: null,
     },
-
-    data: {
-      readAt: new Date(),
-    },
+    data: { readAt: new Date() },
   });
 }
-
-// -----------------------------------------------------------------------------
-// MARK ALL AS READ
-// -----------------------------------------------------------------------------
 
 export async function markAllNotificationsAsRead() {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   await prisma.notification.updateMany({
@@ -218,54 +165,41 @@ export async function markAllNotificationsAsRead() {
       userId: session.user.id,
       readAt: null,
     },
-
-    data: {
-      readAt: new Date(),
-    },
+    data: { readAt: new Date() },
   });
 }
 
-// -----------------------------------------------------------------------------
-// DELETE ONE SOCIAL NOTIFICATION
-// -----------------------------------------------------------------------------
-
 export async function deleteSocialNotification(notificationId: string) {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   await prisma.notification.deleteMany({
     where: {
       id: notificationId,
       userId: session.user.id,
-
-      type: {
-        in: [...SOCIAL_NOTIFICATION_TYPES],
-      },
+      type: { in: [...SOCIAL_NOTIFICATION_TYPES] },
     },
   });
 }
 
-// -----------------------------------------------------------------------------
-// DELETE ALL SOCIAL NOTIFICATIONS
-// -----------------------------------------------------------------------------
-
 export async function deleteAllSocialNotifications() {
   const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
   if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(labels.login_required);
   }
 
   await prisma.notification.deleteMany({
     where: {
       userId: session.user.id,
-
-      type: {
-        in: [...SOCIAL_NOTIFICATION_TYPES],
-      },
+      type: { in: [...SOCIAL_NOTIFICATION_TYPES] },
     },
   });
 }
@@ -273,7 +207,9 @@ export async function deleteAllSocialNotifications() {
 export async function getUnreadNotificationCount(): Promise<number> {
   const session = await auth();
 
-  if (!session?.user?.id) return 0;
+  if (!session?.user?.id) {
+    return 0;
+  }
 
   return prisma.notification.count({
     where: {
