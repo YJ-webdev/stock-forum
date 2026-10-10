@@ -11,7 +11,10 @@ import { createComment } from "@/app/actions/post";
 import { useCurrentUser } from "@/app/context/user-context";
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { resolveLanguage } from "@/lib/data/languages";
-import { HOME_COMMUNITY_LABELS } from "@/lib/data/translations";
+import {
+  HOME_COMMUNITY_LABELS,
+  HOME_COMPOSER_LABELS,
+} from "@/lib/data/translations";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -62,9 +65,10 @@ export function HomeCommentComposer({
   onPublished,
 }: HomeCommentComposerProps) {
   const user = useCurrentUser();
+
   const language = resolveLanguage(user?.language);
   const labels = HOME_COMMUNITY_LABELS[language];
-  const isKorean = language === "ko";
+  const copy = HOME_COMPOSER_LABELS[language];
 
   const editorId = useId();
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -88,23 +92,6 @@ export function HomeCommentComposer({
 
   const hasContent = Boolean(text.trim() || selectedGif);
   const canPublish = Boolean(selectedMarket && hasContent && !submitting);
-
-  const copy = {
-    market: isKorean ? "시장 선택" : "Select a market",
-    cancel: isKorean ? "취소" : "Cancel",
-    publish: isKorean ? "게시" : "Post",
-    publishing: isKorean ? "게시 중…" : "Posting…",
-    login: isKorean ? "로그인 후 작성해주세요." : "Log in to share your view.",
-    success: isKorean ? "게시했어요." : "Your comment was posted.",
-    failed: isKorean ? "게시하지 못했어요." : "Failed to post your comment.",
-    selectMarket: isKorean ? "시장을 선택해주세요." : "Please select a market.",
-    writeComment: isKorean
-      ? "의견을 입력하거나 GIF를 선택해주세요."
-      : "Please write a comment or select a GIF.",
-    selectGif: isKorean ? "GIF 선택" : "Select a GIF",
-    removeGif: isKorean ? "GIF 삭제" : "Remove GIF",
-    gifDraft: isKorean ? "GIF가 첨부된 의견" : "Comment with a GIF",
-  };
 
   useEffect(() => {
     if (expanded) {
@@ -169,12 +156,12 @@ export function HomeCommentComposer({
     }
 
     if (!selectedMarket) {
-      toast.error(copy.selectMarket);
+      toast.error(copy.select_market);
       return;
     }
 
     if (!hasContent) {
-      toast.error(copy.writeComment);
+      toast.error(copy.write_comment);
       inputRef.current?.focus();
       return;
     }
@@ -217,7 +204,7 @@ export function HomeCommentComposer({
   }
 
   return (
-    <div className="mt-8 mb-5">
+    <div dir={language === "ar" ? "rtl" : "ltr"} className="mt-8 mb-5">
       <div className="flex items-start gap-3">
         <Avatar className="size-9 shrink-0">
           <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? ""} />
@@ -253,7 +240,7 @@ export function HomeCommentComposer({
             >
               <span className="truncate">
                 {text.trim() ||
-                  (selectedGif ? copy.gifDraft : labels.share_view)}
+                  (selectedGif ? copy.gif_draft : labels.share_view)}
               </span>
 
               <SquarePen
@@ -334,15 +321,13 @@ export function HomeCommentComposer({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={selectedGif.src}
-                    alt={selectedGif.title || "GIF"}
-                    className="
-                      max-h-60 max-w-full rounded-xl object-contain
-                    "
+                    alt={selectedGif.title || copy.gif_draft}
+                    className="max-h-60 max-w-full rounded-xl object-contain"
                   />
 
                   <button
                     type="button"
-                    aria-label={copy.removeGif}
+                    aria-label={copy.remove_gif}
                     disabled={submitting}
                     onClick={() => setSelectedGif(null)}
                     className="
@@ -366,7 +351,7 @@ export function HomeCommentComposer({
                     type="button"
                     disabled={submitting}
                     onClick={() => setGifPickerOpen((open) => !open)}
-                    aria-label={copy.selectGif}
+                    aria-label={copy.select_gif}
                     aria-expanded={gifPickerOpen}
                     className="
                       h-8.5 cursor-pointer rounded-md px-2
@@ -418,7 +403,7 @@ export function HomeCommentComposer({
                     disabled={!canPublish}
                     aria-busy={submitting}
                     className="
-                      inline-flex h-9 cursor-pointer items-center
+                      inline-flex h-8.5 cursor-pointer items-center
                       justify-center rounded-full bg-zinc-900
                       px-5 text-sm font-medium text-white
                       transition-colors hover:bg-zinc-700
