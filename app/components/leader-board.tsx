@@ -70,7 +70,7 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
               >
                 <AvatarImage src={trader.image ?? undefined} alt="" />
 
-                <AvatarFallback className="text-[11px] font-semibold">
+                <AvatarFallback className="text-[22px] bg-olive-500 text-white font-normal">
                   {getInitials(trader.name)}
                 </AvatarFallback>
               </Avatar>

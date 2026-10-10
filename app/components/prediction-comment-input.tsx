@@ -127,8 +127,8 @@ export function PredictionCommentInput({
           className="object-cover"
         />
 
-        <AvatarFallback className="text-sm">
-          {currentUser?.name ? currentUser.name.slice(0, 2).toUpperCase() : "G"}
+        <AvatarFallback className="text-lg bg-olive-500 text-white font-normal">
+          {currentUser?.name ? currentUser.name.slice(0, 1).toUpperCase() : "G"}
         </AvatarFallback>
       </Avatar>
 

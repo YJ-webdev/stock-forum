@@ -330,11 +330,6 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
       return;
     }
 
-    if (!comment.trim() && !gif) {
-      toast.error("Write or generate a prediction comment.");
-      return;
-    }
-
     requestInFlight.current = true;
     setIsSubmitting(true);
 
@@ -379,7 +374,8 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
       const result = await createComment({
         botUserId: selectedBot.id,
         assetSymbols: [selectedMarket.symbol],
-        content: buildCommentContent(comment, gif),
+        content:
+          comment.trim() || gif ? buildCommentContent(comment, gif) : null,
         prediction: {
           direction,
           pointsBet: betAmount,
@@ -403,7 +399,11 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
 
       resetDraft();
 
-      toast.success("Bot prediction and comment submitted.");
+      toast.success(
+        comment.trim() || gif
+          ? "Bot prediction and comment submitted."
+          : "Bot prediction submitted.",
+      );
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {

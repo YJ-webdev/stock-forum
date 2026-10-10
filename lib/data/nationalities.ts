@@ -169,6 +169,7 @@ export const NATIONALITIES = [
   { value: "SE", label: "Sweden" },
   { value: "CH", label: "Switzerland" },
   { value: "SY", label: "Syria" },
+  { value: "TW", label: "Taiwan" },
   { value: "TJ", label: "Tajikistan" },
   { value: "TZ", label: "Tanzania" },
   { value: "TH", label: "Thailand" },

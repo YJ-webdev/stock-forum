@@ -208,7 +208,7 @@ export function CreateBotUser({
                     alt={name || "Bot"}
                     className="object-cover"
                   />
-                  <AvatarFallback className="text-lg">
+                  <AvatarFallback className="text-[22px] bg-olive-500 text-white font-normal">
                     {(name.trim() || "Bot").slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

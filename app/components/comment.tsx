@@ -901,9 +901,9 @@ export function CommentItem({
             className="object-cover"
           />
 
-          <AvatarFallback className="text-sm">
+          <AvatarFallback className="text-[22px] text-white bg-olive-500 font-normal">
             {comment.author.name
-              ? comment.author.name.slice(0, 2).toUpperCase()
+              ? comment.author.name.slice(0, 1).toUpperCase()
               : labels.guest.slice(0, 1).toUpperCase()}
           </AvatarFallback>
         </Avatar>
