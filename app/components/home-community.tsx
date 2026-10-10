@@ -338,13 +338,11 @@ export function HomeCommunity({
 
       <HomeCommentComposer
         defaultSymbol={assetSymbol}
-        onPublished={(symbol) => {
-          // Invalidate any older feed request.
+        onPublished={(postedSymbol) => {
           requestVersionRef.current += 1;
 
-          // Keep "All markets"; otherwise show the posted market.
           if (assetSymbol !== null) {
-            setAssetSymbol(symbol);
+            setAssetSymbol(postedSymbol);
           }
 
           setSort("latest");
