@@ -1243,6 +1243,14 @@ export async function getLatestMarketNews(
   return getCachedLatestMarketNews(symbol);
 }
 
+// -----------------------------------------------------------------------------
+// MARKET NEWS PAGE
+//
+// Used on:
+//
+// /[symbol]/news
+// -----------------------------------------------------------------------------
+
 export async function getMarketNews(
   symbol: string,
   limit = NEWS_PAGE_LIMIT,
@@ -1264,4 +1272,98 @@ export async function getMarketNews(
 
     take: limit,
   });
+}
+
+// -----------------------------------------------------------------------------
+// GLOBAL MARKET NEWS
+//
+// Used on:
+//
+// /news
+//
+// IMPORTANT:
+//
+// This does NOT call Marketaux.
+//
+// It only reads news already cached in our database.
+// -----------------------------------------------------------------------------
+
+export interface GlobalMarketNewsItem extends MarketNewsItem {
+  market: {
+    symbol: string;
+    displaySymbol: string | null;
+    name: string;
+    category: string;
+  };
+}
+
+export async function getGlobalMarketNews(
+  limit = 30,
+): Promise<GlobalMarketNewsItem[]> {
+  return prisma.marketNews.findMany({
+    where: {
+      publishedAt: {
+        gte: sevenDaysAgo(),
+      },
+
+      /**
+       * Keep the existing global market feed limited
+       * to regional market categories.
+       *
+       * Crypto / Currency / commodity can still have
+       * their own /[symbol]/news pages.
+       *
+       * Remove this market.category filter later if you
+       * want /news to mix every asset class together.
+       */
+      market: {
+        category: {
+          in: ["America", "Asia", "Europe"],
+        },
+      },
+    },
+
+    select: {
+      id: true,
+      marketSymbol: true,
+
+      title: true,
+      summary: true,
+      imageUrl: true,
+
+      source: true,
+      sourceIcon: true,
+
+      url: true,
+      publishedAt: true,
+
+      market: {
+        select: {
+          symbol: true,
+          displaySymbol: true,
+          name: true,
+          category: true,
+        },
+      },
+    },
+
+    orderBy: {
+      publishedAt: "desc",
+    },
+
+    take: limit,
+  });
+}
+
+// -----------------------------------------------------------------------------
+// HOME MARKET HEADLINES
+// -----------------------------------------------------------------------------
+
+export interface HomeMarketHeadline {
+  id: string;
+  title: string;
+  summary: string;
+  source: string;
+  url: string;
+  publishedAt: string;
 }
