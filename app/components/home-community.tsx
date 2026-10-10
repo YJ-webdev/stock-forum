@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 
 import { CommentItem } from "./comment";
+import { HomeCommentComposer } from "./home-comment-composer";
 
 interface HomeCommunityProps {
   initialComments: HomeComments;
@@ -252,7 +253,7 @@ export function HomeCommunity({
 
   return (
     <div className="outfit w-full min-w-0">
-      <div className="mt-3.5 flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         {[
           {
             symbol: null,
@@ -299,25 +300,6 @@ export function HomeCommunity({
           );
         })}
 
-        <button
-          type="button"
-          className="
-      inline-flex h-8.5 shrink-0 cursor-pointer
-      items-center justify-center gap-1 whitespace-nowrap
-      rounded-full border border-zinc-300 bg-zinc-100
-      px-3.5 text-sm font-medium text-zinc-500
-      transition-colors hover:border-zinc-400
-      focus-visible:outline-none
-      focus-visible:ring-2
-      focus-visible:ring-zinc-400
-      dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300
-      dark:hover:border-zinc-600
-    "
-        >
-          <Plus className="size-4" aria-hidden="true" />
-          Share your view
-        </button>
-
         <div className="ml-auto shrink-0">
           <Select
             value={sort}
@@ -352,6 +334,26 @@ export function HomeCommunity({
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <HomeCommentComposer
+        defaultSymbol={assetSymbol}
+        onPublished={(symbol) => {
+          // Invalidate any older feed request.
+          requestVersionRef.current += 1;
+
+          // Keep "All markets"; otherwise show the posted market.
+          if (assetSymbol !== null) {
+            setAssetSymbol(symbol);
+          }
+
+          setSort("latest");
+          setReloadKey((current) => current + 1);
+        }}
+      />
+
+      <div aria-busy={loading} className="mt-7">
+        {/* 기존 댓글 목록 그대로 */}
       </div>
 
       <div aria-busy={loading} className="mt-7">
