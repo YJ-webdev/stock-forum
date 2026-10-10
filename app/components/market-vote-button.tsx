@@ -41,7 +41,7 @@ interface VoteState {
 }
 
 const VOTE_BUTTON_CLASS = `
-  inline-flex h-8 min-w-0 flex-1 cursor-pointer
+  inline-flex h-8.5 min-w-0 flex-1 cursor-pointer
   items-center justify-center gap-1.5
   rounded-full px-3 text-[14px] font-normal text-white transition-colors
   focus-visible:outline-none
