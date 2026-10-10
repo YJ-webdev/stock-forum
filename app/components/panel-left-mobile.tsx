@@ -62,18 +62,30 @@ export default function PanelLeftMobile({
       <div onClick={handlePanelClick} className="h-full w-full">
         <ScrollArea className="h-full">
           <div className="flex min-h-[calc(100dvh-72px)] flex-col py-3">
-            <section aria-labelledby={boardsHeadingId}>
+            <section aria-labelledby={boardsHeadingId} className="mt-1">
               <h2 id={boardsHeadingId} className="sr-only">
                 {labels.popular_boards}
               </h2>
+              <p
+                aria-hidden="true"
+                className="mb-2 truncate px-5 pt-0.5 text-xs font-normal tracking-wider text-muted-foreground/50"
+              >
+                {labels.popular_boards}
+              </p>
 
               <PopularBoards boards={popularBoards} />
             </section>
 
-            <section aria-labelledby={commentsHeadingId} className="mt-3 p-4">
+            <section aria-labelledby={commentsHeadingId} className="mt-2 p-4">
               <h2 id={commentsHeadingId} className="sr-only">
                 {labels.most_liked_comments}
               </h2>
+              <p
+                aria-hidden="true"
+                className="mb-2 truncate text-xs font-normal tracking-wider text-muted-foreground/50"
+              >
+                {labels.most_liked_comments}
+              </p>
 
               {comments.length > 0 ? (
                 <MostLikedComments comments={comments} />

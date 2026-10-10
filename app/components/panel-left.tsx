@@ -43,7 +43,7 @@ export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
           <PopularBoards boards={popularBoards} />
         </section>
 
-        <section aria-labelledby={commentsHeadingId} className="mt-3 p-4">
+        <section aria-labelledby={commentsHeadingId} className="mt-2 p-4">
           <h2 id={commentsHeadingId} className="sr-only">
             {labels.most_liked_comments}
           </h2>
