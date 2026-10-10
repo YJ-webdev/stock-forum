@@ -72,13 +72,16 @@ const MANAGE_BUTTON_CLASS =
   "dark:border-zinc-700 dark:bg-zinc-800/20 dark:text-zinc-400";
 
 const SCROLL_BUTTON_CLASS =
-  "absolute top-1/2 flex size-9 -translate-y-1/2 " +
-  "items-center justify-center rounded-full " +
-  "border border-zinc-200 bg-white shadow-sm " +
+  "group/scroll absolute top-1/2 z-20 flex -translate-y-1/2 " +
+  "items-center justify-center rounded-full p-2 " +
   "opacity-0 transition-opacity duration-150 " +
   "group-hover/markets:opacity-100! focus-visible:opacity-100! " +
   "focus-visible:outline-none focus-visible:ring-2 " +
-  "focus-visible:ring-zinc-400 " +
+  "focus-visible:ring-zinc-400";
+
+const SCROLL_BUTTON_FACE_CLASS =
+  "flex size-9 items-center justify-center rounded-full " +
+  "border border-zinc-200 bg-white shadow-sm transition-colors " +
   "dark:border-zinc-700 dark:bg-zinc-900";
 
 export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
@@ -440,27 +443,27 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 if (canScrollLeft) scrollByCard(-1);
               }}
               className={`
-                ${SCROLL_BUTTON_CLASS} left-2
-                ${
-                  canScrollLeft
-                    ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    : "cursor-default text-zinc-300 dark:text-zinc-600"
-                }
-              `}
+    ${SCROLL_BUTTON_CLASS} left-0
+    ${canScrollLeft ? "cursor-pointer" : "cursor-default"}
+  `}
             >
-              {canScrollLeft ? (
-                <ChevronLeft
-                  className="size-5 text-zinc-800 dark:text-zinc-300"
-                  strokeWidth={1.75}
-                  aria-hidden="true"
-                />
-              ) : (
-                <ChevronFirst
-                  className="size-5"
-                  strokeWidth={1.75}
-                  aria-hidden="true"
-                />
-              )}
+              <span
+                aria-hidden="true"
+                className={`
+      ${SCROLL_BUTTON_FACE_CLASS}
+      ${
+        canScrollLeft
+          ? "text-zinc-800 group-hover/scroll:bg-zinc-100 dark:text-zinc-300 dark:group-hover/scroll:bg-zinc-800"
+          : "text-zinc-300 dark:text-zinc-600"
+      }
+    `}
+              >
+                {canScrollLeft ? (
+                  <ChevronLeft className="size-5" strokeWidth={1.75} />
+                ) : (
+                  <ChevronFirst className="size-5" strokeWidth={1.75} />
+                )}
+              </span>
             </button>
 
             <button
@@ -474,27 +477,27 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 if (canScrollRight) scrollByCard(1);
               }}
               className={`
-                ${SCROLL_BUTTON_CLASS} right-2
-                ${
-                  canScrollRight
-                    ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    : "cursor-default text-zinc-300 dark:text-zinc-600"
-                }
-              `}
+    ${SCROLL_BUTTON_CLASS} right-0
+    ${canScrollRight ? "cursor-pointer" : "cursor-default"}
+  `}
             >
-              {canScrollRight ? (
-                <ChevronRight
-                  className="size-5 text-zinc-800 dark:text-zinc-300"
-                  strokeWidth={1.75}
-                  aria-hidden="true"
-                />
-              ) : (
-                <ChevronLast
-                  className="size-5"
-                  strokeWidth={1.75}
-                  aria-hidden="true"
-                />
-              )}
+              <span
+                aria-hidden="true"
+                className={`
+      ${SCROLL_BUTTON_FACE_CLASS}
+      ${
+        canScrollRight
+          ? "text-zinc-800 group-hover/scroll:bg-zinc-100 dark:text-zinc-300 dark:group-hover/scroll:bg-zinc-800"
+          : "text-zinc-300 dark:text-zinc-600"
+      }
+    `}
+              >
+                {canScrollRight ? (
+                  <ChevronRight className="size-5" strokeWidth={1.75} />
+                ) : (
+                  <ChevronLast className="size-5" strokeWidth={1.75} />
+                )}
+              </span>
             </button>
           </>
         )}

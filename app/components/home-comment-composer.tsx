@@ -300,8 +300,9 @@ export function HomeCommentComposer({
                     </SelectTrigger>
 
                     <SelectContent
+                      align="start"
                       className="
-                        max-h-72 rounded-xl border-zinc-200 bg-white
+                        max-h-72 w-full rounded-xl border-zinc-200 bg-white
                         dark:border-zinc-700 dark:bg-zinc-900
                       "
                     >
