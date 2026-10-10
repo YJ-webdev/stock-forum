@@ -47,6 +47,7 @@ enum ContentVisibility {
 
 
 model User {
+   isBot Boolean @default(false)
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique

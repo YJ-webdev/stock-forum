@@ -1,9 +1,8 @@
+import { getBotUsers } from "@/app/actions/user-bot";
+import { UserBot } from "@/app/components/admin/user-bot";
+
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-
-import { getAiBriefCountries } from "@/app/actions/ai-country-brief";
-import { AiBriefCountryManager } from "@/app/components/ai-brief-country-manager";
-import { AiBriefTest } from "./_components/ai-brief-test";
 
 export default async function AdminPage() {
   const session = await auth();
@@ -12,13 +11,11 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  const countries = await getAiBriefCountries();
+  const bots = await getBotUsers();
 
   return (
-    <main className="mx-auto w-full max-w-4xl space-y-8 px-4 ">
-      <AiBriefCountryManager countries={countries} />
-
-      <AiBriefTest />
+    <main className="mx-auto w-full max-w-4xl space-y-8 px-4">
+      <UserBot bots={bots} currentUser={session.user} />
     </main>
   );
 }

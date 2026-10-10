@@ -17,6 +17,7 @@ type VoteDirection = "BULL" | "BEAR";
 
 interface PredictionCommentInputProps {
   variant?: "default" | "popup";
+  initialComment?: string;
 
   direction: VoteDirection | null;
   setDirection: React.Dispatch<React.SetStateAction<VoteDirection | null>>;
@@ -72,6 +73,7 @@ export function PredictionCommentInput({
   targetMs,
   countdownType,
   showCountdown,
+  initialComment = "",
 }: PredictionCommentInputProps) {
   const gifButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -81,7 +83,7 @@ export function PredictionCommentInput({
 
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
-  const [comment, setComment] = useState("");
+  const [comment, setComment] = useState(initialComment);
   const [pointsDraft, setPointsDraft] = useState<string | null>(null);
 
   const pointsDisabled = buttonDisabled || isPending || !currentUser;

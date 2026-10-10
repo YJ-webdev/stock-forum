@@ -13,8 +13,16 @@ import { GifPicker, type GifResult } from "@/app/components/gif-picker";
 import { createComment, type MarketPageComments } from "../actions/post";
 import { resolveLanguage } from "@/lib/data/languages";
 import { COMMENT_LABELS } from "@/lib/data/translations";
+import type { JSONContent } from "@tiptap/react";
 
 interface CommentOnlyInputProps {
+  initialComment?: string;
+
+  submitComment?: (input: {
+    content: JSONContent;
+    assetSymbols: string[];
+  }) => ReturnType<typeof createComment>;
+
   assetSymbol: string;
   targetMs: number | null;
   countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
@@ -40,10 +48,12 @@ export function CommentOnlyInput({
   isMarketOpen,
   onCommentCreated,
   currentUser,
+  initialComment = "",
+  submitComment = createComment,
 }: CommentOnlyInputProps) {
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
-  const [comment, setComment] = useState("");
+  const [comment, setComment] = useState(initialComment);
   const [isPending, startTransition] = useTransition();
 
   const userLanguage = resolveLanguage(currentUser?.language);
@@ -97,7 +107,7 @@ export function CommentOnlyInput({
           ],
         };
 
-        const result = await createComment({
+        const result = await submitComment({
           content,
           assetSymbols: [assetSymbol],
         });

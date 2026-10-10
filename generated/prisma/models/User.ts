@@ -25,6 +25,7 @@ export type AggregateUser = {
 }
 
 export type UserMinAggregateOutputType = {
+  isBot: boolean | null
   id: string | null
   name: string | null
   email: string | null
@@ -41,6 +42,7 @@ export type UserMinAggregateOutputType = {
 }
 
 export type UserMaxAggregateOutputType = {
+  isBot: boolean | null
   id: string | null
   name: string | null
   email: string | null
@@ -57,6 +59,7 @@ export type UserMaxAggregateOutputType = {
 }
 
 export type UserCountAggregateOutputType = {
+  isBot: number
   id: number
   name: number
   email: number
@@ -75,6 +78,7 @@ export type UserCountAggregateOutputType = {
 
 
 export type UserMinAggregateInputType = {
+  isBot?: true
   id?: true
   name?: true
   email?: true
@@ -91,6 +95,7 @@ export type UserMinAggregateInputType = {
 }
 
 export type UserMaxAggregateInputType = {
+  isBot?: true
   id?: true
   name?: true
   email?: true
@@ -107,6 +112,7 @@ export type UserMaxAggregateInputType = {
 }
 
 export type UserCountAggregateInputType = {
+  isBot?: true
   id?: true
   name?: true
   email?: true
@@ -196,6 +202,7 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 }
 
 export type UserGroupByOutputType = {
+  isBot: boolean
   id: string
   name: string | null
   email: string | null
@@ -233,6 +240,7 @@ export type UserWhereInput = {
   AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
+  isBot?: Prisma.BoolFilter<"User"> | boolean
   id?: Prisma.StringFilter<"User"> | string
   name?: Prisma.StringNullableFilter<"User"> | string | null
   email?: Prisma.StringNullableFilter<"User"> | string | null
@@ -264,6 +272,7 @@ export type UserWhereInput = {
 }
 
 export type UserOrderByWithRelationInput = {
+  isBot?: Prisma.SortOrder
   id?: Prisma.SortOrder
   name?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -300,6 +309,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
+  isBot?: Prisma.BoolFilter<"User"> | boolean
   name?: Prisma.StringNullableFilter<"User"> | string | null
   emailVerified?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   image?: Prisma.StringNullableFilter<"User"> | string | null
@@ -329,6 +339,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
+  isBot?: Prisma.SortOrder
   id?: Prisma.SortOrder
   name?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -351,6 +362,7 @@ export type UserScalarWhereWithAggregatesInput = {
   AND?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[]
   OR?: Prisma.UserScalarWhereWithAggregatesInput[]
   NOT?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[]
+  isBot?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   id?: Prisma.StringWithAggregatesFilter<"User"> | string
   name?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   email?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
@@ -367,6 +379,7 @@ export type UserScalarWhereWithAggregatesInput = {
 }
 
 export type UserCreateInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -398,6 +411,7 @@ export type UserCreateInput = {
 }
 
 export type UserUncheckedCreateInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -429,6 +443,7 @@ export type UserUncheckedCreateInput = {
 }
 
 export type UserUpdateInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -460,6 +475,7 @@ export type UserUpdateInput = {
 }
 
 export type UserUncheckedUpdateInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -491,6 +507,7 @@ export type UserUncheckedUpdateInput = {
 }
 
 export type UserCreateManyInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -507,6 +524,7 @@ export type UserCreateManyInput = {
 }
 
 export type UserUpdateManyMutationInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -523,6 +541,7 @@ export type UserUpdateManyMutationInput = {
 }
 
 export type UserUncheckedUpdateManyInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -539,6 +558,7 @@ export type UserUncheckedUpdateManyInput = {
 }
 
 export type UserCountOrderByAggregateInput = {
+  isBot?: Prisma.SortOrder
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
@@ -555,6 +575,7 @@ export type UserCountOrderByAggregateInput = {
 }
 
 export type UserMaxOrderByAggregateInput = {
+  isBot?: Prisma.SortOrder
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
@@ -571,6 +592,7 @@ export type UserMaxOrderByAggregateInput = {
 }
 
 export type UserMinOrderByAggregateInput = {
+  isBot?: Prisma.SortOrder
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
@@ -594,6 +616,10 @@ export type UserScalarRelationFilter = {
 export type UserNullableScalarRelationFilter = {
   is?: Prisma.UserWhereInput | null
   isNot?: Prisma.UserWhereInput | null
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type StringFieldUpdateOperationsInput = {
@@ -835,6 +861,7 @@ export type UserUpdateOneRequiredWithoutPointTransactionsNestedInput = {
 }
 
 export type UserCreateWithoutAccountsInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -865,6 +892,7 @@ export type UserCreateWithoutAccountsInput = {
 }
 
 export type UserUncheckedCreateWithoutAccountsInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -911,6 +939,7 @@ export type UserUpdateToOneWithWhereWithoutAccountsInput = {
 }
 
 export type UserUpdateWithoutAccountsInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -941,6 +970,7 @@ export type UserUpdateWithoutAccountsInput = {
 }
 
 export type UserUncheckedUpdateWithoutAccountsInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -971,6 +1001,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
 }
 
 export type UserCreateWithoutSessionsInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1001,6 +1032,7 @@ export type UserCreateWithoutSessionsInput = {
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1047,6 +1079,7 @@ export type UserUpdateToOneWithWhereWithoutSessionsInput = {
 }
 
 export type UserUpdateWithoutSessionsInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1077,6 +1110,7 @@ export type UserUpdateWithoutSessionsInput = {
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1107,6 +1141,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
 }
 
 export type UserCreateWithoutCommentsInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1137,6 +1172,7 @@ export type UserCreateWithoutCommentsInput = {
 }
 
 export type UserUncheckedCreateWithoutCommentsInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1183,6 +1219,7 @@ export type UserUpdateToOneWithWhereWithoutCommentsInput = {
 }
 
 export type UserUpdateWithoutCommentsInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1213,6 +1250,7 @@ export type UserUpdateWithoutCommentsInput = {
 }
 
 export type UserUncheckedUpdateWithoutCommentsInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1243,6 +1281,7 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
 }
 
 export type UserCreateWithoutModerationActionsPerformedInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1273,6 +1312,7 @@ export type UserCreateWithoutModerationActionsPerformedInput = {
 }
 
 export type UserUncheckedCreateWithoutModerationActionsPerformedInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1308,6 +1348,7 @@ export type UserCreateOrConnectWithoutModerationActionsPerformedInput = {
 }
 
 export type UserCreateWithoutModerationActionsReceivedInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1338,6 +1379,7 @@ export type UserCreateWithoutModerationActionsReceivedInput = {
 }
 
 export type UserUncheckedCreateWithoutModerationActionsReceivedInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1384,6 +1426,7 @@ export type UserUpdateToOneWithWhereWithoutModerationActionsPerformedInput = {
 }
 
 export type UserUpdateWithoutModerationActionsPerformedInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1414,6 +1457,7 @@ export type UserUpdateWithoutModerationActionsPerformedInput = {
 }
 
 export type UserUncheckedUpdateWithoutModerationActionsPerformedInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1455,6 +1499,7 @@ export type UserUpdateToOneWithWhereWithoutModerationActionsReceivedInput = {
 }
 
 export type UserUpdateWithoutModerationActionsReceivedInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1485,6 +1530,7 @@ export type UserUpdateWithoutModerationActionsReceivedInput = {
 }
 
 export type UserUncheckedUpdateWithoutModerationActionsReceivedInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1515,6 +1561,7 @@ export type UserUncheckedUpdateWithoutModerationActionsReceivedInput = {
 }
 
 export type UserCreateWithoutPredictionsInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1545,6 +1592,7 @@ export type UserCreateWithoutPredictionsInput = {
 }
 
 export type UserUncheckedCreateWithoutPredictionsInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1591,6 +1639,7 @@ export type UserUpdateToOneWithWhereWithoutPredictionsInput = {
 }
 
 export type UserUpdateWithoutPredictionsInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1621,6 +1670,7 @@ export type UserUpdateWithoutPredictionsInput = {
 }
 
 export type UserUncheckedUpdateWithoutPredictionsInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1651,6 +1701,7 @@ export type UserUncheckedUpdateWithoutPredictionsInput = {
 }
 
 export type UserCreateWithoutRepliesInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1681,6 +1732,7 @@ export type UserCreateWithoutRepliesInput = {
 }
 
 export type UserUncheckedCreateWithoutRepliesInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1727,6 +1779,7 @@ export type UserUpdateToOneWithWhereWithoutRepliesInput = {
 }
 
 export type UserUpdateWithoutRepliesInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1757,6 +1810,7 @@ export type UserUpdateWithoutRepliesInput = {
 }
 
 export type UserUncheckedUpdateWithoutRepliesInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1787,6 +1841,7 @@ export type UserUncheckedUpdateWithoutRepliesInput = {
 }
 
 export type UserCreateWithoutCommentLikesInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1817,6 +1872,7 @@ export type UserCreateWithoutCommentLikesInput = {
 }
 
 export type UserUncheckedCreateWithoutCommentLikesInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1863,6 +1919,7 @@ export type UserUpdateToOneWithWhereWithoutCommentLikesInput = {
 }
 
 export type UserUpdateWithoutCommentLikesInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1893,6 +1950,7 @@ export type UserUpdateWithoutCommentLikesInput = {
 }
 
 export type UserUncheckedUpdateWithoutCommentLikesInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1923,6 +1981,7 @@ export type UserUncheckedUpdateWithoutCommentLikesInput = {
 }
 
 export type UserCreateWithoutReplyLikesInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1953,6 +2012,7 @@ export type UserCreateWithoutReplyLikesInput = {
 }
 
 export type UserUncheckedCreateWithoutReplyLikesInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -1999,6 +2059,7 @@ export type UserUpdateToOneWithWhereWithoutReplyLikesInput = {
 }
 
 export type UserUpdateWithoutReplyLikesInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2029,6 +2090,7 @@ export type UserUpdateWithoutReplyLikesInput = {
 }
 
 export type UserUncheckedUpdateWithoutReplyLikesInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2059,6 +2121,7 @@ export type UserUncheckedUpdateWithoutReplyLikesInput = {
 }
 
 export type UserCreateWithoutBalanceInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -2089,6 +2152,7 @@ export type UserCreateWithoutBalanceInput = {
 }
 
 export type UserUncheckedCreateWithoutBalanceInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -2135,6 +2199,7 @@ export type UserUpdateToOneWithWhereWithoutBalanceInput = {
 }
 
 export type UserUpdateWithoutBalanceInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2165,6 +2230,7 @@ export type UserUpdateWithoutBalanceInput = {
 }
 
 export type UserUncheckedUpdateWithoutBalanceInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2195,6 +2261,7 @@ export type UserUncheckedUpdateWithoutBalanceInput = {
 }
 
 export type UserCreateWithoutWatchlistInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -2225,6 +2292,7 @@ export type UserCreateWithoutWatchlistInput = {
 }
 
 export type UserUncheckedCreateWithoutWatchlistInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -2271,6 +2339,7 @@ export type UserUpdateToOneWithWhereWithoutWatchlistInput = {
 }
 
 export type UserUpdateWithoutWatchlistInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2301,6 +2370,7 @@ export type UserUpdateWithoutWatchlistInput = {
 }
 
 export type UserUncheckedUpdateWithoutWatchlistInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2331,6 +2401,7 @@ export type UserUncheckedUpdateWithoutWatchlistInput = {
 }
 
 export type UserCreateWithoutNotificationsReceivedInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -2361,6 +2432,7 @@ export type UserCreateWithoutNotificationsReceivedInput = {
 }
 
 export type UserUncheckedCreateWithoutNotificationsReceivedInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -2396,6 +2468,7 @@ export type UserCreateOrConnectWithoutNotificationsReceivedInput = {
 }
 
 export type UserCreateWithoutNotificationsSentInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -2426,6 +2499,7 @@ export type UserCreateWithoutNotificationsSentInput = {
 }
 
 export type UserUncheckedCreateWithoutNotificationsSentInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -2472,6 +2546,7 @@ export type UserUpdateToOneWithWhereWithoutNotificationsReceivedInput = {
 }
 
 export type UserUpdateWithoutNotificationsReceivedInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2502,6 +2577,7 @@ export type UserUpdateWithoutNotificationsReceivedInput = {
 }
 
 export type UserUncheckedUpdateWithoutNotificationsReceivedInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2543,6 +2619,7 @@ export type UserUpdateToOneWithWhereWithoutNotificationsSentInput = {
 }
 
 export type UserUpdateWithoutNotificationsSentInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2573,6 +2650,7 @@ export type UserUpdateWithoutNotificationsSentInput = {
 }
 
 export type UserUncheckedUpdateWithoutNotificationsSentInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2603,6 +2681,7 @@ export type UserUncheckedUpdateWithoutNotificationsSentInput = {
 }
 
 export type UserCreateWithoutPointBalanceInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -2633,6 +2712,7 @@ export type UserCreateWithoutPointBalanceInput = {
 }
 
 export type UserUncheckedCreateWithoutPointBalanceInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -2679,6 +2759,7 @@ export type UserUpdateToOneWithWhereWithoutPointBalanceInput = {
 }
 
 export type UserUpdateWithoutPointBalanceInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2709,6 +2790,7 @@ export type UserUpdateWithoutPointBalanceInput = {
 }
 
 export type UserUncheckedUpdateWithoutPointBalanceInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2739,6 +2821,7 @@ export type UserUncheckedUpdateWithoutPointBalanceInput = {
 }
 
 export type UserCreateWithoutPointTransactionsInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -2769,6 +2852,7 @@ export type UserCreateWithoutPointTransactionsInput = {
 }
 
 export type UserUncheckedCreateWithoutPointTransactionsInput = {
+  isBot?: boolean
   id?: string
   name?: string | null
   email?: string | null
@@ -2815,6 +2899,7 @@ export type UserUpdateToOneWithWhereWithoutPointTransactionsInput = {
 }
 
 export type UserUpdateWithoutPointTransactionsInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2845,6 +2930,7 @@ export type UserUpdateWithoutPointTransactionsInput = {
 }
 
 export type UserUncheckedUpdateWithoutPointTransactionsInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3014,6 +3100,7 @@ export type UserCountOutputTypeCountPointTransactionsArgs<ExtArgs extends runtim
 
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+  isBot?: boolean
   id?: boolean
   name?: boolean
   email?: boolean
@@ -3046,6 +3133,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+  isBot?: boolean
   id?: boolean
   name?: boolean
   email?: boolean
@@ -3062,6 +3150,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+  isBot?: boolean
   id?: boolean
   name?: boolean
   email?: boolean
@@ -3078,6 +3167,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectScalar = {
+  isBot?: boolean
   id?: boolean
   name?: boolean
   email?: boolean
@@ -3093,7 +3183,7 @@ export type UserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "image" | "nationality" | "language" | "role" | "status" | "mutedAt" | "bannedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"isBot" | "id" | "name" | "email" | "emailVerified" | "image" | "nationality" | "language" | "role" | "status" | "mutedAt" | "bannedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   moderationActionsReceived?: boolean | Prisma.User$moderationActionsReceivedArgs<ExtArgs>
   moderationActionsPerformed?: boolean | Prisma.User$moderationActionsPerformedArgs<ExtArgs>
@@ -3135,6 +3225,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     pointTransactions: Prisma.$PointTransactionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
+    isBot: boolean
     id: string
     name: string | null
     email: string | null
@@ -3231,8 +3322,8 @@ export interface UserDelegate<ExtArgs extends runtime.Types.Extensions.InternalA
    * // Get first 10 Users
    * const users = await prisma.user.findMany({ take: 10 })
    * 
-   * // Only select the `id`
-   * const userWithIdOnly = await prisma.user.findMany({ select: { id: true } })
+   * // Only select the `isBot`
+   * const userWithIsBotOnly = await prisma.user.findMany({ select: { isBot: true } })
    * 
    */
   findMany<T extends UserFindManyArgs>(args?: Prisma.SelectSubset<T, UserFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
@@ -3276,9 +3367,9 @@ export interface UserDelegate<ExtArgs extends runtime.Types.Extensions.InternalA
    *   ]
    * })
    * 
-   * // Create many Users and only return the `id`
-   * const userWithIdOnly = await prisma.user.createManyAndReturn({
-   *   select: { id: true },
+   * // Create many Users and only return the `isBot`
+   * const userWithIsBotOnly = await prisma.user.createManyAndReturn({
+   *   select: { isBot: true },
    *   data: [
    *     // ... provide data here
    *   ]
@@ -3367,9 +3458,9 @@ export interface UserDelegate<ExtArgs extends runtime.Types.Extensions.InternalA
    *   ]
    * })
    * 
-   * // Update zero or more Users and only return the `id`
-   * const userWithIdOnly = await prisma.user.updateManyAndReturn({
-   *   select: { id: true },
+   * // Update zero or more Users and only return the `isBot`
+   * const userWithIsBotOnly = await prisma.user.updateManyAndReturn({
+   *   select: { isBot: true },
    *   where: {
    *     // ... provide filter here
    *   },
@@ -3586,6 +3677,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
  * Fields of the User model
  */
 export interface UserFieldRefs {
+  readonly isBot: Prisma.FieldRef<"User", 'Boolean'>
   readonly id: Prisma.FieldRef<"User", 'String'>
   readonly name: Prisma.FieldRef<"User", 'String'>
   readonly email: Prisma.FieldRef<"User", 'String'>

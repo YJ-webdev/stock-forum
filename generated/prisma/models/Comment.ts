@@ -536,10 +536,6 @@ export type EnumContentVisibilityFieldUpdateOperationsInput = {
   set?: $Enums.ContentVisibility
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type CommentCreateNestedOneWithoutModerationActionsInput = {
   create?: Prisma.XOR<Prisma.CommentCreateWithoutModerationActionsInput, Prisma.CommentUncheckedCreateWithoutModerationActionsInput>
   connectOrCreate?: Prisma.CommentCreateOrConnectWithoutModerationActionsInput

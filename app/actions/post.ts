@@ -18,6 +18,7 @@ import { hasEditorContent } from "@/lib/utils/tiptap-utils";
 import { getReferenceClose } from "@/lib/market/yahoo";
 import { moderateContent } from "@/lib/moderation/moderate-content";
 import { getContentText } from "@/lib/moderation/get-content-text";
+import { getVotingWindow } from "@/lib/utils/get-voting-window";
 
 type PredictionInput = {
   direction: "BULL" | "BEAR";
@@ -26,6 +27,7 @@ type PredictionInput = {
 };
 
 type CreateCommentInput = {
+  botUserId?: string;
   content?: JSONContent | null;
   assetSymbols: string[];
   prediction?: PredictionInput | null;
@@ -177,6 +179,7 @@ export async function createComment({
   content = null,
   assetSymbols,
   prediction = null,
+  botUserId,
 }: CreateCommentInput) {
   const session = await auth();
   const labels =
@@ -186,7 +189,31 @@ export async function createComment({
     throw new Error(labels.login_required);
   }
 
-  const userId = session.user.id;
+  let userId = session.user.id;
+
+  if (botUserId !== undefined) {
+    // Verify the current role from the database.
+    const admin = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+
+    if (admin?.role !== "ADMIN") {
+      throw new Error(labels.permission_denied);
+    }
+
+    const bot = await prisma.user.findUnique({
+      where: { id: botUserId },
+      select: { id: true, isBot: true },
+    });
+
+    if (!bot?.isBot) {
+      throw new Error("Invalid bot user.");
+    }
+
+    userId = bot.id;
+  }
+
   const uniqueSymbols = [...new Set(assetSymbols)];
 
   if (uniqueSymbols.length === 0) {
@@ -199,26 +226,56 @@ export async function createComment({
     )
     .filter((market): market is MarketSymbolItem => Boolean(market));
 
-  if (selectedMarkets.length === 0) {
+  // Reject unknown symbols instead of silently dropping them.
+  if (
+    selectedMarkets.length === 0 ||
+    selectedMarkets.length !== uniqueSymbols.length
+  ) {
     throw new Error(labels.invalid_board);
   }
 
-  if (prediction && selectedMarkets.length !== 1) {
-    throw new Error(labels.single_market);
-  }
-
   if (prediction) {
+    if (selectedMarkets.length !== 1) {
+      throw new Error(labels.single_market);
+    }
+
+    const market = selectedMarkets[0];
+
+    if (market.assetType !== "index") {
+      throw new Error("Predictions are available for indices only.");
+    }
+
+    if (prediction.direction !== "BULL" && prediction.direction !== "BEAR") {
+      throw new Error("Choose Bull or Bear.");
+    }
+
     if (
       !Number.isInteger(prediction.pointsBet) ||
       prediction.pointsBet < 0 ||
-      prediction.pointsBet > 500
+      prediction.pointsBet > 500 ||
+      prediction.pointsBet % 50 !== 0
     ) {
       throw new Error(labels.invalid_points);
     }
 
     if (
       !(prediction.sessionDate instanceof Date) ||
-      Number.isNaN(prediction.sessionDate.getTime())
+      !Number.isFinite(prediction.sessionDate.getTime())
+    ) {
+      throw new Error(labels.invalid_prediction_session);
+    }
+
+    const votingWindow = getVotingWindow(market.symbol, Date.now());
+
+    if (!votingWindow.canVote || !votingWindow.predictionFor) {
+      throw new Error("Voting is closed.");
+    }
+
+    const expectedSession = new Date(votingWindow.predictionFor);
+
+    if (
+      !Number.isFinite(expectedSession.getTime()) ||
+      prediction.sessionDate.getTime() !== expectedSession.getTime()
     ) {
       throw new Error(labels.invalid_prediction_session);
     }
