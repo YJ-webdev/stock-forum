@@ -181,6 +181,7 @@ export const MARKET_LABELS: Record<
     disclaimer: string;
     prev_close: string;
     lunch_break: string;
+    price: string;
   }
 > = {
   en: {
@@ -188,72 +189,84 @@ export const MARKET_LABELS: Record<
     disclaimer: "Disclaimer",
     prev_close: "Previous close",
     lunch_break: "Lunch break",
+    price: "Price",
   },
   ko: {
     data_delayed: "지연 {minutes}분",
     disclaimer: "면책",
     prev_close: "전일 종가",
     lunch_break: "점심 휴장",
+    price: "가격",
   },
   ja: {
     data_delayed: "{minutes}分遅延",
     disclaimer: "免責",
     prev_close: "前日終値",
     lunch_break: "昼休み",
+    price: "価格",
   },
   zh: {
     data_delayed: "延迟{minutes}分钟",
     disclaimer: "免责",
     prev_close: "前收盘价",
     lunch_break: "午间休市",
+    price: "价格",
   },
   de: {
     data_delayed: "{minutes} Min. verzögert",
     disclaimer: "Haftungsausschluss",
     prev_close: "Vorheriger Schlusskurs",
     lunch_break: "Mittagspause",
+    price: "Preis",
   },
   fr: {
     data_delayed: "Retard de {minutes} min",
     disclaimer: "Avertissement",
     prev_close: "Clôture précédente",
     lunch_break: "Pause déjeuner",
+    price: "Prix",
   },
   es: {
     data_delayed: "Retraso de {minutes} min",
     disclaimer: "Aviso legal",
     prev_close: "Cierre anterior",
     lunch_break: "Pausa de almuerzo",
+    price: "Precio",
   },
   pt: {
     data_delayed: "Atraso de {minutes} min",
     disclaimer: "Aviso legal",
     prev_close: "Fechamento anterior",
     lunch_break: "Intervalo de almoço",
+    price: "Preço",
   },
   it: {
     data_delayed: "Ritardo di {minutes} min",
     disclaimer: "Avvertenze",
     prev_close: "Chiusura precedente",
     lunch_break: "Pausa pranzo",
+    price: "Prezzo",
   },
   ru: {
     data_delayed: "Задержка {minutes} мин",
     disclaimer: "Отказ от ответственности",
     prev_close: "Предыдущее закрытие",
     lunch_break: "Обеденный перерыв",
+    price: "Цена",
   },
   ar: {
     data_delayed: "تأخير {minutes} دقيقة",
     disclaimer: "إخلاء المسؤولية",
     prev_close: "الإغلاق السابق",
     lunch_break: "استراحة الغداء",
+    price: "السعر",
   },
   hi: {
     data_delayed: "{minutes} मिनट की देरी",
     disclaimer: "अस्वीकरण",
     prev_close: "पिछला बंद भाव",
     lunch_break: "दोपहर का अवकाश",
+    price: "मूल्य",
   },
 };
 

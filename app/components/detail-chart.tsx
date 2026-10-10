@@ -667,7 +667,9 @@ export function DetailChart({
 
       {hoveredPoint && (
         <div className="jakarta absolute left-1/2 top-14 z-10 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-sm border border-zinc-200 bg-white px-2.5 py-1 text-xs font-normal shadow-xs dark:border-zinc-700 dark:bg-zinc-800">
-          <span className="text-zinc-600 dark:text-zinc-400">Price:</span>
+          <span className="text-zinc-600 dark:text-zinc-400">
+            {marketLabels.price}:
+          </span>
 
           <span className="text-zinc-900 dark:text-zinc-100">
             {hoveredPoint.price.toLocaleString("en-US", {
@@ -775,19 +777,6 @@ export function DetailChart({
               strokeDasharray="2 3"
               strokeWidth="1.5"
             />
-
-            <text
-              x={chartRight - 10}
-              y={previousCloseY - 6}
-              textAnchor="end"
-              className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-300 dark:font-light"
-            >
-              {marketLabels.prev_close}:{" "}
-              {validPreviousClose.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </text>
           </g>
         )}
 
@@ -850,7 +839,7 @@ export function DetailChart({
                 x={(lunchStartPoint.x + lunchEndPoint.x) / 2}
                 y={(lunchStartPoint.y + lunchEndPoint.y) / 2 - 10}
                 textAnchor="middle"
-                className="outfit fill-zinc-400 text-[15px] font-[450] dark:fill-zinc-400"
+                className="outfit fill-zinc-400 text-[15px] font-medium dark:fill-zinc-400"
               >
                 {marketLabels.lunch_break}
               </text>
@@ -972,6 +961,28 @@ export function DetailChart({
             </g>
           </g>
         )}
+
+        {/* PREVIOUS CLOSE LABEL — above chart and crosshair */}
+        {typeof validPreviousClose === "number" &&
+          Number.isFinite(validPreviousClose) &&
+          typeof previousCloseY === "number" &&
+          Number.isFinite(previousCloseY) && (
+            <text
+              x={chartRight - 10}
+              y={previousCloseY - 15}
+              textAnchor="end"
+              pointerEvents="none"
+              className="jakarta fill-zinc-800 text-[12px] dark:fill-zinc-300 dark:font-light"
+            >
+              {marketLabels.prev_close}:{" "}
+              <tspan className="font-bold">
+                {validPreviousClose.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </tspan>
+            </text>
+          )}
       </svg>
     </div>
   );
