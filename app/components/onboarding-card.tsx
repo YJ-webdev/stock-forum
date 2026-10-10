@@ -33,6 +33,7 @@ import { updateAccountPreferences } from "@/app/actions/update-account-preferenc
 import { useCurrentUser, useSetCurrentUser } from "../context/user-context";
 import { addMarketsToWatchlist } from "../actions/watchlist";
 import { MarketPicker } from "./market-picker";
+import { updateAccountLanguage } from "../actions/update-account-language";
 
 type OnboardingStep = 1 | 2;
 
@@ -43,8 +44,9 @@ export function OnboardingCard() {
 
   const [step, setStep] = useState<OnboardingStep>(1);
   const [nationality, setNationality] = useState("");
-  const [language, setLanguage] = useState<Language>("en");
-
+  const [language, setLanguage] = useState<Language>(
+    resolveLanguage(user?.language),
+  );
   const [selectedSymbols, setSelectedSymbols] = useState<string[]>([
     "^GSPC",
     "^IXIC",
@@ -81,6 +83,51 @@ export function OnboardingCard() {
         ? previous.filter((item) => item !== symbol)
         : [...previous, symbol],
     );
+  }
+
+  function handleLanguageChange(value: string | null) {
+    if (
+      !user ||
+      !value ||
+      isPending ||
+      !LANGUAGES.some((item) => item.value === value)
+    ) {
+      return;
+    }
+
+    const nextLanguage = resolveLanguage(value);
+
+    if (nextLanguage === language) return;
+
+    const previousLanguage = language;
+    const userId = user.id;
+
+    // 선택 즉시 온보딩과 사이트 전체에 반영
+    setLanguage(nextLanguage);
+
+    setCurrentUser((previous) =>
+      previous?.id === userId
+        ? { ...previous, language: nextLanguage }
+        : previous,
+    );
+
+    startTransition(async () => {
+      try {
+        await updateAccountLanguage(nextLanguage);
+        router.refresh();
+      } catch (error) {
+        setLanguage(previousLanguage);
+
+        setCurrentUser((previous) =>
+          previous?.id === userId
+            ? { ...previous, language: previousLanguage }
+            : previous,
+        );
+
+        console.error("Failed to update language:", error);
+        toast.error(ONBOARDING_LABELS[previousLanguage].failed);
+      }
+    });
   }
 
   function handleContinue() {
@@ -265,13 +312,9 @@ export function OnboardingCard() {
                   </label>
 
                   <Select
-                    value={nationality}
+                    value={language}
                     disabled={isPending}
-                    onValueChange={(value) => {
-                      if (value !== null) {
-                        setNationality(value);
-                      }
-                    }}
+                    onValueChange={handleLanguageChange}
                   >
                     <SelectTrigger
                       id="onboarding-nationality"

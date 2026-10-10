@@ -37,6 +37,7 @@ import { updateAccountPreferences } from "@/app/actions/update-account-preferenc
 import { uploadAvatar } from "@/app/actions/upload-avatar";
 
 import { useCurrentUser, useSetCurrentUser } from "../context/user-context";
+import { updateAccountLanguage } from "../actions/update-account-language";
 
 interface AccountPanelProps {
   setOnAccount: Dispatch<SetStateAction<boolean>>;
@@ -111,7 +112,6 @@ function AccountPanelForm({
     name !== savedName ||
     image !== savedImage ||
     nationality !== savedNationality ||
-    language !== savedLanguage ||
     selectedFile !== null;
 
   useEffect(() => {
@@ -154,10 +154,62 @@ function AccountPanelForm({
     setPreviewUrl(URL.createObjectURL(file));
   };
 
-  const handleSave = () => {
-    if (isPending || !hasChanges) {
+  const handleLanguageChange = (value: string | null) => {
+    if (
+      !value ||
+      isPending ||
+      value === savedLanguage ||
+      !LANGUAGES.some((item) => item.value === value)
+    ) {
       return;
     }
+
+    const previousLanguage = savedLanguage;
+    const userId = user.id;
+
+    setLanguage(value);
+
+    setCurrentUser((previous) =>
+      previous?.id === userId ? { ...previous, language: value } : previous,
+    );
+
+    startTransition(async () => {
+      try {
+        const updatedUser = await updateAccountLanguage(value);
+        const nextLanguage = updatedUser.language ?? "en";
+
+        setLanguage(nextLanguage);
+        setSavedLanguage(nextLanguage);
+
+        setCurrentUser((previous) =>
+          previous?.id === userId
+            ? { ...previous, language: nextLanguage }
+            : previous,
+        );
+
+        router.refresh();
+
+        toast.success(ACCOUNT_LABELS[resolveLanguage(nextLanguage)].updated);
+      } catch (error) {
+        setLanguage(previousLanguage);
+
+        setCurrentUser((previous) =>
+          previous?.id === userId
+            ? { ...previous, language: previousLanguage }
+            : previous,
+        );
+
+        console.error("Failed to update language:", error);
+
+        toast.error(
+          ACCOUNT_LABELS[resolveLanguage(previousLanguage)].update_failed,
+        );
+      }
+    });
+  };
+
+  const handleSave = () => {
+    if (isPending || !hasChanges) return;
 
     const trimmedName = name.trim();
 
@@ -176,16 +228,10 @@ function AccountPanelForm({
       return;
     }
 
-    if (!language) {
-      toast.error(labels.language_required);
-      return;
-    }
-
     startTransition(async () => {
       try {
         let nextImage = image;
 
-        // Upload only when Save changes is pressed.
         if (selectedFile) {
           const formData = new FormData();
           formData.append("file", selectedFile);
@@ -198,23 +244,20 @@ function AccountPanelForm({
           name: trimmedName,
           image: nextImage || null,
           nationality,
-          language,
+          language: savedLanguage,
         });
 
         const nextName = updatedUser.name ?? "";
         const nextSavedImage = updatedUser.image ?? "";
         const nextNationality = updatedUser.nationality ?? "";
-        const nextLanguage = updatedUser.language ?? "en";
 
         setName(nextName);
         setImage(nextSavedImage);
         setNationality(nextNationality);
-        setLanguage(nextLanguage);
 
         setSavedName(nextName);
         setSavedImage(nextSavedImage);
         setSavedNationality(nextNationality);
-        setSavedLanguage(nextLanguage);
 
         setSelectedFile(null);
         setPreviewUrl(null);
@@ -226,16 +269,13 @@ function AccountPanelForm({
                 name: updatedUser.name,
                 image: updatedUser.image,
                 nationality: updatedUser.nationality,
-                language: updatedUser.language,
               }
             : previous,
         );
 
         router.refresh();
 
-        const nextLabels = ACCOUNT_LABELS[resolveLanguage(nextLanguage)];
-
-        toast.success(nextLabels.updated);
+        toast.success(ACCOUNT_LABELS[resolveLanguage(savedLanguage)].updated);
       } catch (error) {
         console.error("Failed to update account:", error);
         toast.error(labels.update_failed);
@@ -448,11 +488,7 @@ function AccountPanelForm({
           <Select
             value={language}
             disabled={isPending}
-            onValueChange={(value) => {
-              if (value !== null) {
-                setLanguage(value);
-              }
-            }}
+            onValueChange={handleLanguageChange}
           >
             <SelectTrigger
               id="account-language"

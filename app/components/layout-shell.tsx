@@ -19,13 +19,21 @@ import PanelLeftStream from "./panel-left-stream";
 import PanelLeftMobileStream from "./panel-left-mobile-stream";
 import { LeaderBoardStream } from "./leader-board-stream";
 import { OnboardingCard } from "./onboarding-card";
-import { WatchlistPanel } from "./watchlist-panel";
 
 import { UserProvider } from "../context/user-context";
 import { PointBalanceProvider } from "../context/point-balance-context";
 
 import type { User } from "@/types/user";
 import type { LayoutSideData } from "../actions/query";
+import { Footer } from "./footer";
+
+const FOOTER_PATHS = new Set([
+  "/",
+  "/help",
+  "/feedback",
+  "/privacy-terms",
+  "/disclaimer",
+]);
 
 const PanelLoading = () => (
   <div className="flex h-full w-full items-center justify-center">
@@ -69,6 +77,7 @@ export default function LayoutShell({
   sideDataPromise,
 }: LayoutShellProps) {
   const pathname = usePathname();
+  const showFooter = FOOTER_PATHS.has(pathname);
 
   const panelBRef = useRef<PanelImperativeHandle>(null);
   const mainScrollRef = useRef<HTMLDivElement>(null);
@@ -314,11 +323,12 @@ export default function LayoutShell({
                   >
                     <div
                       className={`min-h-full ${
-                        pathname === "/" ? "flex flex-col" : "pb-14"
+                        showFooter ? "flex flex-col" : "pb-14"
                       }`}
                     >
                       {pathname !== "/" && <BreadCrumbs />}
                       {children}
+                      {showFooter && <Footer />}
                     </div>
                   </div>
                 </ResizablePanel>

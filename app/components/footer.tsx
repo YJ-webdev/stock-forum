@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useCurrentUser } from "@/app/context/user-context";
 import { resolveLanguage } from "@/lib/data/languages";
 import { FOOTER_LABELS } from "@/lib/data/translations";
@@ -7,6 +9,13 @@ import { FOOTER_LABELS } from "@/lib/data/translations";
 export const Footer = () => {
   const user = useCurrentUser();
   const labels = FOOTER_LABELS[resolveLanguage(user?.language)];
+
+  const links = [
+    { href: "/help", label: labels.help },
+    { href: "/feedback", label: labels.feedback },
+    { href: "/privacy-terms", label: labels.privacy_terms },
+    { href: "/disclaimer", label: labels.disclaimer },
+  ];
 
   return (
     <footer
@@ -17,21 +26,20 @@ export const Footer = () => {
         text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300
       "
     >
-      <button type="button" className="cursor-pointer text-sm tracking-tight">
-        {labels.help}
-      </button>
-
-      <button type="button" className="cursor-pointer text-sm tracking-tight">
-        {labels.feedback}
-      </button>
-
-      <button type="button" className="cursor-pointer text-sm tracking-tight">
-        {labels.privacy_terms}
-      </button>
-
-      <button type="button" className="cursor-pointer text-sm tracking-tight">
-        {labels.disclaimer}
-      </button>
+      {links.map(({ href, label }) => (
+        <Link
+          key={href}
+          href={href}
+          className="
+            text-sm tracking-tight transition-colors
+            text-zinc-500 
+            hover:text-zinc-950
+            dark:hover:text-white
+          "
+        >
+          {label}
+        </Link>
+      ))}
     </footer>
   );
 };

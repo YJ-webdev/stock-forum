@@ -6,7 +6,7 @@ import { ChevronRight } from "lucide-react";
 import { useCurrentUser } from "@/app/context/user-context";
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { resolveLanguage } from "@/lib/data/languages";
-import { BREADCRUMB_LABELS } from "@/lib/data/translations";
+import { BREADCRUMB_LABELS, FOOTER_LABELS } from "@/lib/data/translations";
 
 interface BreadcrumbItem {
   label: string;
@@ -18,7 +18,17 @@ export const BreadCrumbs = () => {
   const pathname = usePathname();
   const user = useCurrentUser();
 
-  const labels = BREADCRUMB_LABELS[resolveLanguage(user?.language)];
+  const language = resolveLanguage(user?.language);
+  const labels = BREADCRUMB_LABELS[language];
+  const footerLabels = FOOTER_LABELS[language];
+
+  const pageLabels: Record<string, string> = {
+    help: footerLabels.help,
+    feedback: footerLabels.feedback,
+    "privacy-terms": footerLabels.privacy_terms,
+    disclaimer: footerLabels.disclaimer,
+    news: labels.news,
+  };
 
   const segments = pathname.split("/").filter(Boolean);
   const isMarketRoute = segments[0] === "market";
@@ -58,20 +68,18 @@ export const BreadCrumbs = () => {
     });
 
     if (childPage === "news") {
-      items.push({
-        label: labels.news,
-      });
+      items.push({ label: labels.news });
     }
 
     if (childPage === "post") {
-      items.push({
-        label: labels.post,
-      });
+      items.push({ label: labels.post });
     }
-  } else if (!isMarketRoute && segments[0] === "news") {
-    items.push({
-      label: labels.news,
-    });
+  } else if (!isMarketRoute) {
+    const pageLabel = pageLabels[segments[0]];
+
+    if (pageLabel) {
+      items.push({ label: pageLabel });
+    }
   }
 
   return (
@@ -85,7 +93,7 @@ export const BreadCrumbs = () => {
       <nav
         aria-label={labels.breadcrumb}
         className="
-          flex items-center gap-2
+          flex min-w-0 items-center gap-2
           text-sm font-medium text-zinc-500
           dark:text-zinc-300
         "
@@ -95,7 +103,7 @@ export const BreadCrumbs = () => {
           onClick={() => router.push("/")}
           aria-current={pathname === "/" ? "page" : undefined}
           className="
-            cursor-pointer transition-colors
+            shrink-0 cursor-pointer transition-colors
             hover:text-zinc-900 dark:hover:text-zinc-100
           "
         >
@@ -109,23 +117,26 @@ export const BreadCrumbs = () => {
           return (
             <div
               key={`${item.label}-${index}`}
-              className="flex items-center gap-2"
+              className="flex min-w-0 items-center gap-2"
             >
-              <ChevronRight aria-hidden="true" className="h-4 w-4" />
+              <ChevronRight aria-hidden="true" className="size-4 shrink-0" />
 
               {href ? (
                 <button
                   type="button"
                   onClick={() => router.push(href)}
                   className="
-                    cursor-pointer transition-colors
+                    truncate cursor-pointer transition-colors
                     hover:text-zinc-900 dark:hover:text-zinc-100
                   "
                 >
                   {item.label}
                 </button>
               ) : (
-                <span aria-current={isLast ? "page" : undefined}>
+                <span
+                  aria-current={isLast ? "page" : undefined}
+                  className="truncate"
+                >
                   {item.label}
                 </span>
               )}

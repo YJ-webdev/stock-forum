@@ -9,7 +9,6 @@ import { getHomeComments, getHomeCommunityMarkets } from "../actions/post";
 
 import { HomeMarketCarousel } from "../components/home-market-carousel";
 import { HomeCommunity } from "../components/home-community";
-import { Footer } from "../components/footer";
 
 export default async function Home() {
   const [session, markets, community, communityMarkets] = await Promise.all([
@@ -71,8 +70,6 @@ export default async function Home() {
           />
         </section>
       </main>
-
-      <Footer />
     </div>
   );
 }
