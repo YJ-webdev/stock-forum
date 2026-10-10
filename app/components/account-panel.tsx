@@ -246,7 +246,6 @@ function AccountPanelForm({
   return (
     <section
       aria-labelledby="account-settings-heading"
-      dir={uiLanguage === "ar" ? "rtl" : "ltr"}
       className="flex h-full min-h-0 w-full flex-col px-4 pt-3 pb-4"
     >
       <div className="flex shrink-0 items-start justify-between">

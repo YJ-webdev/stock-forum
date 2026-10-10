@@ -251,7 +251,6 @@ export function NotificationPanel({
   return (
     <section
       aria-labelledby="notifications-heading"
-      dir={language === "ar" ? "rtl" : "ltr"}
       className="flex h-full min-h-0 w-full flex-col"
     >
       <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-2">
