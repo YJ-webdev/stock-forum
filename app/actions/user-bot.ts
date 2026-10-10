@@ -443,3 +443,112 @@ export async function createBotUser(formData: FormData) {
 
   return bot;
 }
+
+export async function updateBotProfile(formData: FormData) {
+  await requireAdmin();
+
+  const rawBotId = formData.get("botUserId");
+  const rawName = formData.get("name");
+  const imageFile = formData.get("file");
+
+  const botUserId = typeof rawBotId === "string" ? rawBotId : "";
+
+  const name = typeof rawName === "string" ? rawName.trim() : "";
+
+  if (!botUserId) {
+    throw new Error("Select a bot.");
+  }
+
+  if (!name) {
+    throw new Error("Enter a bot name.");
+  }
+
+  if (name.length > 30) {
+    throw new Error("Name must be 30 characters or fewer.");
+  }
+
+  const existingBot = await prisma.user.findUnique({
+    where: { id: botUserId },
+    select: {
+      id: true,
+      isBot: true,
+      image: true,
+    },
+  });
+
+  if (!existingBot?.isBot) {
+    throw new Error("Bot user not found.");
+  }
+
+  const imageTypes: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+  };
+
+  const file =
+    imageFile instanceof File && imageFile.size > 0 ? imageFile : null;
+
+  if (file) {
+    if (!imageTypes[file.type]) {
+      throw new Error("Use a JPG, PNG, or WebP image.");
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      throw new Error("Image must be 3 MB or smaller.");
+    }
+  }
+
+  let uploadedUrl: string | null = null;
+
+  if (file) {
+    const blob = await put(
+      `bot-avatars/${crypto.randomUUID()}.${imageTypes[file.type]}`,
+      file,
+      {
+        access: "public",
+        contentType: file.type,
+        addRandomSuffix: true,
+      },
+    );
+
+    uploadedUrl = blob.url;
+  }
+
+  let updatedBot;
+
+  try {
+    updatedBot = await prisma.user.update({
+      where: {
+        id: existingBot.id,
+        isBot: true,
+      },
+      data: {
+        name,
+        ...(uploadedUrl ? { image: uploadedUrl } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        nationality: true,
+        language: true,
+      },
+    });
+  } catch (error) {
+    if (uploadedUrl) {
+      try {
+        await del(uploadedUrl);
+      } catch {
+        console.error("Failed to clean up bot image upload.");
+      }
+    }
+
+    throw error;
+  }
+
+  // Keep the previous image: it may still be referenced elsewhere.
+  revalidatePath("/admin");
+
+  return updatedBot;
+}

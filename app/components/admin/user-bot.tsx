@@ -32,6 +32,7 @@ import type { GifResult } from "@/app/components/gif-picker";
 
 import { CreateBotUser } from "./create-bot-user";
 import { createComment } from "@/app/actions/post";
+import { EditBotUser } from "./edit-bot-user";
 
 type BotProfile = Awaited<ReturnType<typeof getBotUsers>>[number];
 type BotMarketState = Awaited<ReturnType<typeof getBotMarketState>>;
@@ -122,6 +123,8 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
     SubmittedComment[]
   >([]);
 
+  const [isEditingBot, setIsEditingBot] = useState(false);
+
   const requestInFlight = useRef(false);
 
   const selectedBot = bots.find((bot) => bot.id === botId);
@@ -131,7 +134,8 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
   );
 
   const selectionKey = `${botId}:${symbol}`;
-  const isBusy = isGenerating || isSubmitting;
+
+  const isBusy = isGenerating || isSubmitting || isEditingBot;
 
   const stateReady =
     loadedStateKey === selectionKey &&
@@ -727,6 +731,41 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
             />
           ))}
         </div>
+      )}
+
+      {selectedBot && (
+        <EditBotUser
+          key={selectedBot.id}
+          bot={selectedBot}
+          disabled={isGenerating || isSubmitting}
+          onBusyChange={setIsEditingBot}
+          onUpdated={(updatedBot) => {
+            setBots((previous) =>
+              previous.map((bot) =>
+                bot.id === updatedBot.id ? updatedBot : bot,
+              ),
+            );
+
+            // Update bot details in comments already rendered here.
+            setSubmittedComments((previous) =>
+              previous.map((entry) =>
+                entry.comment.author.id === updatedBot.id
+                  ? {
+                      ...entry,
+                      comment: {
+                        ...entry.comment,
+                        author: {
+                          ...entry.comment.author,
+                          name: updatedBot.name,
+                          image: updatedBot.image,
+                        },
+                      },
+                    }
+                  : entry,
+              ),
+            );
+          }}
+        />
       )}
     </section>
   );
