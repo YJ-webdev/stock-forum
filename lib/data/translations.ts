@@ -2503,12 +2503,12 @@ export const SEARCH_LABELS: Record<
     results: "시장 검색 결과",
   },
   ja: {
-    placeholder: "検索...",
+    placeholder: "検索…",
     search_markets: "市場を検索",
     results: "市場の検索結果",
   },
   zh: {
-    placeholder: "搜索...",
+    placeholder: "搜索…",
     search_markets: "搜索市场",
     results: "市场搜索结果",
   },
