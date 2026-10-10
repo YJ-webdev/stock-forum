@@ -80,6 +80,7 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
               text-left
               transition-colors
               bg-zinc-100/50 dark:bg-zinc-800/50
+              border hover:bg-zinc-100 dark:hover:bg-zinc-800
             "
           >
             {/* ---------------------------------------------------------- */}

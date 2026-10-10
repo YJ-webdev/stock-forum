@@ -359,7 +359,7 @@ export async function getLayoutSideData() {
   const [comments, popularBoards, traders] = await Promise.all([
     getMostLikedComments(3),
     getPopularBoards(7),
-    getTopBetters(10),
+    getTopBetters(5),
   ]);
 
   return {
