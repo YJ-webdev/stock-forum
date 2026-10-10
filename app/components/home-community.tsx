@@ -271,7 +271,7 @@ export function HomeCommunity({
               aria-pressed={active}
               onClick={() => changeMarket(market.symbol)}
               className={`
-          inline-flex h-9 shrink-0 cursor-pointer
+          inline-flex h-8.5 shrink-0 cursor-pointer
           items-center justify-center whitespace-nowrap
           rounded-full border px-3.5 text-sm font-medium
           transition-colors
@@ -302,7 +302,7 @@ export function HomeCommunity({
         <button
           type="button"
           className="
-      inline-flex h-9 shrink-0 cursor-pointer
+      inline-flex h-8.5 shrink-0 cursor-pointer
       items-center justify-center gap-1 whitespace-nowrap
       rounded-full border border-zinc-300 bg-zinc-100
       px-3.5 text-sm font-medium text-zinc-500
