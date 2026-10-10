@@ -47,7 +47,7 @@ interface PredictionCommentInputProps {
 const POINT_BUTTON_CLASS = `
   flex h-9 w-7 shrink-0 touch-manipulation
   items-center justify-center rounded-md
-  text-lg text-zinc-500 transition-colors
+  text-lg text-zinc-500 dark:text-zinc-300 transition-colors
   hover:bg-zinc-200 active:bg-zinc-200
   focus-visible:outline-none
   focus-visible:ring-2 focus-visible:ring-zinc-400
@@ -114,6 +114,7 @@ export function PredictionCommentInput({
   }
 
   const showMax = betAmount === 500 && Number(pointsDraft ?? betAmount) === 500;
+  const remainingPoints = Math.max(0, userPoints - betAmount);
 
   return (
     <div className="mb-8 flex gap-3">
@@ -213,17 +214,18 @@ export function PredictionCommentInput({
             </div>
 
             {/* Points */}
-            <div className=" flex shrink-0 items-center -gap-5">
-              <button
-                type="button"
-                aria-label="Decrease points"
-                disabled={pointsDisabled || betAmount <= 0}
-                onClick={() => adjustPoints(-50)}
-                className={POINT_BUTTON_CLASS}
-              >
-                −
-              </button>
-              <div className=" relative">
+            <div className=" flex shrink-0 items-center justify-between">
+              <div className="flex relative -gap-4 ">
+                <button
+                  type="button"
+                  aria-label="Decrease points"
+                  disabled={pointsDisabled || betAmount <= 0}
+                  onClick={() => adjustPoints(-50)}
+                  className={POINT_BUTTON_CLASS}
+                >
+                  −
+                </button>
+
                 <input
                   type="text"
                   inputMode="numeric"
@@ -253,7 +255,7 @@ export function PredictionCommentInput({
                   }}
                   className="
                   h-9 w-[3ch] bg-transparent
-                  text-center text-sm tabular-nums text-zinc-500
+                  text-center text-sm tabular-nums text-zinc-500 dark:text-zinc-300
                   outline-none
                   focus-visible:rounded-sm
                   focus-visible:ring-2 focus-visible:ring-zinc-400
@@ -265,20 +267,22 @@ export function PredictionCommentInput({
                     max
                   </span>
                 )}
-              </div>
-              <button
-                type="button"
-                aria-label="Increase points"
-                disabled={pointsDisabled || betAmount >= pointsLimit}
-                onClick={() => adjustPoints(50)}
-                className={POINT_BUTTON_CLASS}
-              >
-                +
-              </button>
 
-              <span className="jakarta whitespace-nowrap text-sm font-normal text-zinc-500">
-                /{userPoints.toLocaleString()}pts
-              </span>
+                <button
+                  type="button"
+                  aria-label="Increase points"
+                  disabled={pointsDisabled || betAmount >= pointsLimit}
+                  onClick={() => adjustPoints(50)}
+                  className={POINT_BUTTON_CLASS}
+                >
+                  +
+                </button>
+              </div>
+              <div className="w-full">
+                <span className="jakarta ml-2 whitespace-nowrap text-sm font-normal tabular-nums text-zinc-400 dark:text-zinc-500">
+                  {remainingPoints.toLocaleString("en-US")}pts.
+                </span>
+              </div>
             </div>
           </div>
 
