@@ -188,43 +188,84 @@ export function FooterPage({ type }: FooterPageProps) {
 }
 
 function HelpContent() {
+  const [openSection, setOpenSection] = useState<number | null>(null);
+
   return (
     <div>
-      <p className="mb-6 text-[15px] leading-7 text-zinc-500 dark:text-zinc-400">
+      <p className="mb-6 text-[15px] text-zinc-500 dark:text-zinc-400">
         Find answers about predictions, your watchlist, and account settings.
       </p>
 
       <div className="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-        {HELP_ITEMS.map(({ title, content }) => (
-          <details key={title} className="group">
-            <summary
-              className="
-                flex min-h-14 cursor-pointer list-none
-                items-center justify-between gap-4 py-4
-                text-[15px] text-zinc-800
-                dark:text-zinc-200
-                [&::-webkit-details-marker]:hidden
-              "
-            >
-              {title}
+        {HELP_ITEMS.map(({ title, content }, index) => {
+          const triggerId = `help-${index}-trigger`;
+          const contentId = `help-${index}-content`;
+          const isOpen = openSection === index;
 
-              <ChevronDown
-                size={16}
-                aria-hidden="true"
-                className="
-                  shrink-0 text-zinc-400
-                  transition-transform duration-200
-                  group-open:rotate-180
+          return (
+            <section key={title}>
+              <h2>
+                <button
+                  id={triggerId}
+                  type="button"
+                  aria-expanded={isOpen}
+                  aria-controls={contentId}
+                  onClick={() =>
+                    setOpenSection((current) =>
+                      current === index ? null : index,
+                    )
+                  }
+                  className="
+                    flex min-h-14 w-full cursor-pointer
+                    items-center justify-between gap-4 py-4
+                    text-start text-[15px] font-medium text-zinc-800
+                    focus-visible:outline-none
+                    focus-visible:ring-2 focus-visible:ring-inset
+                    focus-visible:ring-zinc-400
+                    dark:text-zinc-200
+                  "
+                >
+                  <span>{title}</span>
+
+                  <ChevronDown
+                    size={16}
+                    aria-hidden="true"
+                    className={`
+                      shrink-0 text-zinc-400
+                      transition-transform duration-250 ease-in-out
+                      motion-reduce:transition-none
+                      ${isOpen ? "rotate-180" : ""}
+                    `}
+                  />
+                </button>
+              </h2>
+
+              <div
+                id={contentId}
+                role="region"
+                aria-labelledby={triggerId}
+                aria-hidden={!isOpen}
+                inert={!isOpen}
+                className={`
+                  grid transition-[grid-template-rows,opacity,visibility]
+                  duration-250 ease-in-out
                   motion-reduce:transition-none
-                "
-              />
-            </summary>
-
-            <p className="pb-5 pr-6 text-[15px] leading-7 text-zinc-500 dark:text-zinc-400">
-              {content}
-            </p>
-          </details>
-        ))}
+                  ${
+                    isOpen
+                      ? "visible grid-rows-[1fr] opacity-100"
+                      : "invisible grid-rows-[0fr] opacity-0"
+                  }
+                `}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <p className="pb-5 pr-6 text-[15px] leading-7 text-zinc-500 dark:text-zinc-400">
+                    {content}
+                  </p>
+                </div>
+              </div>
+            </section>
+          );
+        })}
       </div>
 
       <Link
@@ -249,7 +290,7 @@ function FeedbackContent() {
 
   return (
     <div>
-      <p className="text-[15px] leading-7 text-zinc-500 dark:text-zinc-400">
+      <p className="text-[15px] text-zinc-500 dark:text-zinc-400">
         Have an idea or found something that isn’t working? Tell us about it.
       </p>
 
@@ -348,6 +389,8 @@ function FeedbackContent() {
 }
 
 function PolicyContent({ type }: { type: PolicyPageType }) {
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
   const sections = POLICY_SECTIONS[type];
 
   const introduction =
@@ -357,51 +400,88 @@ function PolicyContent({ type }: { type: PolicyPageType }) {
 
   return (
     <div>
-      <p className="mb-6 text-[15px] leading-7 text-zinc-500 dark:text-zinc-400">
+      <p className="mb-6 text-[15px] text-zinc-500 dark:text-zinc-400">
         {introduction}
       </p>
 
       <div className="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-        {sections.map(({ title, content }) => (
-          <details key={title} className="group">
-            <summary
-              className="
-                flex min-h-14 cursor-pointer list-none
-                items-center justify-between gap-4 py-4
-                text-[15px] font-medium text-zinc-800
-                focus-visible:outline-none
-                focus-visible:ring-2 focus-visible:ring-inset
-                focus-visible:ring-zinc-400
-                dark:text-zinc-200
-                [&::-webkit-details-marker]:hidden
-              "
-            >
-              <span>{title}</span>
+        {sections.map(({ title, content }, index) => {
+          const sectionKey = `${type}-${index}`;
+          const triggerId = `${sectionKey}-trigger`;
+          const contentId = `${sectionKey}-content`;
+          const isOpen = openSection === sectionKey;
 
-              <ChevronDown
-                size={16}
-                aria-hidden="true"
-                className="
-                  shrink-0 text-zinc-400
-                  transition-transform duration-200
-                  group-open:rotate-180
-                  motion-reduce:transition-none
-                "
-              />
-            </summary>
-
-            <div className="space-y-3 pb-5 pr-6">
-              {content.map((paragraph, index) => (
-                <p
-                  key={index}
-                  className="text-[15px] leading-7 text-zinc-500 dark:text-zinc-400"
+          return (
+            <section key={sectionKey}>
+              <h2>
+                <button
+                  id={triggerId}
+                  type="button"
+                  aria-expanded={isOpen}
+                  aria-controls={contentId}
+                  onClick={() =>
+                    setOpenSection((current) =>
+                      current === sectionKey ? null : sectionKey,
+                    )
+                  }
+                  className="
+                    flex min-h-14 w-full cursor-pointer
+                    items-center justify-between gap-4 py-4
+                    text-start text-[15px] font-medium text-zinc-800
+                    focus-visible:outline-none
+                    focus-visible:ring-2 focus-visible:ring-inset
+                    focus-visible:ring-zinc-400
+                    dark:text-zinc-200
+                  "
                 >
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-          </details>
-        ))}
+                  <span>{title}</span>
+
+                  <ChevronDown
+                    size={16}
+                    aria-hidden="true"
+                    className={`
+                      shrink-0 text-zinc-400
+                      transition-transform duration-250 ease-in-out
+                      motion-reduce:transition-none
+                      ${isOpen ? "rotate-180" : ""}
+                    `}
+                  />
+                </button>
+              </h2>
+
+              <div
+                id={contentId}
+                role="region"
+                aria-labelledby={triggerId}
+                aria-hidden={!isOpen}
+                inert={!isOpen}
+                className={`
+                  grid transition-[grid-template-rows,opacity,visibility]
+                  duration-250 ease-in-out
+                  motion-reduce:transition-none
+                  ${
+                    isOpen
+                      ? "visible grid-rows-[1fr] opacity-100"
+                      : "invisible grid-rows-[0fr] opacity-0"
+                  }
+                `}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <div className="space-y-3 pb-5 pr-6">
+                    {content.map((paragraph, paragraphIndex) => (
+                      <p
+                        key={paragraphIndex}
+                        className="text-[15px] leading-7 text-zinc-500 dark:text-zinc-400"
+                      >
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+          );
+        })}
       </div>
     </div>
   );
