@@ -3,9 +3,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
 import { useSearchParams } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -19,7 +18,6 @@ import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { resolveLanguage } from "@/lib/data/languages";
 import { HOME_COMMUNITY_LABELS } from "@/lib/data/translations";
 
-import { CommentItem } from "./comment";
 import {
   Select,
   SelectContent,
@@ -27,6 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+import { CommentItem } from "./comment";
 
 interface HomeCommunityProps {
   initialComments: HomeComments;
@@ -92,7 +92,6 @@ export function HomeCommunity({
   );
 
   const filterMarkets = markets.slice(0, 5);
-
   const selectedMarket = assetSymbol ? marketBySymbol.get(assetSymbol) : null;
 
   const highlightTargetComment =
@@ -252,69 +251,81 @@ export function HomeCommunity({
   }
 
   return (
-    <div className="outfit w-full min-w-0 ">
-      <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3">
-        <div
-          role="group"
-          aria-label={labels.filter_markets}
-          className="mb-2 flex min-w-0 flex-wrap items-center gap-2"
+    <div className="outfit w-full min-w-0">
+      <div className="mt-3.5 flex flex-wrap items-center gap-2">
+        {[
+          {
+            symbol: null,
+            displaySymbol: labels.all_markets,
+            name: labels.all_markets,
+          },
+          ...filterMarkets,
+        ].map((market) => {
+          const active = assetSymbol === market.symbol;
+
+          return (
+            <button
+              key={market.symbol ?? "all"}
+              type="button"
+              title={market.name}
+              aria-pressed={active}
+              onClick={() => changeMarket(market.symbol)}
+              className={`
+          inline-flex h-9 shrink-0 cursor-pointer
+          items-center justify-center whitespace-nowrap
+          rounded-full border px-3.5 text-sm font-medium
+          transition-colors
+          focus-visible:outline-none
+          focus-visible:ring-2
+          focus-visible:ring-zinc-400
+          ${
+            active
+              ? `
+                border-transparent bg-zinc-500/50 text-white
+                dark:bg-[#515151] dark:text-zinc-100
+              `
+              : `
+                border-zinc-300 text-zinc-500
+                hover:border-zinc-400
+                dark:border-zinc-700 dark:text-zinc-500
+                dark:hover:border-zinc-700
+                dark:hover:text-zinc-100
+              `
+          }
+        `}
+            >
+              {market.displaySymbol}
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          className="
+      inline-flex h-9 shrink-0 cursor-pointer
+      items-center justify-center gap-1 whitespace-nowrap
+      rounded-full border border-zinc-300 bg-zinc-100
+      px-3.5 text-sm font-medium text-zinc-500
+      transition-colors hover:border-zinc-400
+      focus-visible:outline-none
+      focus-visible:ring-2
+      focus-visible:ring-zinc-400
+      dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300
+      dark:hover:border-zinc-600
+    "
         >
-          {[
-            {
-              symbol: null,
-              displaySymbol: labels.all_markets,
-              name: labels.all_markets,
-            },
-            ...filterMarkets,
-          ].map((market) => {
-            const active = assetSymbol === market.symbol;
+          <Plus className="size-4" aria-hidden="true" />
+          Share your view
+        </button>
 
-            return (
-              <button
-                key={market.symbol ?? "all"}
-                type="button"
-                title={market.name}
-                aria-pressed={active}
-                onClick={() => changeMarket(market.symbol)}
-                className={`
-                  shrink-0 cursor-pointer rounded-full
-                  border px-3.5 py-1.5 text-sm font-medium
-                  transition-colors
-                  focus-visible:outline-none
-                  focus-visible:ring-2
-                  focus-visible:ring-zinc-400
-                  ${
-                    active
-                      ? `
-                        border-transparent bg-zinc-500/50 text-white
-                        dark:bg-[#515151] dark:text-zinc-900
-                      `
-                      : `
-                        border-zinc-300 text-zinc-500
-                        hover:border-zinc-400
-                        dark:border-zinc-700 dark:text-zinc-500
-                        dark:hover:border-zinc-700
-                        dark:hover:text-zinc-100
-                      `
-                  }
-                `}
-              >
-                {market.displaySymbol}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="relative ml-auto shrink-0">
+        <div className="ml-auto shrink-0">
           <Select
             value={sort}
             onValueChange={(value) => changeSort(value as HomeCommentSort)}
           >
             <SelectTrigger
               aria-label={labels.sort_discussions}
-              className="
-  
-    "
+              className="h-9 w-auto whitespace-nowrap rounded-full"
             >
               <SelectValue>
                 {sort === "latest" ? labels.latest : labels.most_liked}
@@ -324,9 +335,9 @@ export function HomeCommunity({
             <SelectContent
               align="end"
               className="
-      rounded-xl border-zinc-200 bg-white
-      dark:border-zinc-700 dark:bg-zinc-900
-    "
+          rounded-xl border-zinc-200 bg-white
+          dark:border-zinc-700 dark:bg-zinc-900
+        "
             >
               <SelectItem value="latest" className="cursor-pointer rounded-lg">
                 {labels.latest}
@@ -343,7 +354,7 @@ export function HomeCommunity({
         </div>
       </div>
 
-      <div aria-busy={loading} className="mt-5">
+      <div aria-busy={loading} className="mt-7">
         {loading ? (
           <div role="status" className="space-y-6 py-3">
             <span className="sr-only">{labels.loading_discussions}</span>
