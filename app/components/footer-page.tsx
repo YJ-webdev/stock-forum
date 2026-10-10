@@ -170,7 +170,7 @@ export function FooterPage({ type }: FooterPageProps) {
 
   return (
     <main className="mx-auto min-h-[calc(100dvh-146px)] w-full max-w-2xl px-5 pt-5 pb-10 md:px-6">
-      <h1 className="text-2xl font-medium tracking-tight text-zinc-900 dark:text-zinc-100">
+      <h1 className="text-2xl font-medium tracking-tight text-zinc-800 dark:text-zinc-300">
         {labels[type]}
       </h1>
 
@@ -270,7 +270,7 @@ function FeedbackContent() {
                 aria-pressed={category === value}
                 onClick={() => setCategory(value)}
                 className={`
-                  min-h-10 rounded-full px-4 text-sm
+                  min-h-8.5 rounded-full px-4 text-sm
                   transition-colors
                   focus-visible:outline-none focus-visible:ring-2
                   focus-visible:ring-zinc-400
@@ -309,12 +309,12 @@ function FeedbackContent() {
             rows={7}
             className="
               block w-full resize-y rounded-xl
-              border border-zinc-200 bg-transparent
+              border border-zinc-100 bg-zinc-100
               px-4 py-3 text-base leading-7 text-zinc-900
               outline-none placeholder:text-zinc-400
-              focus:border-zinc-400
-              dark:border-zinc-700 dark:text-zinc-100
-              dark:focus:border-zinc-500
+              focus:border-zinc-300 
+              dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-100
+              dark:focus:border-zinc-600
               md:text-[15px]
             "
           />
@@ -333,7 +333,7 @@ function FeedbackContent() {
             type="submit"
             disabled
             className="
-              min-h-11 rounded-full bg-zinc-900 px-5
+              min-h-8.5 rounded-full bg-zinc-900 px-5
               text-sm font-medium text-white
               disabled:cursor-default disabled:opacity-40
               dark:bg-zinc-100 dark:text-zinc-900
