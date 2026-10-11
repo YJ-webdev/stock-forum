@@ -1,3 +1,14 @@
+import type { UserTier } from "@/generated/prisma/client";
+
+export interface UserRanking {
+  tier: UserTier;
+  rank: number | null;
+  netProfit: number;
+  settledCount: number;
+  wonCount: number;
+  lostCount: number;
+}
+
 export interface User {
   id: string;
   name?: string | null;
@@ -6,4 +17,6 @@ export interface User {
   nationality?: string | null;
   language?: string | null;
   role: string;
+
+  ranking: UserRanking | null;
 }

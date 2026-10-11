@@ -71,7 +71,8 @@ export const ModelName = {
   PointBalance: 'PointBalance',
   PointTransaction: 'PointTransaction',
   UserFollow: 'UserFollow',
-  UserActivity: 'UserActivity'
+  UserActivity: 'UserActivity',
+  UserRanking: 'UserRanking'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -383,6 +384,25 @@ export const UserActivityScalarFieldEnum = {
 } as const
 
 export type UserActivityScalarFieldEnum = (typeof UserActivityScalarFieldEnum)[keyof typeof UserActivityScalarFieldEnum]
+
+
+export const UserRankingScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tier: 'tier',
+  rank: 'rank',
+  netProfit: 'netProfit',
+  settledCount: 'settledCount',
+  wonCount: 'wonCount',
+  lostCount: 'lostCount',
+  periodStart: 'periodStart',
+  periodEnd: 'periodEnd',
+  calculatedAt: 'calculatedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UserRankingScalarFieldEnum = (typeof UserRankingScalarFieldEnum)[keyof typeof UserRankingScalarFieldEnum]
 
 
 export const SortOrder = {

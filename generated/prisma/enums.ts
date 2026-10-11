@@ -57,6 +57,18 @@ export const ModerationActionType = {
 export type ModerationActionType = (typeof ModerationActionType)[keyof typeof ModerationActionType]
 
 
+export const UserTier = {
+  UNRANKED: 'UNRANKED',
+  BRONZE: 'BRONZE',
+  SILVER: 'SILVER',
+  GOLD: 'GOLD',
+  PLATINUM: 'PLATINUM',
+  DIAMOND: 'DIAMOND'
+} as const
+
+export type UserTier = (typeof UserTier)[keyof typeof UserTier]
+
+
 export const ContentVisibility = {
   PUBLIC: 'PUBLIC',
   PRIVATE: 'PRIVATE'

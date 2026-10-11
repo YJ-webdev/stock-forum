@@ -417,7 +417,8 @@ export const ModelName = {
   PointBalance: 'PointBalance',
   PointTransaction: 'PointTransaction',
   UserFollow: 'UserFollow',
-  UserActivity: 'UserActivity'
+  UserActivity: 'UserActivity',
+  UserRanking: 'UserRanking'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -433,7 +434,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "moderationAction" | "prediction" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "countryAiBrief" | "marketNews" | "accountBalance" | "watchlist" | "notification" | "pointBalance" | "pointTransaction" | "userFollow" | "userActivity"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "moderationAction" | "prediction" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "countryAiBrief" | "marketNews" | "accountBalance" | "watchlist" | "notification" | "pointBalance" | "pointTransaction" | "userFollow" | "userActivity" | "userRanking"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1991,6 +1992,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    UserRanking: {
+      payload: Prisma.$UserRankingPayload<ExtArgs>
+      fields: Prisma.UserRankingFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UserRankingFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRankingPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UserRankingFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRankingPayload>
+        }
+        findFirst: {
+          args: Prisma.UserRankingFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRankingPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UserRankingFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRankingPayload>
+        }
+        findMany: {
+          args: Prisma.UserRankingFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRankingPayload>[]
+        }
+        create: {
+          args: Prisma.UserRankingCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRankingPayload>
+        }
+        createMany: {
+          args: Prisma.UserRankingCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UserRankingCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRankingPayload>[]
+        }
+        delete: {
+          args: Prisma.UserRankingDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRankingPayload>
+        }
+        update: {
+          args: Prisma.UserRankingUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRankingPayload>
+        }
+        deleteMany: {
+          args: Prisma.UserRankingDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UserRankingUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UserRankingUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRankingPayload>[]
+        }
+        upsert: {
+          args: Prisma.UserRankingUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRankingPayload>
+        }
+        aggregate: {
+          args: Prisma.UserRankingAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUserRanking>
+        }
+        groupBy: {
+          args: Prisma.UserRankingGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserRankingGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UserRankingCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserRankingCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2325,6 +2400,25 @@ export const UserActivityScalarFieldEnum = {
 export type UserActivityScalarFieldEnum = (typeof UserActivityScalarFieldEnum)[keyof typeof UserActivityScalarFieldEnum]
 
 
+export const UserRankingScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tier: 'tier',
+  rank: 'rank',
+  netProfit: 'netProfit',
+  settledCount: 'settledCount',
+  wonCount: 'wonCount',
+  lostCount: 'lostCount',
+  periodStart: 'periodStart',
+  periodEnd: 'periodEnd',
+  calculatedAt: 'calculatedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UserRankingScalarFieldEnum = (typeof UserRankingScalarFieldEnum)[keyof typeof UserRankingScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2583,6 +2677,20 @@ export type ListEnumUserActivityTypeFieldRefInput<$PrismaModel> = FieldRefInputT
 
 
 /**
+ * Reference to a field of type 'UserTier'
+ */
+export type EnumUserTierFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserTier'>
+    
+
+
+/**
+ * Reference to a field of type 'UserTier[]'
+ */
+export type ListEnumUserTierFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserTier[]'>
+    
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -2767,6 +2875,7 @@ export type GlobalOmitConfig = {
   pointTransaction?: Prisma.PointTransactionOmit
   userFollow?: Prisma.UserFollowOmit
   userActivity?: Prisma.UserActivityOmit
+  userRanking?: Prisma.UserRankingOmit
 }
 
 /* Types for Logging */

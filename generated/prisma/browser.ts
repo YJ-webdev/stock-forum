@@ -122,3 +122,8 @@ export type UserFollow = Prisma.UserFollowModel
  * 
  */
 export type UserActivity = Prisma.UserActivityModel
+/**
+ * Model UserRanking
+ * 
+ */
+export type UserRanking = Prisma.UserRankingModel

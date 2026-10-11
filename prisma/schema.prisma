@@ -40,6 +40,15 @@ enum ModerationActionType {
   RESTORE_COMMENT
 }
 
+enum UserTier {
+  UNRANKED
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
 enum ContentVisibility {
   PUBLIC
   PRIVATE
@@ -56,6 +65,7 @@ model User {
   nationality   String?
   language      String    @default("en")
   role          Role      @default(USER)
+  ranking UserRanking?
 
   
 
@@ -212,6 +222,7 @@ model Prediction {
   @@index([userId, createdAt])
   @@index([nationality, symbol, sessionDate])
   @@index([status])
+  @@index([status, settledAt])
 }
 
 model CommentAsset {
@@ -540,4 +551,36 @@ enum UserActivityType {
 
   COMMENT_REPORTED
 REPLY_REPORTED
+}
+
+model UserRanking {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tier UserTier @default(UNRANKED)
+
+
+  rank Int?
+
+
+  netProfit Int @default(0)
+
+
+  settledCount Int @default(0)
+  wonCount     Int @default(0)
+  lostCount    Int @default(0)
+
+  
+  periodStart DateTime
+  periodEnd   DateTime
+
+  calculatedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tier])
+  @@index([rank])
 }

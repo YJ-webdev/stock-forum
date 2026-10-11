@@ -254,6 +254,7 @@ export type UserWhereInput = {
   bannedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  ranking?: Prisma.XOR<Prisma.UserRankingNullableScalarRelationFilter, Prisma.UserRankingWhereInput> | null
   moderationActionsReceived?: Prisma.ModerationActionListRelationFilter
   moderationActionsPerformed?: Prisma.ModerationActionListRelationFilter
   accounts?: Prisma.AccountListRelationFilter
@@ -289,6 +290,7 @@ export type UserOrderByWithRelationInput = {
   bannedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  ranking?: Prisma.UserRankingOrderByWithRelationInput
   moderationActionsReceived?: Prisma.ModerationActionOrderByRelationAggregateInput
   moderationActionsPerformed?: Prisma.ModerationActionOrderByRelationAggregateInput
   accounts?: Prisma.AccountOrderByRelationAggregateInput
@@ -327,6 +329,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   bannedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  ranking?: Prisma.XOR<Prisma.UserRankingNullableScalarRelationFilter, Prisma.UserRankingWhereInput> | null
   moderationActionsReceived?: Prisma.ModerationActionListRelationFilter
   moderationActionsPerformed?: Prisma.ModerationActionListRelationFilter
   accounts?: Prisma.AccountListRelationFilter
@@ -402,6 +405,7 @@ export type UserCreateInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -437,6 +441,7 @@ export type UserUncheckedCreateInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -472,6 +477,7 @@ export type UserUpdateInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -507,6 +513,7 @@ export type UserUncheckedUpdateInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -923,6 +930,20 @@ export type UserUpdateOneRequiredWithoutActivitiesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutActivitiesInput, Prisma.UserUpdateWithoutActivitiesInput>, Prisma.UserUncheckedUpdateWithoutActivitiesInput>
 }
 
+export type UserCreateNestedOneWithoutRankingInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRankingInput, Prisma.UserUncheckedCreateWithoutRankingInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRankingInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRankingNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRankingInput, Prisma.UserUncheckedCreateWithoutRankingInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRankingInput
+  upsert?: Prisma.UserUpsertWithoutRankingInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRankingInput, Prisma.UserUpdateWithoutRankingInput>, Prisma.UserUncheckedUpdateWithoutRankingInput>
+}
+
 export type UserCreateWithoutAccountsInput = {
   isBot?: boolean
   id?: string
@@ -938,6 +959,7 @@ export type UserCreateWithoutAccountsInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -972,6 +994,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -1022,6 +1045,7 @@ export type UserUpdateWithoutAccountsInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -1056,6 +1080,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -1090,6 +1115,7 @@ export type UserCreateWithoutSessionsInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -1124,6 +1150,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -1174,6 +1201,7 @@ export type UserUpdateWithoutSessionsInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -1208,6 +1236,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -1242,6 +1271,7 @@ export type UserCreateWithoutCommentsInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -1276,6 +1306,7 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -1326,6 +1357,7 @@ export type UserUpdateWithoutCommentsInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -1360,6 +1392,7 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -1394,6 +1427,7 @@ export type UserCreateWithoutModerationActionsPerformedInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -1428,6 +1462,7 @@ export type UserUncheckedCreateWithoutModerationActionsPerformedInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -1467,6 +1502,7 @@ export type UserCreateWithoutModerationActionsReceivedInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -1501,6 +1537,7 @@ export type UserUncheckedCreateWithoutModerationActionsReceivedInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -1551,6 +1588,7 @@ export type UserUpdateWithoutModerationActionsPerformedInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -1585,6 +1623,7 @@ export type UserUncheckedUpdateWithoutModerationActionsPerformedInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -1630,6 +1669,7 @@ export type UserUpdateWithoutModerationActionsReceivedInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -1664,6 +1704,7 @@ export type UserUncheckedUpdateWithoutModerationActionsReceivedInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -1698,6 +1739,7 @@ export type UserCreateWithoutPredictionsInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -1732,6 +1774,7 @@ export type UserUncheckedCreateWithoutPredictionsInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -1782,6 +1825,7 @@ export type UserUpdateWithoutPredictionsInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -1816,6 +1860,7 @@ export type UserUncheckedUpdateWithoutPredictionsInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -1850,6 +1895,7 @@ export type UserCreateWithoutRepliesInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -1884,6 +1930,7 @@ export type UserUncheckedCreateWithoutRepliesInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -1934,6 +1981,7 @@ export type UserUpdateWithoutRepliesInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -1968,6 +2016,7 @@ export type UserUncheckedUpdateWithoutRepliesInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -2002,6 +2051,7 @@ export type UserCreateWithoutCommentLikesInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -2036,6 +2086,7 @@ export type UserUncheckedCreateWithoutCommentLikesInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -2086,6 +2137,7 @@ export type UserUpdateWithoutCommentLikesInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -2120,6 +2172,7 @@ export type UserUncheckedUpdateWithoutCommentLikesInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -2154,6 +2207,7 @@ export type UserCreateWithoutReplyLikesInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -2188,6 +2242,7 @@ export type UserUncheckedCreateWithoutReplyLikesInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -2238,6 +2293,7 @@ export type UserUpdateWithoutReplyLikesInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -2272,6 +2328,7 @@ export type UserUncheckedUpdateWithoutReplyLikesInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -2306,6 +2363,7 @@ export type UserCreateWithoutBalanceInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -2340,6 +2398,7 @@ export type UserUncheckedCreateWithoutBalanceInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -2390,6 +2449,7 @@ export type UserUpdateWithoutBalanceInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -2424,6 +2484,7 @@ export type UserUncheckedUpdateWithoutBalanceInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -2458,6 +2519,7 @@ export type UserCreateWithoutWatchlistInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -2492,6 +2554,7 @@ export type UserUncheckedCreateWithoutWatchlistInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -2542,6 +2605,7 @@ export type UserUpdateWithoutWatchlistInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -2576,6 +2640,7 @@ export type UserUncheckedUpdateWithoutWatchlistInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -2610,6 +2675,7 @@ export type UserCreateWithoutNotificationsReceivedInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -2644,6 +2710,7 @@ export type UserUncheckedCreateWithoutNotificationsReceivedInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -2683,6 +2750,7 @@ export type UserCreateWithoutNotificationsSentInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -2717,6 +2785,7 @@ export type UserUncheckedCreateWithoutNotificationsSentInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -2767,6 +2836,7 @@ export type UserUpdateWithoutNotificationsReceivedInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -2801,6 +2871,7 @@ export type UserUncheckedUpdateWithoutNotificationsReceivedInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -2846,6 +2917,7 @@ export type UserUpdateWithoutNotificationsSentInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -2880,6 +2952,7 @@ export type UserUncheckedUpdateWithoutNotificationsSentInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -2914,6 +2987,7 @@ export type UserCreateWithoutPointBalanceInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -2948,6 +3022,7 @@ export type UserUncheckedCreateWithoutPointBalanceInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -2998,6 +3073,7 @@ export type UserUpdateWithoutPointBalanceInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -3032,6 +3108,7 @@ export type UserUncheckedUpdateWithoutPointBalanceInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -3066,6 +3143,7 @@ export type UserCreateWithoutPointTransactionsInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -3100,6 +3178,7 @@ export type UserUncheckedCreateWithoutPointTransactionsInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -3150,6 +3229,7 @@ export type UserUpdateWithoutPointTransactionsInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -3184,6 +3264,7 @@ export type UserUncheckedUpdateWithoutPointTransactionsInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -3218,6 +3299,7 @@ export type UserCreateWithoutFollowingInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -3252,6 +3334,7 @@ export type UserUncheckedCreateWithoutFollowingInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -3291,6 +3374,7 @@ export type UserCreateWithoutFollowersInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -3325,6 +3409,7 @@ export type UserUncheckedCreateWithoutFollowersInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -3375,6 +3460,7 @@ export type UserUpdateWithoutFollowingInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -3409,6 +3495,7 @@ export type UserUncheckedUpdateWithoutFollowingInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -3454,6 +3541,7 @@ export type UserUpdateWithoutFollowersInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -3488,6 +3576,7 @@ export type UserUncheckedUpdateWithoutFollowersInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -3522,6 +3611,7 @@ export type UserCreateWithoutActivitiesInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -3556,6 +3646,7 @@ export type UserUncheckedCreateWithoutActivitiesInput = {
   bannedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -3606,6 +3697,7 @@ export type UserUpdateWithoutActivitiesInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -3640,6 +3732,7 @@ export type UserUncheckedUpdateWithoutActivitiesInput = {
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -3653,6 +3746,162 @@ export type UserUncheckedUpdateWithoutActivitiesInput = {
   predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
   notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
+  following?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
+  pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
+  pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutRankingInput = {
+  isBot?: boolean
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  nationality?: string | null
+  language?: string
+  role?: $Enums.Role
+  status?: $Enums.UserStatus
+  mutedAt?: Date | string | null
+  bannedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
+  moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
+  replyLikes?: Prisma.ReplyLikeCreateNestedManyWithoutUserInput
+  commentLikes?: Prisma.CommentLikeCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
+  activities?: Prisma.UserActivityCreateNestedManyWithoutUserInput
+  following?: Prisma.UserFollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
+  pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
+  pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutRankingInput = {
+  isBot?: boolean
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  nationality?: string | null
+  language?: string
+  role?: $Enums.Role
+  status?: $Enums.UserStatus
+  mutedAt?: Date | string | null
+  bannedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
+  moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
+  replyLikes?: Prisma.ReplyLikeUncheckedCreateNestedManyWithoutUserInput
+  commentLikes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
+  activities?: Prisma.UserActivityUncheckedCreateNestedManyWithoutUserInput
+  following?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
+  pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
+  pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutRankingInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRankingInput, Prisma.UserUncheckedCreateWithoutRankingInput>
+}
+
+export type UserUpsertWithoutRankingInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRankingInput, Prisma.UserUncheckedUpdateWithoutRankingInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRankingInput, Prisma.UserUncheckedCreateWithoutRankingInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRankingInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRankingInput, Prisma.UserUncheckedUpdateWithoutRankingInput>
+}
+
+export type UserUpdateWithoutRankingInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
+  moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
+  replyLikes?: Prisma.ReplyLikeUpdateManyWithoutUserNestedInput
+  commentLikes?: Prisma.CommentLikeUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
+  activities?: Prisma.UserActivityUpdateManyWithoutUserNestedInput
+  following?: Prisma.UserFollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
+  pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
+  pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRankingInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
+  moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
+  replyLikes?: Prisma.ReplyLikeUncheckedUpdateManyWithoutUserNestedInput
+  commentLikes?: Prisma.CommentLikeUncheckedUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
+  activities?: Prisma.UserActivityUncheckedUpdateManyWithoutUserNestedInput
   following?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowerNestedInput
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
@@ -3840,6 +4089,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   bannedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  ranking?: boolean | Prisma.User$rankingArgs<ExtArgs>
   moderationActionsReceived?: boolean | Prisma.User$moderationActionsReceivedArgs<ExtArgs>
   moderationActionsPerformed?: boolean | Prisma.User$moderationActionsPerformedArgs<ExtArgs>
   accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>
@@ -3914,6 +4164,7 @@ export type UserSelectScalar = {
 
 export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"isBot" | "id" | "name" | "email" | "emailVerified" | "image" | "nationality" | "language" | "role" | "status" | "mutedAt" | "bannedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  ranking?: boolean | Prisma.User$rankingArgs<ExtArgs>
   moderationActionsReceived?: boolean | Prisma.User$moderationActionsReceivedArgs<ExtArgs>
   moderationActionsPerformed?: boolean | Prisma.User$moderationActionsPerformedArgs<ExtArgs>
   accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>
@@ -3940,6 +4191,7 @@ export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "User"
   objects: {
+    ranking: Prisma.$UserRankingPayload<ExtArgs> | null
     moderationActionsReceived: Prisma.$ModerationActionPayload<ExtArgs>[]
     moderationActionsPerformed: Prisma.$ModerationActionPayload<ExtArgs>[]
     accounts: Prisma.$AccountPayload<ExtArgs>[]
@@ -4368,6 +4620,7 @@ readonly fields: UserFieldRefs;
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  ranking<T extends Prisma.User$rankingArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$rankingArgs<ExtArgs>>): Prisma.Prisma__UserRankingClient<runtime.Types.Result.GetResult<Prisma.$UserRankingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   moderationActionsReceived<T extends Prisma.User$moderationActionsReceivedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$moderationActionsReceivedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ModerationActionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   moderationActionsPerformed<T extends Prisma.User$moderationActionsPerformedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$moderationActionsPerformedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ModerationActionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   accounts<T extends Prisma.User$accountsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$accountsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -4819,6 +5072,25 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Limit how many Users to delete.
    */
   limit?: number
+}
+
+/**
+ * User.ranking
+ */
+export type User$rankingArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserRanking
+   */
+  select?: Prisma.UserRankingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserRanking
+   */
+  omit?: Prisma.UserRankingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserRankingInclude<ExtArgs> | null
+  where?: Prisma.UserRankingWhereInput
 }
 
 /**
