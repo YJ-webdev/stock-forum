@@ -32,6 +32,7 @@ import {
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { resolveLanguage } from "@/lib/data/languages";
 import { HISTORY_LABELS } from "@/lib/data/translations";
+import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 
 // -----------------------------------------------------------------------------
 // FILTER LABELS
@@ -456,7 +457,7 @@ function HistoryPanelContent({
                       dateTime={activity.createdAt}
                       className="mt-1.5 block text-xs text-zinc-400 dark:text-zinc-500 truncate"
                     >
-                      {formatActivityTime(activity.createdAt, language)}
+                      {formatTimeAgo(activity.createdAt, language)}
                     </time>
                   </span>
                 </>
@@ -576,7 +577,7 @@ function HistoryLoader({ labels }: { labels: { loading: string } }) {
 // -----------------------------------------------------------------------------
 
 function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
-  const className = "size-4 mt-[1.5px] text-zinc-500 dark:text-zinc-400";
+  const className = "size-4 mt-[1.75px] text-zinc-500 dark:text-zinc-400";
 
   switch (type) {
     case "COMMENT_LIKED":
@@ -669,29 +670,6 @@ function getActivityDetail(
 
   return [marketName, direction, points].filter(Boolean).join(" · ");
 }
-
-// -----------------------------------------------------------------------------
-// ACTIVITY TIME
-// -----------------------------------------------------------------------------
-
-function formatActivityTime(date: string, language: string) {
-  const parsedDate = new Date(date);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "";
-  }
-
-  return new Intl.DateTimeFormat(language, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(parsedDate);
-}
-
-// -----------------------------------------------------------------------------
-// EMPTY STATE
-// -----------------------------------------------------------------------------
 
 function EmptyHistory({ message }: { message: string }) {
   return (

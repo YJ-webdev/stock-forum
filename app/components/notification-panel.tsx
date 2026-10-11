@@ -20,7 +20,9 @@ import {
   X,
 } from "lucide-react";
 
+import { BiSolidChat } from "react-icons/bi";
 import { RiHeartFill } from "react-icons/ri";
+import { TbFlagFilled } from "react-icons/tb";
 
 import {
   deleteAllSocialNotifications,
@@ -32,23 +34,165 @@ import {
 } from "@/app/actions/notification";
 
 import { resolveLanguage } from "@/lib/data/languages";
+
 import {
   CONTENT_STATUS_LABELS,
   NOTIFICATION_LABELS,
 } from "@/lib/data/translations";
+
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
+import { formatTimeAgo } from "@/lib/utils/format-time-ago";
+
+// -----------------------------------------------------------------------------
+// TYPES
+// -----------------------------------------------------------------------------
 
 type ResolvedLanguage = ReturnType<typeof resolveLanguage>;
 type PanelLabels = (typeof NOTIFICATION_LABELS)[ResolvedLanguage];
+
+type NotificationRange = "all" | "today" | "yesterday" | "week";
 
 interface NotificationPanelProps {
   refreshKey: number;
   setOnNotification: Dispatch<SetStateAction<boolean>>;
 
   currentUser?: {
+    id?: string;
     language?: string | null;
   } | null;
 }
+
+interface NotificationRangeLabels {
+  description: string;
+  range: string;
+  all: string;
+  today: string;
+  yesterday: string;
+  week: string;
+  empty: string;
+}
+
+// -----------------------------------------------------------------------------
+// RANGE LABELS
+// -----------------------------------------------------------------------------
+
+const NOTIFICATION_RANGE_LABELS: Record<
+  ResolvedLanguage,
+  NotificationRangeLabels
+> = {
+  en: {
+    description: "Your notifications",
+    range: "Notification period",
+    all: "All",
+    today: "Today",
+    yesterday: "Yesterday",
+    week: "Last 7 days",
+    empty: "No notifications in this period.",
+  },
+  ko: {
+    description: "받은 알림",
+    range: "알림 기간",
+    all: "전체",
+    today: "오늘",
+    yesterday: "어제",
+    week: "최근 7일",
+    empty: "해당 기간에 알림이 없습니다.",
+  },
+  ja: {
+    description: "受信した通知",
+    range: "通知の期間",
+    all: "すべて",
+    today: "今日",
+    yesterday: "昨日",
+    week: "過去7日間",
+    empty: "この期間の通知はありません。",
+  },
+  zh: {
+    description: "收到的通知",
+    range: "通知时间范围",
+    all: "全部",
+    today: "今天",
+    yesterday: "昨天",
+    week: "最近7天",
+    empty: "此时间段没有通知。",
+  },
+  de: {
+    description: "Deine Benachrichtigungen",
+    range: "Zeitraum der Benachrichtigungen",
+    all: "Alle",
+    today: "Heute",
+    yesterday: "Gestern",
+    week: "Letzte 7 Tage",
+    empty: "Keine Benachrichtigungen in diesem Zeitraum.",
+  },
+  fr: {
+    description: "Vos notifications",
+    range: "Période des notifications",
+    all: "Toutes",
+    today: "Aujourd’hui",
+    yesterday: "Hier",
+    week: "7 derniers jours",
+    empty: "Aucune notification pour cette période.",
+  },
+  es: {
+    description: "Tus notificaciones",
+    range: "Periodo de notificaciones",
+    all: "Todas",
+    today: "Hoy",
+    yesterday: "Ayer",
+    week: "Últimos 7 días",
+    empty: "No hay notificaciones en este periodo.",
+  },
+  pt: {
+    description: "Suas notificações",
+    range: "Período das notificações",
+    all: "Todas",
+    today: "Hoje",
+    yesterday: "Ontem",
+    week: "Últimos 7 dias",
+    empty: "Nenhuma notificação neste período.",
+  },
+  it: {
+    description: "Le tue notifiche",
+    range: "Periodo delle notifiche",
+    all: "Tutte",
+    today: "Oggi",
+    yesterday: "Ieri",
+    week: "Ultimi 7 giorni",
+    empty: "Nessuna notifica in questo periodo.",
+  },
+  ru: {
+    description: "Ваши уведомления",
+    range: "Период уведомлений",
+    all: "Все",
+    today: "Сегодня",
+    yesterday: "Вчера",
+    week: "Последние 7 дней",
+    empty: "Нет уведомлений за этот период.",
+  },
+  ar: {
+    description: "إشعاراتك",
+    range: "فترة الإشعارات",
+    all: "الكل",
+    today: "اليوم",
+    yesterday: "أمس",
+    week: "آخر 7 أيام",
+    empty: "لا توجد إشعارات خلال هذه الفترة.",
+  },
+  hi: {
+    description: "आपकी सूचनाएँ",
+    range: "सूचनाओं की अवधि",
+    all: "सभी",
+    today: "आज",
+    yesterday: "कल",
+    week: "पिछले 7 दिन",
+    empty: "इस अवधि में कोई सूचना नहीं है।",
+  },
+};
+
+// -----------------------------------------------------------------------------
+// SOCIAL TYPES
+// -----------------------------------------------------------------------------
 
 const SOCIAL_TYPES = new Set<MyNotification["type"]>([
   "COMMENT_LIKED",
@@ -57,55 +201,179 @@ const SOCIAL_TYPES = new Set<MyNotification["type"]>([
   "REPLY_REPLIED",
 ]);
 
-let notificationCache: MyNotification[] | null = null;
-let notificationRequest: Promise<MyNotification[]> | null = null;
+// -----------------------------------------------------------------------------
+// CLIENT CACHE
+// Only cache when a user ID is available.
+// -----------------------------------------------------------------------------
 
-function fetchNotifications() {
-  if (!notificationRequest) {
-    notificationRequest = getNotifications().finally(() => {
-      notificationRequest = null;
-    });
-  }
+const NOTIFICATION_CACHE_TIME = 30 * 1000;
 
-  return notificationRequest;
+interface NotificationCacheEntry {
+  notifications: MyNotification[];
+  fetchedAt: number;
+  refreshKey: number;
 }
 
-export function NotificationPanel({
+const notificationCache = new Map<string, NotificationCacheEntry>();
+
+// -----------------------------------------------------------------------------
+// RANGE
+// -----------------------------------------------------------------------------
+
+function isInNotificationRange(
+  date: Date | string,
+  range: NotificationRange,
+  now: Date,
+) {
+  if (range === "all") {
+    return true;
+  }
+
+  const timestamp = new Date(date).getTime();
+
+  if (!Number.isFinite(timestamp)) {
+    return false;
+  }
+
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (range === "today") {
+    return timestamp >= today.getTime() && timestamp < tomorrow.getTime();
+  }
+
+  if (range === "yesterday") {
+    return timestamp >= yesterday.getTime() && timestamp < today.getTime();
+  }
+
+  const weekStart = new Date(today);
+  weekStart.setDate(weekStart.getDate() - 6);
+
+  return timestamp >= weekStart.getTime() && timestamp < tomorrow.getTime();
+}
+
+// -----------------------------------------------------------------------------
+// PANEL
+// -----------------------------------------------------------------------------
+
+export function NotificationPanel(props: NotificationPanelProps) {
+  const userId = props.currentUser?.id;
+
+  useEffect(() => {
+    for (const cachedUserId of notificationCache.keys()) {
+      if (cachedUserId !== userId) {
+        notificationCache.delete(cachedUserId);
+      }
+    }
+  }, [userId]);
+
+  return <NotificationPanelContent key={userId ?? "uncached"} {...props} />;
+}
+
+function NotificationPanelContent({
   refreshKey,
   setOnNotification,
   currentUser,
 }: NotificationPanelProps) {
+  const userId = currentUser?.id;
+
   const language = resolveLanguage(currentUser?.language);
   const labels = NOTIFICATION_LABELS[language];
-
-  const [notifications, setNotifications] = useState<MyNotification[]>(
-    () => notificationCache ?? [],
-  );
-
-  const [loading, setLoading] = useState(notificationCache === null);
-  const [isPending, startTransition] = useTransition();
+  const rangeLabels = NOTIFICATION_RANGE_LABELS[language];
 
   const router = useRouter();
+
+  const [initialCache] = useState(() =>
+    userId ? notificationCache.get(userId) : undefined,
+  );
+
+  const [notifications, setNotifications] = useState<MyNotification[]>(
+    () => initialCache?.notifications ?? [],
+  );
+
+  const [loading, setLoading] = useState(!initialCache);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+
+  const [range, setRange] = useState<NotificationRange>("all");
+  const [rangeNow, setRangeNow] = useState(() => new Date());
+
+  const [isPending, startTransition] = useTransition();
+
+  // ---------------------------------------------------------------------------
+  // DATE BOUNDARIES
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    const updateDate = () => setRangeNow(new Date());
+
+    const timer = window.setInterval(updateDate, 60_000);
+
+    window.addEventListener("focus", updateDate);
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", updateDate);
+    };
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // LOAD
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadNotifications() {
-      if (notificationCache === null) {
-        setLoading(true);
-      }
+    const cached = userId ? notificationCache.get(userId) : undefined;
 
+    setLoadFailed(false);
+
+    if (cached) {
+      setNotifications(cached.notifications);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    const isFresh =
+      cached !== undefined &&
+      cached.refreshKey === refreshKey &&
+      Date.now() - cached.fetchedAt < NOTIFICATION_CACHE_TIME;
+
+    if (isFresh && retryKey === 0) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    async function loadNotifications() {
       try {
-        const result = await fetchNotifications();
+        const result = await getNotifications();
 
         if (cancelled) {
           return;
         }
 
-        notificationCache = result;
+        if (userId) {
+          notificationCache.set(userId, {
+            notifications: result,
+            fetchedAt: Date.now(),
+            refreshKey,
+          });
+        }
+
         setNotifications(result);
       } catch (error) {
-        console.error("Failed to load notifications:", error);
+        if (!cancelled) {
+          console.error("Failed to load notifications:", error);
+          setLoadFailed(true);
+        }
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -118,32 +386,38 @@ export function NotificationPanel({
     return () => {
       cancelled = true;
     };
-  }, [refreshKey]);
+  }, [userId, refreshKey, retryKey]);
 
-  const updateNotifications = (
-    updater: (current: MyNotification[]) => MyNotification[],
-  ) => {
-    setNotifications((current) => {
-      const next = updater(current);
-      notificationCache = next;
+  // ---------------------------------------------------------------------------
+  // LOCAL STATE / CACHE
+  // ---------------------------------------------------------------------------
 
-      return next;
-    });
+  const saveNotifications = (next: MyNotification[]) => {
+    setNotifications(next);
+
+    if (userId) {
+      const cached = notificationCache.get(userId);
+
+      notificationCache.set(userId, {
+        notifications: next,
+        fetchedAt: cached?.fetchedAt ?? 0,
+        refreshKey: cached?.refreshKey ?? refreshKey,
+      });
+    }
   };
 
-  const restoreNotifications = (previous: MyNotification[]) => {
-    notificationCache = previous;
-    setNotifications(previous);
-  };
+  // ---------------------------------------------------------------------------
+  // OPEN / MARK READ
+  // ---------------------------------------------------------------------------
 
   const handleNotificationClick = (notification: MyNotification) => {
     const href = getNotificationHref(notification);
 
-    if (!notification.readAt) {
+    if (!notification.readAt && !isPending) {
       const now = new Date();
 
-      updateNotifications((current) =>
-        current.map((item) =>
+      saveNotifications(
+        notifications.map((item) =>
           item.id === notification.id
             ? {
                 ...item,
@@ -153,8 +427,34 @@ export function NotificationPanel({
         ),
       );
 
-      void markNotificationAsRead(notification.id).catch((error) => {
-        console.error("Failed to mark notification as read:", error);
+      startTransition(async () => {
+        try {
+          await markNotificationAsRead(notification.id);
+        } catch (error) {
+          console.error("Failed to mark notification as read:", error);
+
+          // Restore only this notification's read state.
+          setNotifications((current) => {
+            const next = current.map((item) =>
+              item.id === notification.id
+                ? { ...item, readAt: notification.readAt }
+                : item,
+            );
+
+            if (userId) {
+              const cached = notificationCache.get(userId);
+
+              if (cached) {
+                notificationCache.set(userId, {
+                  ...cached,
+                  notifications: next,
+                });
+              }
+            }
+
+            return next;
+          });
+        }
       });
     }
 
@@ -163,18 +463,24 @@ export function NotificationPanel({
     }
   };
 
-  const handleMarkAllRead = () => {
-    const hasUnread = notifications.some((item) => !item.readAt);
+  // ---------------------------------------------------------------------------
+  // MARK ALL READ
+  // Applies to all notifications, regardless of selected range.
+  // ---------------------------------------------------------------------------
 
-    if (!hasUnread || isPending) {
+  const handleMarkAllRead = () => {
+    if (
+      isPending ||
+      !notifications.some((notification) => !notification.readAt)
+    ) {
       return;
     }
 
     const previousNotifications = notifications;
     const now = new Date();
 
-    updateNotifications((current) =>
-      current.map((notification) => ({
+    saveNotifications(
+      notifications.map((notification) => ({
         ...notification,
         readAt: notification.readAt ?? now,
       })),
@@ -185,10 +491,14 @@ export function NotificationPanel({
         await markAllNotificationsAsRead();
       } catch (error) {
         console.error("Failed to mark all notifications as read:", error);
-        restoreNotifications(previousNotifications);
+        saveNotifications(previousNotifications);
       }
     });
   };
+
+  // ---------------------------------------------------------------------------
+  // DELETE ONE SOCIAL NOTIFICATION
+  // ---------------------------------------------------------------------------
 
   const handleDeleteNotification = (notificationId: string) => {
     if (isPending) {
@@ -197,8 +507,10 @@ export function NotificationPanel({
 
     const previousNotifications = notifications;
 
-    updateNotifications((current) =>
-      current.filter((notification) => notification.id !== notificationId),
+    saveNotifications(
+      notifications.filter(
+        (notification) => notification.id !== notificationId,
+      ),
     );
 
     startTransition(async () => {
@@ -206,28 +518,30 @@ export function NotificationPanel({
         await deleteSocialNotification(notificationId);
       } catch (error) {
         console.error("Failed to delete notification:", error);
-        restoreNotifications(previousNotifications);
+        saveNotifications(previousNotifications);
       }
     });
   };
 
+  // ---------------------------------------------------------------------------
+  // DELETE ALL SOCIAL NOTIFICATIONS
+  // Applies to all dates.
+  // ---------------------------------------------------------------------------
+
   const handleDeleteAllSocial = () => {
-    if (isPending) {
-      return;
-    }
-
-    const hasSocial = notifications.some((notification) =>
-      SOCIAL_TYPES.has(notification.type),
-    );
-
-    if (!hasSocial) {
+    if (
+      isPending ||
+      !notifications.some((notification) => SOCIAL_TYPES.has(notification.type))
+    ) {
       return;
     }
 
     const previousNotifications = notifications;
 
-    updateNotifications((current) =>
-      current.filter((notification) => !SOCIAL_TYPES.has(notification.type)),
+    saveNotifications(
+      notifications.filter(
+        (notification) => !SOCIAL_TYPES.has(notification.type),
+      ),
     );
 
     startTransition(async () => {
@@ -235,10 +549,18 @@ export function NotificationPanel({
         await deleteAllSocialNotifications();
       } catch (error) {
         console.error("Failed to delete social notifications:", error);
-        restoreNotifications(previousNotifications);
+        saveNotifications(previousNotifications);
       }
     });
   };
+
+  // ---------------------------------------------------------------------------
+  // FILTER
+  // ---------------------------------------------------------------------------
+
+  const visibleNotifications = notifications.filter((notification) =>
+    isInNotificationRange(notification.createdAt, range, rangeNow),
+  );
 
   const hasSocialNotifications = notifications.some((notification) =>
     SOCIAL_TYPES.has(notification.type),
@@ -248,35 +570,42 @@ export function NotificationPanel({
     (notification) => !notification.readAt,
   );
 
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
+
   return (
     <section
-      aria-labelledby="notifications-heading"
-      className="flex h-full min-h-0 w-full flex-col"
+      className="
+        flex h-full min-h-0 w-full flex-col
+        text-zinc-800 dark:text-zinc-300
+      "
     >
       <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-1.5">
-        <h2
-          id="notifications-heading"
-          className="text-xs font-normal tracking-wider text-muted-foreground/50"
-        >
-          {labels.heading}
-        </h2>
+        <h2 className="sr-only">{labels.heading}</h2>
 
-        <div className="flex shrink-0 items-center gap-3">
+        <p className="min-w-0 truncate text-xs font-normal tracking-wider text-muted-foreground/50">
+          {rangeLabels.description}
+        </p>
+
+        <div className="flex shrink-0 items-center gap-1">
           {!loading && hasUnreadNotifications && (
             <button
               type="button"
               disabled={isPending}
               onClick={handleMarkAllRead}
+              aria-label={labels.mark_all_read}
+              title={labels.mark_all_read}
               className="
-                flex cursor-pointer items-center gap-1.5
-                text-xs text-zinc-500 transition-colors
-                hover:text-zinc-900
+                flex size-8 cursor-pointer items-center justify-center
+                rounded-md text-zinc-400 transition-colors
+                hover:bg-zinc-100 hover:text-zinc-900
                 disabled:cursor-default disabled:opacity-50
-                dark:text-zinc-400 dark:hover:text-zinc-100
+                dark:text-zinc-500 dark:hover:bg-zinc-800
+                dark:hover:text-zinc-100
               "
             >
-              <CheckCheck className="size-3.5" aria-hidden="true" />
-              {labels.mark_all_read}
+              <CheckCheck className="size-4" aria-hidden="true" />
             </button>
           )}
 
@@ -285,18 +614,44 @@ export function NotificationPanel({
               type="button"
               disabled={isPending}
               onClick={handleDeleteAllSocial}
+              aria-label={labels.clear}
+              title={labels.clear}
               className="
-                flex cursor-pointer items-center gap-1.5
-                text-xs text-zinc-500 transition-colors
-                hover:text-rose-600
+                flex size-8 cursor-pointer items-center justify-center
+                rounded-md text-zinc-400 transition-colors
+                hover:bg-zinc-100 hover:text-rose-600
                 disabled:cursor-default disabled:opacity-50
-                dark:text-zinc-400 dark:hover:text-rose-400
+                dark:text-zinc-500 dark:hover:bg-zinc-800
+                dark:hover:text-rose-400
               "
             >
-              <Trash2 className="size-3.5" aria-hidden="true" />
-              {labels.clear}
+              <Trash2 className="size-4" aria-hidden="true" />
             </button>
           )}
+
+          <select
+            value={range}
+            aria-label={rangeLabels.range}
+            onChange={(event) => {
+              setRange(event.target.value as NotificationRange);
+              setRangeNow(new Date());
+            }}
+            className="
+              h-7 max-w-36 cursor-pointer rounded-md
+              border-0 bg-transparent px-1 text-xs text-zinc-400
+              focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-zinc-400
+              dark:text-zinc-500
+              [&>option]:bg-white [&>option]:text-zinc-800
+              dark:[&>option]:bg-zinc-900
+              dark:[&>option]:text-zinc-300
+            "
+          >
+            <option value="all">{rangeLabels.all}</option>
+            <option value="today">{rangeLabels.today}</option>
+            <option value="yesterday">{rangeLabels.yesterday}</option>
+            <option value="week">{rangeLabels.week}</option>
+          </select>
 
           <button
             type="button"
@@ -315,27 +670,55 @@ export function NotificationPanel({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pb-4">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {loading ? (
           <NotificationLoader labels={labels} />
-        ) : notifications.length === 0 ? (
-          <EmptyNotifications labels={labels} />
+        ) : visibleNotifications.length === 0 && !loadFailed ? (
+          <EmptyNotifications
+            message={range === "all" ? labels.empty : rangeLabels.empty}
+          />
         ) : (
-          notifications.map((notification) => (
-            <NotificationItem
-              key={notification.id}
-              notification={notification}
-              language={language}
-              isPending={isPending}
-              onClick={() => handleNotificationClick(notification)}
-              onDelete={() => handleDeleteNotification(notification.id)}
-            />
-          ))
+          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {visibleNotifications.map((notification) => (
+              <li key={notification.id} className="pl-1">
+                <NotificationItem
+                  notification={notification}
+                  language={language}
+                  isPending={isPending}
+                  onClick={() => handleNotificationClick(notification)}
+                  onDelete={() => handleDeleteNotification(notification.id)}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {loadFailed && (
+          <div className="flex justify-center px-4 py-4">
+            <button
+              type="button"
+              onClick={() => setRetryKey((value) => value + 1)}
+              aria-label={labels.loading}
+              className="
+                cursor-pointer rounded-full border
+                border-zinc-200 px-4 py-2 text-sm
+                text-zinc-500 hover:bg-zinc-100
+                dark:border-zinc-700 dark:text-zinc-400
+                dark:hover:bg-zinc-800
+              "
+            >
+              ↻
+            </button>
+          </div>
         )}
       </div>
     </section>
   );
 }
+
+// -----------------------------------------------------------------------------
+// LOADER
+// -----------------------------------------------------------------------------
 
 function NotificationLoader({ labels }: { labels: PanelLabels }) {
   return (
@@ -357,6 +740,10 @@ function NotificationLoader({ labels }: { labels: PanelLabels }) {
   );
 }
 
+// -----------------------------------------------------------------------------
+// ITEM
+// -----------------------------------------------------------------------------
+
 function NotificationItem({
   notification,
   language,
@@ -371,20 +758,25 @@ function NotificationItem({
   onDelete: () => void;
 }) {
   const labels = NOTIFICATION_LABELS[language];
+
   const unread = notification.readAt === null;
   const isSocial = SOCIAL_TYPES.has(notification.type);
 
   const preview = getNotificationPreview(notification);
   const { title, message } = getNotificationText(notification, language);
 
+  const createdAt = new Date(notification.createdAt);
+
+  const dateTime = Number.isFinite(createdAt.getTime())
+    ? createdAt.toISOString()
+    : undefined;
+
   return (
     <div
       className={`
-        group relative flex w-full
-        border-b border-zinc-100 transition-colors
-        hover:bg-zinc-50
-        dark:border-zinc-800 dark:hover:bg-zinc-900
-        ${unread ? "bg-zinc-50/80 dark:bg-zinc-900/60" : ""}
+        group relative flex w-full transition-colors
+        hover:bg-zinc-50 dark:hover:bg-zinc-800/40
+        ${unread ? "bg-zinc-50/80 dark:bg-zinc-800/20" : ""}
       `}
     >
       <button
@@ -392,63 +784,54 @@ function NotificationItem({
         onClick={onClick}
         className="
           flex min-w-0 flex-1 cursor-pointer gap-3
-          px-4 py-3 pe-10 text-start
+          px-4 py-4 pe-11 text-start
+          focus-visible:outline-none
+          focus-visible:ring-2 focus-visible:ring-inset
+          focus-visible:ring-zinc-400
         "
       >
-        <div className="mt-0.5 shrink-0">
+        <span className="flex shrink-0 items-start justify-center">
           <NotificationIcon type={notification.type} />
-        </div>
+        </span>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-2">
-            <p
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2">
+            <span
               className={`
-                min-w-0 flex-1 text-sm
+                block min-w-0 flex-1 truncate text-[15px]
                 ${unread ? "font-semibold" : "font-medium"}
               `}
             >
               {title}
-            </p>
+            </span>
 
             {unread && (
               <span
                 aria-hidden="true"
-                className="mt-1.5 size-2 shrink-0 rounded-full bg-blue-500"
+                className="size-1.5 shrink-0 rounded-full bg-amber-500"
               />
             )}
-          </div>
+          </span>
 
           {message && (
-            <div
-              className="
-                mt-1 flex items-center gap-1.5
-                text-sm leading-5 text-zinc-500 dark:text-zinc-400
-              "
-            >
-              <span>{message}</span>
-
-              {(notification.type === "COMMENT_LIKED" ||
-                notification.type === "REPLY_LIKED") && (
-                <RiHeartFill className="size-4 shrink-0" aria-hidden="true" />
-              )}
-            </div>
+            <span className="mt-1 block truncate text-sm text-zinc-500 dark:text-zinc-400">
+              {message}
+            </span>
           )}
 
           {preview && (
-            <p
-              className="
-                mt-1 truncate text-sm
-                text-zinc-400 dark:text-zinc-500
-              "
-            >
+            <span className="mt-1 block truncate text-sm text-zinc-400 dark:text-zinc-500">
               “{preview}”
-            </p>
+            </span>
           )}
 
-          <p className="mt-1.5 text-xs text-zinc-400 dark:text-zinc-500">
-            {formatNotificationTime(notification.createdAt, language)}
-          </p>
-        </div>
+          <time
+            dateTime={dateTime}
+            className="mt-1.5 block truncate text-xs text-zinc-400 dark:text-zinc-500"
+          >
+            {formatTimeAgo(notification.createdAt, language, labels.just_now)}
+          </time>
+        </span>
       </button>
 
       {isSocial && (
@@ -465,19 +848,27 @@ function NotificationItem({
           className="
             absolute top-3 inset-e-3
             flex size-7 cursor-pointer items-center justify-center
-            rounded-md text-zinc-400 opacity-0 transition
-            hover:bg-zinc-200 hover:text-rose-600
-            group-hover:opacity-100 focus:opacity-100
+            rounded-md text-zinc-400 transition-colors
+            hover:bg-zinc-100 hover:text-rose-600
+            focus-visible:outline-none focus-visible:ring-2
+            focus-visible:ring-zinc-400
             disabled:cursor-default disabled:opacity-50
-            dark:hover:bg-zinc-800 dark:hover:text-rose-400
+            dark:text-zinc-500 dark:hover:bg-zinc-800
+            dark:hover:text-rose-400
+            md:opacity-0 md:group-hover:opacity-100
+            md:group-focus-within:opacity-100
           "
         >
-          <Trash2 className="size-4" aria-hidden="true" />
+          <Trash2 className="size-3.5" aria-hidden="true" />
         </button>
       )}
     </div>
   );
 }
+
+// -----------------------------------------------------------------------------
+// TEXT
+// -----------------------------------------------------------------------------
 
 function getNotificationText(
   notification: MyNotification,
@@ -570,6 +961,7 @@ function getNotificationText(
 
       return {
         title: titles[notification.type],
+
         message:
           hasSettlement &&
           Number.isFinite(from) &&
@@ -587,6 +979,10 @@ function getNotificationText(
       };
   }
 }
+
+// -----------------------------------------------------------------------------
+// PREVIEW
+// -----------------------------------------------------------------------------
 
 function getNotificationPreview(notification: MyNotification): string | null {
   switch (notification.type) {
@@ -641,6 +1037,10 @@ function extractTextFromTipTap(value: unknown): string {
   return node.content.map(extractTextFromTipTap).join(" ");
 }
 
+// -----------------------------------------------------------------------------
+// LINK
+// -----------------------------------------------------------------------------
+
 function getNotificationHref(notification: MyNotification): string | null {
   switch (notification.type) {
     case "COMMENT_LIKED":
@@ -652,12 +1052,15 @@ function getNotificationHref(notification: MyNotification): string | null {
         return null;
       }
 
-      const reportQuery =
-        notification.type === "COMMENT_REPORTED" ? "&from=report" : "";
+      const query = new URLSearchParams({
+        comment: commentId,
+      });
 
-      return `/market/${encodeURIComponent(
-        symbol,
-      )}?comment=${encodeURIComponent(commentId)}${reportQuery}`;
+      if (notification.type === "COMMENT_REPORTED") {
+        query.set("from", "report");
+      }
+
+      return `/market/${encodeURIComponent(symbol)}?${query}`;
     }
 
     case "REPLY_LIKED":
@@ -675,14 +1078,16 @@ function getNotificationHref(notification: MyNotification): string | null {
         return null;
       }
 
-      const reportQuery =
-        notification.type === "REPLY_REPORTED" ? "&from=report" : "";
+      const query = new URLSearchParams({
+        comment: commentId,
+        reply: replyId,
+      });
 
-      return `/market/${encodeURIComponent(
-        symbol,
-      )}?comment=${encodeURIComponent(commentId)}&reply=${encodeURIComponent(
-        replyId,
-      )}${reportQuery}`;
+      if (notification.type === "REPLY_REPORTED") {
+        query.set("from", "report");
+      }
+
+      return `/market/${encodeURIComponent(symbol)}?${query}`;
     }
 
     case "PREDICTION_WON":
@@ -700,97 +1105,69 @@ function getNotificationHref(notification: MyNotification): string | null {
   }
 }
 
+// -----------------------------------------------------------------------------
+// ICON
+// -----------------------------------------------------------------------------
+
 function NotificationIcon({ type }: { type: MyNotification["type"] }) {
+  const className = "size-4 text-zinc-500 dark:text-zinc-400";
+
   switch (type) {
+    case "COMMENT_LIKED":
+    case "REPLY_LIKED":
+      return <RiHeartFill className={className} aria-hidden="true" />;
+
+    case "COMMENT_REPLIED":
+    case "REPLY_REPLIED":
+      return <BiSolidChat className={className} aria-hidden="true" />;
+
+    case "COMMENT_REPORTED":
+    case "REPLY_REPORTED":
+      return <TbFlagFilled className={className} aria-hidden="true" />;
+
     case "PREDICTION_WON":
       return (
-        <TrendingUp className="size-5 text-emerald-600" aria-hidden="true" />
+        <TrendingUp
+          className="size-4 text-emerald-600 dark:text-emerald-400"
+          aria-hidden="true"
+        />
       );
 
     case "PREDICTION_LOST":
       return (
-        <TrendingDown className="size-5 text-rose-600" aria-hidden="true" />
+        <TrendingDown
+          className="size-4 text-rose-600 dark:text-rose-400"
+          aria-hidden="true"
+        />
       );
 
     case "PREDICTION_PENDING":
       return (
-        <CircleAlert className="size-5 text-amber-500" aria-hidden="true" />
+        <CircleAlert className="size-4 text-amber-500" aria-hidden="true" />
       );
 
     case "PREDICTION_DRAW":
     case "PREDICTION_VOID":
-      return (
-        <CircleAlert className="size-5 text-zinc-500" aria-hidden="true" />
-      );
+      return <CircleAlert className={className} aria-hidden="true" />;
 
     default:
-      return <Bell className="size-5 text-zinc-500" aria-hidden="true" />;
+      return <Bell className={className} aria-hidden="true" />;
   }
 }
 
-function EmptyNotifications({ labels }: { labels: PanelLabels }) {
+// -----------------------------------------------------------------------------
+// EMPTY
+// -----------------------------------------------------------------------------
+
+function EmptyNotifications({ message }: { message: string }) {
   return (
-    <div
-      className="
-        flex h-full min-h-0 flex-col
-        items-center justify-center px-6 text-center
-      "
-    >
+    <div className="flex min-h-60 flex-col items-center justify-center px-6 text-center">
       <Bell
         className="mb-3 size-6 text-zinc-300 dark:text-zinc-700"
         aria-hidden="true"
       />
 
-      <p className="text-sm font-medium">{labels.empty}</p>
-
-      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-        {labels.empty_description}
-      </p>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">{message}</p>
     </div>
   );
-}
-
-function formatNotificationTime(
-  date: Date | string,
-  language: ResolvedLanguage,
-) {
-  const value = new Date(date);
-  const timestamp = value.getTime();
-
-  if (!Number.isFinite(timestamp)) {
-    return "";
-  }
-
-  const diff = Math.max(0, Date.now() - timestamp);
-
-  const minute = 60 * 1000;
-  const hour = 60 * minute;
-  const day = 24 * hour;
-
-  if (diff < minute) {
-    return NOTIFICATION_LABELS[language].just_now;
-  }
-
-  const formatter = new Intl.RelativeTimeFormat(language, {
-    numeric: "always",
-    style: "short",
-  });
-
-  if (diff < hour) {
-    return formatter.format(-Math.floor(diff / minute), "minute");
-  }
-
-  if (diff < day) {
-    return formatter.format(-Math.floor(diff / hour), "hour");
-  }
-
-  if (diff < 7 * day) {
-    return formatter.format(-Math.floor(diff / day), "day");
-  }
-
-  return new Intl.DateTimeFormat(language, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(value);
 }

@@ -1,28 +1,45 @@
-export function formatTimeAgo(date: Date | string) {
-  const time = new Date(date).getTime();
+export function formatTimeAgo(
+  date: Date | string,
+  language = "en",
+  justNow = "Just now",
+) {
+  const value = new Date(date);
+  const time = value.getTime();
+
+  if (!Number.isFinite(time)) {
+    return "";
+  }
 
   const diff = Math.max(0, Date.now() - time);
 
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
 
-  if (seconds < 60) {
-    return "Just now";
+  if (diff < minute) {
+    return justNow;
   }
 
-  if (minutes < 60) {
-    return `${minutes}m`;
+  const formatter = new Intl.RelativeTimeFormat(language, {
+    numeric: "always",
+    style: "short",
+  });
+
+  if (diff < hour) {
+    return formatter.format(-Math.floor(diff / minute), "minute");
   }
 
-  if (hours < 24) {
-    return `${hours}h`;
+  if (diff < day) {
+    return formatter.format(-Math.floor(diff / hour), "hour");
   }
 
-  if (days < 7) {
-    return `${days}d`;
+  if (diff < 7 * day) {
+    return formatter.format(-Math.floor(diff / day), "day");
   }
 
-  return new Date(date).toLocaleDateString();
+  return new Intl.DateTimeFormat(language, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(value);
 }
