@@ -31,66 +31,37 @@ import {
 
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { resolveLanguage } from "@/lib/data/languages";
-import { HISTORY_LABELS } from "@/lib/data/translations";
+
+import {
+  HISTORY_LABELS,
+  HISTORY_FILTER_LABELS,
+  DATE_SECTION_LABELS,
+  type DateSectionKey,
+} from "@/lib/data/translations";
+
 import { formatTimeAgo } from "@/lib/utils/format-time-ago";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // -----------------------------------------------------------------------------
-// FILTER LABELS
+// TYPES
 // -----------------------------------------------------------------------------
 
-const HISTORY_FILTER_LABELS: Record<
-  ReturnType<typeof resolveLanguage>,
-  { predictions_only: string; empty: string }
-> = {
-  en: {
-    predictions_only: "Predictions only",
-    empty: "No predictions in the last 30 days.",
-  },
-  ko: {
-    predictions_only: "예측만 보기",
-    empty: "최근 30일간 예측 기록이 없습니다.",
-  },
-  ja: {
-    predictions_only: "予測のみ",
-    empty: "過去30日間の予測はありません。",
-  },
-  zh: {
-    predictions_only: "仅看预测",
-    empty: "最近30天没有预测记录。",
-  },
-  de: {
-    predictions_only: "Nur Prognosen",
-    empty: "Keine Prognosen in den letzten 30 Tagen.",
-  },
-  fr: {
-    predictions_only: "Prévisions uniquement",
-    empty: "Aucune prévision au cours des 30 derniers jours.",
-  },
-  es: {
-    predictions_only: "Solo predicciones",
-    empty: "No hay predicciones en los últimos 30 días.",
-  },
-  pt: {
-    predictions_only: "Apenas previsões",
-    empty: "Nenhuma previsão nos últimos 30 dias.",
-  },
-  it: {
-    predictions_only: "Solo previsioni",
-    empty: "Nessuna previsione negli ultimi 30 giorni.",
-  },
-  ru: {
-    predictions_only: "Только прогнозы",
-    empty: "Нет прогнозов за последние 30 дней.",
-  },
-  ar: {
-    predictions_only: "التوقعات فقط",
-    empty: "لا توجد توقعات خلال آخر 30 يومًا.",
-  },
-  hi: {
-    predictions_only: "केवल पूर्वानुमान",
-    empty: "पिछले 30 दिनों में कोई पूर्वानुमान नहीं है।",
-  },
-};
+type ResolvedLanguage = ReturnType<typeof resolveLanguage>;
+type HistoryError = "load_failed" | "load_more_failed";
+
+interface HistoryPanelProps {
+  refreshKey: number;
+  setOnHistory: Dispatch<SetStateAction<boolean>>;
+  currentUser: {
+    id: string;
+    language?: string | null;
+  } | null;
+}
+
+interface HistoryPanelContentProps extends HistoryPanelProps {
+  predictionsOnly: boolean;
+  onPredictionsOnlyChange: (checked: boolean) => void;
+}
 
 // -----------------------------------------------------------------------------
 // CLIENT CACHE
@@ -113,24 +84,82 @@ function getHistoryCacheKey(userId: string, predictionsOnly: boolean) {
 }
 
 // -----------------------------------------------------------------------------
-// TYPES
+// DATE GROUPING
+// Device timezone; weeks begin on Monday.
 // -----------------------------------------------------------------------------
 
-interface HistoryPanelProps {
-  refreshKey: number;
-  setOnHistory: Dispatch<SetStateAction<boolean>>;
-  currentUser: {
-    id: string;
-    language?: string | null;
-  } | null;
-}
+const SECTION_ORDER: DateSectionKey[] = [
+  "today",
+  "yesterday",
+  "this_week",
+  "last_week",
+  "this_month",
+  "earlier",
+];
 
-interface HistoryPanelContentProps extends HistoryPanelProps {
-  predictionsOnly: boolean;
-  onPredictionsOnlyChange: (checked: boolean) => void;
-}
+function groupHistoryActivities(activities: HistoryActivity[], now: Date) {
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
 
-type HistoryError = "load_failed" | "load_more_failed";
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const thisWeek = new Date(today);
+  thisWeek.setDate(thisWeek.getDate() - ((thisWeek.getDay() + 6) % 7));
+
+  const lastWeek = new Date(thisWeek);
+  lastWeek.setDate(lastWeek.getDate() - 7);
+
+  const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const groups: Record<DateSectionKey, HistoryActivity[]> = {
+    today: [],
+    yesterday: [],
+    this_week: [],
+    last_week: [],
+    this_month: [],
+    earlier: [],
+  };
+
+  const sortedActivities = [...activities].sort((a, b) => {
+    const aTime = new Date(a.createdAt).getTime();
+    const bTime = new Date(b.createdAt).getTime();
+
+    return (
+      (Number.isFinite(bTime) ? bTime : 0) -
+        (Number.isFinite(aTime) ? aTime : 0) || b.id.localeCompare(a.id)
+    );
+  });
+
+  for (const activity of sortedActivities) {
+    const timestamp = new Date(activity.createdAt).getTime();
+
+    let section: DateSectionKey;
+
+    if (!Number.isFinite(timestamp)) {
+      section = "earlier";
+    } else if (timestamp >= today.getTime()) {
+      section = "today";
+    } else if (timestamp >= yesterday.getTime()) {
+      section = "yesterday";
+    } else if (timestamp >= thisWeek.getTime()) {
+      section = "this_week";
+    } else if (timestamp >= lastWeek.getTime()) {
+      section = "last_week";
+    } else if (timestamp >= thisMonth.getTime()) {
+      section = "this_month";
+    } else {
+      section = "earlier";
+    }
+
+    groups[section].push(activity);
+  }
+
+  return SECTION_ORDER.map((key) => ({
+    key,
+    activities: groups[key],
+  })).filter((section) => section.activities.length > 0);
+}
 
 // -----------------------------------------------------------------------------
 // HISTORY PANEL
@@ -185,8 +214,10 @@ function HistoryPanelContent({
   const userId = currentUser?.id;
 
   const language = resolveLanguage(currentUser?.language);
+
   const labels = HISTORY_LABELS[language];
   const filterLabels = HISTORY_FILTER_LABELS[language];
+  const sectionLabels = DATE_SECTION_LABELS[language];
 
   const cacheKey = userId ? getHistoryCacheKey(userId, predictionsOnly) : null;
 
@@ -212,8 +243,27 @@ function HistoryPanelContent({
   const [error, setError] = useState<HistoryError | null>(null);
   const [retryKey, setRetryKey] = useState(0);
 
+  const [sectionNow, setSectionNow] = useState(() => new Date());
+
   const requestVersion = useRef(0);
   const moreRequest = useRef(false);
+
+  // ---------------------------------------------------------------------------
+  // UPDATE DATE SECTIONS
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    const updateDate = () => setSectionNow(new Date());
+
+    const timer = window.setInterval(updateDate, 60_000);
+
+    window.addEventListener("focus", updateDate);
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", updateDate);
+    };
+  }, []);
 
   // ---------------------------------------------------------------------------
   // LOAD / BACKGROUND REFRESH
@@ -371,6 +421,8 @@ function HistoryPanelContent({
     }
   }
 
+  const activitySections = groupHistoryActivities(activities, sectionNow);
+
   // ---------------------------------------------------------------------------
   // RENDER
   // ---------------------------------------------------------------------------
@@ -379,36 +431,43 @@ function HistoryPanelContent({
     <section className="flex h-full min-h-0 flex-col text-zinc-800 dark:text-zinc-300">
       <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-1.5">
         <h2 className="sr-only">{labels.title}</h2>
-
-        <p className="min-w-0 text-xs font-normal tracking-wider text-muted-foreground/50 truncate">
-          {labels.description}
-        </p>
-
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-0.5">
+          <p className="mr-1 min-w-0 truncate text-xs font-normal tracking-wider text-muted-foreground/50">
+            {labels.title}
+          </p>
+          <span aria-hidden="true" className="text-muted-foreground/50">
+            ·
+          </span>
           <label
             className="
               flex cursor-pointer items-center gap-1.5
               rounded-md px-1 py-2
-              text-xs text-zinc-400 dark:text-zinc-500
+              min-w-0 truncate text-xs font-normal tracking-wider text-muted-foreground/50
             "
           >
-            <input
-              type="checkbox"
-              checked={predictionsOnly}
-              onChange={(event) => {
-                onPredictionsOnlyChange(event.target.checked);
-              }}
-              className="
-                size-3.5 shrink-0 cursor-pointer
-                accent-zinc-800 dark:accent-zinc-200
-              "
-            />
-
             <span className="whitespace-nowrap">
               {filterLabels.predictions_only}
-            </span>
+            </span>{" "}
+            <Checkbox
+              checked={predictionsOnly}
+              onCheckedChange={(checked) => {
+                onPredictionsOnlyChange(checked === true);
+              }}
+              className="
+    size-3.5 shrink-0 cursor-pointer rounded-[3px]
+    border-zinc-300 shadow-none
+    data-[state=checked]:border-zinc-800
+    data-[state=checked]:bg-zinc-800
+    data-[state=checked]:text-white
+    dark:border-zinc-600
+    dark:data-[state=checked]:border-zinc-300
+    dark:data-[state=checked]:bg-zinc-300
+    dark:data-[state=checked]:text-zinc-900
+  "
+            />
           </label>
-
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
             aria-label={labels.close}
@@ -436,58 +495,78 @@ function HistoryPanelContent({
             message={predictionsOnly ? filterLabels.empty : labels.empty}
           />
         ) : (
-          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800 ">
-            {activities.map((activity) => {
-              const content = (
-                <>
-                  <span className="flex shrink-0 items-start justify-center pl-1">
-                    <ActivityIcon type={activity.type} />
-                  </span>
+          <div>
+            {activitySections.map((section) => (
+              <section key={section.key}>
+                {section.key !== "today" && (
+                  <h3
+                    className="
+                      mx-1 rounded-md border border-zinc-300/50
+                      bg-zinc-50 px-5 py-2
+                      text-xs font-normal text-zinc-500
+                      dark:border-zinc-700 dark:bg-zinc-800
+                      dark:text-zinc-300
+                    "
+                  >
+                    {sectionLabels[section.key]}
+                  </h3>
+                )}
 
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] font-medium truncate">
-                      {labels.activities[activity.type]}
-                    </span>
+                <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {section.activities.map((activity) => {
+                    const content = (
+                      <>
+                        <span className="ml-1 flex shrink-0 items-start justify-center">
+                          <ActivityIcon type={activity.type} />
+                        </span>
 
-                    <span className="mt-1 block truncate text-sm text-zinc-500 dark:text-zinc-400">
-                      {getActivityDetail(activity, language)}
-                    </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-medium">
+                            {labels.activities[activity.type]}
+                          </span>
 
-                    <time
-                      dateTime={activity.createdAt}
-                      className="mt-1.5 block text-xs text-zinc-400 dark:text-zinc-500 truncate"
-                    >
-                      {formatTimeAgo(activity.createdAt, language)}
-                    </time>
-                  </span>
-                </>
-              );
+                          <span className="mt-1 block truncate text-sm text-zinc-500 dark:text-zinc-400">
+                            {getActivityDetail(activity, language)}
+                          </span>
 
-              return (
-                <li key={activity.id}>
-                  {activity.href ? (
-                    <Link
-                      href={activity.href}
-                      prefetch={false}
-                      className="
-                        flex gap-3 px-4 py-4 transition-colors
-                        hover:bg-zinc-50
-                        focus-visible:outline-none
-                        focus-visible:ring-2
-                        focus-visible:ring-inset
-                        focus-visible:ring-zinc-400
-                        dark:hover:bg-zinc-800/40
-                      "
-                    >
-                      {content}
-                    </Link>
-                  ) : (
-                    <div className="flex gap-3 px-4 py-4">{content}</div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+                          <time
+                            dateTime={activity.createdAt}
+                            className="mt-1.5 block truncate text-xs text-zinc-400 dark:text-zinc-500"
+                          >
+                            {formatTimeAgo(activity.createdAt, language)}
+                          </time>
+                        </span>
+                      </>
+                    );
+
+                    return (
+                      <li key={activity.id}>
+                        {activity.href ? (
+                          <Link
+                            href={activity.href}
+                            prefetch={false}
+                            className="
+                              flex gap-3 px-4 py-4 transition-colors
+                              hover:bg-zinc-50
+                              focus-visible:outline-none
+                              focus-visible:ring-2
+                              focus-visible:ring-inset
+                              focus-visible:ring-zinc-400
+                              dark:hover:bg-zinc-800/40
+                            "
+                          >
+                            {content}
+                          </Link>
+                        ) : (
+                          <div className="flex gap-3 px-4 py-4">{content}</div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
         )}
 
         {refreshing && (
@@ -577,7 +656,7 @@ function HistoryLoader({ labels }: { labels: { loading: string } }) {
 // -----------------------------------------------------------------------------
 
 function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
-  const className = "size-4 mt-[1.75px] text-zinc-500 dark:text-zinc-400";
+  const className = "mt-0.75 size-4 text-zinc-500 dark:text-zinc-400";
 
   switch (type) {
     case "COMMENT_LIKED":
@@ -624,7 +703,7 @@ function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
 
 function getActivityDetail(
   activity: HistoryActivity,
-  language: ReturnType<typeof resolveLanguage>,
+  language: ResolvedLanguage,
 ) {
   const labels = HISTORY_LABELS[language];
 
@@ -670,6 +749,10 @@ function getActivityDetail(
 
   return [marketName, direction, points].filter(Boolean).join(" · ");
 }
+
+// -----------------------------------------------------------------------------
+// EMPTY STATE
+// -----------------------------------------------------------------------------
 
 function EmptyHistory({ message }: { message: string }) {
   return (

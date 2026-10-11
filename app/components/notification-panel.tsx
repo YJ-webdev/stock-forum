@@ -14,6 +14,7 @@ import {
   Bell,
   CheckCheck,
   CircleAlert,
+  RotateCcw,
   Trash2,
   TrendingDown,
   TrendingUp,
@@ -37,7 +38,10 @@ import { resolveLanguage } from "@/lib/data/languages";
 
 import {
   CONTENT_STATUS_LABELS,
+  DATE_SECTION_LABELS,
   NOTIFICATION_LABELS,
+  NOTIFICATION_PANEL_LABELS,
+  type DateSectionKey,
 } from "@/lib/data/translations";
 
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
@@ -50,8 +54,6 @@ import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 type ResolvedLanguage = ReturnType<typeof resolveLanguage>;
 type PanelLabels = (typeof NOTIFICATION_LABELS)[ResolvedLanguage];
 
-type NotificationRange = "all" | "today" | "yesterday" | "week";
-
 interface NotificationPanelProps {
   refreshKey: number;
   setOnNotification: Dispatch<SetStateAction<boolean>>;
@@ -61,134 +63,6 @@ interface NotificationPanelProps {
     language?: string | null;
   } | null;
 }
-
-interface NotificationRangeLabels {
-  description: string;
-  range: string;
-  all: string;
-  today: string;
-  yesterday: string;
-  week: string;
-  empty: string;
-}
-
-// -----------------------------------------------------------------------------
-// RANGE LABELS
-// -----------------------------------------------------------------------------
-
-const NOTIFICATION_RANGE_LABELS: Record<
-  ResolvedLanguage,
-  NotificationRangeLabels
-> = {
-  en: {
-    description: "Your notifications",
-    range: "Notification period",
-    all: "All",
-    today: "Today",
-    yesterday: "Yesterday",
-    week: "Last 7 days",
-    empty: "No notifications in this period.",
-  },
-  ko: {
-    description: "받은 알림",
-    range: "알림 기간",
-    all: "전체",
-    today: "오늘",
-    yesterday: "어제",
-    week: "최근 7일",
-    empty: "해당 기간에 알림이 없습니다.",
-  },
-  ja: {
-    description: "受信した通知",
-    range: "通知の期間",
-    all: "すべて",
-    today: "今日",
-    yesterday: "昨日",
-    week: "過去7日間",
-    empty: "この期間の通知はありません。",
-  },
-  zh: {
-    description: "收到的通知",
-    range: "通知时间范围",
-    all: "全部",
-    today: "今天",
-    yesterday: "昨天",
-    week: "最近7天",
-    empty: "此时间段没有通知。",
-  },
-  de: {
-    description: "Deine Benachrichtigungen",
-    range: "Zeitraum der Benachrichtigungen",
-    all: "Alle",
-    today: "Heute",
-    yesterday: "Gestern",
-    week: "Letzte 7 Tage",
-    empty: "Keine Benachrichtigungen in diesem Zeitraum.",
-  },
-  fr: {
-    description: "Vos notifications",
-    range: "Période des notifications",
-    all: "Toutes",
-    today: "Aujourd’hui",
-    yesterday: "Hier",
-    week: "7 derniers jours",
-    empty: "Aucune notification pour cette période.",
-  },
-  es: {
-    description: "Tus notificaciones",
-    range: "Periodo de notificaciones",
-    all: "Todas",
-    today: "Hoy",
-    yesterday: "Ayer",
-    week: "Últimos 7 días",
-    empty: "No hay notificaciones en este periodo.",
-  },
-  pt: {
-    description: "Suas notificações",
-    range: "Período das notificações",
-    all: "Todas",
-    today: "Hoje",
-    yesterday: "Ontem",
-    week: "Últimos 7 dias",
-    empty: "Nenhuma notificação neste período.",
-  },
-  it: {
-    description: "Le tue notifiche",
-    range: "Periodo delle notifiche",
-    all: "Tutte",
-    today: "Oggi",
-    yesterday: "Ieri",
-    week: "Ultimi 7 giorni",
-    empty: "Nessuna notifica in questo periodo.",
-  },
-  ru: {
-    description: "Ваши уведомления",
-    range: "Период уведомлений",
-    all: "Все",
-    today: "Сегодня",
-    yesterday: "Вчера",
-    week: "Последние 7 дней",
-    empty: "Нет уведомлений за этот период.",
-  },
-  ar: {
-    description: "إشعاراتك",
-    range: "فترة الإشعارات",
-    all: "الكل",
-    today: "اليوم",
-    yesterday: "أمس",
-    week: "آخر 7 أيام",
-    empty: "لا توجد إشعارات خلال هذه الفترة.",
-  },
-  hi: {
-    description: "आपकी सूचनाएँ",
-    range: "सूचनाओं की अवधि",
-    all: "सभी",
-    today: "आज",
-    yesterday: "कल",
-    week: "पिछले 7 दिन",
-    empty: "इस अवधि में कोई सूचना नहीं है।",
-  },
-};
 
 // -----------------------------------------------------------------------------
 // SOCIAL TYPES
@@ -203,7 +77,6 @@ const SOCIAL_TYPES = new Set<MyNotification["type"]>([
 
 // -----------------------------------------------------------------------------
 // CLIENT CACHE
-// Only cache when a user ID is available.
 // -----------------------------------------------------------------------------
 
 const NOTIFICATION_CACHE_TIME = 30 * 1000;
@@ -217,45 +90,81 @@ interface NotificationCacheEntry {
 const notificationCache = new Map<string, NotificationCacheEntry>();
 
 // -----------------------------------------------------------------------------
-// RANGE
+// DATE GROUPING
+// Device timezone; weeks begin on Monday.
 // -----------------------------------------------------------------------------
 
-function isInNotificationRange(
-  date: Date | string,
-  range: NotificationRange,
-  now: Date,
-) {
-  if (range === "all") {
-    return true;
-  }
+const SECTION_ORDER: DateSectionKey[] = [
+  "today",
+  "yesterday",
+  "this_week",
+  "last_week",
+  "this_month",
+  "earlier",
+];
 
-  const timestamp = new Date(date).getTime();
-
-  if (!Number.isFinite(timestamp)) {
-    return false;
-  }
-
+function groupNotifications(notifications: MyNotification[], now: Date) {
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
 
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  if (range === "today") {
-    return timestamp >= today.getTime() && timestamp < tomorrow.getTime();
+  const thisWeek = new Date(today);
+  thisWeek.setDate(thisWeek.getDate() - ((thisWeek.getDay() + 6) % 7));
+
+  const lastWeek = new Date(thisWeek);
+  lastWeek.setDate(lastWeek.getDate() - 7);
+
+  const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const groups: Record<DateSectionKey, MyNotification[]> = {
+    today: [],
+    yesterday: [],
+    this_week: [],
+    last_week: [],
+    this_month: [],
+    earlier: [],
+  };
+
+  const sorted = [...notifications].sort((a, b) => {
+    const aTime = new Date(a.createdAt).getTime();
+    const bTime = new Date(b.createdAt).getTime();
+
+    return (
+      (Number.isFinite(bTime) ? bTime : 0) -
+        (Number.isFinite(aTime) ? aTime : 0) || b.id.localeCompare(a.id)
+    );
+  });
+
+  for (const notification of sorted) {
+    const timestamp = new Date(notification.createdAt).getTime();
+
+    let key: DateSectionKey;
+
+    if (!Number.isFinite(timestamp)) {
+      key = "earlier";
+    } else if (timestamp >= today.getTime()) {
+      key = "today";
+    } else if (timestamp >= yesterday.getTime()) {
+      key = "yesterday";
+    } else if (timestamp >= thisWeek.getTime()) {
+      key = "this_week";
+    } else if (timestamp >= lastWeek.getTime()) {
+      key = "last_week";
+    } else if (timestamp >= thisMonth.getTime()) {
+      key = "this_month";
+    } else {
+      key = "earlier";
+    }
+
+    groups[key].push(notification);
   }
 
-  if (range === "yesterday") {
-    return timestamp >= yesterday.getTime() && timestamp < today.getTime();
-  }
-
-  const weekStart = new Date(today);
-  weekStart.setDate(weekStart.getDate() - 6);
-
-  return timestamp >= weekStart.getTime() && timestamp < tomorrow.getTime();
+  return SECTION_ORDER.map((key) => ({
+    key,
+    notifications: groups[key],
+  })).filter((section) => section.notifications.length > 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -284,8 +193,10 @@ function NotificationPanelContent({
   const userId = currentUser?.id;
 
   const language = resolveLanguage(currentUser?.language);
+
   const labels = NOTIFICATION_LABELS[language];
-  const rangeLabels = NOTIFICATION_RANGE_LABELS[language];
+  const panelLabels = NOTIFICATION_PANEL_LABELS[language];
+  const sectionLabels = DATE_SECTION_LABELS[language];
 
   const router = useRouter();
 
@@ -301,17 +212,16 @@ function NotificationPanelContent({
   const [loadFailed, setLoadFailed] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
-  const [range, setRange] = useState<NotificationRange>("all");
-  const [rangeNow, setRangeNow] = useState(() => new Date());
+  const [sectionNow, setSectionNow] = useState(() => new Date());
 
   const [isPending, startTransition] = useTransition();
 
   // ---------------------------------------------------------------------------
-  // DATE BOUNDARIES
+  // DATE SECTIONS
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    const updateDate = () => setRangeNow(new Date());
+    const updateDate = () => setSectionNow(new Date());
 
     const timer = window.setInterval(updateDate, 60_000);
 
@@ -433,11 +343,13 @@ function NotificationPanelContent({
         } catch (error) {
           console.error("Failed to mark notification as read:", error);
 
-          // Restore only this notification's read state.
           setNotifications((current) => {
             const next = current.map((item) =>
               item.id === notification.id
-                ? { ...item, readAt: notification.readAt }
+                ? {
+                    ...item,
+                    readAt: notification.readAt,
+                  }
                 : item,
             );
 
@@ -465,7 +377,6 @@ function NotificationPanelContent({
 
   // ---------------------------------------------------------------------------
   // MARK ALL READ
-  // Applies to all notifications, regardless of selected range.
   // ---------------------------------------------------------------------------
 
   const handleMarkAllRead = () => {
@@ -525,7 +436,6 @@ function NotificationPanelContent({
 
   // ---------------------------------------------------------------------------
   // DELETE ALL SOCIAL NOTIFICATIONS
-  // Applies to all dates.
   // ---------------------------------------------------------------------------
 
   const handleDeleteAllSocial = () => {
@@ -555,12 +465,10 @@ function NotificationPanelContent({
   };
 
   // ---------------------------------------------------------------------------
-  // FILTER
+  // GROUPS
   // ---------------------------------------------------------------------------
 
-  const visibleNotifications = notifications.filter((notification) =>
-    isInNotificationRange(notification.createdAt, range, rangeNow),
-  );
+  const notificationSections = groupNotifications(notifications, sectionNow);
 
   const hasSocialNotifications = notifications.some((notification) =>
     SOCIAL_TYPES.has(notification.type),
@@ -575,28 +483,39 @@ function NotificationPanelContent({
   // ---------------------------------------------------------------------------
 
   return (
-    <section
-      className="
-        flex h-full min-h-0 w-full flex-col
-        text-zinc-800 dark:text-zinc-300
-      "
-    >
+    <section className="flex h-full min-h-0 w-full flex-col text-zinc-800 dark:text-zinc-300">
       <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-1.5">
         <h2 className="sr-only">{labels.heading}</h2>
 
         <p className="min-w-0 truncate text-xs font-normal tracking-wider text-muted-foreground/50">
-          {rangeLabels.description}
+          {panelLabels.description}
         </p>
 
-        <div className="flex shrink-0 items-center gap-1">
-          {!loading && hasUnreadNotifications && (
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={handleMarkAllRead}
-              aria-label={labels.mark_all_read}
-              title={labels.mark_all_read}
-              className="
+        <button
+          type="button"
+          onClick={() => setOnNotification(false)}
+          aria-label={labels.close}
+          className="
+              flex size-8 cursor-pointer items-center justify-center
+              rounded-md text-zinc-500 transition-colors
+              hover:bg-zinc-100 hover:text-zinc-900
+              dark:text-zinc-400 dark:hover:bg-zinc-800
+              dark:hover:text-zinc-100
+            "
+        >
+          <X className="size-4" aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1">
+        {!loading && hasUnreadNotifications && (
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleMarkAllRead}
+            aria-label={labels.mark_all_read}
+            title={labels.mark_all_read}
+            className="
                 flex size-8 cursor-pointer items-center justify-center
                 rounded-md text-zinc-400 transition-colors
                 hover:bg-zinc-100 hover:text-zinc-900
@@ -604,19 +523,19 @@ function NotificationPanelContent({
                 dark:text-zinc-500 dark:hover:bg-zinc-800
                 dark:hover:text-zinc-100
               "
-            >
-              <CheckCheck className="size-4" aria-hidden="true" />
-            </button>
-          )}
+          >
+            <CheckCheck className="size-4" aria-hidden="true" />
+          </button>
+        )}
 
-          {!loading && hasSocialNotifications && (
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={handleDeleteAllSocial}
-              aria-label={labels.clear}
-              title={labels.clear}
-              className="
+        {!loading && hasSocialNotifications && (
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleDeleteAllSocial}
+            aria-label={labels.clear}
+            title={labels.clear}
+            className="
                 flex size-8 cursor-pointer items-center justify-center
                 rounded-md text-zinc-400 transition-colors
                 hover:bg-zinc-100 hover:text-rose-600
@@ -624,90 +543,71 @@ function NotificationPanelContent({
                 dark:text-zinc-500 dark:hover:bg-zinc-800
                 dark:hover:text-rose-400
               "
-            >
-              <Trash2 className="size-4" aria-hidden="true" />
-            </button>
-          )}
-
-          <select
-            value={range}
-            aria-label={rangeLabels.range}
-            onChange={(event) => {
-              setRange(event.target.value as NotificationRange);
-              setRangeNow(new Date());
-            }}
-            className="
-              h-7 max-w-36 cursor-pointer rounded-md
-              border-0 bg-transparent px-1 text-xs text-zinc-400
-              focus-visible:outline-none
-              focus-visible:ring-2 focus-visible:ring-zinc-400
-              dark:text-zinc-500
-              [&>option]:bg-white [&>option]:text-zinc-800
-              dark:[&>option]:bg-zinc-900
-              dark:[&>option]:text-zinc-300
-            "
           >
-            <option value="all">{rangeLabels.all}</option>
-            <option value="today">{rangeLabels.today}</option>
-            <option value="yesterday">{rangeLabels.yesterday}</option>
-            <option value="week">{rangeLabels.week}</option>
-          </select>
-
-          <button
-            type="button"
-            onClick={() => setOnNotification(false)}
-            aria-label={labels.close}
-            className="
-              flex size-8 cursor-pointer items-center justify-center
-              rounded-md text-zinc-500 transition-colors
-              hover:bg-zinc-100 hover:text-zinc-900
-              dark:text-zinc-400 dark:hover:bg-zinc-800
-              dark:hover:text-zinc-100
-            "
-          >
-            <X className="size-4" aria-hidden="true" />
+            <Trash2 className="size-4" aria-hidden="true" />
           </button>
-        </div>
+        )}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {loading ? (
           <NotificationLoader labels={labels} />
-        ) : visibleNotifications.length === 0 && !loadFailed ? (
-          <EmptyNotifications
-            message={range === "all" ? labels.empty : rangeLabels.empty}
-          />
+        ) : notifications.length === 0 && !loadFailed ? (
+          <EmptyNotifications message={labels.empty} />
         ) : (
-          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {visibleNotifications.map((notification) => (
-              <li key={notification.id}>
-                <NotificationItem
-                  notification={notification}
-                  language={language}
-                  isPending={isPending}
-                  onClick={() => handleNotificationClick(notification)}
-                  onDelete={() => handleDeleteNotification(notification.id)}
-                />
-              </li>
+          <div>
+            {notificationSections.map((section) => (
+              <section key={section.key}>
+                {section.key !== "today" && (
+                  <h3
+                    className="
+                      mx-1 rounded-md border border-zinc-300
+                      bg-zinc-50 px-5 py-2
+                      text-xs font-normal text-zinc-500
+                      dark:border-zinc-700 dark:bg-zinc-800
+                      dark:text-zinc-300
+                    "
+                  >
+                    {sectionLabels[section.key]}
+                  </h3>
+                )}
+
+                <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {section.notifications.map((notification) => (
+                    <li key={notification.id}>
+                      <NotificationItem
+                        notification={notification}
+                        language={language}
+                        isPending={isPending}
+                        onClick={() => handleNotificationClick(notification)}
+                        onDelete={() =>
+                          handleDeleteNotification(notification.id)
+                        }
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
         )}
 
         {loadFailed && (
-          <div className="flex justify-center px-4 py-4">
+          <div className="px-4 py-4 text-center" role="alert">
+            <p className="text-sm text-rose-500">{panelLabels.load_failed}</p>
+
             <button
               type="button"
               onClick={() => setRetryKey((value) => value + 1)}
-              aria-label={labels.loading}
               className="
-                cursor-pointer rounded-full border
-                border-zinc-200 px-4 py-2 text-sm
-                text-zinc-500 hover:bg-zinc-100
-                dark:border-zinc-700 dark:text-zinc-400
-                dark:hover:bg-zinc-800
+                mt-2 inline-flex cursor-pointer items-center gap-1.5
+                text-sm text-zinc-500 underline
+                hover:text-zinc-900
+                dark:text-zinc-400 dark:hover:text-zinc-100
               "
             >
-              ↻
+              <RotateCcw className="size-3.5" aria-hidden="true" />
+              {panelLabels.retry}
             </button>
           </div>
         )}
@@ -790,7 +690,7 @@ function NotificationItem({
           focus-visible:ring-zinc-400
         "
       >
-        <span className="flex shrink-0 items-start justify-center ml-1">
+        <span className="flex shrink-0 items-start justify-center mt-0.75">
           <NotificationIcon type={notification.type} />
         </span>
 
@@ -961,7 +861,6 @@ function getNotificationText(
 
       return {
         title: titles[notification.type],
-
         message:
           hasSettlement &&
           Number.isFinite(from) &&

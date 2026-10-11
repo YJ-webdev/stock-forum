@@ -6286,3 +6286,237 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     },
   },
 };
+
+export type DateSectionKey =
+  | "today"
+  | "yesterday"
+  | "this_week"
+  | "last_week"
+  | "this_month"
+  | "earlier";
+
+export const DATE_SECTION_LABELS: Record<
+  Language,
+  Record<DateSectionKey, string>
+> = {
+  en: {
+    today: "Today",
+    yesterday: "Yesterday",
+    this_week: "This week",
+    last_week: "Last week",
+    this_month: "This month",
+    earlier: "Earlier",
+  },
+  ko: {
+    today: "오늘",
+    yesterday: "어제",
+    this_week: "이번 주",
+    last_week: "지난주",
+    this_month: "이번 달",
+    earlier: "이전",
+  },
+  ja: {
+    today: "今日",
+    yesterday: "昨日",
+    this_week: "今週",
+    last_week: "先週",
+    this_month: "今月",
+    earlier: "それ以前",
+  },
+  zh: {
+    today: "今天",
+    yesterday: "昨天",
+    this_week: "本周",
+    last_week: "上周",
+    this_month: "本月",
+    earlier: "更早",
+  },
+  de: {
+    today: "Heute",
+    yesterday: "Gestern",
+    this_week: "Diese Woche",
+    last_week: "Letzte Woche",
+    this_month: "Diesen Monat",
+    earlier: "Früher",
+  },
+  fr: {
+    today: "Aujourd’hui",
+    yesterday: "Hier",
+    this_week: "Cette semaine",
+    last_week: "La semaine dernière",
+    this_month: "Ce mois-ci",
+    earlier: "Plus tôt",
+  },
+  es: {
+    today: "Hoy",
+    yesterday: "Ayer",
+    this_week: "Esta semana",
+    last_week: "La semana pasada",
+    this_month: "Este mes",
+    earlier: "Anteriormente",
+  },
+  pt: {
+    today: "Hoje",
+    yesterday: "Ontem",
+    this_week: "Esta semana",
+    last_week: "Semana passada",
+    this_month: "Este mês",
+    earlier: "Anteriores",
+  },
+  it: {
+    today: "Oggi",
+    yesterday: "Ieri",
+    this_week: "Questa settimana",
+    last_week: "La settimana scorsa",
+    this_month: "Questo mese",
+    earlier: "In precedenza",
+  },
+  ru: {
+    today: "Сегодня",
+    yesterday: "Вчера",
+    this_week: "На этой неделе",
+    last_week: "На прошлой неделе",
+    this_month: "В этом месяце",
+    earlier: "Ранее",
+  },
+  ar: {
+    today: "اليوم",
+    yesterday: "أمس",
+    this_week: "هذا الأسبوع",
+    last_week: "الأسبوع الماضي",
+    this_month: "هذا الشهر",
+    earlier: "سابقًا",
+  },
+  hi: {
+    today: "आज",
+    yesterday: "कल",
+    this_week: "इस सप्ताह",
+    last_week: "पिछले सप्ताह",
+    this_month: "इस महीने",
+    earlier: "पहले",
+  },
+};
+interface NotificationPanelLabels {
+  description: string;
+  retry: string;
+  load_failed: string;
+}
+
+export const NOTIFICATION_PANEL_LABELS: Record<
+  Language,
+  NotificationPanelLabels
+> = {
+  en: {
+    description: "Your notifications",
+    retry: "Try again",
+    load_failed: "Failed to load notifications.",
+  },
+  ko: {
+    description: "받은 알림",
+    retry: "다시 시도",
+    load_failed: "알림을 불러오지 못했습니다.",
+  },
+  ja: {
+    description: "受信した通知",
+    retry: "再試行",
+    load_failed: "通知を読み込めませんでした。",
+  },
+  zh: {
+    description: "收到的通知",
+    retry: "重试",
+    load_failed: "无法加载通知。",
+  },
+  de: {
+    description: "Deine Benachrichtigungen",
+    retry: "Erneut versuchen",
+    load_failed: "Benachrichtigungen konnten nicht geladen werden.",
+  },
+  fr: {
+    description: "Vos notifications",
+    retry: "Réessayer",
+    load_failed: "Impossible de charger les notifications.",
+  },
+  es: {
+    description: "Tus notificaciones",
+    retry: "Reintentar",
+    load_failed: "No se pudieron cargar las notificaciones.",
+  },
+  pt: {
+    description: "Suas notificações",
+    retry: "Tentar novamente",
+    load_failed: "Não foi possível carregar as notificações.",
+  },
+  it: {
+    description: "Le tue notifiche",
+    retry: "Riprova",
+    load_failed: "Impossibile caricare le notifiche.",
+  },
+  ru: {
+    description: "Ваши уведомления",
+    retry: "Повторить",
+    load_failed: "Не удалось загрузить уведомления.",
+  },
+  ar: {
+    description: "إشعاراتك",
+    retry: "إعادة المحاولة",
+    load_failed: "تعذّر تحميل الإشعارات.",
+  },
+  hi: {
+    description: "आपकी सूचनाएँ",
+    retry: "फिर से कोशिश करें",
+    load_failed: "सूचनाएँ लोड नहीं हो सकीं।",
+  },
+};
+export const HISTORY_FILTER_LABELS: Record<
+  Language,
+  { predictions_only: string; empty: string }
+> = {
+  en: {
+    predictions_only: "Predictions only",
+    empty: "No predictions in the last 30 days.",
+  },
+  ko: {
+    predictions_only: "예측만 보기",
+    empty: "최근 30일간 예측 기록이 없습니다.",
+  },
+  ja: {
+    predictions_only: "予測のみ",
+    empty: "過去30日間の予測はありません。",
+  },
+  zh: {
+    predictions_only: "仅看预测",
+    empty: "最近30天没有预测记录。",
+  },
+  de: {
+    predictions_only: "Nur Prognosen",
+    empty: "Keine Prognosen in den letzten 30 Tagen.",
+  },
+  fr: {
+    predictions_only: "Prévisions uniquement",
+    empty: "Aucune prévision au cours des 30 derniers jours.",
+  },
+  es: {
+    predictions_only: "Solo predicciones",
+    empty: "No hay predicciones en los últimos 30 días.",
+  },
+  pt: {
+    predictions_only: "Apenas previsões",
+    empty: "Nenhuma previsão nos últimos 30 dias.",
+  },
+  it: {
+    predictions_only: "Solo previsioni",
+    empty: "Nessuna previsione negli ultimi 30 giorni.",
+  },
+  ru: {
+    predictions_only: "Только прогнозы",
+    empty: "Нет прогнозов за последние 30 дней.",
+  },
+  ar: {
+    predictions_only: "التوقعات فقط",
+    empty: "لا توجد توقعات خلال آخر 30 يومًا.",
+  },
+  hi: {
+    predictions_only: "केवल पूर्वानुमान",
+    empty: "पिछले 30 दिनों में कोई पूर्वानुमान नहीं है।",
+  },
+};
