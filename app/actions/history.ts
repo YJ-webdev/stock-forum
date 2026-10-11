@@ -13,7 +13,10 @@ export type HistoryCursor = {
 
 const PAGE_SIZE = 20;
 
-export async function getUserActivities(cursor: HistoryCursor | null = null) {
+export async function getUserActivities(
+  cursor: HistoryCursor | null = null,
+  predictionsOnly = false,
+) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -32,6 +35,9 @@ export async function getUserActivities(cursor: HistoryCursor | null = null) {
     where: {
       userId,
       createdAt: { gte: cutoff },
+
+      ...(predictionsOnly ? { type: "PREDICTION_SUBMITTED" as const } : {}),
+
       ...(cursor && cursorDate
         ? {
             OR: [

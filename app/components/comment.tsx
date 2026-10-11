@@ -165,10 +165,8 @@ export function MarketComments({
 
   const targetCommentId = searchParams.get("comment");
   const targetReplyId = searchParams.get("reply");
-  const from = searchParams.get("from");
 
-  const highlightTargetComment =
-    Boolean(targetCommentId) && (from === "most-liked" || from === "report");
+  const highlightTargetComment = Boolean(targetCommentId);
 
   const [direction, setDirection] = useState<PredictionDirection | null>(null);
 
@@ -947,6 +945,13 @@ export function CommentItem({
                     {comment.prediction.direction === "BULL"
                       ? labels.bullish
                       : labels.bearish}
+
+                    {isAuthor && (
+                      <span className="tabular-nums">
+                        {" · "}
+                        {comment.prediction.pointsBet.toLocaleString(language)}
+                      </span>
+                    )}
                   </span>
                 </div>
               )}

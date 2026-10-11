@@ -703,6 +703,7 @@ export type MarketPageComments = MarketCommentsPage["comments"];
 
 export async function deleteComment(commentId: string) {
   const session = await auth();
+
   const labels =
     COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
@@ -710,76 +711,135 @@ export async function deleteComment(commentId: string) {
     throw new Error(labels.login_required);
   }
 
-  const comment = await prisma.comment.findUnique({
-    where: { id: commentId },
-    select: {
-      authorId: true,
-      predictionId: true,
-      content: true,
-    },
-  });
+  const userId = session.user.id;
 
-  if (!comment) {
-    throw new Error(labels.comment_not_found);
-  }
+  return prisma.$transaction(async (tx) => {
+    // Use the same lock as editComment.
+    await tx.$queryRaw`
+      SELECT 1 AS locked
+      FROM pg_advisory_xact_lock(
+        hashtext(${`comment-edit-delete:${commentId}`})::bigint
+      )
+    `;
 
-  if (comment.authorId !== session.user.id) {
-    throw new Error(labels.permission_denied);
-  }
-
-  if (comment.predictionId) {
-    const deletedContent: JSONContent = {
-      type: "doc",
-      content: [
-        {
-          type: "paragraph",
-          content: [
-            {
-              type: "text",
-              text: DELETED_COMMENT_TEXT,
-            },
-          ],
-        },
-      ],
-    };
-
-    const currentContent = comment.content as JSONContent;
-
-    const currentText =
-      currentContent.content
-        ?.flatMap((node) => node.content ?? [])
-        .map((node) => node.text ?? "")
-        .join("")
-        .trim() ?? "";
-
-    const alreadyRemoved = currentText === DELETED_COMMENT_TEXT;
-
-    await prisma.comment.update({
-      where: { id: commentId },
-      data: {
-        content: deletedContent as Prisma.InputJsonValue,
-        hasContent: false,
-        editedAt: null,
+    const comment = await tx.comment.findUnique({
+      where: {
+        id: commentId,
       },
+
+      select: {
+        authorId: true,
+        predictionId: true,
+        content: true,
+
+        assets: {
+          take: 1,
+          select: {
+            assetSymbol: true,
+          },
+        },
+      },
+    });
+
+    if (!comment) {
+      throw new Error(labels.comment_not_found);
+    }
+
+    if (comment.authorId !== userId) {
+      throw new Error(labels.permission_denied);
+    }
+
+    // Capture the symbol before deleting the comment's asset relations.
+    const marketSymbol = comment.assets[0]?.assetSymbol ?? null;
+
+    // -------------------------------------------------------------------------
+    // PREDICTION COMMENT: REMOVE CONTENT
+    // -------------------------------------------------------------------------
+
+    if (comment.predictionId) {
+      const deletedContent: JSONContent = {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                type: "text",
+                text: DELETED_COMMENT_TEXT,
+              },
+            ],
+          },
+        ],
+      };
+
+      const currentContent = comment.content as JSONContent;
+
+      const currentText =
+        currentContent.content
+          ?.flatMap((node) => node.content ?? [])
+          .map((node) => node.text ?? "")
+          .join("")
+          .trim() ?? "";
+
+      if (currentText === DELETED_COMMENT_TEXT) {
+        return {
+          success: true,
+          action: "ALREADY_CONTENT_REMOVED" as const,
+          content: deletedContent,
+        };
+      }
+
+      await tx.comment.update({
+        where: {
+          id: commentId,
+        },
+
+        data: {
+          content: JSON.parse(
+            JSON.stringify(deletedContent),
+          ) as Prisma.InputJsonValue,
+          hasContent: false,
+          editedAt: null,
+        },
+      });
+
+      await recordUserActivity(tx, {
+        userId,
+        type: "COMMENT_DELETED",
+        marketSymbol,
+        commentId,
+        predictionId: comment.predictionId,
+      });
+
+      return {
+        success: true,
+        action: "CONTENT_REMOVED" as const,
+        content: deletedContent,
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // REGULAR COMMENT: DELETE
+    // -------------------------------------------------------------------------
+
+    await tx.comment.delete({
+      where: {
+        id: commentId,
+      },
+    });
+
+    await recordUserActivity(tx, {
+      userId,
+      type: "COMMENT_DELETED",
+      marketSymbol,
+      commentId,
     });
 
     return {
       success: true,
-      action: alreadyRemoved
-        ? ("ALREADY_CONTENT_REMOVED" as const)
-        : ("CONTENT_REMOVED" as const),
-      content: deletedContent,
+      action: "DELETED" as const,
     };
-  }
-
-  await prisma.comment.delete({
-    where: { id: commentId },
   });
-
-  return {
-    success: true,
-    action: "DELETED" as const,
-  };
 }
 
 export async function editComment({
