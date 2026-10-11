@@ -286,29 +286,33 @@ function AccountPanelForm({
   return (
     <section
       aria-labelledby="account-settings-heading"
-      className="flex h-full min-h-0 w-full flex-col px-4 pt-3 pb-4"
+      className="flex h-full min-h-0 w-full flex-col"
     >
-      <div className="flex shrink-0 items-start justify-between">
+      <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-1.5">
         <h2
           id="account-settings-heading"
-          className="mt-1 text-xs font-normal tracking-wider text-muted-foreground/50"
+          className="text-xs font-normal tracking-wider text-muted-foreground/50"
         >
           {labels.settings}
         </h2>
 
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="icon"
           onClick={() => setOnAccount(false)}
-          className="size-8"
           aria-label={labels.close}
+          className="
+              flex size-8 cursor-pointer items-center justify-center
+              rounded-md text-zinc-500 transition-colors
+              hover:bg-zinc-100 hover:text-zinc-900
+              dark:text-zinc-400 dark:hover:bg-zinc-800
+              dark:hover:text-zinc-100
+            "
         >
           <X className="size-4" aria-hidden="true" />
-        </Button>
+        </button>
       </div>
 
-      <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-1">
+      <div className="px-5 hide-scrollbar min-h-0 flex-1 overflow-y-auto my-2">
         <div className="flex items-center gap-4">
           <div className="shrink-0">
             <input
@@ -519,7 +523,7 @@ function AccountPanelForm({
         </div>
       </div>
 
-      <div className="ms-auto mt-auto shrink-0">
+      <div className="ms-auto mt-auto shrink-0 pb-5 px-5">
         <Button
           type="button"
           onClick={handleSave}

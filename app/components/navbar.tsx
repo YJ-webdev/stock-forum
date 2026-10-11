@@ -10,6 +10,7 @@ import {
   TextAlignJustify as MenuButton,
   Settings,
   ShieldCogCorner,
+  RotateCcwClock,
 } from "lucide-react";
 import { TbUser } from "react-icons/tb";
 
@@ -41,7 +42,7 @@ interface NavbarProps {
   onWrite: () => void;
   onAccount: () => void;
   onNotification: () => void;
-  onFavotites: () => void;
+  onHistory: () => void;
   user: User | null;
 }
 
@@ -54,6 +55,7 @@ interface UserMenuProps {
   onWrite: () => void;
   onAccount: () => void;
   onNotification: () => void;
+  onHistory: () => void;
 }
 
 function getInitials(user: User) {
@@ -75,6 +77,7 @@ export function Navbar({
   onWrite,
   onAccount,
   onNotification,
+  onHistory,
   user,
 }: NavbarProps) {
   const language = resolveLanguage(user?.language);
@@ -171,6 +174,7 @@ export function Navbar({
           onWrite={() => handlePanelAction(onWrite)}
           onAccount={() => handlePanelAction(onAccount)}
           onNotification={() => handlePanelAction(onNotification)}
+          onHistory={() => handlePanelAction(onHistory)}
         />
 
         {!user && (
@@ -192,6 +196,7 @@ export default function UserMenu({
   onSignOut,
   onLoginClick,
   onAccount,
+  onHistory,
   onNotification,
 }: UserMenuProps) {
   const router = useRouter();
@@ -345,6 +350,18 @@ export default function UserMenu({
                   : unreadCount.toLocaleString(language)}
               </span>
             )}
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={onHistory}
+            className="h-11 cursor-pointer text-[15px]"
+          >
+            <RotateCcwClock
+              className="mr-2 size-4.5"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            {labels.history}
           </DropdownMenuItem>
 
           <DropdownMenuItem

@@ -9,6 +9,7 @@ import { HomeMarketEntry } from "@/types/home-market";
 import type { VoteDirection } from "@/app/actions/market-vote";
 import { revalidatePath } from "next/cache";
 import { MAX_WATCHLIST_MARKETS } from "@/lib/constants/watchlist";
+import { recordUserActivity } from "@/lib/activity/record-user-activity";
 
 const DEFAULT_HOME_MARKETS = [
   "^GSPC", // S&P 500
@@ -41,158 +42,6 @@ export async function isMarketInWatchlist(symbol: string) {
   });
 
   return !!item;
-}
-
-export async function toggleMarketWatchlist(symbol: string) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    throw new Error("Log in to manage your watchlist.");
-  }
-
-  if (typeof symbol !== "string" || !symbol.trim()) {
-    throw new Error("Invalid market symbol.");
-  }
-
-  const userId = session.user.id;
-  const marketSymbol = symbol.trim();
-  const displaySymbol = ALL_MARKET_SYMBOLS.find(
-    (market) => market.symbol === marketSymbol,
-  )?.name;
-
-  const result = await prisma.$transaction(async (tx) => {
-    // PostgreSQL: serialize watchlist additions for this user.
-    await tx.$queryRaw`
-      SELECT 1 AS locked
-      FROM pg_advisory_xact_lock(hashtext(${userId})::bigint)
-    `;
-
-    const removed = await tx.watchlist.deleteMany({
-      where: {
-        userId,
-        symbol: marketSymbol,
-      },
-    });
-
-    if (removed.count > 0) {
-      return { isWatchlist: false };
-    }
-
-    const asset = await tx.marketAsset.findUnique({
-      where: {
-        symbol: marketSymbol,
-      },
-      select: {
-        symbol: true,
-      },
-    });
-
-    if (!asset) {
-      throw new Error("Market not found.");
-    }
-
-    const currentCount = await tx.watchlist.count({
-      where: { userId },
-    });
-
-    if (currentCount >= MAX_WATCHLIST_MARKETS) {
-      throw new Error(
-        `Failed to add ${displaySymbol} . Your watchlist is full.`,
-      );
-    }
-
-    await tx.watchlist.create({
-      data: {
-        userId,
-        symbol: marketSymbol,
-      },
-    });
-
-    return { isWatchlist: true };
-  });
-
-  revalidatePath("/");
-
-  return result;
-}
-
-export async function addMarketsToWatchlist(symbols: string[]) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    throw new Error("Log in to manage your watchlist.");
-  }
-
-  if (
-    !Array.isArray(symbols) ||
-    symbols.some((symbol) => typeof symbol !== "string")
-  ) {
-    throw new Error("Invalid market symbols.");
-  }
-
-  const userId = session.user.id;
-
-  const uniqueSymbols = [
-    ...new Set(symbols.map((symbol) => symbol.trim()).filter(Boolean)),
-  ];
-
-  if (uniqueSymbols.length === 0) {
-    return { addedCount: 0 };
-  }
-
-  const result = await prisma.$transaction(async (tx) => {
-    // Use the same lock as toggleMarketWatchlist.
-    await tx.$queryRaw`
-      SELECT 1 AS locked
-      FROM pg_advisory_xact_lock(hashtext(${userId})::bigint)
-    `;
-
-    const assets = await tx.marketAsset.findMany({
-      where: {
-        symbol: {
-          in: uniqueSymbols,
-        },
-      },
-      select: {
-        symbol: true,
-      },
-    });
-
-    const existing = await tx.watchlist.findMany({
-      where: { userId },
-      select: {
-        symbol: true,
-      },
-    });
-
-    const existingSymbols = new Set(existing.map((item) => item.symbol));
-
-    const symbolsToAdd = assets
-      .map((asset) => asset.symbol)
-      .filter((symbol) => !existingSymbols.has(symbol));
-
-    if (symbolsToAdd.length === 0) {
-      return { addedCount: 0 };
-    }
-
-    if (existing.length + symbolsToAdd.length > MAX_WATCHLIST_MARKETS) {
-      throw new Error(`You can follow up to ${MAX_WATCHLIST_MARKETS} markets.`);
-    }
-
-    const created = await tx.watchlist.createMany({
-      data: symbolsToAdd.map((symbol) => ({
-        userId,
-        symbol,
-      })),
-      skipDuplicates: true,
-    });
-
-    return { addedCount: created.count };
-  });
-
-  revalidatePath("/");
-
-  return result;
 }
 
 export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
@@ -378,6 +227,165 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
     });
 }
 
+export async function toggleMarketWatchlist(symbol: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Log in to manage your watchlist.");
+  }
+
+  if (typeof symbol !== "string" || !symbol.trim()) {
+    throw new Error("Invalid market symbol.");
+  }
+
+  const userId = session.user.id;
+  const marketSymbol = symbol.trim();
+
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT 1 AS locked
+      FROM pg_advisory_xact_lock(hashtext(${userId})::bigint)
+    `;
+
+    const removed = await tx.watchlist.deleteMany({
+      where: {
+        userId,
+        symbol: marketSymbol,
+      },
+    });
+
+    if (removed.count > 0) {
+      await recordUserActivity(tx, {
+        userId,
+        type: "WATCHLIST_REMOVED",
+        marketSymbol,
+      });
+
+      return { isWatchlist: false };
+    }
+
+    const asset = await tx.marketAsset.findUnique({
+      where: { symbol: marketSymbol },
+      select: {
+        symbol: true,
+        name: true,
+      },
+    });
+
+    if (!asset) {
+      throw new Error("Market not found.");
+    }
+
+    const currentCount = await tx.watchlist.count({
+      where: { userId },
+    });
+
+    if (currentCount >= MAX_WATCHLIST_MARKETS) {
+      throw new Error(`Failed to add ${asset.name}. Your watchlist is full.`);
+    }
+
+    await tx.watchlist.create({
+      data: {
+        userId,
+        symbol: marketSymbol,
+      },
+    });
+
+    await recordUserActivity(tx, {
+      userId,
+      type: "WATCHLIST_ADDED",
+      marketSymbol,
+    });
+
+    return { isWatchlist: true };
+  });
+
+  revalidatePath("/");
+
+  return result;
+}
+
+export async function addMarketsToWatchlist(symbols: string[]) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Log in to manage your watchlist.");
+  }
+
+  if (
+    !Array.isArray(symbols) ||
+    symbols.some((symbol) => typeof symbol !== "string")
+  ) {
+    throw new Error("Invalid market symbols.");
+  }
+
+  const userId = session.user.id;
+  const uniqueSymbols = [
+    ...new Set(symbols.map((symbol) => symbol.trim()).filter(Boolean)),
+  ];
+
+  if (uniqueSymbols.length === 0) {
+    return { addedCount: 0 };
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT 1 AS locked
+      FROM pg_advisory_xact_lock(hashtext(${userId})::bigint)
+    `;
+
+    const assets = await tx.marketAsset.findMany({
+      where: {
+        symbol: { in: uniqueSymbols },
+      },
+      select: { symbol: true },
+    });
+
+    const existing = await tx.watchlist.findMany({
+      where: { userId },
+      select: { symbol: true },
+    });
+
+    const existingSymbols = new Set(existing.map((item) => item.symbol));
+
+    const symbolsToAdd = assets
+      .map((asset) => asset.symbol)
+      .filter((symbol) => !existingSymbols.has(symbol));
+
+    if (symbolsToAdd.length === 0) {
+      return { addedCount: 0 };
+    }
+
+    if (existing.length + symbolsToAdd.length > MAX_WATCHLIST_MARKETS) {
+      throw new Error(
+        `You can add up to ${MAX_WATCHLIST_MARKETS} markets to your watchlist.`,
+      );
+    }
+
+    // The shared user lock prevents duplicate additions through these actions.
+    const created = await tx.watchlist.createMany({
+      data: symbolsToAdd.map((symbol) => ({
+        userId,
+        symbol,
+      })),
+    });
+
+    await tx.userActivity.createMany({
+      data: symbolsToAdd.map((marketSymbol) => ({
+        userId,
+        type: "WATCHLIST_ADDED" as const,
+        marketSymbol,
+      })),
+    });
+
+    return { addedCount: created.count };
+  });
+
+  revalidatePath("/");
+
+  return result;
+}
+
 export async function removeMarketsFromWatchlist(symbols: string[]) {
   const session = await auth();
 
@@ -392,6 +400,7 @@ export async function removeMarketsFromWatchlist(symbols: string[]) {
     throw new Error("Invalid market symbols.");
   }
 
+  const userId = session.user.id;
   const uniqueSymbols = [
     ...new Set(symbols.map((symbol) => symbol.trim()).filter(Boolean)),
   ];
@@ -400,18 +409,46 @@ export async function removeMarketsFromWatchlist(symbols: string[]) {
     return { removedCount: 0 };
   }
 
-  const result = await prisma.watchlist.deleteMany({
-    where: {
-      userId: session.user.id,
-      symbol: {
-        in: uniqueSymbols,
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT 1 AS locked
+      FROM pg_advisory_xact_lock(hashtext(${userId})::bigint)
+    `;
+
+    const existing = await tx.watchlist.findMany({
+      where: {
+        userId,
+        symbol: { in: uniqueSymbols },
       },
-    },
+      select: {
+        id: true,
+        symbol: true,
+      },
+    });
+
+    if (existing.length === 0) {
+      return { removedCount: 0 };
+    }
+
+    const removed = await tx.watchlist.deleteMany({
+      where: {
+        userId,
+        id: { in: existing.map((item) => item.id) },
+      },
+    });
+
+    await tx.userActivity.createMany({
+      data: existing.map((item) => ({
+        userId,
+        type: "WATCHLIST_REMOVED" as const,
+        marketSymbol: item.symbol,
+      })),
+    });
+
+    return { removedCount: removed.count };
   });
 
   revalidatePath("/");
 
-  return {
-    removedCount: result.count,
-  };
+  return result;
 }

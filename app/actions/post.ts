@@ -19,6 +19,7 @@ import { getReferenceClose } from "@/lib/market/yahoo";
 import { moderateContent } from "@/lib/moderation/moderate-content";
 import { getContentText } from "@/lib/moderation/get-content-text";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
+import { recordUserActivity } from "@/lib/activity/record-user-activity";
 
 type PredictionInput = {
   direction: "BULL" | "BEAR";
@@ -189,10 +190,13 @@ export async function createComment({
     throw new Error(labels.login_required);
   }
 
+  // ---------------------------------------------------------------------------
+  // AUTHOR
+  // ---------------------------------------------------------------------------
+
   let userId = session.user.id;
 
   if (botUserId !== undefined) {
-    // Verify the current role from the database.
     const admin = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { role: true },
@@ -204,7 +208,10 @@ export async function createComment({
 
     const bot = await prisma.user.findUnique({
       where: { id: botUserId },
-      select: { id: true, isBot: true },
+      select: {
+        id: true,
+        isBot: true,
+      },
     });
 
     if (!bot?.isBot) {
@@ -214,33 +221,31 @@ export async function createComment({
     userId = bot.id;
   }
 
-  const uniqueSymbols = [...new Set(assetSymbols)];
+  // ---------------------------------------------------------------------------
+  // SINGLE BOARD
+  // ---------------------------------------------------------------------------
 
-  if (uniqueSymbols.length === 0) {
-    throw new Error(labels.select_board);
+  if (
+    !Array.isArray(assetSymbols) ||
+    assetSymbols.length !== 1 ||
+    typeof assetSymbols[0] !== "string" ||
+    !assetSymbols[0].trim()
+  ) {
+    throw new Error("Select exactly one board.");
   }
 
-  const selectedMarkets = uniqueSymbols
-    .map((symbol) =>
-      ALL_MARKET_SYMBOLS.find((market) => market.symbol === symbol),
-    )
-    .filter((market): market is MarketSymbolItem => Boolean(market));
+  const symbol = assetSymbols[0].trim();
+  const market = ALL_MARKET_SYMBOLS.find((item) => item.symbol === symbol);
 
-  // Reject unknown symbols instead of silently dropping them.
-  if (
-    selectedMarkets.length === 0 ||
-    selectedMarkets.length !== uniqueSymbols.length
-  ) {
+  if (!market) {
     throw new Error(labels.invalid_board);
   }
 
+  // ---------------------------------------------------------------------------
+  // PREDICTION VALIDATION
+  // ---------------------------------------------------------------------------
+
   if (prediction) {
-    if (selectedMarkets.length !== 1) {
-      throw new Error(labels.single_market);
-    }
-
-    const market = selectedMarkets[0];
-
     if (market.assetType !== "index") {
       throw new Error("Predictions are available for indices only.");
     }
@@ -281,15 +286,22 @@ export async function createComment({
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // CONTENT / MODERATION
+  // ---------------------------------------------------------------------------
+
   const hasContent = content !== null && hasEditorContent(content);
 
   if (!hasContent && !prediction) {
     throw new Error(labels.write_comment);
   }
 
-  const plainContent = hasContent
+  const commentContent: Prisma.InputJsonValue = hasContent
     ? (JSON.parse(JSON.stringify(content)) as Prisma.InputJsonValue)
-    : null;
+    : {
+        type: "doc",
+        content: [],
+      };
 
   const moderationText =
     hasContent && content !== null ? getContentText(content) : "";
@@ -299,7 +311,12 @@ export async function createComment({
     ? "PRIVATE"
     : "PUBLIC";
 
+  // ---------------------------------------------------------------------------
+  // PREDICTION INPUTS
+  // ---------------------------------------------------------------------------
+
   let predictionNationality: string | null = null;
+  let referenceClose: number | null = null;
 
   if (prediction) {
     const user = await prisma.user.findUnique({
@@ -316,14 +333,8 @@ export async function createComment({
     }
 
     predictionNationality = user.nationality;
-  }
 
-  // Fetch external market data before opening the transaction.
-  let referenceClose: number | null = null;
-
-  if (prediction) {
-    const market = selectedMarkets[0];
-
+    // External data is fetched before opening the transaction.
     referenceClose = await getReferenceClose(
       market.symbol,
       prediction.sessionDate,
@@ -334,36 +345,46 @@ export async function createComment({
     }
   }
 
-  await Promise.all(
-    selectedMarkets.map((market) =>
-      prisma.marketAsset.upsert({
-        where: { symbol: market.symbol },
+  await prisma.marketAsset.upsert({
+    where: { symbol: market.symbol },
+    update: {
+      name: market.name,
+      displaySymbol: market.displaySymbol,
+      category: market.region,
+      assetType: market.assetType,
+      timezone: market.timezone ?? "UTC",
+    },
+    create: {
+      symbol: market.symbol,
+      name: market.name,
+      displaySymbol: market.displaySymbol,
+      category: market.region,
+      assetType: market.assetType,
+      timezone: market.timezone ?? "UTC",
+    },
+  });
 
-        update: {
-          name: market.name,
-          displaySymbol: market.displaySymbol,
-          category: market.region,
-          assetType: market.assetType,
-          timezone: market.timezone ?? "UTC",
-        },
-
-        create: {
-          symbol: market.symbol,
-          name: market.name,
-          displaySymbol: market.displaySymbol,
-          category: market.region,
-          assetType: market.assetType,
-          timezone: market.timezone ?? "UTC",
-        },
-      }),
-    ),
-  );
+  // ---------------------------------------------------------------------------
+  // SAVE
+  // ---------------------------------------------------------------------------
 
   const result = await prisma.$transaction(async (tx) => {
     let createdPrediction: { id: string } | null = null;
 
     if (prediction) {
-      const market = selectedMarkets[0];
+      // Recheck after the market-data request.
+      const votingWindow = getVotingWindow(market.symbol, Date.now());
+
+      if (!votingWindow.canVote || !votingWindow.predictionFor) {
+        throw new Error("Voting is closed.");
+      }
+
+      if (
+        new Date(votingWindow.predictionFor).getTime() !==
+        prediction.sessionDate.getTime()
+      ) {
+        throw new Error(labels.invalid_prediction_session);
+      }
 
       if (referenceClose === null) {
         throw new Error(labels.previous_close_unavailable);
@@ -421,31 +442,49 @@ export async function createComment({
       }
     }
 
-    let createdComment: { id: string } | null = null;
-
-    if (hasContent || createdPrediction) {
-      const commentContent: Prisma.InputJsonValue = plainContent ?? {
-        type: "doc",
-        content: [],
-      };
-
-      createdComment = await tx.comment.create({
-        data: {
-          content: commentContent,
-          hasContent,
-          authorId: userId,
-          predictionId: createdPrediction?.id ?? null,
-          visibility: commentVisibility,
-
-          assets: {
-            create: selectedMarkets.map((market) => ({
-              asset: {
-                connect: { symbol: market.symbol },
-              },
-            })),
+    const createdComment = await tx.comment.create({
+      data: {
+        content: commentContent,
+        hasContent,
+        authorId: userId,
+        predictionId: createdPrediction?.id ?? null,
+        visibility: commentVisibility,
+        assets: {
+          create: {
+            asset: {
+              connect: { symbol: market.symbol },
+            },
           },
         },
-        select: { id: true },
+      },
+      select: { id: true },
+    });
+
+    // -------------------------------------------------------------------------
+    // ACTIVITY HISTORY
+    // -------------------------------------------------------------------------
+
+    if (hasContent) {
+      await recordUserActivity(tx, {
+        userId,
+        type: "COMMENT_CREATED",
+        marketSymbol: market.symbol,
+        commentId: createdComment.id,
+      });
+    }
+
+    if (prediction && createdPrediction) {
+      await recordUserActivity(tx, {
+        userId,
+        type: "PREDICTION_SUBMITTED",
+        marketSymbol: market.symbol,
+        commentId: createdComment.id,
+        predictionId: createdPrediction.id,
+        metadata: {
+          direction: prediction.direction,
+          pointsBet: prediction.pointsBet,
+          sessionDate: prediction.sessionDate.toISOString(),
+        },
       });
     }
 
@@ -458,15 +497,13 @@ export async function createComment({
 
     return {
       success: true,
-      commentId: createdComment?.id ?? null,
+      commentId: createdComment.id,
       predictionId: createdPrediction?.id ?? null,
       points: pointBalance?.points ?? null,
     };
   });
 
-  const createdComment = result.commentId
-    ? await getCommentById(result.commentId, userId)
-    : null;
+  const createdComment = await getCommentById(result.commentId, userId);
 
   return {
     ...result,
@@ -760,54 +797,79 @@ export async function editComment({
     throw new Error(labels.login_required);
   }
 
-  const comment = await prisma.comment.findUnique({
-    where: { id: commentId },
-    select: {
-      authorId: true,
-      predictionId: true,
-      withdrawnAt: true,
-      moderatedAt: true,
-    },
-  });
+  const userId = session.user.id;
 
-  if (!comment) {
-    throw new Error(labels.comment_not_found);
-  }
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT 1 AS locked
+      FROM pg_advisory_xact_lock(
+        hashtext(${`comment-edit-delete:${commentId}`})::bigint
+      )
+    `;
 
-  if (comment.authorId !== session.user.id) {
-    throw new Error(labels.permission_denied);
-  }
+    const comment = await tx.comment.findUnique({
+      where: { id: commentId },
+      select: {
+        authorId: true,
+        predictionId: true,
+        withdrawnAt: true,
+        moderatedAt: true,
+        assets: {
+          take: 1,
+          select: { assetSymbol: true },
+        },
+      },
+    });
 
-  if (comment.withdrawnAt || comment.moderatedAt) {
-    throw new Error(labels.comment_not_editable);
-  }
+    if (!comment) {
+      throw new Error(labels.comment_not_found);
+    }
 
-  const hasContent = hasEditorContent(content);
+    if (comment.authorId !== userId) {
+      throw new Error(labels.permission_denied);
+    }
 
-  if (!hasContent && !comment.predictionId) {
-    throw new Error(labels.write_comment);
-  }
+    if (comment.withdrawnAt || comment.moderatedAt) {
+      throw new Error(labels.comment_not_editable);
+    }
 
-  const updatedContent: JSONContent = hasContent
-    ? content
-    : { type: "doc", content: [] };
+    const hasContent = hasEditorContent(content);
 
-  const editedAt = new Date();
+    if (!hasContent && !comment.predictionId) {
+      throw new Error(labels.write_comment);
+    }
 
-  await prisma.comment.update({
-    where: { id: commentId },
-    data: {
-      content: updatedContent as Prisma.InputJsonValue,
-      hasContent,
+    const updatedContent: JSONContent = hasContent
+      ? content
+      : { type: "doc", content: [] };
+
+    const editedAt = new Date();
+
+    await tx.comment.update({
+      where: { id: commentId },
+      data: {
+        content: JSON.parse(
+          JSON.stringify(updatedContent),
+        ) as Prisma.InputJsonValue,
+        hasContent,
+        editedAt,
+      },
+    });
+
+    await recordUserActivity(tx, {
+      userId,
+      type: "COMMENT_EDITED",
+      marketSymbol: comment.assets[0]?.assetSymbol ?? null,
+      commentId,
+      predictionId: comment.predictionId,
+    });
+
+    return {
+      success: true,
+      content: updatedContent,
       editedAt,
-    },
+    };
   });
-
-  return {
-    success: true,
-    content: updatedContent,
-    editedAt,
-  };
 }
 
 export async function hideComment(commentId: string, reason?: string) {
@@ -957,104 +1019,103 @@ export async function createReply({
     ? "PRIVATE"
     : "PUBLIC";
 
-  const comment = await prisma.comment.findUnique({
-    where: { id: commentId },
-    select: {
-      id: true,
-      authorId: true,
-      withdrawnAt: true,
-      moderatedAt: true,
-    },
-  });
-
-  if (!comment) {
-    throw new Error(labels.comment_not_found);
-  }
-
-  if (comment.withdrawnAt || comment.moderatedAt) {
-    throw new Error(labels.cannot_reply);
-  }
-
-  let parentReply: {
-    id: string;
-    commentId: string;
-    authorId: string;
-    moderatedAt: Date | null;
-  } | null = null;
-
-  if (parentId) {
-    parentReply = await prisma.reply.findUnique({
-      where: { id: parentId },
+  return prisma.$transaction(async (tx) => {
+    const comment = await tx.comment.findUnique({
+      where: { id: commentId },
       select: {
-        id: true,
-        commentId: true,
         authorId: true,
+        withdrawnAt: true,
         moderatedAt: true,
+        assets: {
+          take: 1,
+          select: { assetSymbol: true },
+        },
       },
     });
 
-    if (!parentReply) {
-      throw new Error(labels.reply_not_found);
+    if (!comment) {
+      throw new Error(labels.comment_not_found);
     }
 
-    if (parentReply.commentId !== commentId) {
-      throw new Error(labels.invalid_parent);
-    }
-
-    if (parentReply.moderatedAt) {
+    if (comment.withdrawnAt || comment.moderatedAt) {
       throw new Error(labels.cannot_reply);
     }
-  }
 
-  const reply = await prisma.reply.create({
-    data: {
-      content: trimmedContent,
-      gifUrl,
-      commentId,
-      authorId: userId,
-      parentId,
-      visibility: replyVisibility,
-    },
-    select: REPLY_SELECT,
-  });
-
-  // Notification text is translated in NotificationPanel.
-  if (replyVisibility === "PUBLIC") {
-    if (parentReply) {
-      if (parentReply.authorId !== userId) {
-        await prisma.notification.create({
-          data: {
-            userId: parentReply.authorId,
-            actorId: userId,
-            type: "REPLY_REPLIED",
-            title: "New reply",
-            message: `${session.user.name ?? "Someone"} replied to your reply.`,
-            commentId,
-            replyId: reply.id,
-            eventKey: `reply-replied:${reply.id}`,
+    const parentReply = parentId
+      ? await tx.reply.findUnique({
+          where: { id: parentId },
+          select: {
+            authorId: true,
+            commentId: true,
+            moderatedAt: true,
           },
-        });
+        })
+      : null;
+
+    if (parentId) {
+      if (!parentReply) {
+        throw new Error(labels.reply_not_found);
       }
-    } else if (comment.authorId !== userId) {
-      await prisma.notification.create({
+
+      if (parentReply.commentId !== commentId) {
+        throw new Error(labels.invalid_parent);
+      }
+
+      if (parentReply.moderatedAt) {
+        throw new Error(labels.cannot_reply);
+      }
+    }
+
+    const reply = await tx.reply.create({
+      data: {
+        content: trimmedContent,
+        gifUrl,
+        commentId,
+        authorId: userId,
+        parentId,
+        visibility: replyVisibility,
+      },
+      select: REPLY_SELECT,
+    });
+
+    const targetUserId = parentReply?.authorId ?? comment.authorId;
+
+    if (replyVisibility === "PUBLIC" && targetUserId !== userId) {
+      await tx.notification.create({
         data: {
-          userId: comment.authorId,
+          userId: targetUserId,
           actorId: userId,
-          type: "COMMENT_REPLIED",
+          type: parentReply ? "REPLY_REPLIED" : "COMMENT_REPLIED",
           title: "New reply",
-          message: `${session.user.name ?? "Someone"} replied to your comment.`,
+          message: parentReply
+            ? `${session.user.name ?? "Someone"} replied to your reply.`
+            : `${session.user.name ?? "Someone"} replied to your comment.`,
           commentId,
           replyId: reply.id,
-          eventKey: `comment-replied:${reply.id}`,
+          eventKey: parentReply
+            ? `reply-replied:${reply.id}`
+            : `comment-replied:${reply.id}`,
         },
       });
     }
-  }
 
-  return {
-    success: true,
-    reply,
-  };
+    await recordUserActivity(tx, {
+      userId,
+      type: "REPLY_CREATED",
+      targetUserId,
+      marketSymbol: comment.assets[0]?.assetSymbol ?? null,
+      commentId,
+      replyId: reply.id,
+      metadata: {
+        parentId,
+      },
+    });
+
+    return {
+      success: true,
+      reply,
+    };
+  });
 }
 
 export async function editReply({
@@ -1074,47 +1135,81 @@ export async function editReply({
     throw new Error(labels.login_required);
   }
 
+  const userId = session.user.id;
   const trimmedContent = content.trim();
 
   if (!trimmedContent && !gifUrl) {
     throw new Error(labels.write_reply);
   }
 
-  const reply = await prisma.reply.findUnique({
-    where: { id: replyId },
-    select: {
-      id: true,
-      authorId: true,
-      moderatedAt: true,
-    },
+  return prisma.$transaction(async (tx) => {
+    const reply = await tx.reply.findUnique({
+      where: { id: replyId },
+      select: {
+        authorId: true,
+        commentId: true,
+        content: true,
+        gifUrl: true,
+        moderatedAt: true,
+        comment: {
+          select: {
+            assets: {
+              take: 1,
+              select: { assetSymbol: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!reply) {
+      throw new Error(labels.reply_not_found);
+    }
+
+    if (reply.authorId !== userId) {
+      throw new Error(labels.permission_denied);
+    }
+
+    if (reply.moderatedAt) {
+      throw new Error(labels.reply_not_editable);
+    }
+
+    // 내용이 그대로면 수정 시각과 History를 변경하지 않음.
+    if (reply.content === trimmedContent && reply.gifUrl === gifUrl) {
+      const unchangedReply = await tx.reply.findUniqueOrThrow({
+        where: { id: replyId },
+        select: REPLY_SELECT,
+      });
+
+      return {
+        success: true,
+        reply: unchangedReply,
+      };
+    }
+
+    const updatedReply = await tx.reply.update({
+      where: { id: replyId },
+      data: {
+        content: trimmedContent,
+        gifUrl,
+        editedAt: new Date(),
+      },
+      select: REPLY_SELECT,
+    });
+
+    await recordUserActivity(tx, {
+      userId,
+      type: "REPLY_EDITED",
+      marketSymbol: reply.comment.assets[0]?.assetSymbol ?? null,
+      commentId: reply.commentId,
+      replyId,
+    });
+
+    return {
+      success: true,
+      reply: updatedReply,
+    };
   });
-
-  if (!reply) {
-    throw new Error(labels.reply_not_found);
-  }
-
-  if (reply.authorId !== session.user.id) {
-    throw new Error(labels.permission_denied);
-  }
-
-  if (reply.moderatedAt) {
-    throw new Error(labels.reply_not_editable);
-  }
-
-  const updatedReply = await prisma.reply.update({
-    where: { id: replyId },
-    data: {
-      content: trimmedContent,
-      gifUrl,
-      editedAt: new Date(),
-    },
-    select: REPLY_SELECT,
-  });
-
-  return {
-    success: true,
-    reply: updatedReply,
-  };
 }
 
 export async function deleteReply(replyId: string) {
@@ -1126,30 +1221,49 @@ export async function deleteReply(replyId: string) {
     throw new Error(labels.login_required);
   }
 
-  const reply = await prisma.reply.findUnique({
-    where: { id: replyId },
-    select: {
-      id: true,
-      authorId: true,
-      moderatedAt: true,
-    },
+  const userId = session.user.id;
+
+  return prisma.$transaction(async (tx) => {
+    const reply = await tx.reply.findUnique({
+      where: { id: replyId },
+      select: {
+        authorId: true,
+        commentId: true,
+        comment: {
+          select: {
+            assets: {
+              take: 1,
+              select: { assetSymbol: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!reply) {
+      throw new Error(labels.reply_not_found);
+    }
+
+    if (reply.authorId !== userId) {
+      throw new Error(labels.permission_denied);
+    }
+
+    await tx.reply.delete({
+      where: { id: replyId },
+    });
+
+    await recordUserActivity(tx, {
+      userId,
+      type: "REPLY_DELETED",
+      marketSymbol: reply.comment.assets[0]?.assetSymbol ?? null,
+      commentId: reply.commentId,
+      replyId,
+    });
+
+    return {
+      success: true,
+    };
   });
-
-  if (!reply) {
-    throw new Error(labels.reply_not_found);
-  }
-
-  if (reply.authorId !== session.user.id) {
-    throw new Error(labels.permission_denied);
-  }
-
-  await prisma.reply.delete({
-    where: { id: replyId },
-  });
-
-  return {
-    success: true,
-  };
 }
 
 export async function hideReply(replyId: string) {
@@ -1294,52 +1408,77 @@ export async function reportComment(commentId: string) {
     throw new Error(labels.login_required);
   }
 
-  const comment = await prisma.comment.findUnique({
-    where: { id: commentId },
-    select: { id: true },
-  });
-
-  if (!comment) {
-    throw new Error(labels.comment_not_found);
-  }
-
+  const userId = session.user.id;
   const eventKeyPrefix = `comment-report:${commentId}:`;
 
-  const existingReport = await prisma.notification.findFirst({
-    where: {
-      eventKey: { startsWith: eventKeyPrefix },
-    },
-    select: { id: true },
-  });
+  return prisma.$transaction(async (tx) => {
+    // 같은 댓글의 동시 신고를 순서대로 처리.
+    await tx.$queryRaw`
+      SELECT 1 AS locked
+      FROM pg_advisory_xact_lock(
+        hashtext(${eventKeyPrefix})::bigint
+      )
+    `;
 
-  if (existingReport) {
-    throw new Error(labels.comment_reported);
-  }
+    const comment = await tx.comment.findUnique({
+      where: { id: commentId },
+      select: {
+        authorId: true,
+        assets: {
+          take: 1,
+          select: { assetSymbol: true },
+        },
+      },
+    });
 
-  const admins = await prisma.user.findMany({
-    where: { role: "ADMIN" },
-    select: { id: true },
-  });
+    if (!comment) {
+      throw new Error(labels.comment_not_found);
+    }
 
-  if (admins.length === 0) {
-    throw new Error(labels.admin_unavailable);
-  }
+    const existingReport = await tx.notification.findFirst({
+      where: {
+        eventKey: { startsWith: eventKeyPrefix },
+      },
+      select: { id: true },
+    });
 
-  await prisma.notification.createMany({
-    data: admins.map((admin) => ({
-      userId: admin.id,
-      actorId: null,
+    if (existingReport) {
+      throw new Error(labels.comment_reported);
+    }
+
+    const admins = await tx.user.findMany({
+      where: { role: "ADMIN" },
+      select: { id: true },
+    });
+
+    if (admins.length === 0) {
+      throw new Error(labels.admin_unavailable);
+    }
+
+    await tx.notification.createMany({
+      data: admins.map((admin) => ({
+        userId: admin.id,
+        actorId: null,
+        type: "COMMENT_REPORTED" as const,
+        title: "Comment reported",
+        message: "A comment has been reported for review.",
+        commentId,
+        eventKey: `${eventKeyPrefix}${admin.id}`,
+      })),
+    });
+
+    await recordUserActivity(tx, {
+      userId,
       type: "COMMENT_REPORTED",
-      title: "Comment reported",
-      message: "A comment has been reported for review.",
+      targetUserId: comment.authorId,
+      marketSymbol: comment.assets[0]?.assetSymbol ?? null,
       commentId,
-      eventKey: `${eventKeyPrefix}${admin.id}`,
-    })),
-  });
+    });
 
-  return {
-    success: true,
-  };
+    return {
+      success: true,
+    };
+  });
 }
 
 export async function reportReply(replyId: string) {
@@ -1351,56 +1490,83 @@ export async function reportReply(replyId: string) {
     throw new Error(labels.login_required);
   }
 
-  const reply = await prisma.reply.findUnique({
-    where: { id: replyId },
-    select: {
-      id: true,
-      commentId: true,
-    },
-  });
-
-  if (!reply) {
-    throw new Error(labels.reply_not_found);
-  }
-
+  const userId = session.user.id;
   const eventKeyPrefix = `reply-report:${replyId}:`;
 
-  const existingReport = await prisma.notification.findFirst({
-    where: {
-      eventKey: { startsWith: eventKeyPrefix },
-    },
-    select: { id: true },
-  });
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT 1 AS locked
+      FROM pg_advisory_xact_lock(
+        hashtext(${eventKeyPrefix})::bigint
+      )
+    `;
 
-  if (existingReport) {
-    throw new Error(labels.reply_reported);
-  }
+    const reply = await tx.reply.findUnique({
+      where: { id: replyId },
+      select: {
+        authorId: true,
+        commentId: true,
+        comment: {
+          select: {
+            assets: {
+              take: 1,
+              select: { assetSymbol: true },
+            },
+          },
+        },
+      },
+    });
 
-  const admins = await prisma.user.findMany({
-    where: { role: "ADMIN" },
-    select: { id: true },
-  });
+    if (!reply) {
+      throw new Error(labels.reply_not_found);
+    }
 
-  if (admins.length === 0) {
-    throw new Error(labels.admin_unavailable);
-  }
+    const existingReport = await tx.notification.findFirst({
+      where: {
+        eventKey: { startsWith: eventKeyPrefix },
+      },
+      select: { id: true },
+    });
 
-  await prisma.notification.createMany({
-    data: admins.map((admin) => ({
-      userId: admin.id,
-      actorId: null,
+    if (existingReport) {
+      throw new Error(labels.reply_reported);
+    }
+
+    const admins = await tx.user.findMany({
+      where: { role: "ADMIN" },
+      select: { id: true },
+    });
+
+    if (admins.length === 0) {
+      throw new Error(labels.admin_unavailable);
+    }
+
+    await tx.notification.createMany({
+      data: admins.map((admin) => ({
+        userId: admin.id,
+        actorId: null,
+        type: "REPLY_REPORTED" as const,
+        title: "Reply reported",
+        message: "A reply has been reported for review.",
+        commentId: reply.commentId,
+        replyId,
+        eventKey: `${eventKeyPrefix}${admin.id}`,
+      })),
+    });
+
+    await recordUserActivity(tx, {
+      userId,
       type: "REPLY_REPORTED",
-      title: "Reply reported",
-      message: "A reply has been reported for review.",
+      targetUserId: reply.authorId,
+      marketSymbol: reply.comment.assets[0]?.assetSymbol ?? null,
       commentId: reply.commentId,
       replyId,
-      eventKey: `${eventKeyPrefix}${admin.id}`,
-    })),
-  });
+    });
 
-  return {
-    success: true,
-  };
+    return {
+      success: true,
+    };
+  });
 }
 
 export type HomeCommentSort = "latest" | "most-liked";

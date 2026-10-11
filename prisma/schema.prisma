@@ -57,6 +57,8 @@ model User {
   language      String    @default("en")
   role          Role      @default(USER)
 
+  
+
   status   UserStatus @default(ACTIVE)
   mutedAt  DateTime?
   bannedAt DateTime?
@@ -75,6 +77,11 @@ model User {
   predictions           Prediction[]
   notificationsReceived Notification[]  @relation("NotificationRecipient")
   notificationsSent     Notification[]  @relation("NotificationActor")
+
+    activities UserActivity[]
+
+  following UserFollow[] @relation("UserFollowing")
+  followers UserFollow[] @relation("UserFollowers")
 
   pointBalance      PointBalance?
   pointTransactions PointTransaction[]
@@ -472,4 +479,65 @@ model PointTransaction {
   @@unique([predictionId, type])
   @@index([userId, createdAt])
   @@index([predictionId])
+}
+
+model UserFollow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower User @relation("UserFollowing",fields: [followerId],references: [id],onDelete: Cascade)
+
+  following User @relation("UserFollowers",fields: [followingId],references: [id],onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId, createdAt, id])
+  @@index([followingId, createdAt, id])
+}
+
+model UserActivity {
+  id           String           @id @default(cuid())
+  userId       String
+  type         UserActivityType
+
+  targetUserId String?
+  marketSymbol String?
+  commentId    String?
+  replyId      String?
+  predictionId String?
+
+  metadata     Json?
+  createdAt    DateTime         @default(now())
+
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+  @@index([userId, createdAt, id])
+}
+
+enum UserActivityType {
+  COMMENT_CREATED
+  COMMENT_EDITED
+  COMMENT_DELETED
+
+  REPLY_CREATED
+  REPLY_EDITED
+  REPLY_DELETED
+
+  COMMENT_LIKED
+  COMMENT_UNLIKED
+
+  REPLY_LIKED
+  REPLY_UNLIKED
+
+  PREDICTION_SUBMITTED
+
+  WATCHLIST_ADDED
+  WATCHLIST_REMOVED
+
+  USER_FOLLOWED
+  USER_UNFOLLOWED
+
+  COMMENT_REPORTED
+REPLY_REPORTED
 }

@@ -253,7 +253,7 @@ export function NotificationPanel({
       aria-labelledby="notifications-heading"
       className="flex h-full min-h-0 w-full flex-col"
     >
-      <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-2">
+      <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-1.5">
         <h2
           id="notifications-heading"
           className="text-xs font-normal tracking-wider text-muted-foreground/50"

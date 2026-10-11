@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { recordUserActivity } from "@/lib/activity/record-user-activity";
 import { prisma } from "@/lib/prisma";
 
 export async function toggleCommentLike(commentId: string) {
@@ -11,123 +12,98 @@ export async function toggleCommentLike(commentId: string) {
   }
 
   const userId = session.user.id;
-
-  const comment = await prisma.comment.findUnique({
-    where: {
-      id: commentId,
-    },
-    select: {
-      id: true,
-      authorId: true,
-      withdrawnAt: true,
-      moderatedAt: true,
-    },
-  });
-
-  if (!comment) {
-    throw new Error("Comment not found.");
-  }
-
-  if (comment.withdrawnAt || comment.moderatedAt) {
-    throw new Error("This comment can no longer be liked.");
-  }
-
   const eventKey = `comment-like:${userId}:${commentId}`;
 
-  const existingLike = await prisma.commentLike.findUnique({
-    where: {
-      userId_commentId: {
-        userId,
-        commentId,
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT 1 AS locked
+      FROM pg_advisory_xact_lock(
+        hashtext(${eventKey})::bigint
+      )
+    `;
+
+    const comment = await tx.comment.findUnique({
+      where: { id: commentId },
+      select: {
+        authorId: true,
+        withdrawnAt: true,
+        moderatedAt: true,
+        assets: {
+          take: 1,
+          select: { assetSymbol: true },
+        },
       },
-    },
-    select: {
-      id: true,
-    },
-  });
+    });
 
-  // ---------------------------------------------------------------------------
-  // UNLIKE
-  // ---------------------------------------------------------------------------
+    if (!comment) {
+      throw new Error("Comment not found.");
+    }
 
-  if (existingLike) {
-    await prisma.$transaction([
-      prisma.commentLike.delete({
-        where: {
-          userId_commentId: {
-            userId,
-            commentId,
-          },
-        },
-      }),
+    if (comment.withdrawnAt || comment.moderatedAt) {
+      throw new Error("This comment can no longer be liked.");
+    }
 
-      prisma.notification.deleteMany({
-        where: {
-          eventKey,
-        },
-      }),
-    ]);
-
-    const likeCount = await prisma.commentLike.count({
+    const existingLike = await tx.commentLike.findUnique({
       where: {
-        commentId,
+        userId_commentId: { userId, commentId },
       },
+      select: { id: true },
     });
 
-    return {
-      liked: false,
-      likeCount,
-    };
-  }
+    const liked = !existingLike;
 
-  // ---------------------------------------------------------------------------
-  // LIKE
-  // ---------------------------------------------------------------------------
+    if (existingLike) {
+      await tx.commentLike.delete({
+        where: { id: existingLike.id },
+      });
 
-  if (comment.authorId === userId) {
-    // Allow self-like, but don't notify yourself.
-    await prisma.commentLike.create({
-      data: {
+      await tx.notification.deleteMany({
+        where: { eventKey },
+      });
+    } else {
+      await tx.commentLike.create({
+        data: { userId, commentId },
+      });
+
+      if (comment.authorId !== userId) {
+        await tx.notification.create({
+          data: {
+            userId: comment.authorId,
+            actorId: userId,
+            type: "COMMENT_LIKED",
+            title: "👍 New like",
+            message: `${session.user.name ?? "Someone"} liked your comment.`,
+            commentId,
+            eventKey,
+          },
+        });
+      }
+    }
+
+    await tx.userActivity.deleteMany({
+      where: {
         userId,
         commentId,
+        type: {
+          in: ["COMMENT_LIKED", "COMMENT_UNLIKED"],
+        },
       },
     });
-  } else {
-    await prisma.$transaction([
-      prisma.commentLike.create({
-        data: {
-          userId,
-          commentId,
-        },
-      }),
 
-      prisma.notification.create({
-        data: {
-          userId: comment.authorId,
-          actorId: userId,
-
-          type: "COMMENT_LIKED",
-
-          title: "👍 New like",
-          message: `${session.user.name ?? "Someone"} liked your comment.`,
-
-          commentId,
-          eventKey,
-        },
-      }),
-    ]);
-  }
-
-  const likeCount = await prisma.commentLike.count({
-    where: {
+    await recordUserActivity(tx, {
+      userId,
+      type: liked ? "COMMENT_LIKED" : "COMMENT_UNLIKED",
+      targetUserId: comment.authorId,
       commentId,
-    },
-  });
+      marketSymbol: comment.assets[0]?.assetSymbol ?? null,
+    });
 
-  return {
-    liked: true,
-    likeCount,
-  };
+    const likeCount = await tx.commentLike.count({
+      where: { commentId },
+    });
+
+    return { liked, likeCount };
+  });
 }
 
 export async function toggleReplyLike(replyId: string) {
@@ -138,120 +114,101 @@ export async function toggleReplyLike(replyId: string) {
   }
 
   const userId = session.user.id;
-
-  const reply = await prisma.reply.findUnique({
-    where: {
-      id: replyId,
-    },
-    select: {
-      id: true,
-      authorId: true,
-      moderatedAt: true,
-    },
-  });
-
-  if (!reply) {
-    throw new Error("Reply not found.");
-  }
-
-  if (reply.moderatedAt) {
-    throw new Error("This reply can no longer be liked.");
-  }
-
   const eventKey = `reply-like:${userId}:${replyId}`;
 
-  const existingLike = await prisma.replyLike.findUnique({
-    where: {
-      userId_replyId: {
-        userId,
-        replyId,
-      },
-    },
-    select: {
-      id: true,
-    },
-  });
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT 1 AS locked
+      FROM pg_advisory_xact_lock(
+        hashtext(${eventKey})::bigint
+      )
+    `;
 
-  // ---------------------------------------------------------------------------
-  // UNLIKE
-  // ---------------------------------------------------------------------------
-
-  if (existingLike) {
-    await prisma.$transaction([
-      prisma.replyLike.delete({
-        where: {
-          userId_replyId: {
-            userId,
-            replyId,
+    const reply = await tx.reply.findUnique({
+      where: { id: replyId },
+      select: {
+        authorId: true,
+        commentId: true,
+        moderatedAt: true,
+        comment: {
+          select: {
+            assets: {
+              take: 1,
+              select: { assetSymbol: true },
+            },
           },
         },
-      }),
-
-      prisma.notification.deleteMany({
-        where: {
-          eventKey,
-        },
-      }),
-    ]);
-
-    const likeCount = await prisma.replyLike.count({
-      where: {
-        replyId,
       },
     });
 
-    return {
-      liked: false,
-      likeCount,
-    };
-  }
+    if (!reply) {
+      throw new Error("Reply not found.");
+    }
 
-  // ---------------------------------------------------------------------------
-  // LIKE
-  // ---------------------------------------------------------------------------
+    if (reply.moderatedAt) {
+      throw new Error("This reply can no longer be liked.");
+    }
 
-  if (reply.authorId === userId) {
-    // Allow self-like, but don't notify yourself.
-    await prisma.replyLike.create({
-      data: {
+    const existingLike = await tx.replyLike.findUnique({
+      where: {
+        userId_replyId: { userId, replyId },
+      },
+      select: { id: true },
+    });
+
+    const liked = !existingLike;
+
+    if (existingLike) {
+      await tx.replyLike.delete({
+        where: { id: existingLike.id },
+      });
+
+      await tx.notification.deleteMany({
+        where: { eventKey },
+      });
+    } else {
+      await tx.replyLike.create({
+        data: { userId, replyId },
+      });
+
+      if (reply.authorId !== userId) {
+        await tx.notification.create({
+          data: {
+            userId: reply.authorId,
+            actorId: userId,
+            type: "REPLY_LIKED",
+            title: "👍 New like",
+            message: `${session.user.name ?? "Someone"} liked your reply.`,
+            replyId,
+            eventKey,
+          },
+        });
+      }
+    }
+
+    await tx.userActivity.deleteMany({
+      where: {
         userId,
         replyId,
+        type: {
+          in: ["REPLY_LIKED", "REPLY_UNLIKED"],
+        },
       },
     });
-  } else {
-    await prisma.$transaction([
-      prisma.replyLike.create({
-        data: {
-          userId,
-          replyId,
-        },
-      }),
 
-      prisma.notification.create({
-        data: {
-          userId: reply.authorId,
-          actorId: userId,
-
-          type: "REPLY_LIKED",
-
-          title: "👍 New like",
-          message: `${session.user.name ?? "Someone"} liked your reply.`,
-
-          replyId,
-          eventKey,
-        },
-      }),
-    ]);
-  }
-
-  const likeCount = await prisma.replyLike.count({
-    where: {
+    await recordUserActivity(tx, {
+      userId,
+      type: liked ? "REPLY_LIKED" : "REPLY_UNLIKED",
+      targetUserId: reply.authorId,
+      commentId: reply.commentId,
       replyId,
-    },
-  });
+      marketSymbol: reply.comment.assets[0]?.assetSymbol ?? null,
+    });
 
-  return {
-    liked: true,
-    likeCount,
-  };
+    const likeCount = await tx.replyLike.count({
+      where: { replyId },
+    });
+
+    return { liked, likeCount };
+  });
 }

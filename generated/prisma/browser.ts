@@ -112,3 +112,13 @@ export type PointBalance = Prisma.PointBalanceModel
  * 
  */
 export type PointTransaction = Prisma.PointTransactionModel
+/**
+ * Model UserFollow
+ * 
+ */
+export type UserFollow = Prisma.UserFollowModel
+/**
+ * Model UserActivity
+ * 
+ */
+export type UserActivity = Prisma.UserActivityModel

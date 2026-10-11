@@ -26,19 +26,22 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
   const labels = LEADERBOARD_LABELS[language];
 
   return (
-    <section aria-labelledby={headingId} className="flex w-full flex-col">
+    <section
+      aria-labelledby={headingId}
+      className="flex min-h-0 w-full flex-col overflow-hidden pt-3.5"
+    >
       <h2 id={headingId} className="sr-only">
         {labels.title}
       </h2>
 
       <p
         aria-hidden="true"
-        className="truncate px-4 pt-4 text-xs font-normal tracking-wider text-muted-foreground/50"
+        className="shrink-0 truncate px-4 pb-1 text-xs font-normal tracking-wider text-muted-foreground/50"
       >
         {labels.title}
       </p>
 
-      <div className="flex w-full flex-col px-3">
+      <div className="flex min-h-0 w-full flex-col overflow-x-hidden overflow-y-auto px-2.25">
         {traders.map((trader) => {
           const isMe = trader.id === user?.id;
 
@@ -51,7 +54,7 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
                 ${isMe ? "bg-zinc-100 dark:bg-zinc-800" : ""}
               `}
             >
-              <div className="jakarta ml-2 flex w-2 shrink-0 justify-center">
+              <div className="jakarta ml-1.5 flex w-2 shrink-0 justify-center">
                 <span className="text-[13px] font-medium text-zinc-500">
                   {trader.rank}
                 </span>

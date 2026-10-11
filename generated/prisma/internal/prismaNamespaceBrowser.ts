@@ -69,7 +69,9 @@ export const ModelName = {
   Watchlist: 'Watchlist',
   Notification: 'Notification',
   PointBalance: 'PointBalance',
-  PointTransaction: 'PointTransaction'
+  PointTransaction: 'PointTransaction',
+  UserFollow: 'UserFollow',
+  UserActivity: 'UserActivity'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -355,6 +357,32 @@ export const PointTransactionScalarFieldEnum = {
 } as const
 
 export type PointTransactionScalarFieldEnum = (typeof PointTransactionScalarFieldEnum)[keyof typeof PointTransactionScalarFieldEnum]
+
+
+export const UserFollowScalarFieldEnum = {
+  id: 'id',
+  followerId: 'followerId',
+  followingId: 'followingId',
+  createdAt: 'createdAt'
+} as const
+
+export type UserFollowScalarFieldEnum = (typeof UserFollowScalarFieldEnum)[keyof typeof UserFollowScalarFieldEnum]
+
+
+export const UserActivityScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  type: 'type',
+  targetUserId: 'targetUserId',
+  marketSymbol: 'marketSymbol',
+  commentId: 'commentId',
+  replyId: 'replyId',
+  predictionId: 'predictionId',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+} as const
+
+export type UserActivityScalarFieldEnum = (typeof UserActivityScalarFieldEnum)[keyof typeof UserActivityScalarFieldEnum]
 
 
 export const SortOrder = {

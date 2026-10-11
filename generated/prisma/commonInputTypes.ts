@@ -494,6 +494,23 @@ export type EnumPointTransactionTypeWithAggregatesFilter<$PrismaModel = never> =
   _max?: Prisma.NestedEnumPointTransactionTypeFilter<$PrismaModel>
 }
 
+export type EnumUserActivityTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.UserActivityType | Prisma.EnumUserActivityTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.UserActivityType[] | Prisma.ListEnumUserActivityTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.UserActivityType[] | Prisma.ListEnumUserActivityTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumUserActivityTypeFilter<$PrismaModel> | $Enums.UserActivityType
+}
+
+export type EnumUserActivityTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.UserActivityType | Prisma.EnumUserActivityTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.UserActivityType[] | Prisma.ListEnumUserActivityTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.UserActivityType[] | Prisma.ListEnumUserActivityTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumUserActivityTypeWithAggregatesFilter<$PrismaModel> | $Enums.UserActivityType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumUserActivityTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumUserActivityTypeFilter<$PrismaModel>
+}
+
 export type NestedBoolFilter<$PrismaModel = never> = {
   equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
   not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
@@ -931,6 +948,23 @@ export type NestedEnumPointTransactionTypeWithAggregatesFilter<$PrismaModel = ne
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumPointTransactionTypeFilter<$PrismaModel>
   _max?: Prisma.NestedEnumPointTransactionTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumUserActivityTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.UserActivityType | Prisma.EnumUserActivityTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.UserActivityType[] | Prisma.ListEnumUserActivityTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.UserActivityType[] | Prisma.ListEnumUserActivityTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumUserActivityTypeFilter<$PrismaModel> | $Enums.UserActivityType
+}
+
+export type NestedEnumUserActivityTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.UserActivityType | Prisma.EnumUserActivityTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.UserActivityType[] | Prisma.ListEnumUserActivityTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.UserActivityType[] | Prisma.ListEnumUserActivityTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumUserActivityTypeWithAggregatesFilter<$PrismaModel> | $Enums.UserActivityType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumUserActivityTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumUserActivityTypeFilter<$PrismaModel>
 }
 
 

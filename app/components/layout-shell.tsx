@@ -65,6 +65,14 @@ const NotificationPanel = dynamic(
   },
 );
 
+const HistoryPanel = dynamic(
+  () => import("./history-panel").then((mod) => mod.HistoryPanel),
+  {
+    ssr: false,
+    loading: PanelLoading,
+  },
+);
+
 interface LayoutShellProps {
   user: User | null;
   children: ReactNode;
@@ -90,9 +98,10 @@ export default function LayoutShell({
   const [onWrite, setOnWrite] = useState(false);
   const [onAccount, setOnAccount] = useState(false);
   const [onNotification, setOnNotification] = useState(false);
-  const [onFavotites, setOnFavotites] = useState(false);
+  const [onHistory, setOnHistory] = useState(false);
 
   const [notificationRefreshKey, setNotificationRefreshKey] = useState(0);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   useEffect(() => {
     mainScrollRef.current?.scrollTo({
@@ -162,12 +171,12 @@ export default function LayoutShell({
   }, []);
 
   function setActivePanel(
-    panel: "write" | "account" | "notifications" | "watchlist" | null,
+    panel: "write" | "account" | "notifications" | "history" | null,
   ) {
     setOnWrite(panel === "write");
     setOnAccount(panel === "account");
     setOnNotification(panel === "notifications");
-    setOnFavotites(panel === "watchlist");
+    setOnHistory(panel === "history");
   }
 
   function handleOpenSearch() {
@@ -185,9 +194,7 @@ export default function LayoutShell({
     setIsMobilePanelOpen((current) => !current);
   }
 
-  function openPanel(
-    panel: "write" | "account" | "notifications" | "watchlist",
-  ) {
+  function openPanel(panel: "write" | "account" | "notifications" | "history") {
     if (!user) return;
 
     setIsMobilePanelOpen(false);
@@ -213,11 +220,14 @@ export default function LayoutShell({
     setNotificationRefreshKey((current) => current + 1);
   }
 
-  function handleFavotites() {
-    openPanel("watchlist");
+  function handleHistory() {
+    if (!user) return;
+
+    openPanel("history");
+    setHistoryRefreshKey((current) => current + 1);
   }
 
-  const hasActivePanel = onWrite || onAccount || onNotification || onFavotites;
+  const hasActivePanel = onWrite || onAccount || onNotification || onHistory;
 
   const mobilePanelOpen = Boolean(user) && hasActivePanel;
   const showLeaderboard = !hasActivePanel;
@@ -243,6 +253,16 @@ export default function LayoutShell({
       );
     }
 
+    if (onHistory) {
+      return (
+        <HistoryPanel
+          refreshKey={historyRefreshKey}
+          setOnHistory={setOnHistory}
+          currentUser={user}
+        />
+      );
+    }
+
     return null;
   }
 
@@ -258,7 +278,7 @@ export default function LayoutShell({
             onWrite={handleWrite}
             onAccount={handleAccount}
             onNotification={handleNotification}
-            onFavotites={handleFavotites}
+            onHistory={handleHistory}
             user={user}
           />
 
@@ -342,11 +362,20 @@ export default function LayoutShell({
                   className="
                     z-2 min-h-0 min-w-0 overflow-hidden
                     border-l border-gray-100 bg-white
-                    dark:border-zinc-800 dark:bg-zinc-900
+                    dark:border-zinc-800 dark:bg-zinc-900 relative
                   "
                 >
                   <div className="hidden h-full min-h-0 min-w-0 flex-col overflow-hidden lg:flex">
-                    <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+                    <div
+                      className={`
+    min-h-0 min-w-0
+    ${
+      showLeaderboard
+        ? "flex max-h-[45%] flex-col overflow-hidden"
+        : "flex-1 overflow-x-hidden overflow-y-auto"
+    }
+  `}
+                    >
                       {renderActivePanel()}
 
                       {showLeaderboard && (

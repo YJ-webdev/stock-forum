@@ -2786,6 +2786,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: string;
     sign_out: string;
     admin: string;
+    history: string;
   }
 > = {
   en: {
@@ -2800,6 +2801,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: "Signing out...",
     sign_out: "Sign out",
     admin: "Admin",
+    history: "History",
   },
   ko: {
     close_search: "검색 닫기",
@@ -2813,6 +2815,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: "로그아웃 중...",
     sign_out: "로그아웃",
     admin: "관리자",
+    history: "히스토리",
   },
   ja: {
     close_search: "検索を閉じる",
@@ -2826,6 +2829,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: "ログアウト中...",
     sign_out: "ログアウト",
     admin: "管理者",
+    history: "履歴",
   },
   zh: {
     close_search: "关闭搜索",
@@ -2839,6 +2843,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: "正在退出...",
     sign_out: "退出登录",
     admin: "管理",
+    history: "历史",
   },
   de: {
     close_search: "Suche schließen",
@@ -2852,6 +2857,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: "Abmelden...",
     sign_out: "Abmelden",
     admin: "Verwaltung",
+    history: "Verlauf",
   },
   fr: {
     close_search: "Fermer la recherche",
@@ -2865,6 +2871,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: "Déconnexion...",
     sign_out: "Déconnexion",
     admin: "Administration",
+    history: "Historique",
   },
   es: {
     close_search: "Cerrar búsqueda",
@@ -2878,6 +2885,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: "Cerrando sesión...",
     sign_out: "Cerrar sesión",
     admin: "Administración",
+    history: "Historial",
   },
   pt: {
     close_search: "Fechar pesquisa",
@@ -2891,6 +2899,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: "Saindo...",
     sign_out: "Sair",
     admin: "Administração",
+    history: "Histórico",
   },
   it: {
     close_search: "Chiudi ricerca",
@@ -2904,6 +2913,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: "Disconnessione...",
     sign_out: "Esci",
     admin: "Amministrazione",
+    history: "Cronologia",
   },
   ru: {
     close_search: "Закрыть поиск",
@@ -2917,6 +2927,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: "Выход...",
     sign_out: "Выйти",
     admin: "Администрирование",
+    history: "История",
   },
   ar: {
     close_search: "إغلاق البحث",
@@ -2930,6 +2941,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: "جارٍ تسجيل الخروج...",
     sign_out: "تسجيل الخروج",
     admin: "الإدارة",
+    history: "التاريخ",
   },
   hi: {
     close_search: "खोज बंद करें",
@@ -2943,6 +2955,7 @@ export const NAVBAR_LABELS: Record<
     signing_out: "लॉग आउट हो रहा है...",
     sign_out: "लॉग आउट",
     admin: "प्रशासन",
+    history: "इतिहास",
   },
 };
 
