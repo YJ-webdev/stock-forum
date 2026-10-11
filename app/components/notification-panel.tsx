@@ -680,7 +680,7 @@ function NotificationPanelContent({
         ) : (
           <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {visibleNotifications.map((notification) => (
-              <li key={notification.id} className="pl-1">
+              <li key={notification.id}>
                 <NotificationItem
                   notification={notification}
                   language={language}
@@ -790,7 +790,7 @@ function NotificationItem({
           focus-visible:ring-zinc-400
         "
       >
-        <span className="flex shrink-0 items-start justify-center">
+        <span className="flex shrink-0 items-start justify-center ml-1">
           <NotificationIcon type={notification.type} />
         </span>
 

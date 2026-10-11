@@ -436,11 +436,11 @@ function HistoryPanelContent({
             message={predictionsOnly ? filterLabels.empty : labels.empty}
           />
         ) : (
-          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800 ">
             {activities.map((activity) => {
               const content = (
                 <>
-                  <span className="flex shrink-0 items-start justify-center">
+                  <span className="flex shrink-0 items-start justify-center pl-1">
                     <ActivityIcon type={activity.type} />
                   </span>
 
@@ -464,7 +464,7 @@ function HistoryPanelContent({
               );
 
               return (
-                <li key={activity.id} className="pl-1">
+                <li key={activity.id}>
                   {activity.href ? (
                     <Link
                       href={activity.href}
