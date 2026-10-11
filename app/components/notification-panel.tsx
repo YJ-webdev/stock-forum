@@ -561,8 +561,8 @@ function NotificationPanelContent({
                 {section.key !== "today" && (
                   <h3
                     className="
-                      mx-1 rounded-md border border-zinc-300
-                      bg-zinc-50 px-5 py-2
+                      mx-3  rounded-md border border-zinc-300
+                      bg-zinc-50 px-3 py-2
                       text-xs font-normal text-zinc-500
                       dark:border-zinc-700 dark:bg-zinc-800
                       dark:text-zinc-300
