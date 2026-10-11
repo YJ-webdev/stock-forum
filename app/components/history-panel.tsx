@@ -576,7 +576,7 @@ function HistoryLoader({ labels }: { labels: { loading: string } }) {
 // -----------------------------------------------------------------------------
 
 function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
-  const className = "size-4 text-zinc-500 dark:text-zinc-400";
+  const className = "size-4 mt-[1.5px] text-zinc-500 dark:text-zinc-400";
 
   switch (type) {
     case "COMMENT_LIKED":

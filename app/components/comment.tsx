@@ -946,7 +946,7 @@ export function CommentItem({
                       ? labels.bullish
                       : labels.bearish}
 
-                    {isAuthor && (
+                    {comment.prediction.pointsBet > 0 && (
                       <span className="tabular-nums">
                         {" · "}
                         {comment.prediction.pointsBet.toLocaleString(language)}
