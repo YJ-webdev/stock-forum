@@ -28,6 +28,7 @@ import {
 
 import { CommentItem } from "./comment";
 import { HomeCommentComposer } from "./home-comment-composer";
+import { LoadMoreButton } from "./load-more-button";
 
 interface HomeCommunityProps {
   initialComments: HomeComments;
@@ -252,7 +253,7 @@ export function HomeCommunity({
   }
 
   return (
-    <div className="outfit w-full min-w-0">
+    <div className="outfit w-full min-w-0 pb-10">
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {[
           {
@@ -354,7 +355,7 @@ export function HomeCommunity({
         {/* 기존 댓글 목록 그대로 */}
       </div>
 
-      <div aria-busy={loading} className="mt-7">
+      <div aria-busy={loading} className="mt-7 mb-10">
         {loading ? (
           <div role="status" className="space-y-6 py-3">
             <span className="sr-only">{labels.loading_discussions}</span>
@@ -449,33 +450,12 @@ export function HomeCommunity({
       </div>
 
       {!loading && !loadError && nextCursor && (
-        <div className="flex justify-center pt-8">
-          <button
-            type="button"
-            onClick={() => void loadMoreComments()}
-            disabled={loadingMore}
-            className="
-              inline-flex cursor-pointer items-center gap-2
-              rounded-full px-4 py-2 text-sm text-zinc-500
-              transition-colors
-              hover:bg-zinc-100 hover:text-zinc-900
-              focus-visible:outline-none
-              focus-visible:ring-2
-              focus-visible:ring-zinc-400
-              disabled:cursor-wait disabled:opacity-50
-              dark:text-zinc-400 dark:hover:bg-zinc-800
-              dark:hover:text-zinc-100
-            "
-          >
-            {loadingMore ? labels.loading : labels.view_more}
-
-            <ChevronDown
-              className="size-4"
-              strokeWidth={1.5}
-              aria-hidden="true"
-            />
-          </button>
-        </div>
+        <LoadMoreButton
+          loading={loadingMore}
+          loadingLabel={labels.loading}
+          label={labels.view_more}
+          onClick={() => void loadMoreComments()}
+        />
       )}
     </div>
   );

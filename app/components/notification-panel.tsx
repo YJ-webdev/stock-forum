@@ -34,11 +34,14 @@ import {
   type MyNotification,
 } from "@/app/actions/notification";
 
+import { LoadMoreButton } from "@/app/components/load-more-button";
+
 import { resolveLanguage } from "@/lib/data/languages";
 
 import {
   CONTENT_STATUS_LABELS,
   DATE_SECTION_LABELS,
+  HISTORY_LABELS,
   NOTIFICATION_LABELS,
   NOTIFICATION_PANEL_LABELS,
   type DateSectionKey,
@@ -52,6 +55,7 @@ import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 // -----------------------------------------------------------------------------
 
 type ResolvedLanguage = ReturnType<typeof resolveLanguage>;
+
 type PanelLabels = (typeof NOTIFICATION_LABELS)[ResolvedLanguage];
 
 interface NotificationPanelProps {
@@ -65,8 +69,12 @@ interface NotificationPanelProps {
 }
 
 // -----------------------------------------------------------------------------
-// SOCIAL TYPES
+// CONSTANTS
 // -----------------------------------------------------------------------------
+
+const NOTIFICATION_PAGE_SIZE = 20;
+
+const NOTIFICATION_CACHE_TIME = 30 * 1000;
 
 const SOCIAL_TYPES = new Set<MyNotification["type"]>([
   "COMMENT_LIKED",
@@ -75,11 +83,18 @@ const SOCIAL_TYPES = new Set<MyNotification["type"]>([
   "REPLY_REPLIED",
 ]);
 
+const SECTION_ORDER: DateSectionKey[] = [
+  "today",
+  "yesterday",
+  "this_week",
+  "last_week",
+  "this_month",
+  "earlier",
+];
+
 // -----------------------------------------------------------------------------
 // CLIENT CACHE
 // -----------------------------------------------------------------------------
-
-const NOTIFICATION_CACHE_TIME = 30 * 1000;
 
 interface NotificationCacheEntry {
   notifications: MyNotification[];
@@ -90,18 +105,25 @@ interface NotificationCacheEntry {
 const notificationCache = new Map<string, NotificationCacheEntry>();
 
 // -----------------------------------------------------------------------------
+// SORT
+// -----------------------------------------------------------------------------
+
+function sortNotifications(notifications: MyNotification[]) {
+  return [...notifications].sort((a, b) => {
+    const aTime = new Date(a.createdAt).getTime();
+    const bTime = new Date(b.createdAt).getTime();
+
+    const safeATime = Number.isFinite(aTime) ? aTime : 0;
+    const safeBTime = Number.isFinite(bTime) ? bTime : 0;
+
+    return safeBTime - safeATime || b.id.localeCompare(a.id);
+  });
+}
+
+// -----------------------------------------------------------------------------
 // DATE GROUPING
 // Device timezone; weeks begin on Monday.
 // -----------------------------------------------------------------------------
-
-const SECTION_ORDER: DateSectionKey[] = [
-  "today",
-  "yesterday",
-  "this_week",
-  "last_week",
-  "this_month",
-  "earlier",
-];
 
 function groupNotifications(notifications: MyNotification[], now: Date) {
   const today = new Date(now);
@@ -127,17 +149,7 @@ function groupNotifications(notifications: MyNotification[], now: Date) {
     earlier: [],
   };
 
-  const sorted = [...notifications].sort((a, b) => {
-    const aTime = new Date(a.createdAt).getTime();
-    const bTime = new Date(b.createdAt).getTime();
-
-    return (
-      (Number.isFinite(bTime) ? bTime : 0) -
-        (Number.isFinite(aTime) ? aTime : 0) || b.id.localeCompare(a.id)
-    );
-  });
-
-  for (const notification of sorted) {
+  for (const notification of notifications) {
     const timestamp = new Date(notification.createdAt).getTime();
 
     let key: DateSectionKey;
@@ -197,6 +209,7 @@ function NotificationPanelContent({
   const labels = NOTIFICATION_LABELS[language];
   const panelLabels = NOTIFICATION_PANEL_LABELS[language];
   const sectionLabels = DATE_SECTION_LABELS[language];
+  const historyLabels = HISTORY_LABELS[language];
 
   const router = useRouter();
 
@@ -207,6 +220,8 @@ function NotificationPanelContent({
   const [notifications, setNotifications] = useState<MyNotification[]>(
     () => initialCache?.notifications ?? [],
   );
+
+  const [visibleCount, setVisibleCount] = useState(NOTIFICATION_PAGE_SIZE);
 
   const [loading, setLoading] = useState(!initialCache);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -465,10 +480,19 @@ function NotificationPanelContent({
   };
 
   // ---------------------------------------------------------------------------
-  // GROUPS
+  // VISIBLE NOTIFICATIONS
   // ---------------------------------------------------------------------------
 
-  const notificationSections = groupNotifications(notifications, sectionNow);
+  const sortedNotifications = sortNotifications(notifications);
+
+  const visibleNotifications = sortedNotifications.slice(0, visibleCount);
+
+  const notificationSections = groupNotifications(
+    visibleNotifications,
+    sectionNow,
+  );
+
+  const hasMoreNotifications = sortedNotifications.length > visibleCount;
 
   const hasSocialNotifications = notifications.some((notification) =>
     SOCIAL_TYPES.has(notification.type),
@@ -477,6 +501,10 @@ function NotificationPanelContent({
   const hasUnreadNotifications = notifications.some(
     (notification) => !notification.readAt,
   );
+
+  const handleLoadMore = () => {
+    setVisibleCount((current) => current + NOTIFICATION_PAGE_SIZE);
+  };
 
   // ---------------------------------------------------------------------------
   // RENDER
@@ -496,12 +524,12 @@ function NotificationPanelContent({
           onClick={() => setOnNotification(false)}
           aria-label={labels.close}
           className="
-              flex size-8 cursor-pointer items-center justify-center
-              rounded-md text-zinc-500 transition-colors
-              hover:bg-zinc-100 hover:text-zinc-900
-              dark:text-zinc-400 dark:hover:bg-zinc-800
-              dark:hover:text-zinc-100
-            "
+            flex size-8 cursor-pointer items-center justify-center
+            rounded-md text-zinc-500 transition-colors
+            hover:bg-zinc-100 hover:text-zinc-900
+            dark:text-zinc-400 dark:hover:bg-zinc-800
+            dark:hover:text-zinc-100
+          "
         >
           <X className="size-4" aria-hidden="true" />
         </button>
@@ -516,13 +544,13 @@ function NotificationPanelContent({
             aria-label={labels.mark_all_read}
             title={labels.mark_all_read}
             className="
-                flex size-8 cursor-pointer items-center justify-center
-                rounded-md text-zinc-400 transition-colors
-                hover:bg-zinc-100 hover:text-zinc-900
-                disabled:cursor-default disabled:opacity-50
-                dark:text-zinc-500 dark:hover:bg-zinc-800
-                dark:hover:text-zinc-100
-              "
+              flex size-8 cursor-pointer items-center justify-center
+              rounded-md text-zinc-400 transition-colors
+              hover:bg-zinc-100 hover:text-zinc-900
+              disabled:cursor-default disabled:opacity-50
+              dark:text-zinc-500 dark:hover:bg-zinc-800
+              dark:hover:text-zinc-100
+            "
           >
             <CheckCheck className="size-4" aria-hidden="true" />
           </button>
@@ -536,13 +564,13 @@ function NotificationPanelContent({
             aria-label={labels.clear}
             title={labels.clear}
             className="
-                flex size-8 cursor-pointer items-center justify-center
-                rounded-md text-zinc-400 transition-colors
-                hover:bg-zinc-100 hover:text-rose-600
-                disabled:cursor-default disabled:opacity-50
-                dark:text-zinc-500 dark:hover:bg-zinc-800
-                dark:hover:text-rose-400
-              "
+              flex size-8 cursor-pointer items-center justify-center
+              rounded-md text-zinc-400 transition-colors
+              hover:bg-zinc-100 hover:text-rose-600
+              disabled:cursor-default disabled:opacity-50
+              dark:text-zinc-500 dark:hover:bg-zinc-800
+              dark:hover:text-rose-400
+            "
           >
             <Trash2 className="size-4" aria-hidden="true" />
           </button>
@@ -561,7 +589,7 @@ function NotificationPanelContent({
                 {section.key !== "today" && (
                   <h3
                     className="
-                      mx-3  rounded-md border border-zinc-300
+                      mx-3 rounded-md border border-zinc-300
                       bg-zinc-50 px-3 py-2
                       text-xs font-normal text-zinc-500
                       dark:border-zinc-700 dark:bg-zinc-800
@@ -590,6 +618,15 @@ function NotificationPanelContent({
               </section>
             ))}
           </div>
+        )}
+
+        {!loading && !loadFailed && hasMoreNotifications && (
+          <LoadMoreButton
+            loading={false}
+            loadingLabel={labels.loading}
+            label={historyLabels.load_more}
+            onClick={handleLoadMore}
+          />
         )}
 
         {loadFailed && (
@@ -690,7 +727,7 @@ function NotificationItem({
           focus-visible:ring-zinc-400
         "
       >
-        <span className="flex shrink-0 items-start justify-center mt-0.75">
+        <span className="mt-0.75 flex shrink-0 items-start justify-center">
           <NotificationIcon type={notification.type} />
         </span>
 

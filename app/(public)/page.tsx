@@ -46,7 +46,7 @@ export default async function Home() {
 
         <section
           aria-labelledby="home-community-heading"
-          className="my-8 px-3 pb-8 sm:px-4"
+          className="mt-8 px-3 sm:px-4"
         >
           <h2 id="home-community-heading" className="sr-only">
             {labels.community}

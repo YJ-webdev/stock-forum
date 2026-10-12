@@ -1,3 +1,4 @@
+// app/components/history-panel.tsx
 "use client";
 
 import {
@@ -9,7 +10,6 @@ import {
 } from "react";
 
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 import { History, X } from "lucide-react";
 import { BiSolidChat, BiSolidPencil } from "react-icons/bi";
@@ -25,6 +25,7 @@ import {
 import { TbClipboardCheckFilled, TbFlagFilled } from "react-icons/tb";
 
 import { Checkbox } from "@/components/ui/checkbox";
+import { LoadMoreButton } from "@/app/components/load-more-button";
 
 import {
   getUserActivities,
@@ -258,7 +259,6 @@ function HistoryPanelContent({
     const updateDate = () => setSectionNow(new Date());
 
     const timer = window.setInterval(updateDate, 60_000);
-
     window.addEventListener("focus", updateDate);
 
     return () => {
@@ -378,7 +378,6 @@ function HistoryPanelContent({
     const version = requestVersion.current;
 
     moreRequest.current = true;
-
     setLoadingMore(true);
     setError(null);
 
@@ -424,7 +423,6 @@ function HistoryPanelContent({
 
   // ---------------------------------------------------------------------------
   // CLICK
-  // No extra server request.
   // ---------------------------------------------------------------------------
 
   function handleActivityClick(activity: HistoryActivity) {
@@ -480,6 +478,7 @@ function HistoryPanelContent({
 
             <Checkbox
               checked={predictionsOnly}
+              aria-label={filterLabels.predictions_only}
               onCheckedChange={(checked) => {
                 onPredictionsOnlyChange(checked === true);
               }}
@@ -525,7 +524,7 @@ function HistoryPanelContent({
             message={predictionsOnly ? filterLabels.empty : labels.empty}
           />
         ) : (
-          <div>
+          <div className="">
             {activitySections.map((section) => (
               <section key={section.key}>
                 {section.key !== "today" && (
@@ -618,28 +617,13 @@ function HistoryPanelContent({
           </div>
         )}
 
-        {cursor && !error && (
-          <div className="px-4 py-4">
-            <button
-              type="button"
-              disabled={loading || refreshing || loadingMore}
-              onClick={() => void loadMore()}
-              className="
-                flex min-h-10 w-full cursor-pointer
-                items-center justify-center rounded-full
-                border border-zinc-200 px-4 py-2 text-sm
-                transition-colors hover:bg-zinc-100
-                disabled:cursor-default disabled:opacity-50
-                dark:border-zinc-700 dark:hover:bg-zinc-800
-              "
-            >
-              {loadingMore ? (
-                <HistoryLoader labels={labels} />
-              ) : (
-                labels.load_more
-              )}
-            </button>
-          </div>
+        {!loading && !refreshing && !error && cursor && (
+          <LoadMoreButton
+            loading={loadingMore}
+            loadingLabel={labels.loading}
+            label={labels.load_more}
+            onClick={() => void loadMore()}
+          />
         )}
       </div>
     </section>
