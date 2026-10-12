@@ -6520,3 +6520,73 @@ export const HISTORY_FILTER_LABELS: Record<
     empty: "पिछले 30 दिनों में कोई पूर्वानुमान नहीं है।",
   },
 };
+
+export const HISTORY_CLICK_LABELS: Record<
+  Language,
+  {
+    comment_deleted: string;
+    reply_deleted: string;
+    unavailable: string;
+  }
+> = {
+  en: {
+    comment_deleted: "This comment has been deleted.",
+    reply_deleted: "This reply has been deleted.",
+    unavailable: "This item is no longer available.",
+  },
+  ko: {
+    comment_deleted: "삭제된 댓글입니다.",
+    reply_deleted: "삭제된 답글입니다.",
+    unavailable: "이 항목에 접근할 수 없습니다.",
+  },
+  ja: {
+    comment_deleted: "このコメントは削除されています。",
+    reply_deleted: "この返信は削除されています。",
+    unavailable: "この項目は現在表示できません。",
+  },
+  zh: {
+    comment_deleted: "此评论已被删除。",
+    reply_deleted: "此回复已被删除。",
+    unavailable: "此内容目前无法访问。",
+  },
+  de: {
+    comment_deleted: "Dieser Kommentar wurde gelöscht.",
+    reply_deleted: "Diese Antwort wurde gelöscht.",
+    unavailable: "Dieser Eintrag ist nicht mehr verfügbar.",
+  },
+  fr: {
+    comment_deleted: "Ce commentaire a été supprimé.",
+    reply_deleted: "Cette réponse a été supprimée.",
+    unavailable: "Cet élément n’est plus disponible.",
+  },
+  es: {
+    comment_deleted: "Este comentario ha sido eliminado.",
+    reply_deleted: "Esta respuesta ha sido eliminada.",
+    unavailable: "Este elemento ya no está disponible.",
+  },
+  pt: {
+    comment_deleted: "Este comentário foi excluído.",
+    reply_deleted: "Esta resposta foi excluída.",
+    unavailable: "Este item não está mais disponível.",
+  },
+  it: {
+    comment_deleted: "Questo commento è stato eliminato.",
+    reply_deleted: "Questa risposta è stata eliminata.",
+    unavailable: "Questo elemento non è più disponibile.",
+  },
+  ru: {
+    comment_deleted: "Этот комментарий удалён.",
+    reply_deleted: "Этот ответ удалён.",
+    unavailable: "Этот элемент больше недоступен.",
+  },
+  ar: {
+    comment_deleted: "تم حذف هذا التعليق.",
+    reply_deleted: "تم حذف هذا الرد.",
+    unavailable: "هذا العنصر لم يعد متاحًا.",
+  },
+  hi: {
+    comment_deleted: "यह टिप्पणी हटा दी गई है।",
+    reply_deleted: "यह जवाब हटा दिया गया है।",
+    unavailable: "यह आइटम अब उपलब्ध नहीं है।",
+  },
+};

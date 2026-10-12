@@ -24,32 +24,33 @@ export async function getTopBetters(limit = 5): Promise<LeaderboardUser[]> {
     : 5;
 
   try {
-    const rankings = await prisma.userRanking.findMany({
-      where: {
-        rank: {
-          not: null,
-        },
-        tier: {
-          not: "UNRANKED",
-        },
-      },
-
+    const users = await prisma.user.findMany({
       select: {
-        rank: true,
-        tier: true,
-        netProfit: true,
-        settledCount: true,
-        wonCount: true,
+        id: true,
+        name: true,
+        image: true,
 
-        user: {
+        pointBalance: {
           select: {
-            id: true,
-            name: true,
-            image: true,
+            points: true,
+          },
+        },
 
-            pointBalance: {
-              select: {
-                points: true,
+        ranking: {
+          select: {
+            tier: true,
+            netProfit: true,
+            settledCount: true,
+          },
+        },
+
+        _count: {
+          select: {
+            predictions: {
+              where: {
+                status: {
+                  in: ["WON", "LOST"],
+                },
               },
             },
           },
@@ -58,35 +59,56 @@ export async function getTopBetters(limit = 5): Promise<LeaderboardUser[]> {
 
       orderBy: [
         {
-          rank: "asc",
+          pointBalance: {
+            points: "desc",
+          },
         },
         {
-          userId: "asc",
+          id: "asc",
         },
       ],
 
       take,
     });
 
-    return rankings.map((ranking) => {
+    const wins = await prisma.prediction.groupBy({
+      by: ["userId"],
+
+      where: {
+        userId: {
+          in: users.map((user) => user.id),
+        },
+        status: "WON",
+      },
+
+      _count: {
+        _all: true,
+      },
+    });
+
+    const winsByUser = new Map(
+      wins.map((item) => [item.userId, item._count._all]),
+    );
+
+    return users.map((user, index) => {
+      const totalPredictions = user._count.predictions;
+      const wonCount = winsByUser.get(user.id) ?? 0;
+
       const winRate =
-        ranking.settledCount > 0
-          ? (ranking.wonCount / ranking.settledCount) * 100
-          : 0;
+        totalPredictions > 0 ? (wonCount / totalPredictions) * 100 : 0;
 
       return {
-        id: ranking.user.id,
-        name: ranking.user.name || "Anonymous Trader",
-        image: ranking.user.image,
+        id: user.id,
+        name: user.name || "Anonymous Trader",
+        image: user.image,
 
         winRate: Math.round(winRate * 10) / 10,
+        points: user.pointBalance?.points ?? 0,
+        netProfit: user.ranking?.netProfit ?? 0,
 
-        points: ranking.user.pointBalance?.points ?? 0,
-        netProfit: ranking.netProfit,
-
-        rank: ranking.rank!,
-        tier: ranking.tier,
-        settledCount: ranking.settledCount,
+        rank: index + 1,
+        tier: user.ranking?.tier ?? "UNRANKED",
+        settledCount: user.ranking?.settledCount ?? 0,
       };
     });
   } catch (error) {

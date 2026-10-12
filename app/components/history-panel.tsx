@@ -8,9 +8,10 @@ import {
   type SetStateAction,
 } from "react";
 
-import Link from "next/link";
-import { History, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
+import { History, X } from "lucide-react";
 import { BiSolidChat, BiSolidPencil } from "react-icons/bi";
 
 import {
@@ -22,6 +23,8 @@ import {
 } from "react-icons/ri";
 
 import { TbClipboardCheckFilled, TbFlagFilled } from "react-icons/tb";
+
+import { Checkbox } from "@/components/ui/checkbox";
 
 import {
   getUserActivities,
@@ -35,12 +38,12 @@ import { resolveLanguage } from "@/lib/data/languages";
 import {
   HISTORY_LABELS,
   HISTORY_FILTER_LABELS,
+  HISTORY_CLICK_LABELS,
   DATE_SECTION_LABELS,
   type DateSectionKey,
 } from "@/lib/data/translations";
 
 import { formatTimeAgo } from "@/lib/utils/format-time-ago";
-import { Checkbox } from "@/components/ui/checkbox";
 
 // -----------------------------------------------------------------------------
 // TYPES
@@ -85,7 +88,6 @@ function getHistoryCacheKey(userId: string, predictionsOnly: boolean) {
 
 // -----------------------------------------------------------------------------
 // DATE GROUPING
-// Device timezone; weeks begin on Monday.
 // -----------------------------------------------------------------------------
 
 const SECTION_ORDER: DateSectionKey[] = [
@@ -162,7 +164,7 @@ function groupHistoryActivities(activities: HistoryActivity[], now: Date) {
 }
 
 // -----------------------------------------------------------------------------
-// HISTORY PANEL
+// PANEL
 // -----------------------------------------------------------------------------
 
 export function HistoryPanel({
@@ -211,12 +213,14 @@ function HistoryPanelContent({
   predictionsOnly,
   onPredictionsOnlyChange,
 }: HistoryPanelContentProps) {
+  const router = useRouter();
   const userId = currentUser?.id;
 
   const language = resolveLanguage(currentUser?.language);
 
   const labels = HISTORY_LABELS[language];
   const filterLabels = HISTORY_FILTER_LABELS[language];
+  const clickLabels = HISTORY_CLICK_LABELS[language];
   const sectionLabels = DATE_SECTION_LABELS[language];
 
   const cacheKey = userId ? getHistoryCacheKey(userId, predictionsOnly) : null;
@@ -239,17 +243,15 @@ function HistoryPanelContent({
 
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-
   const [error, setError] = useState<HistoryError | null>(null);
   const [retryKey, setRetryKey] = useState(0);
-
   const [sectionNow, setSectionNow] = useState(() => new Date());
 
   const requestVersion = useRef(0);
   const moreRequest = useRef(false);
 
   // ---------------------------------------------------------------------------
-  // UPDATE DATE SECTIONS
+  // DATE SECTIONS
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
@@ -292,7 +294,6 @@ function HistoryPanelContent({
 
     const requestUserId = userId;
     const requestCacheKey = cacheKey;
-
     const cached = historyCache.get(requestCacheKey);
 
     if (cached) {
@@ -421,6 +422,30 @@ function HistoryPanelContent({
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // CLICK
+  // No extra server request.
+  // ---------------------------------------------------------------------------
+
+  function handleActivityClick(activity: HistoryActivity) {
+    if (activity.type === "COMMENT_DELETED") {
+      window.alert(clickLabels.comment_deleted);
+      return;
+    }
+
+    if (activity.type === "REPLY_DELETED") {
+      window.alert(clickLabels.reply_deleted);
+      return;
+    }
+
+    if (activity.href) {
+      router.push(activity.href);
+      return;
+    }
+
+    window.alert(clickLabels.unavailable);
+  }
+
   const activitySections = groupHistoryActivities(activities, sectionNow);
 
   // ---------------------------------------------------------------------------
@@ -431,58 +456,63 @@ function HistoryPanelContent({
     <section className="flex h-full min-h-0 flex-col text-zinc-800 dark:text-zinc-300">
       <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-1.5">
         <h2 className="sr-only">{labels.title}</h2>
-        <div className="flex shrink-0 items-center gap-0.5">
-          <p className="mr-1 min-w-0 truncate text-xs font-normal tracking-wider text-muted-foreground/50">
+
+        <div className="flex min-w-0 items-center gap-0.5">
+          <p className="mr-1 truncate text-xs font-normal tracking-wider text-muted-foreground/50">
             {labels.title}
           </p>
+
           <span aria-hidden="true" className="text-muted-foreground/50">
             ·
           </span>
+
           <label
             className="
-              flex cursor-pointer items-center gap-1.5
+              flex min-w-0 cursor-pointer items-center gap-1.5
               rounded-md px-1 py-2
-              min-w-0 truncate text-xs font-normal tracking-wider text-muted-foreground/50
+              text-xs font-normal tracking-wider
+              text-muted-foreground/50
             "
           >
             <span className="whitespace-nowrap">
               {filterLabels.predictions_only}
-            </span>{" "}
+            </span>
+
             <Checkbox
               checked={predictionsOnly}
               onCheckedChange={(checked) => {
                 onPredictionsOnlyChange(checked === true);
               }}
               className="
-    size-3.5 shrink-0 cursor-pointer rounded-[3px]
-    border-zinc-300 shadow-none
-    data-[state=checked]:border-zinc-800
-    data-[state=checked]:bg-zinc-800
-    data-[state=checked]:text-white
-    dark:border-zinc-600
-    dark:data-[state=checked]:border-zinc-300
-    dark:data-[state=checked]:bg-zinc-300
-    dark:data-[state=checked]:text-zinc-900
-  "
+                size-3.5 shrink-0 cursor-pointer rounded-[3px]
+                border-zinc-300 shadow-none
+                data-[state=checked]:border-zinc-800
+                data-[state=checked]:bg-zinc-800
+                data-[state=checked]:text-white
+                dark:border-zinc-600
+                dark:data-[state=checked]:border-zinc-300
+                dark:data-[state=checked]:bg-zinc-300
+                dark:data-[state=checked]:text-zinc-900
+              "
             />
           </label>
         </div>
-        <div className="flex shrink-0 items-center gap-2 ">
-          <button
-            type="button"
-            aria-label={labels.close}
-            onClick={() => setOnHistory(false)}
-            className="
-              flex size-8 cursor-pointer items-center justify-center
-              rounded-md text-zinc-500 transition-colors
-              hover:bg-zinc-100 hover:text-zinc-900
-              dark:text-zinc-400 dark:hover:bg-zinc-800
-              dark:hover:text-zinc-100
-            "
-          >
-            <X className="size-4" aria-hidden="true" />
-          </button>
-        </div>
+
+        <button
+          type="button"
+          aria-label={labels.close}
+          onClick={() => setOnHistory(false)}
+          className="
+            flex size-8 shrink-0 cursor-pointer
+            items-center justify-center rounded-md
+            text-zinc-500 transition-colors
+            hover:bg-zinc-100 hover:text-zinc-900
+            dark:text-zinc-400 dark:hover:bg-zinc-800
+            dark:hover:text-zinc-100
+          "
+        >
+          <X className="size-4" aria-hidden="true" />
+        </button>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -501,7 +531,7 @@ function HistoryPanelContent({
                 {section.key !== "today" && (
                   <h3
                     className="
-                      mx-3  rounded-md border border-zinc-300/50
+                      mx-3 rounded-md border border-zinc-300/50
                       bg-zinc-50 px-3 py-2
                       text-xs font-normal text-zinc-500
                       dark:border-zinc-700 dark:bg-zinc-800
@@ -512,10 +542,23 @@ function HistoryPanelContent({
                   </h3>
                 )}
 
-                <ul className=" divide-y divide-zinc-100 dark:divide-zinc-800">
-                  {section.activities.map((activity) => {
-                    const content = (
-                      <div className="flex gap-3 group">
+                <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {section.activities.map((activity) => (
+                    <li key={activity.id}>
+                      <button
+                        type="button"
+                        onClick={() => handleActivityClick(activity)}
+                        className="
+                          group flex w-full cursor-pointer gap-3
+                          px-4 py-4 text-start transition-colors
+                          hover:bg-zinc-50
+                          focus-visible:outline-none
+                          focus-visible:ring-2
+                          focus-visible:ring-inset
+                          focus-visible:ring-zinc-400
+                          dark:hover:bg-zinc-800/40
+                        "
+                      >
                         <span className="flex shrink-0 items-start justify-center">
                           <ActivityIcon type={activity.type} />
                         </span>
@@ -536,33 +579,9 @@ function HistoryPanelContent({
                             {formatTimeAgo(activity.createdAt, language)}
                           </time>
                         </span>
-                      </div>
-                    );
-
-                    return (
-                      <li key={activity.id}>
-                        {activity.href ? (
-                          <Link
-                            href={activity.href}
-                            prefetch={false}
-                            className="
-                              flex gap-3 px-4 py-4 transition-colors
-                              hover:bg-zinc-50
-                              focus-visible:outline-none
-                              focus-visible:ring-2
-                              focus-visible:ring-inset
-                              focus-visible:ring-zinc-400
-                              dark:hover:bg-zinc-800/40
-                            "
-                          >
-                            {content}
-                          </Link>
-                        ) : (
-                          <div className="flex gap-3 px-4 py-4">{content}</div>
-                        )}
-                      </li>
-                    );
-                  })}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </section>
             ))}
@@ -652,12 +671,15 @@ function HistoryLoader({ labels }: { labels: { loading: string } }) {
 }
 
 // -----------------------------------------------------------------------------
-// ACTIVITY ICON
+// ICON
 // -----------------------------------------------------------------------------
 
 function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
-  const className =
-    "mt-0.75 size-4 text-zinc-400 group-hover:text-zinc-500 dark:text-zinc-400 dark:group-hover:text-zinc-300";
+  const className = `
+    mt-0.75 size-4 text-zinc-400
+    group-hover:text-zinc-500
+    dark:text-zinc-400 dark:group-hover:text-zinc-300
+  `;
 
   switch (type) {
     case "COMMENT_LIKED":
@@ -699,7 +721,7 @@ function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
 }
 
 // -----------------------------------------------------------------------------
-// ACTIVITY DETAIL
+// DETAIL
 // -----------------------------------------------------------------------------
 
 function getActivityDetail(
