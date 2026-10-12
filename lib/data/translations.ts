@@ -6526,68 +6526,55 @@ export const HISTORY_CLICK_LABELS: Record<
   {
     comment_deleted: string;
     reply_deleted: string;
-    unavailable: string;
   }
 > = {
   en: {
     comment_deleted: "This comment has been deleted.",
     reply_deleted: "This reply has been deleted.",
-    unavailable: "This item is no longer available.",
   },
   ko: {
-    comment_deleted: "삭제된 댓글입니다.",
-    reply_deleted: "삭제된 답글입니다.",
-    unavailable: "이 항목에 접근할 수 없습니다.",
+    comment_deleted: "삭제된 글입니다.",
+    reply_deleted: "삭제된 글입니다.",
   },
   ja: {
     comment_deleted: "このコメントは削除されています。",
     reply_deleted: "この返信は削除されています。",
-    unavailable: "この項目は現在表示できません。",
   },
   zh: {
     comment_deleted: "此评论已被删除。",
     reply_deleted: "此回复已被删除。",
-    unavailable: "此内容目前无法访问。",
   },
   de: {
     comment_deleted: "Dieser Kommentar wurde gelöscht.",
     reply_deleted: "Diese Antwort wurde gelöscht.",
-    unavailable: "Dieser Eintrag ist nicht mehr verfügbar.",
   },
   fr: {
     comment_deleted: "Ce commentaire a été supprimé.",
     reply_deleted: "Cette réponse a été supprimée.",
-    unavailable: "Cet élément n’est plus disponible.",
   },
   es: {
     comment_deleted: "Este comentario ha sido eliminado.",
     reply_deleted: "Esta respuesta ha sido eliminada.",
-    unavailable: "Este elemento ya no está disponible.",
   },
   pt: {
     comment_deleted: "Este comentário foi excluído.",
     reply_deleted: "Esta resposta foi excluída.",
-    unavailable: "Este item não está mais disponível.",
   },
   it: {
     comment_deleted: "Questo commento è stato eliminato.",
     reply_deleted: "Questa risposta è stata eliminata.",
-    unavailable: "Questo elemento non è più disponibile.",
   },
   ru: {
     comment_deleted: "Этот комментарий удалён.",
     reply_deleted: "Этот ответ удалён.",
-    unavailable: "Этот элемент больше недоступен.",
   },
   ar: {
     comment_deleted: "تم حذف هذا التعليق.",
     reply_deleted: "تم حذف هذا الرد.",
-    unavailable: "هذا العنصر لم يعد متاحًا.",
   },
   hi: {
     comment_deleted: "यह टिप्पणी हटा दी गई है।",
     reply_deleted: "यह जवाब हटा दिया गया है।",
-    unavailable: "यह आइटम अब उपलब्ध नहीं है।",
   },
 };
 
@@ -6712,4 +6699,129 @@ export const PROFILE_STATUS_PLACEHOLDERS: Record<Language, string> = {
   ru: "О чём сейчас думаешь?",
   ar: "ما الذي يدور في بالك؟",
   hi: "आपके मन में क्या चल रहा है?",
+};
+
+const HISTORY_DELETE_FAILED: Record<Language, string> = {
+  en: "Failed to delete activity.",
+  ko: "기록을 삭제하지 못했습니다.",
+  ja: "履歴を削除できませんでした。",
+  zh: "无法删除记录。",
+  de: "Der Eintrag konnte nicht gelöscht werden.",
+  fr: "Impossible de supprimer cette activité.",
+  es: "No se pudo eliminar la actividad.",
+  pt: "Não foi possível excluir a atividade.",
+  it: "Impossibile eliminare l’attività.",
+  ru: "Не удалось удалить запись.",
+  ar: "تعذر حذف النشاط.",
+  hi: "गतिविधि हटाई नहीं जा सकी।",
+};
+
+export const LOGIN_LABELS: Record<
+  Language,
+  {
+    welcome: string;
+    description: string;
+    or: string;
+    notice: string;
+  }
+> = {
+  en: {
+    welcome: "Welcome to {siteName}",
+    description: "Sign in to continue",
+    or: "or",
+    notice:
+      "When you sign in, {siteName} can continue to access the information you share through your OAuth provider. Your provider may record when {siteName} accesses this information.",
+  },
+  ko: {
+    welcome: "{siteName}에 오신 것을 환영합니다",
+    description: "로그인하고 시작하세요",
+    or: "또는",
+    notice:
+      "로그인하면 {siteName}은 OAuth 제공자를 통해 공유한 정보에 지속적으로 접근할 수 있습니다. 제공자는 {siteName}이 해당 정보에 접근한 시점을 기록할 수 있습니다.",
+  },
+  ja: {
+    welcome: "{siteName}へようこそ",
+    description: "ログインして続ける",
+    or: "または",
+    notice:
+      "ログインすると、{siteName}はOAuthプロバイダーを通じて共有された情報に継続してアクセスできるようになります。プロバイダーは、{siteName}がこの情報にアクセスした日時を記録する場合があります。",
+  },
+  zh: {
+    welcome: "欢迎来到 {siteName}",
+    description: "登录以继续",
+    or: "或",
+    notice:
+      "登录后，{siteName}可以持续访问您通过 OAuth 提供商共享的信息。提供商可能会记录{siteName}访问这些信息的时间。",
+  },
+  de: {
+    welcome: "Willkommen bei {siteName}",
+    description: "Melde dich an, um fortzufahren",
+    or: "oder",
+    notice:
+      "Wenn du dich anmeldest, kann {siteName} weiterhin auf die Informationen zugreifen, die du über deinen OAuth-Anbieter teilst. Dein Anbieter kann protokollieren, wann {siteName} auf diese Informationen zugreift.",
+  },
+  fr: {
+    welcome: "Bienvenue sur {siteName}",
+    description: "Connectez-vous pour continuer",
+    or: "ou",
+    notice:
+      "Lorsque vous vous connectez, {siteName} peut continuer à accéder aux informations que vous partagez via votre fournisseur OAuth. Celui-ci peut enregistrer les moments où {siteName} accède à ces informations.",
+  },
+  es: {
+    welcome: "Te damos la bienvenida a {siteName}",
+    description: "Inicia sesión para continuar",
+    or: "o",
+    notice:
+      "Al iniciar sesión, {siteName} puede seguir accediendo a la información que compartes a través de tu proveedor OAuth. Tu proveedor puede registrar cuándo {siteName} accede a esta información.",
+  },
+  pt: {
+    welcome: "Boas-vindas ao {siteName}",
+    description: "Entre para continuar",
+    or: "ou",
+    notice:
+      "Ao entrar, {siteName} pode continuar acessando as informações que você compartilha por meio do seu provedor OAuth. Seu provedor pode registrar quando {siteName} acessa essas informações.",
+  },
+  it: {
+    welcome: "Benvenuto su {siteName}",
+    description: "Accedi per continuare",
+    or: "oppure",
+    notice:
+      "Quando accedi, {siteName} può continuare ad accedere alle informazioni che condividi tramite il tuo provider OAuth. Il provider può registrare quando {siteName} accede a queste informazioni.",
+  },
+  ru: {
+    welcome: "Добро пожаловать в {siteName}",
+    description: "Войдите, чтобы продолжить",
+    or: "или",
+    notice:
+      "После входа {siteName} сможет продолжать получать доступ к информации, которой вы делитесь через провайдера OAuth. Провайдер может записывать время доступа {siteName} к этой информации.",
+  },
+  ar: {
+    welcome: "مرحبًا بك في {siteName}",
+    description: "سجّل الدخول للمتابعة",
+    or: "أو",
+    notice:
+      "عند تسجيل الدخول، يمكن لـ {siteName} الاستمرار في الوصول إلى المعلومات التي تشاركها عبر مزوّد OAuth. قد يسجّل المزوّد أوقات وصول {siteName} إلى هذه المعلومات.",
+  },
+  hi: {
+    welcome: "{siteName} में आपका स्वागत है",
+    description: "जारी रखने के लिए साइन इन करें",
+    or: "या",
+    notice:
+      "साइन इन करने पर, {siteName} आपके OAuth प्रदाता के माध्यम से साझा की गई जानकारी तक पहुँच बनाए रख सकता है। आपका प्रदाता यह रिकॉर्ड कर सकता है कि {siteName} इस जानकारी तक कब पहुँचता है।",
+  },
+};
+
+export const OAUTH_LABELS: Record<Language, string> = {
+  en: "Sign in with {provider}",
+  ko: "{provider} 계정으로 로그인",
+  ja: "{provider}でログイン",
+  zh: "使用 {provider} 登录",
+  de: "Mit {provider} anmelden",
+  fr: "Se connecter avec {provider}",
+  es: "Iniciar sesión con {provider}",
+  pt: "Entrar com {provider}",
+  it: "Accedi con {provider}",
+  ru: "Войти через {provider}",
+  ar: "تسجيل الدخول باستخدام {provider}",
+  hi: "{provider} से साइन इन करें",
 };

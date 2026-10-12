@@ -1,7 +1,12 @@
+// app/components/notification-panel.tsx
+
 "use client";
 
 import {
+  Fragment,
   useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
   useTransition,
   type Dispatch,
@@ -35,7 +40,6 @@ import {
 } from "@/app/actions/notification";
 
 import { LoadMoreButton } from "@/app/components/load-more-button";
-
 import { resolveLanguage } from "@/lib/data/languages";
 
 import {
@@ -51,30 +55,37 @@ import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 
 // -----------------------------------------------------------------------------
-// TYPES
+// TYPES / CONSTANTS
 // -----------------------------------------------------------------------------
 
 type ResolvedLanguage = ReturnType<typeof resolveLanguage>;
-
 type PanelLabels = (typeof NOTIFICATION_LABELS)[ResolvedLanguage];
 
 interface NotificationPanelProps {
   refreshKey: number;
   setOnNotification: Dispatch<SetStateAction<boolean>>;
-
   currentUser?: {
     id?: string;
     language?: string | null;
   } | null;
 }
 
-// -----------------------------------------------------------------------------
-// CONSTANTS
-// -----------------------------------------------------------------------------
+interface NotificationCacheEntry {
+  notifications: MyNotification[];
+  fetchedAt: number;
+  refreshKey: number;
+}
+
+interface SectionRequest {
+  key: DateSectionKey;
+  opening: boolean;
+}
 
 const NOTIFICATION_PAGE_SIZE = 20;
+const NOTIFICATION_CACHE_TIME = 30_000;
 
-const NOTIFICATION_CACHE_TIME = 30 * 1000;
+const SMALL_TOUCH_QUERY =
+  "(max-width: 767px) and (hover: none) and (pointer: coarse)";
 
 const SOCIAL_TYPES = new Set<MyNotification["type"]>([
   "COMMENT_LIKED",
@@ -92,20 +103,10 @@ const SECTION_ORDER: DateSectionKey[] = [
   "earlier",
 ];
 
-// -----------------------------------------------------------------------------
-// CLIENT CACHE
-// -----------------------------------------------------------------------------
-
-interface NotificationCacheEntry {
-  notifications: MyNotification[];
-  fetchedAt: number;
-  refreshKey: number;
-}
-
 const notificationCache = new Map<string, NotificationCacheEntry>();
 
 // -----------------------------------------------------------------------------
-// SORT
+// SORT / DATE GROUPING
 // -----------------------------------------------------------------------------
 
 function sortNotifications(notifications: MyNotification[]) {
@@ -113,17 +114,12 @@ function sortNotifications(notifications: MyNotification[]) {
     const aTime = new Date(a.createdAt).getTime();
     const bTime = new Date(b.createdAt).getTime();
 
-    const safeATime = Number.isFinite(aTime) ? aTime : 0;
-    const safeBTime = Number.isFinite(bTime) ? bTime : 0;
-
-    return safeBTime - safeATime || b.id.localeCompare(a.id);
+    return (
+      (Number.isFinite(bTime) ? bTime : 0) -
+        (Number.isFinite(aTime) ? aTime : 0) || b.id.localeCompare(a.id)
+    );
   });
 }
-
-// -----------------------------------------------------------------------------
-// DATE GROUPING
-// Device timezone; weeks begin on Monday.
-// -----------------------------------------------------------------------------
 
 function groupNotifications(notifications: MyNotification[], now: Date) {
   const today = new Date(now);
@@ -152,23 +148,19 @@ function groupNotifications(notifications: MyNotification[], now: Date) {
   for (const notification of notifications) {
     const timestamp = new Date(notification.createdAt).getTime();
 
-    let key: DateSectionKey;
-
-    if (!Number.isFinite(timestamp)) {
-      key = "earlier";
-    } else if (timestamp >= today.getTime()) {
-      key = "today";
-    } else if (timestamp >= yesterday.getTime()) {
-      key = "yesterday";
-    } else if (timestamp >= thisWeek.getTime()) {
-      key = "this_week";
-    } else if (timestamp >= lastWeek.getTime()) {
-      key = "last_week";
-    } else if (timestamp >= thisMonth.getTime()) {
-      key = "this_month";
-    } else {
-      key = "earlier";
-    }
+    const key: DateSectionKey = !Number.isFinite(timestamp)
+      ? "earlier"
+      : timestamp >= today.getTime()
+        ? "today"
+        : timestamp >= yesterday.getTime()
+          ? "yesterday"
+          : timestamp >= thisWeek.getTime()
+            ? "this_week"
+            : timestamp >= lastWeek.getTime()
+              ? "last_week"
+              : timestamp >= thisMonth.getTime()
+                ? "this_month"
+                : "earlier";
 
     groups[key].push(notification);
   }
@@ -202,8 +194,8 @@ function NotificationPanelContent({
   setOnNotification,
   currentUser,
 }: NotificationPanelProps) {
+  const router = useRouter();
   const userId = currentUser?.id;
-
   const language = resolveLanguage(currentUser?.language);
 
   const labels = NOTIFICATION_LABELS[language];
@@ -211,35 +203,92 @@ function NotificationPanelContent({
   const sectionLabels = DATE_SECTION_LABELS[language];
   const historyLabels = HISTORY_LABELS[language];
 
-  const router = useRouter();
-
   const [initialCache] = useState(() =>
     userId ? notificationCache.get(userId) : undefined,
   );
 
   const [notifications, setNotifications] = useState<MyNotification[]>(
-    () => initialCache?.notifications ?? [],
+    initialCache?.notifications ?? [],
   );
 
   const [visibleCount, setVisibleCount] = useState(NOTIFICATION_PAGE_SIZE);
-
   const [loading, setLoading] = useState(!initialCache);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-
   const [sectionNow, setSectionNow] = useState(() => new Date());
+
+  const [swipedNotificationId, setSwipedNotificationId] = useState<
+    string | null
+  >(null);
+
+  const [collapsedSections, setCollapsedSections] = useState<
+    Partial<Record<DateSectionKey, boolean>>
+  >({});
+
+  const [sectionRequest, setSectionRequest] = useState<SectionRequest | null>(
+    null,
+  );
+
+  const [headerHeights, setHeaderHeights] = useState<
+    Partial<Record<DateSectionKey, number>>
+  >({});
 
   const [isPending, startTransition] = useTransition();
 
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  const headerRefs = useRef<
+    Partial<Record<DateSectionKey, HTMLHeadingElement | null>>
+  >({});
+
+  const recordStartRefs = useRef<
+    Partial<Record<DateSectionKey, HTMLDivElement | null>>
+  >({});
+
+  const mutationBusy = useRef(false);
+  const notificationsRef = useRef(notifications);
+  const mounted = useRef(false);
+
+  const sortedNotifications = sortNotifications(notifications);
+  const visibleNotifications = sortedNotifications.slice(0, visibleCount);
+  const notificationSections = groupNotifications(
+    visibleNotifications,
+    sectionNow,
+  );
+
+  const sectionSignature = notificationSections
+    .map((section) => section.key)
+    .join(",");
+
+  const hasMoreNotifications = sortedNotifications.length > visibleCount;
+
+  const hasSocialNotifications = notifications.some((notification) =>
+    SOCIAL_TYPES.has(notification.type),
+  );
+
+  const hasUnreadNotifications = notifications.some(
+    (notification) => !notification.readAt,
+  );
+
+  const mutationDisabled = isPending || refreshing;
+
   // ---------------------------------------------------------------------------
-  // DATE SECTIONS
+  // LIFECYCLE / DATE
   // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    mounted.current = true;
+
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const updateDate = () => setSectionNow(new Date());
 
     const timer = window.setInterval(updateDate, 60_000);
-
     window.addEventListener("focus", updateDate);
 
     return () => {
@@ -247,6 +296,28 @@ function NotificationPanelContent({
       window.removeEventListener("focus", updateDate);
     };
   }, []);
+
+  // ---------------------------------------------------------------------------
+  // STATE / CACHE
+  // ---------------------------------------------------------------------------
+
+  function saveNotifications(next: MyNotification[]) {
+    notificationsRef.current = next;
+
+    if (mounted.current) {
+      setNotifications(next);
+    }
+
+    if (userId) {
+      const cached = notificationCache.get(userId);
+
+      notificationCache.set(userId, {
+        notifications: next,
+        fetchedAt: cached?.fetchedAt ?? 0,
+        refreshKey: cached?.refreshKey ?? refreshKey,
+      });
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // LOAD
@@ -260,6 +331,7 @@ function NotificationPanelContent({
     setLoadFailed(false);
 
     if (cached) {
+      notificationsRef.current = cached.notifications;
       setNotifications(cached.notifications);
       setLoading(false);
     } else {
@@ -272,10 +344,14 @@ function NotificationPanelContent({
       Date.now() - cached.fetchedAt < NOTIFICATION_CACHE_TIME;
 
     if (isFresh && retryKey === 0) {
+      setRefreshing(false);
+
       return () => {
         cancelled = true;
       };
     }
+
+    setRefreshing(Boolean(cached));
 
     async function loadNotifications() {
       try {
@@ -293,6 +369,7 @@ function NotificationPanelContent({
           });
         }
 
+        notificationsRef.current = result;
         setNotifications(result);
       } catch (error) {
         if (!cancelled) {
@@ -302,6 +379,7 @@ function NotificationPanelContent({
       } finally {
         if (!cancelled) {
           setLoading(false);
+          setRefreshing(false);
         }
       }
     }
@@ -314,41 +392,20 @@ function NotificationPanelContent({
   }, [userId, refreshKey, retryKey]);
 
   // ---------------------------------------------------------------------------
-  // LOCAL STATE / CACHE
-  // ---------------------------------------------------------------------------
-
-  const saveNotifications = (next: MyNotification[]) => {
-    setNotifications(next);
-
-    if (userId) {
-      const cached = notificationCache.get(userId);
-
-      notificationCache.set(userId, {
-        notifications: next,
-        fetchedAt: cached?.fetchedAt ?? 0,
-        refreshKey: cached?.refreshKey ?? refreshKey,
-      });
-    }
-  };
-
-  // ---------------------------------------------------------------------------
   // OPEN / MARK READ
   // ---------------------------------------------------------------------------
 
-  const handleNotificationClick = (notification: MyNotification) => {
+  function handleNotificationClick(notification: MyNotification) {
     const href = getNotificationHref(notification);
 
-    if (!notification.readAt && !isPending) {
+    if (!notification.readAt && !mutationDisabled && !mutationBusy.current) {
+      mutationBusy.current = true;
+
       const now = new Date();
 
       saveNotifications(
-        notifications.map((item) =>
-          item.id === notification.id
-            ? {
-                ...item,
-                readAt: now,
-              }
-            : item,
+        notificationsRef.current.map((item) =>
+          item.id === notification.id ? { ...item, readAt: now } : item,
         ),
       );
 
@@ -358,29 +415,15 @@ function NotificationPanelContent({
         } catch (error) {
           console.error("Failed to mark notification as read:", error);
 
-          setNotifications((current) => {
-            const next = current.map((item) =>
+          saveNotifications(
+            notificationsRef.current.map((item) =>
               item.id === notification.id
-                ? {
-                    ...item,
-                    readAt: notification.readAt,
-                  }
+                ? { ...item, readAt: notification.readAt }
                 : item,
-            );
-
-            if (userId) {
-              const cached = notificationCache.get(userId);
-
-              if (cached) {
-                notificationCache.set(userId, {
-                  ...cached,
-                  notifications: next,
-                });
-              }
-            }
-
-            return next;
-          });
+            ),
+          );
+        } finally {
+          mutationBusy.current = false;
         }
       });
     }
@@ -388,25 +431,28 @@ function NotificationPanelContent({
     if (href) {
       router.push(href);
     }
-  };
+  }
 
   // ---------------------------------------------------------------------------
   // MARK ALL READ
   // ---------------------------------------------------------------------------
 
-  const handleMarkAllRead = () => {
+  function handleMarkAllRead() {
     if (
-      isPending ||
-      !notifications.some((notification) => !notification.readAt)
+      mutationDisabled ||
+      mutationBusy.current ||
+      !notificationsRef.current.some((item) => !item.readAt)
     ) {
       return;
     }
 
-    const previousNotifications = notifications;
+    mutationBusy.current = true;
+
+    const previous = notificationsRef.current;
     const now = new Date();
 
     saveNotifications(
-      notifications.map((notification) => ({
+      previous.map((notification) => ({
         ...notification,
         readAt: notification.readAt ?? now,
       })),
@@ -417,139 +463,238 @@ function NotificationPanelContent({
         await markAllNotificationsAsRead();
       } catch (error) {
         console.error("Failed to mark all notifications as read:", error);
-        saveNotifications(previousNotifications);
+        saveNotifications(previous);
+      } finally {
+        mutationBusy.current = false;
       }
     });
-  };
+  }
 
   // ---------------------------------------------------------------------------
   // DELETE ONE SOCIAL NOTIFICATION
   // ---------------------------------------------------------------------------
 
-  const handleDeleteNotification = (notificationId: string) => {
-    if (isPending) {
+  function handleDeleteNotification(notification: MyNotification) {
+    if (
+      mutationDisabled ||
+      mutationBusy.current ||
+      !SOCIAL_TYPES.has(notification.type)
+    ) {
       return;
     }
 
-    const previousNotifications = notifications;
+    mutationBusy.current = true;
 
-    saveNotifications(
-      notifications.filter(
-        (notification) => notification.id !== notificationId,
-      ),
-    );
+    const previous = notificationsRef.current;
+
+    saveNotifications(previous.filter((item) => item.id !== notification.id));
+
+    setSwipedNotificationId(null);
 
     startTransition(async () => {
       try {
-        await deleteSocialNotification(notificationId);
+        await deleteSocialNotification(notification.id);
       } catch (error) {
         console.error("Failed to delete notification:", error);
-        saveNotifications(previousNotifications);
+        saveNotifications(previous);
+      } finally {
+        mutationBusy.current = false;
       }
     });
-  };
+  }
 
   // ---------------------------------------------------------------------------
   // DELETE ALL SOCIAL NOTIFICATIONS
   // ---------------------------------------------------------------------------
 
-  const handleDeleteAllSocial = () => {
+  function handleDeleteAllSocial() {
     if (
-      isPending ||
-      !notifications.some((notification) => SOCIAL_TYPES.has(notification.type))
+      mutationDisabled ||
+      mutationBusy.current ||
+      !notificationsRef.current.some((item) => SOCIAL_TYPES.has(item.type))
     ) {
       return;
     }
 
-    const previousNotifications = notifications;
+    mutationBusy.current = true;
 
-    saveNotifications(
-      notifications.filter(
-        (notification) => !SOCIAL_TYPES.has(notification.type),
-      ),
-    );
+    const previous = notificationsRef.current;
+
+    saveNotifications(previous.filter((item) => !SOCIAL_TYPES.has(item.type)));
+
+    setSwipedNotificationId(null);
 
     startTransition(async () => {
       try {
         await deleteAllSocialNotifications();
       } catch (error) {
         console.error("Failed to delete social notifications:", error);
-        saveNotifications(previousNotifications);
+        saveNotifications(previous);
+      } finally {
+        mutationBusy.current = false;
       }
     });
-  };
+  }
 
   // ---------------------------------------------------------------------------
-  // VISIBLE NOTIFICATIONS
+  // DATE HEADER MEASUREMENT
   // ---------------------------------------------------------------------------
 
-  const sortedNotifications = sortNotifications(notifications);
+  useLayoutEffect(() => {
+    const keys = sectionSignature
+      ? (sectionSignature.split(",") as DateSectionKey[])
+      : [];
 
-  const visibleNotifications = sortedNotifications.slice(0, visibleCount);
+    function measure() {
+      const next: Partial<Record<DateSectionKey, number>> = {};
 
-  const notificationSections = groupNotifications(
-    visibleNotifications,
-    sectionNow,
-  );
+      for (const key of keys) {
+        const header = headerRefs.current[key];
 
-  const hasMoreNotifications = sortedNotifications.length > visibleCount;
+        if (!header) {
+          continue;
+        }
 
-  const hasSocialNotifications = notifications.some((notification) =>
-    SOCIAL_TYPES.has(notification.type),
-  );
+        const height = Number.parseFloat(
+          window.getComputedStyle(header).height,
+        );
 
-  const hasUnreadNotifications = notifications.some(
-    (notification) => !notification.readAt,
-  );
+        next[key] = Number.isFinite(height) ? height : header.offsetHeight;
+      }
 
-  const handleLoadMore = () => {
-    setVisibleCount((current) => current + NOTIFICATION_PAGE_SIZE);
-  };
+      setHeaderHeights((current) => {
+        const unchanged =
+          Object.keys(current).length === Object.keys(next).length &&
+          keys.every(
+            (key) => Math.abs((current[key] ?? 0) - (next[key] ?? 0)) < 0.01,
+          );
+
+        return unchanged ? current : next;
+      });
+    }
+
+    measure();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+
+      return () => window.removeEventListener("resize", measure);
+    }
+
+    const observer = new ResizeObserver(measure);
+
+    for (const key of keys) {
+      const header = headerRefs.current[key];
+
+      if (header) {
+        observer.observe(header);
+      }
+    }
+
+    return () => observer.disconnect();
+  }, [sectionSignature, language, loading]);
+
+  function getHeaderHeight(key: DateSectionKey) {
+    return headerHeights[key] ?? 36;
+  }
+
+  function getHeaderTop(index: number) {
+    return notificationSections
+      .slice(0, index)
+      .reduce((total, section) => total + getHeaderHeight(section.key), 0);
+  }
+
+  function handlePeriodClick(key: DateSectionKey) {
+    const index = notificationSections.findIndex(
+      (section) => section.key === key,
+    );
+
+    if (index < 0) {
+      return;
+    }
+
+    const container = scrollRef.current;
+    const start = recordStartRefs.current[key];
+
+    const collapsed = Boolean(collapsedSections[key]);
+    let scrolledPastStart = false;
+
+    if (container && start) {
+      const recordsTop =
+        container.getBoundingClientRect().top +
+        container.clientTop +
+        getHeaderTop(index) +
+        getHeaderHeight(key);
+
+      scrolledPastStart = start.getBoundingClientRect().top < recordsTop - 2;
+    }
+
+    const opening = collapsed || scrolledPastStart;
+
+    setSwipedNotificationId(null);
+
+    setCollapsedSections((current) => ({
+      ...current,
+      [key]: !opening,
+    }));
+
+    setSectionRequest({ key, opening });
+  }
+
+  useLayoutEffect(() => {
+    if (!sectionRequest) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const start = recordStartRefs.current[sectionRequest.key];
+
+      if (sectionRequest.opening && start) {
+        start.scrollIntoView({
+          block: "start",
+          inline: "nearest",
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches
+            ? "auto"
+            : "smooth",
+        });
+      }
+
+      setSectionRequest(null);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [sectionRequest, headerHeights]);
 
   // ---------------------------------------------------------------------------
   // RENDER
   // ---------------------------------------------------------------------------
 
   return (
-    <section className="flex h-full min-h-0 w-full flex-col text-zinc-800 dark:text-zinc-300">
-      <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-1.5">
-        <h2 className="sr-only">{labels.heading}</h2>
-
-        <p className="min-w-0 truncate text-xs font-normal tracking-wider text-muted-foreground/50">
-          {panelLabels.description}
-        </p>
-
-        <button
-          type="button"
-          onClick={() => setOnNotification(false)}
-          aria-label={labels.close}
-          className="
-            flex size-8 cursor-pointer items-center justify-center
-            rounded-md text-zinc-500 transition-colors
-            hover:bg-zinc-100 hover:text-zinc-900
-            dark:text-zinc-400 dark:hover:bg-zinc-800
-            dark:hover:text-zinc-100
-          "
-        >
-          <X className="size-4" aria-hidden="true" />
-        </button>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-1">
+    <section
+      aria-label={labels.heading}
+      className="
+        relative flex h-full min-h-0 w-full flex-col
+        text-zinc-800 dark:text-zinc-300
+      "
+    >
+      <div className="absolute right-1 top-0.5 z-50 flex items-center">
         {!loading && hasUnreadNotifications && (
           <button
             type="button"
-            disabled={isPending}
+            disabled={mutationDisabled}
             onClick={handleMarkAllRead}
             aria-label={labels.mark_all_read}
             title={labels.mark_all_read}
             className="
               flex size-8 cursor-pointer items-center justify-center
-              rounded-md text-zinc-400 transition-colors
-              hover:bg-zinc-100 hover:text-zinc-900
+              rounded-md bg-zinc-100 text-zinc-500
+              transition-colors hover:bg-zinc-200 hover:text-zinc-900
               disabled:cursor-default disabled:opacity-50
-              dark:text-zinc-500 dark:hover:bg-zinc-800
-              dark:hover:text-zinc-100
+              focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-zinc-400
+              dark:bg-zinc-800 dark:text-zinc-400
+              dark:hover:bg-zinc-700 dark:hover:text-zinc-100
             "
           >
             <CheckCheck className="size-4" aria-hidden="true" />
@@ -559,74 +704,149 @@ function NotificationPanelContent({
         {!loading && hasSocialNotifications && (
           <button
             type="button"
-            disabled={isPending}
+            disabled={mutationDisabled}
             onClick={handleDeleteAllSocial}
             aria-label={labels.clear}
             title={labels.clear}
             className="
               flex size-8 cursor-pointer items-center justify-center
-              rounded-md text-zinc-400 transition-colors
-              hover:bg-zinc-100 hover:text-rose-600
+              rounded-md bg-zinc-100 text-zinc-500
+              transition-colors hover:bg-zinc-200 hover:text-rose-600
               disabled:cursor-default disabled:opacity-50
-              dark:text-zinc-500 dark:hover:bg-zinc-800
-              dark:hover:text-rose-400
+              focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-zinc-400
+              dark:bg-zinc-800 dark:text-zinc-400
+              dark:hover:bg-zinc-700 dark:hover:text-rose-400
             "
           >
             <Trash2 className="size-4" aria-hidden="true" />
           </button>
         )}
+
+        <button
+          type="button"
+          onClick={() => setOnNotification(false)}
+          aria-label={labels.close}
+          className="
+            flex size-8 cursor-pointer items-center justify-center
+            rounded-md bg-zinc-100 text-zinc-500
+            transition-colors hover:bg-zinc-200 hover:text-zinc-900
+            focus-visible:outline-none
+            focus-visible:ring-2 focus-visible:ring-zinc-400
+            dark:bg-zinc-800 dark:text-zinc-400
+            dark:hover:bg-zinc-700 dark:hover:text-zinc-100
+          "
+        >
+          <X className="size-4" aria-hidden="true" />
+        </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        ref={scrollRef}
+        className="
+          relative min-h-0 flex-1 overflow-y-auto
+          [overflow-anchor:none]
+        "
+      >
         {loading ? (
           <NotificationLoader labels={labels} />
         ) : notifications.length === 0 && !loadFailed ? (
           <EmptyNotifications message={labels.empty} />
         ) : (
-          <div>
-            {notificationSections.map((section) => (
-              <section key={section.key}>
-                {section.key !== "today" && (
+          <>
+            {notificationSections.map((section, index) => {
+              const collapsed = Boolean(collapsedSections[section.key]);
+
+              const labelsBottom =
+                getHeaderTop(index) + getHeaderHeight(section.key);
+
+              return (
+                <Fragment key={section.key}>
                   <h3
+                    ref={(element) => {
+                      headerRefs.current[section.key] = element;
+                    }}
+                    style={{
+                      top: getHeaderTop(index),
+                      zIndex: 30 - index,
+                    }}
+                    className="sticky m-0 w-full"
+                  >
+                    <button
+                      type="button"
+                      aria-expanded={!collapsed}
+                      aria-controls={`notification-records-${section.key}`}
+                      onClick={() => handlePeriodClick(section.key)}
+                      className="
+                        block w-full cursor-pointer
+                        bg-zinc-100 py-2.5 pl-4 pr-28 text-start
+                        text-xs font-medium text-zinc-500
+                        focus-visible:outline-none
+                        focus-visible:ring-2 focus-visible:ring-inset
+                        focus-visible:ring-zinc-400
+                        dark:bg-zinc-800 dark:text-zinc-300
+                      "
+                    >
+                      {sectionLabels[section.key]}
+                    </button>
+                  </h3>
+
+                  {!collapsed && (
+                    <div
+                      ref={(element) => {
+                        recordStartRefs.current[section.key] = element;
+                      }}
+                      aria-hidden="true"
+                      style={{
+                        scrollMarginTop: labelsBottom,
+                      }}
+                      className="h-px -mb-px w-full"
+                    />
+                  )}
+
+                  <ul
+                    id={`notification-records-${section.key}`}
+                    hidden={collapsed}
                     className="
-                      mx-3 rounded-md border border-zinc-300
-                      bg-zinc-50 px-3 py-2
-                      text-xs font-normal text-zinc-500
-                      dark:border-zinc-700 dark:bg-zinc-800
-                      dark:text-zinc-300
+                      m-0 list-none p-0
+                      divide-y divide-zinc-100 dark:divide-zinc-800
                     "
                   >
-                    {sectionLabels[section.key]}
-                  </h3>
-                )}
-
-                <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                  {section.notifications.map((notification) => (
-                    <li key={notification.id}>
+                    {section.notifications.map((notification) => (
                       <NotificationItem
+                        key={notification.id}
                         notification={notification}
                         language={language}
-                        isPending={isPending}
-                        onClick={() => handleNotificationClick(notification)}
-                        onDelete={() =>
-                          handleDeleteNotification(notification.id)
+                        isPending={mutationDisabled}
+                        isOpen={swipedNotificationId === notification.id}
+                        onOpen={() => setSwipedNotificationId(notification.id)}
+                        onClose={() =>
+                          setSwipedNotificationId((current) =>
+                            current === notification.id ? null : current,
+                          )
                         }
+                        onClick={() => handleNotificationClick(notification)}
+                        onDelete={() => handleDeleteNotification(notification)}
                       />
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </div>
+                    ))}
+                  </ul>
+                </Fragment>
+              );
+            })}
+          </>
         )}
 
         {!loading && !loadFailed && hasMoreNotifications && (
-          <LoadMoreButton
-            loading={false}
-            loadingLabel={labels.loading}
-            label={historyLabels.load_more}
-            onClick={handleLoadMore}
-          />
+          <div className="px-4 py-3">
+            <LoadMoreButton
+              loading={false}
+              loadingLabel={labels.loading}
+              label={historyLabels.load_more}
+              onClick={() =>
+                setVisibleCount((current) => current + NOTIFICATION_PAGE_SIZE)
+              }
+            />
+          </div>
         )}
 
         {loadFailed && (
@@ -635,11 +855,13 @@ function NotificationPanelContent({
 
             <button
               type="button"
+              disabled={isPending || refreshing}
               onClick={() => setRetryKey((value) => value + 1)}
               className="
                 mt-2 inline-flex cursor-pointer items-center gap-1.5
                 text-sm text-zinc-500 underline
                 hover:text-zinc-900
+                disabled:cursor-default disabled:opacity-50
                 dark:text-zinc-400 dark:hover:text-zinc-100
               "
             >
@@ -648,32 +870,14 @@ function NotificationPanelContent({
             </button>
           </div>
         )}
+
+        {refreshing && (
+          <span role="status" className="sr-only">
+            {labels.loading}
+          </span>
+        )}
       </div>
     </section>
-  );
-}
-
-// -----------------------------------------------------------------------------
-// LOADER
-// -----------------------------------------------------------------------------
-
-function NotificationLoader({ labels }: { labels: PanelLabels }) {
-  return (
-    <div
-      role="status"
-      className="flex h-full min-h-0 items-center justify-center"
-    >
-      <div
-        aria-hidden="true"
-        className="
-          size-5 animate-spin rounded-full
-          border-2 border-zinc-200 border-t-zinc-700
-          dark:border-zinc-700 dark:border-t-zinc-200
-        "
-      />
-
-      <span className="sr-only">{labels.loading}</span>
-    </div>
   );
 }
 
@@ -685,12 +889,18 @@ function NotificationItem({
   notification,
   language,
   isPending,
+  isOpen,
+  onOpen,
+  onClose,
   onClick,
   onDelete,
 }: {
   notification: MyNotification;
   language: ResolvedLanguage;
   isPending: boolean;
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
   onClick: () => void;
   onDelete: () => void;
 }) {
@@ -698,30 +908,107 @@ function NotificationItem({
 
   const unread = notification.readAt === null;
   const isSocial = SOCIAL_TYPES.has(notification.type);
+  const href = getNotificationHref(notification);
+  const clickable = Boolean(href) || unread;
 
   const preview = getNotificationPreview(notification);
   const { title, message } = getNotificationText(notification, language);
 
   const createdAt = new Date(notification.createdAt);
-
   const dateTime = Number.isFinite(createdAt.getTime())
     ? createdAt.toISOString()
     : undefined;
 
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const suppressClickUntil = useRef(0);
+
   return (
-    <div
+    <li
       className={`
-        group relative flex w-full transition-colors
-        hover:bg-zinc-50 dark:hover:bg-zinc-800/40
+        group/row flex w-full touch-pan-y
+        items-stretch overflow-hidden
         ${unread ? "bg-zinc-50/80 dark:bg-zinc-800/20" : ""}
       `}
+      onTouchStart={(event) => {
+        if (
+          !isSocial ||
+          !window.matchMedia(SMALL_TOUCH_QUERY).matches ||
+          event.touches.length !== 1
+        ) {
+          swipeStart.current = null;
+          return;
+        }
+
+        const touch = event.touches[0];
+
+        swipeStart.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+        };
+      }}
+      onTouchEnd={(event) => {
+        const start = swipeStart.current;
+        swipeStart.current = null;
+
+        if (!start) {
+          return;
+        }
+
+        const touch = event.changedTouches[0];
+
+        if (!touch) {
+          return;
+        }
+
+        const dx = touch.clientX - start.x;
+        const dy = touch.clientY - start.y;
+
+        if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) {
+          return;
+        }
+
+        suppressClickUntil.current = Date.now() + 500;
+
+        if (dx > 0) {
+          onOpen();
+        } else {
+          onClose();
+        }
+      }}
+      onTouchCancel={() => {
+        swipeStart.current = null;
+      }}
+      onClickCapture={(event) => {
+        if (event.detail !== 0 && Date.now() < suppressClickUntil.current) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+
+        const target = event.target;
+
+        if (
+          isOpen &&
+          target instanceof Element &&
+          !target.closest("[data-notification-delete]")
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          onClose();
+        }
+      }}
     >
       <button
         type="button"
         onClick={onClick}
+        disabled={!clickable}
         className="
-          flex min-w-0 flex-1 cursor-pointer gap-3
-          px-4 py-4 pe-11 text-start
+          flex min-w-0 flex-1 gap-3
+          px-4 py-4 text-start transition-colors
+          enabled:cursor-pointer
+          enabled:hover:bg-zinc-50
+          dark:enabled:hover:bg-zinc-800/40
+          disabled:cursor-default
           focus-visible:outline-none
           focus-visible:ring-2 focus-visible:ring-inset
           focus-visible:ring-zinc-400
@@ -772,34 +1059,52 @@ function NotificationItem({
       </button>
 
       {isSocial && (
-        <button
-          type="button"
-          disabled={isPending}
-          aria-label={labels.delete}
-          title={labels.delete}
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            onDelete();
-          }}
-          className="
-            absolute top-3 inset-e-3
-            flex size-7 cursor-pointer items-center justify-center
-            rounded-md text-zinc-400 transition-colors
-            hover:bg-zinc-100 hover:text-rose-600
-            focus-visible:outline-none focus-visible:ring-2
-            focus-visible:ring-zinc-400
-            disabled:cursor-default disabled:opacity-50
-            dark:text-zinc-500 dark:hover:bg-zinc-800
-            dark:hover:text-rose-400
-            md:opacity-0 md:group-hover:opacity-100
-            md:group-focus-within:opacity-100
-          "
+        <div
+          className={`
+            order-last flex shrink-0 overflow-hidden
+            transition-[width,opacity] duration-200 ease-out
+            motion-reduce:transition-none
+
+            ${isOpen ? "w-10 opacity-100" : "w-0 opacity-0"}
+
+            [@media(max-width:767px)_and_(hover:none)_and_(pointer:coarse)]:order-first
+
+            [@media(hover:hover)_and_(pointer:fine)]:group-hover/row:w-10
+            [@media(hover:hover)_and_(pointer:fine)]:group-hover/row:opacity-100
+
+            group-has-[:focus-visible]/row:w-10
+            group-has-[:focus-visible]/row:opacity-100
+
+            [@media(hover:none)_and_(min-width:768px)]:w-10
+            [@media(hover:none)_and_(min-width:768px)]:opacity-100
+          `}
         >
-          <Trash2 className="size-3.5" aria-hidden="true" />
-        </button>
+          <button
+            data-notification-delete
+            type="button"
+            disabled={isPending}
+            aria-label={`${labels.delete}: ${title}`}
+            title={labels.delete}
+            onClick={onDelete}
+            className="
+              flex w-10 shrink-0 cursor-pointer
+              items-center justify-center self-stretch
+              bg-red-500 text-white
+              transition-colors
+              hover:bg-red-600 active:bg-red-700
+              disabled:cursor-default disabled:bg-red-400
+              focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-inset
+              focus-visible:ring-white
+              dark:bg-red-600 dark:hover:bg-red-700
+              dark:disabled:bg-red-500
+            "
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
+        </div>
       )}
-    </div>
+    </li>
   );
 }
 
@@ -815,7 +1120,6 @@ function getNotificationText(
   const statusLabels = CONTENT_STATUS_LABELS[language];
 
   const name = notification.actor?.name?.trim() || labels.someone;
-
   const withName = (template: string) => template.replace("{name}", () => name);
 
   switch (notification.type) {
@@ -1092,8 +1396,28 @@ function NotificationIcon({ type }: { type: MyNotification["type"] }) {
 }
 
 // -----------------------------------------------------------------------------
-// EMPTY
+// LOADER / EMPTY
 // -----------------------------------------------------------------------------
+
+function NotificationLoader({ labels }: { labels: PanelLabels }) {
+  return (
+    <div
+      role="status"
+      className="flex h-full min-h-0 items-center justify-center"
+    >
+      <span
+        aria-hidden="true"
+        className="
+          size-5 animate-spin rounded-full
+          border-2 border-zinc-200 border-t-zinc-700
+          dark:border-zinc-700 dark:border-t-zinc-200
+        "
+      />
+
+      <span className="sr-only">{labels.loading}</span>
+    </div>
+  );
+}
 
 function EmptyNotifications({ message }: { message: string }) {
   return (

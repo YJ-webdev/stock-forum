@@ -1,7 +1,13 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
+import Facebook from "next-auth/providers/facebook";
+import Twitter from "next-auth/providers/twitter";
+import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
+import Apple from "next-auth/providers/apple";
+import Discord from "next-auth/providers/discord";
 
 import { prisma } from "@/lib/prisma";
 
@@ -28,10 +34,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
 
-    GitHub({
-      clientId: process.env.AUTH_GITHUB_ID,
-      clientSecret: process.env.AUTH_GITHUB_SECRET,
+    Facebook({
+      clientId: process.env.AUTH_FACEBOOK_ID,
+      clientSecret: process.env.AUTH_FACEBOOK_SECRET,
     }),
+
+    Twitter({
+      clientId: process.env.AUTH_TWITTER_ID,
+      clientSecret: process.env.AUTH_TWITTER_SECRET,
+    }),
+
+    MicrosoftEntraID({
+      clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
+      clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
+      issuer: "https://login.microsoftonline.com/common/v2.0",
+    }),
+
+    Apple({
+      clientId: process.env.AUTH_APPLE_ID,
+      clientSecret: process.env.AUTH_APPLE_SECRET,
+    }),
+
+    Discord({
+      clientId: process.env.AUTH_DISCORD_ID,
+      clientSecret: process.env.AUTH_DISCORD_SECRET,
+    }),
+
+    ...(process.env.NODE_ENV === "development"
+      ? [
+          GitHub({
+            clientId: process.env.AUTH_GITHUB_ID,
+            clientSecret: process.env.AUTH_GITHUB_SECRET,
+          }),
+        ]
+      : []),
   ],
 
   events: {
@@ -53,12 +89,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   callbacks: {
     async jwt({ token, user }) {
-      // Initial login: make sure we have the user id.
       if (user?.id) {
         token.sub = user.id;
       }
 
-      // Always refresh the current user from the database.
       if (token.sub) {
         const dbUser = await prisma.user.findUnique({
           where: {

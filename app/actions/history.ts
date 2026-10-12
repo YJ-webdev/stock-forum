@@ -243,3 +243,24 @@ export async function getUserActivities(
 export type HistoryActivity = Awaited<
   ReturnType<typeof getUserActivities>
 >["activities"][number];
+
+export async function deleteUserActivity(activityId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized.");
+  }
+
+  if (typeof activityId !== "string" || !activityId.trim()) {
+    throw new Error("Invalid activity.");
+  }
+
+  await prisma.userActivity.deleteMany({
+    where: {
+      id: activityId.trim(),
+      userId: session.user.id,
+    },
+  });
+
+  return { success: true };
+}

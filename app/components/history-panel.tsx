@@ -1,8 +1,11 @@
 // app/components/history-panel.tsx
+
 "use client";
 
 import {
+  Fragment,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type Dispatch,
@@ -10,7 +13,6 @@ import {
 } from "react";
 
 import { useRouter } from "next/navigation";
-
 import { History, X } from "lucide-react";
 import { BiSolidChat, BiSolidPencil } from "react-icons/bi";
 
@@ -23,11 +25,12 @@ import {
 } from "react-icons/ri";
 
 import { TbClipboardCheckFilled, TbFlagFilled } from "react-icons/tb";
+import { toast } from "sonner";
 
-import { Checkbox } from "@/components/ui/checkbox";
 import { LoadMoreButton } from "@/app/components/load-more-button";
 
 import {
+  deleteUserActivity,
   getUserActivities,
   type HistoryActivity,
   type HistoryCursor,
@@ -38,19 +41,19 @@ import { resolveLanguage } from "@/lib/data/languages";
 
 import {
   HISTORY_LABELS,
-  HISTORY_FILTER_LABELS,
   HISTORY_CLICK_LABELS,
   DATE_SECTION_LABELS,
+  NOTIFICATION_LABELS,
   type DateSectionKey,
 } from "@/lib/data/translations";
 
 import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 
 // -----------------------------------------------------------------------------
-// TYPES
+// TYPES / CONSTANTS
 // -----------------------------------------------------------------------------
 
-type ResolvedLanguage = ReturnType<typeof resolveLanguage>;
+type Language = ReturnType<typeof resolveLanguage>;
 type HistoryError = "load_failed" | "load_more_failed";
 
 interface HistoryPanelProps {
@@ -62,17 +65,6 @@ interface HistoryPanelProps {
   } | null;
 }
 
-interface HistoryPanelContentProps extends HistoryPanelProps {
-  predictionsOnly: boolean;
-  onPredictionsOnlyChange: (checked: boolean) => void;
-}
-
-// -----------------------------------------------------------------------------
-// CLIENT CACHE
-// -----------------------------------------------------------------------------
-
-const HISTORY_CACHE_TIME = 30 * 1000;
-
 interface HistoryCacheEntry {
   userId: string;
   activities: HistoryActivity[];
@@ -81,15 +73,22 @@ interface HistoryCacheEntry {
   refreshKey: number;
 }
 
-const historyCache = new Map<string, HistoryCacheEntry>();
-
-function getHistoryCacheKey(userId: string, predictionsOnly: boolean) {
-  return JSON.stringify([userId, predictionsOnly ? "predictions" : "all"]);
+interface SectionRequest {
+  key: DateSectionKey;
+  opening: boolean;
 }
 
-// -----------------------------------------------------------------------------
-// DATE GROUPING
-// -----------------------------------------------------------------------------
+const HISTORY_CACHE_TIME = 30_000;
+
+const SMALL_TOUCH_QUERY =
+  "(max-width: 767px) and (hover: none) and (pointer: coarse)";
+
+const UNCLICKABLE_TYPES: readonly HistoryActivity["type"][] = [
+  "USER_FOLLOWED",
+  "USER_UNFOLLOWED",
+  "COMMENT_DELETED",
+  "REPLY_DELETED",
+];
 
 const SECTION_ORDER: DateSectionKey[] = [
   "today",
@@ -99,6 +98,27 @@ const SECTION_ORDER: DateSectionKey[] = [
   "this_month",
   "earlier",
 ];
+
+const DELETE_FAILED: Record<Language, string> = {
+  en: "Failed to delete activity.",
+  ko: "기록을 삭제하지 못했습니다.",
+  ja: "履歴を削除できませんでした。",
+  zh: "无法删除记录。",
+  de: "Der Eintrag konnte nicht gelöscht werden.",
+  fr: "Impossible de supprimer cette activité.",
+  es: "No se pudo eliminar la actividad.",
+  pt: "Não foi possível excluir a atividade.",
+  it: "Impossibile eliminare l’attività.",
+  ru: "Не удалось удалить запись.",
+  ar: "تعذر حذف النشاط.",
+  hi: "गतिविधि हटाई नहीं जा सकी।",
+};
+
+const historyCache = new Map<string, HistoryCacheEntry>();
+
+// -----------------------------------------------------------------------------
+// DATE GROUPING
+// -----------------------------------------------------------------------------
 
 function groupHistoryActivities(activities: HistoryActivity[], now: Date) {
   const today = new Date(now);
@@ -124,7 +144,7 @@ function groupHistoryActivities(activities: HistoryActivity[], now: Date) {
     earlier: [],
   };
 
-  const sortedActivities = [...activities].sort((a, b) => {
+  const sorted = [...activities].sort((a, b) => {
     const aTime = new Date(a.createdAt).getTime();
     const bTime = new Date(b.createdAt).getTime();
 
@@ -134,28 +154,24 @@ function groupHistoryActivities(activities: HistoryActivity[], now: Date) {
     );
   });
 
-  for (const activity of sortedActivities) {
-    const timestamp = new Date(activity.createdAt).getTime();
+  for (const activity of sorted) {
+    const time = new Date(activity.createdAt).getTime();
 
-    let section: DateSectionKey;
+    const key: DateSectionKey = !Number.isFinite(time)
+      ? "earlier"
+      : time >= today.getTime()
+        ? "today"
+        : time >= yesterday.getTime()
+          ? "yesterday"
+          : time >= thisWeek.getTime()
+            ? "this_week"
+            : time >= lastWeek.getTime()
+              ? "last_week"
+              : time >= thisMonth.getTime()
+                ? "this_month"
+                : "earlier";
 
-    if (!Number.isFinite(timestamp)) {
-      section = "earlier";
-    } else if (timestamp >= today.getTime()) {
-      section = "today";
-    } else if (timestamp >= yesterday.getTime()) {
-      section = "yesterday";
-    } else if (timestamp >= thisWeek.getTime()) {
-      section = "this_week";
-    } else if (timestamp >= lastWeek.getTime()) {
-      section = "last_week";
-    } else if (timestamp >= thisMonth.getTime()) {
-      section = "this_month";
-    } else {
-      section = "earlier";
-    }
-
-    groups[section].push(activity);
+    groups[key].push(activity);
   }
 
   return SECTION_ORDER.map((key) => ({
@@ -168,19 +184,8 @@ function groupHistoryActivities(activities: HistoryActivity[], now: Date) {
 // PANEL
 // -----------------------------------------------------------------------------
 
-export function HistoryPanel({
-  refreshKey,
-  setOnHistory,
-  currentUser,
-}: HistoryPanelProps) {
-  const userId = currentUser?.id;
-
-  const [filter, setFilter] = useState({
-    userId,
-    predictionsOnly: false,
-  });
-
-  const predictionsOnly = filter.userId === userId && filter.predictionsOnly;
+export function HistoryPanel(props: HistoryPanelProps) {
+  const userId = props.currentUser?.id;
 
   useEffect(() => {
     for (const [key, entry] of historyCache) {
@@ -190,57 +195,38 @@ export function HistoryPanel({
     }
   }, [userId]);
 
-  return (
-    <HistoryPanelContent
-      key={JSON.stringify([userId ?? "guest", predictionsOnly])}
-      refreshKey={refreshKey}
-      setOnHistory={setOnHistory}
-      currentUser={currentUser}
-      predictionsOnly={predictionsOnly}
-      onPredictionsOnlyChange={(checked) => {
-        setFilter({
-          userId,
-          predictionsOnly: checked,
-        });
-      }}
-    />
-  );
+  return <HistoryPanelContent key={userId ?? "guest"} {...props} />;
 }
 
 function HistoryPanelContent({
   refreshKey,
   setOnHistory,
   currentUser,
-  predictionsOnly,
-  onPredictionsOnlyChange,
-}: HistoryPanelContentProps) {
+}: HistoryPanelProps) {
   const router = useRouter();
   const userId = currentUser?.id;
-
   const language = resolveLanguage(currentUser?.language);
 
   const labels = HISTORY_LABELS[language];
-  const filterLabels = HISTORY_FILTER_LABELS[language];
   const clickLabels = HISTORY_CLICK_LABELS[language];
   const sectionLabels = DATE_SECTION_LABELS[language];
+  const deleteLabel = NOTIFICATION_LABELS[language].delete;
 
-  const cacheKey = userId ? getHistoryCacheKey(userId, predictionsOnly) : null;
+  const cacheKey = userId ? JSON.stringify([userId, "all"]) : null;
 
   const [initialCache] = useState(() =>
     cacheKey ? historyCache.get(cacheKey) : undefined,
   );
 
   const [activities, setActivities] = useState<HistoryActivity[]>(
-    () => initialCache?.activities ?? [],
+    initialCache?.activities ?? [],
   );
 
   const [cursor, setCursor] = useState<HistoryCursor | null>(
-    () => initialCache?.cursor ?? null,
+    initialCache?.cursor ?? null,
   );
 
-  const [loading, setLoading] = useState(() =>
-    Boolean(userId && !initialCache),
-  );
+  const [loading, setLoading] = useState(Boolean(userId && !initialCache));
 
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -248,27 +234,77 @@ function HistoryPanelContent({
   const [retryKey, setRetryKey] = useState(0);
   const [sectionNow, setSectionNow] = useState(() => new Date());
 
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [swipedActivityId, setSwipedActivityId] = useState<string | null>(null);
+
+  const [collapsedSections, setCollapsedSections] = useState<
+    Partial<Record<DateSectionKey, boolean>>
+  >({});
+
+  const [sectionRequest, setSectionRequest] = useState<SectionRequest | null>(
+    null,
+  );
+
+  const [headerHeights, setHeaderHeights] = useState<
+    Partial<Record<DateSectionKey, number>>
+  >({});
+
+  const mounted = useRef(false);
   const requestVersion = useRef(0);
   const moreRequest = useRef(false);
+  const deleteRequest = useRef(false);
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  const headerRefs = useRef<
+    Partial<Record<DateSectionKey, HTMLHeadingElement | null>>
+  >({});
+
+  const recordStartRefs = useRef<
+    Partial<Record<DateSectionKey, HTMLDivElement | null>>
+  >({});
+
+  const swipeStart = useRef<{
+    activityId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const suppressClickUntil = useRef(0);
+
+  const activitySections = groupHistoryActivities(activities, sectionNow);
+
+  const sectionSignature = activitySections
+    .map((section) => section.key)
+    .join(",");
 
   // ---------------------------------------------------------------------------
-  // DATE SECTIONS
+  // LIFECYCLE / DATE
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    const updateDate = () => setSectionNow(new Date());
+    mounted.current = true;
 
-    const timer = window.setInterval(updateDate, 60_000);
-    window.addEventListener("focus", updateDate);
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const update = () => setSectionNow(new Date());
+    const timer = window.setInterval(update, 60_000);
+
+    window.addEventListener("focus", update);
 
     return () => {
       window.clearInterval(timer);
-      window.removeEventListener("focus", updateDate);
+      window.removeEventListener("focus", update);
     };
   }, []);
 
   // ---------------------------------------------------------------------------
-  // LOAD / BACKGROUND REFRESH
+  // LOAD
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
@@ -276,7 +312,6 @@ function HistoryPanelContent({
     let cancelled = false;
 
     moreRequest.current = false;
-
     setLoadingMore(false);
     setError(null);
 
@@ -304,12 +339,12 @@ function HistoryPanelContent({
       setLoading(true);
     }
 
-    const isFresh =
+    const fresh =
       cached !== undefined &&
       cached.refreshKey === refreshKey &&
       Date.now() - cached.fetchedAt < HISTORY_CACHE_TIME;
 
-    if (isFresh && retryKey === 0) {
+    if (fresh && retryKey === 0) {
       setRefreshing(false);
 
       return () => {
@@ -322,7 +357,7 @@ function HistoryPanelContent({
 
     async function load() {
       try {
-        const result = await getUserActivities(null, predictionsOnly);
+        const result = await getUserActivities(null, false);
 
         if (cancelled || version !== requestVersion.current) {
           return;
@@ -338,7 +373,6 @@ function HistoryPanelContent({
 
         setActivities(result.activities);
         setCursor(result.nextCursor);
-        setError(null);
       } catch {
         if (!cancelled && version === requestVersion.current) {
           setError("load_failed");
@@ -357,7 +391,7 @@ function HistoryPanelContent({
       cancelled = true;
       requestVersion.current++;
     };
-  }, [userId, cacheKey, predictionsOnly, refreshKey, retryKey]);
+  }, [userId, cacheKey, refreshKey, retryKey]);
 
   // ---------------------------------------------------------------------------
   // LOAD MORE
@@ -370,7 +404,8 @@ function HistoryPanelContent({
       !cursor ||
       loading ||
       refreshing ||
-      moreRequest.current
+      moreRequest.current ||
+      deleteRequest.current
     ) {
       return;
     }
@@ -382,32 +417,30 @@ function HistoryPanelContent({
     setError(null);
 
     try {
-      const result = await getUserActivities(cursor, predictionsOnly);
+      const result = await getUserActivities(cursor, false);
 
       if (version !== requestVersion.current) {
         return;
       }
 
-      const existingIds = new Set(activities.map((activity) => activity.id));
+      const existingIds = new Set(activities.map((item) => item.id));
 
-      const mergedActivities = [
+      const next = [
         ...activities,
-        ...result.activities.filter(
-          (activity) => !existingIds.has(activity.id),
-        ),
+        ...result.activities.filter((item) => !existingIds.has(item.id)),
       ];
 
       const cached = historyCache.get(cacheKey);
 
       historyCache.set(cacheKey, {
         userId,
-        activities: mergedActivities,
+        activities: next,
         cursor: result.nextCursor,
         fetchedAt: cached?.fetchedAt ?? 0,
         refreshKey: cached?.refreshKey ?? refreshKey,
       });
 
-      setActivities(mergedActivities);
+      setActivities(next);
       setCursor(result.nextCursor);
     } catch {
       if (version === requestVersion.current) {
@@ -422,169 +455,506 @@ function HistoryPanelContent({
   }
 
   // ---------------------------------------------------------------------------
-  // CLICK
+  // DELETE
   // ---------------------------------------------------------------------------
 
-  function handleActivityClick(activity: HistoryActivity) {
-    if (activity.type === "COMMENT_DELETED") {
-      window.alert(clickLabels.comment_deleted);
+  async function handleDeleteActivity(activityId: string) {
+    if (
+      !userId ||
+      loading ||
+      refreshing ||
+      moreRequest.current ||
+      deleteRequest.current
+    ) {
       return;
     }
 
-    if (activity.type === "REPLY_DELETED") {
-      window.alert(clickLabels.reply_deleted);
+    deleteRequest.current = true;
+    setDeletingId(activityId);
+
+    try {
+      await deleteUserActivity(activityId);
+
+      for (const [key, entry] of historyCache) {
+        if (entry.userId !== userId) {
+          continue;
+        }
+
+        historyCache.set(key, {
+          ...entry,
+          activities: entry.activities.filter(
+            (activity) => activity.id !== activityId,
+          ),
+          fetchedAt: 0,
+        });
+      }
+
+      if (mounted.current) {
+        setActivities((current) =>
+          current.filter((activity) => activity.id !== activityId),
+        );
+
+        setSwipedActivityId((current) =>
+          current === activityId ? null : current,
+        );
+      }
+    } catch {
+      toast.error(DELETE_FAILED[language]);
+    } finally {
+      deleteRequest.current = false;
+
+      if (mounted.current) {
+        setDeletingId(null);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // HEADER MEASUREMENT
+  // ---------------------------------------------------------------------------
+
+  useLayoutEffect(() => {
+    const keys = sectionSignature
+      ? (sectionSignature.split(",") as DateSectionKey[])
+      : [];
+
+    function measure() {
+      const next: Partial<Record<DateSectionKey, number>> = {};
+
+      for (const key of keys) {
+        const header = headerRefs.current[key];
+
+        if (!header) {
+          continue;
+        }
+
+        const computed = window.getComputedStyle(header);
+        const height = Number.parseFloat(computed.height);
+
+        next[key] = Number.isFinite(height) ? height : header.offsetHeight;
+      }
+
+      setHeaderHeights((current) => {
+        const unchanged =
+          Object.keys(current).length === Object.keys(next).length &&
+          keys.every(
+            (key) => Math.abs((current[key] ?? 0) - (next[key] ?? 0)) < 0.01,
+          );
+
+        return unchanged ? current : next;
+      });
+    }
+
+    measure();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+
+      return () => window.removeEventListener("resize", measure);
+    }
+
+    const observer = new ResizeObserver(measure);
+
+    for (const key of keys) {
+      const header = headerRefs.current[key];
+
+      if (header) {
+        observer.observe(header);
+      }
+    }
+
+    return () => observer.disconnect();
+  }, [sectionSignature, language, loading]);
+
+  function getHeaderHeight(key: DateSectionKey) {
+    return headerHeights[key] ?? 36;
+  }
+
+  function getHeaderTop(index: number) {
+    return activitySections
+      .slice(0, index)
+      .reduce((total, section) => total + getHeaderHeight(section.key), 0);
+  }
+
+  function handlePeriodClick(key: DateSectionKey) {
+    const index = activitySections.findIndex((section) => section.key === key);
+
+    if (index < 0) {
+      return;
+    }
+
+    const container = scrollRef.current;
+    const start = recordStartRefs.current[key];
+
+    const collapsed = Boolean(collapsedSections[key]);
+    let scrolledPastStart = false;
+
+    if (container && start) {
+      const recordsTop =
+        container.getBoundingClientRect().top +
+        container.clientTop +
+        getHeaderTop(index) +
+        getHeaderHeight(key);
+
+      // 첫 기록이 sticky 제목들 위로 넘어갔는지 확인.
+      scrolledPastStart = start.getBoundingClientRect().top < recordsTop - 2;
+    }
+
+    // 접혀 있으면 펼침.
+    // 펼쳐져 있지만 시작 위치를 지나쳤으면 시작으로 이동.
+    // 펼쳐져 있고 시작 위치가 보이면 닫음.
+    const opening = collapsed || scrolledPastStart;
+
+    setSwipedActivityId(null);
+
+    setCollapsedSections((current) => ({
+      ...current,
+      [key]: !opening,
+    }));
+
+    setSectionRequest({ key, opening });
+  }
+
+  useLayoutEffect(() => {
+    if (!sectionRequest) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const start = recordStartRefs.current[sectionRequest.key];
+
+      if (sectionRequest.opening && start) {
+        start.scrollIntoView({
+          block: "start",
+          inline: "nearest",
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches
+            ? "auto"
+            : "smooth",
+        });
+      }
+
+      setSectionRequest(null);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [sectionRequest, headerHeights]);
+
+  function handleActivityClick(activity: HistoryActivity) {
+    if (UNCLICKABLE_TYPES.includes(activity.type)) {
       return;
     }
 
     if (activity.href) {
       router.push(activity.href);
-      return;
+    } else {
+      window.alert(clickLabels.reply_deleted);
     }
-
-    window.alert(clickLabels.unavailable);
   }
-
-  const activitySections = groupHistoryActivities(activities, sectionNow);
 
   // ---------------------------------------------------------------------------
   // RENDER
   // ---------------------------------------------------------------------------
 
   return (
-    <section className="flex h-full min-h-0 flex-col text-zinc-800 dark:text-zinc-300">
-      <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-1.5">
-        <h2 className="sr-only">{labels.title}</h2>
+    <section
+      aria-label={labels.title}
+      className="
+        relative flex h-full min-h-0 flex-col
+        text-zinc-800 dark:text-zinc-300
+      "
+    >
+      <button
+        type="button"
+        aria-label={labels.close}
+        onClick={() => setOnHistory(false)}
+        className="
+          absolute right-1 top-0.5 z-50
+          flex size-8 cursor-pointer items-center justify-center
+          rounded-md bg-zinc-100 text-zinc-500
+          transition-colors hover:bg-zinc-200 hover:text-zinc-900
+          focus-visible:outline-none
+          focus-visible:ring-2 focus-visible:ring-zinc-400
+          dark:bg-zinc-800 dark:text-zinc-400
+          dark:hover:bg-zinc-700 dark:hover:text-zinc-100
+        "
+      >
+        <X className="size-4" aria-hidden="true" />
+      </button>
 
-        <div className="flex min-w-0 items-center gap-0.5">
-          <p className="mr-1 truncate text-xs font-normal tracking-wider text-muted-foreground/50">
-            {labels.title}
-          </p>
-
-          <span aria-hidden="true" className="text-muted-foreground/50">
-            ·
-          </span>
-
-          <label
-            className="
-              flex min-w-0 cursor-pointer items-center gap-1.5
-              rounded-md px-1 py-2
-              text-xs font-normal tracking-wider
-              text-muted-foreground/50
-            "
-          >
-            <span className="whitespace-nowrap">
-              {filterLabels.predictions_only}
-            </span>
-
-            <Checkbox
-              checked={predictionsOnly}
-              aria-label={filterLabels.predictions_only}
-              onCheckedChange={(checked) => {
-                onPredictionsOnlyChange(checked === true);
-              }}
-              className="
-                size-3.5 shrink-0 cursor-pointer rounded-[3px]
-                border-zinc-300 shadow-none
-                data-[state=checked]:border-zinc-800
-                data-[state=checked]:bg-zinc-800
-                data-[state=checked]:text-white
-                dark:border-zinc-600
-                dark:data-[state=checked]:border-zinc-300
-                dark:data-[state=checked]:bg-zinc-300
-                dark:data-[state=checked]:text-zinc-900
-              "
-            />
-          </label>
-        </div>
-
-        <button
-          type="button"
-          aria-label={labels.close}
-          onClick={() => setOnHistory(false)}
-          className="
-            flex size-8 shrink-0 cursor-pointer
-            items-center justify-center rounded-md
-            text-zinc-500 transition-colors
-            hover:bg-zinc-100 hover:text-zinc-900
-            dark:text-zinc-400 dark:hover:bg-zinc-800
-            dark:hover:text-zinc-100
-          "
-        >
-          <X className="size-4" aria-hidden="true" />
-        </button>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        ref={scrollRef}
+        className="
+          relative min-h-0 flex-1 overflow-y-auto
+          [overflow-anchor:none]
+        "
+      >
         {loading ? (
-          <HistoryLoader labels={labels} />
+          <HistoryLoader message={labels.loading} />
         ) : !currentUser ? (
           <EmptyHistory message={labels.login_required} />
         ) : activities.length === 0 && !error ? (
-          <EmptyHistory
-            message={predictionsOnly ? filterLabels.empty : labels.empty}
-          />
+          <EmptyHistory message={labels.empty} />
         ) : (
-          <div className="">
-            {activitySections.map((section) => (
-              <section key={section.key}>
-                {section.key !== "today" && (
+          <>
+            {activitySections.map((section, index) => {
+              const collapsed = Boolean(collapsedSections[section.key]);
+
+              const labelsBottom =
+                getHeaderTop(index) + getHeaderHeight(section.key);
+
+              return (
+                <Fragment key={section.key}>
                   <h3
+                    ref={(element) => {
+                      headerRefs.current[section.key] = element;
+                    }}
+                    style={{
+                      top: getHeaderTop(index),
+                      zIndex: 30 - index,
+                    }}
+                    className="sticky m-0 w-full"
+                  >
+                    <button
+                      type="button"
+                      aria-expanded={!collapsed}
+                      aria-controls={`history-records-${section.key}`}
+                      onClick={() => handlePeriodClick(section.key)}
+                      className="
+  block w-full cursor-pointer
+  bg-zinc-100 py-2.5 pl-4 pr-11 text-start
+  text-xs font-medium text-zinc-500
+  focus-visible:outline-none
+  focus-visible:ring-2 focus-visible:ring-inset
+  focus-visible:ring-zinc-400
+  dark:bg-zinc-800 dark:text-zinc-300
+"
+                    >
+                      {sectionLabels[section.key]}
+                    </button>
+                  </h3>
+
+                  {!collapsed && (
+                    <div
+                      ref={(element) => {
+                        recordStartRefs.current[section.key] = element;
+                      }}
+                      aria-hidden="true"
+                      style={{
+                        scrollMarginTop: labelsBottom,
+                      }}
+                      className="h-px -mb-px w-full"
+                    />
+                  )}
+
+                  <ul
+                    id={`history-records-${section.key}`}
+                    hidden={collapsed}
                     className="
-                      mx-3 rounded-md border border-zinc-300/50
-                      bg-zinc-50 px-3 py-2
-                      text-xs font-normal text-zinc-500
-                      dark:border-zinc-700 dark:bg-zinc-800
-                      dark:text-zinc-300
+                      m-0 list-none p-0
+                      divide-y divide-zinc-100 dark:divide-zinc-800
                     "
                   >
-                    {sectionLabels[section.key]}
-                  </h3>
-                )}
+                    {section.activities.map((activity) => {
+                      const open = swipedActivityId === activity.id;
+                      const deleting = deletingId === activity.id;
 
-                <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                  {section.activities.map((activity) => (
-                    <li key={activity.id}>
-                      <button
-                        type="button"
-                        onClick={() => handleActivityClick(activity)}
-                        className="
-                          group flex w-full cursor-pointer gap-3
-                          px-4 py-4 text-start transition-colors
-                          hover:bg-zinc-50
-                          focus-visible:outline-none
-                          focus-visible:ring-2
-                          focus-visible:ring-inset
-                          focus-visible:ring-zinc-400
-                          dark:hover:bg-zinc-800/40
-                        "
-                      >
-                        <span className="flex shrink-0 items-start justify-center">
-                          <ActivityIcon type={activity.type} />
-                        </span>
+                      return (
+                        <li
+                          key={activity.id}
+                          className="
+                            group/row flex touch-pan-y
+                            items-stretch overflow-hidden
+                          "
+                          onTouchStart={(event) => {
+                            if (
+                              !window.matchMedia(SMALL_TOUCH_QUERY).matches ||
+                              event.touches.length !== 1
+                            ) {
+                              swipeStart.current = null;
+                              return;
+                            }
 
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[15px] font-medium">
-                            {labels.activities[activity.type]}
-                          </span>
+                            const touch = event.touches[0];
 
-                          <span className="mt-1 block truncate text-sm text-zinc-500 dark:text-zinc-400">
-                            {getActivityDetail(activity, language)}
-                          </span>
+                            swipeStart.current = {
+                              activityId: activity.id,
+                              x: touch.clientX,
+                              y: touch.clientY,
+                            };
+                          }}
+                          onTouchEnd={(event) => {
+                            const start = swipeStart.current;
+                            swipeStart.current = null;
 
-                          <time
-                            dateTime={activity.createdAt}
-                            className="mt-1.5 block truncate text-xs text-zinc-400 dark:text-zinc-500"
+                            if (!start || start.activityId !== activity.id) {
+                              return;
+                            }
+
+                            const touch = event.changedTouches[0];
+
+                            if (!touch) {
+                              return;
+                            }
+
+                            const dx = touch.clientX - start.x;
+                            const dy = touch.clientY - start.y;
+
+                            if (
+                              Math.abs(dx) < 40 ||
+                              Math.abs(dx) < Math.abs(dy) * 1.5
+                            ) {
+                              return;
+                            }
+
+                            suppressClickUntil.current = Date.now() + 500;
+
+                            if (dx > 0) {
+                              setSwipedActivityId(activity.id);
+                            } else {
+                              setSwipedActivityId((current) =>
+                                current === activity.id ? null : current,
+                              );
+                            }
+                          }}
+                          onTouchCancel={() => {
+                            swipeStart.current = null;
+                          }}
+                          onClickCapture={(event) => {
+                            if (
+                              event.detail !== 0 &&
+                              Date.now() < suppressClickUntil.current
+                            ) {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              return;
+                            }
+
+                            const target = event.target;
+
+                            if (
+                              open &&
+                              target instanceof Element &&
+                              !target.closest("[data-history-delete]")
+                            ) {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setSwipedActivityId(null);
+                            }
+                          }}
+                        >
+                          <button
+                            type="button"
+                            disabled={UNCLICKABLE_TYPES.includes(activity.type)}
+                            onClick={() => handleActivityClick(activity)}
+                            className="
+                              group flex min-w-0 flex-1 gap-3
+                              px-4 py-4 text-start transition-colors
+                              enabled:cursor-pointer
+                              enabled:hover:bg-zinc-50
+                              dark:enabled:hover:bg-zinc-800/40
+                              disabled:cursor-default
+                              focus-visible:outline-none
+                              focus-visible:ring-2 focus-visible:ring-inset
+                              focus-visible:ring-zinc-400
+                            "
                           >
-                            {formatTimeAgo(activity.createdAt, language)}
-                          </time>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </div>
+                            <span className="flex shrink-0 items-start">
+                              <ActivityIcon type={activity.type} />
+                            </span>
+
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[15px] font-medium">
+                                {labels.activities[activity.type]}
+                              </span>
+
+                              <span className="mt-1 block truncate text-sm text-zinc-500 dark:text-zinc-400">
+                                {getActivityDetail(activity, language)}
+                              </span>
+
+                              <time
+                                dateTime={activity.createdAt}
+                                className="
+                                  mt-1.5 block truncate text-xs
+                                  text-zinc-400 dark:text-zinc-500
+                                "
+                              >
+                                {formatTimeAgo(activity.createdAt, language)}
+                              </time>
+                            </span>
+                          </button>
+
+                          <div
+                            className={`
+                              order-last flex shrink-0 overflow-hidden
+                              transition-[width,opacity] duration-200 ease-out
+                              motion-reduce:transition-none
+
+                              ${
+                                open || deleting
+                                  ? "w-10 opacity-100"
+                                  : "w-0 opacity-0"
+                              }
+
+                              [@media(max-width:767px)_and_(hover:none)_and_(pointer:coarse)]:order-first
+
+                              [@media(hover:hover)_and_(pointer:fine)]:group-hover/row:w-10
+                              [@media(hover:hover)_and_(pointer:fine)]:group-hover/row:opacity-100
+
+                              group-has-[:focus-visible]/row:w-10
+                              group-has-[:focus-visible]/row:opacity-100
+
+                              [@media(hover:none)_and_(min-width:768px)]:w-10
+                              [@media(hover:none)_and_(min-width:768px)]:opacity-100
+                            `}
+                          >
+                            <button
+                              data-history-delete
+                              type="button"
+                              disabled={
+                                refreshing || loadingMore || deletingId !== null
+                              }
+                              aria-label={`${deleteLabel}: ${labels.activities[activity.type]}`}
+                              title={deleteLabel}
+                              aria-busy={deleting}
+                              onClick={() =>
+                                void handleDeleteActivity(activity.id)
+                              }
+                              className="
+                                flex w-10 shrink-0 cursor-pointer
+                                items-center justify-center self-stretch
+                                bg-red-500 text-white
+                                transition-colors
+                                hover:bg-red-600 active:bg-red-700
+                                disabled:cursor-default disabled:bg-red-400
+                                focus-visible:outline-none
+                                focus-visible:ring-2 focus-visible:ring-inset
+                                focus-visible:ring-white
+                                dark:bg-red-600 dark:hover:bg-red-700
+                                dark:disabled:bg-red-500
+                              "
+                            >
+                              {deleting ? (
+                                <span
+                                  aria-hidden="true"
+                                  className="
+                                    size-4 animate-spin rounded-full
+                                    border-2 border-white/40 border-t-white
+                                  "
+                                />
+                              ) : (
+                                <X className="size-4" aria-hidden="true" />
+                              )}
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </Fragment>
+              );
+            })}
+          </>
         )}
 
         {refreshing && (
@@ -594,17 +964,19 @@ function HistoryPanelContent({
         )}
 
         {error && (
-          <div className="px-4 py-4 text-center" role="alert">
+          <div role="alert" className="px-4 py-4 text-center">
             <p className="text-sm text-rose-500">{labels[error]}</p>
 
             <button
               type="button"
-              disabled={loading || refreshing || loadingMore}
+              disabled={
+                loading || refreshing || loadingMore || deletingId !== null
+              }
               onClick={() => {
                 if (error === "load_more_failed" && cursor) {
                   void loadMore();
                 } else {
-                  setRetryKey((value) => value + 1);
+                  setRetryKey((current) => current + 1);
                 }
               }}
               className="
@@ -618,12 +990,14 @@ function HistoryPanelContent({
         )}
 
         {!loading && !refreshing && !error && cursor && (
-          <LoadMoreButton
-            loading={loadingMore}
-            loadingLabel={labels.loading}
-            label={labels.load_more}
-            onClick={() => void loadMore()}
-          />
+          <div className="px-4 py-3">
+            <LoadMoreButton
+              loading={loadingMore}
+              loadingLabel={labels.loading}
+              label={labels.load_more}
+              onClick={() => void loadMore()}
+            />
+          </div>
         )}
       </div>
     </section>
@@ -631,16 +1005,16 @@ function HistoryPanelContent({
 }
 
 // -----------------------------------------------------------------------------
-// LOADER
+// LOADER / EMPTY
 // -----------------------------------------------------------------------------
 
-function HistoryLoader({ labels }: { labels: { loading: string } }) {
+function HistoryLoader({ message }: { message: string }) {
   return (
     <div
       role="status"
       className="flex h-full min-h-0 items-center justify-center"
     >
-      <div
+      <span
         aria-hidden="true"
         className="
           size-5 animate-spin rounded-full
@@ -648,8 +1022,19 @@ function HistoryLoader({ labels }: { labels: { loading: string } }) {
           dark:border-zinc-700 dark:border-t-zinc-200
         "
       />
+      <span className="sr-only">{message}</span>
+    </div>
+  );
+}
 
-      <span className="sr-only">{labels.loading}</span>
+function EmptyHistory({ message }: { message: string }) {
+  return (
+    <div className="flex min-h-60 flex-col items-center justify-center px-6 text-center">
+      <History
+        aria-hidden="true"
+        className="mb-3 size-6 text-zinc-300 dark:text-zinc-700"
+      />
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">{message}</p>
     </div>
   );
 }
@@ -661,8 +1046,8 @@ function HistoryLoader({ labels }: { labels: { loading: string } }) {
 function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
   const className = `
     mt-0.75 size-4 text-zinc-400
-    group-hover:text-zinc-500
-    dark:text-zinc-400 dark:group-hover:text-zinc-300
+    group-enabled:group-hover:text-zinc-500
+    dark:group-enabled:group-hover:text-zinc-300
   `;
 
   switch (type) {
@@ -708,10 +1093,7 @@ function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
 // DETAIL
 // -----------------------------------------------------------------------------
 
-function getActivityDetail(
-  activity: HistoryActivity,
-  language: ResolvedLanguage,
-) {
+function getActivityDetail(activity: HistoryActivity, language: Language) {
   const labels = HISTORY_LABELS[language];
 
   if (
@@ -755,21 +1137,4 @@ function getActivityDetail(
       : null;
 
   return [marketName, direction, points].filter(Boolean).join(" · ");
-}
-
-// -----------------------------------------------------------------------------
-// EMPTY STATE
-// -----------------------------------------------------------------------------
-
-function EmptyHistory({ message }: { message: string }) {
-  return (
-    <div className="flex min-h-60 flex-col items-center justify-center px-6 text-center">
-      <History
-        className="mb-3 size-6 text-zinc-300 dark:text-zinc-700"
-        aria-hidden="true"
-      />
-
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">{message}</p>
-    </div>
-  );
 }

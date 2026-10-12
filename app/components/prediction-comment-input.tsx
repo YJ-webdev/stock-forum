@@ -216,8 +216,8 @@ export function PredictionCommentInput({
             </div>
 
             {/* Points */}
-            <div className=" flex shrink-0 items-center justify-between">
-              <div className="flex relative -gap-4 ">
+            <div className="flex shrink-0 items-center justify-between">
+              <div className="relative flex items-center">
                 <button
                   type="button"
                   aria-label="Decrease points"
@@ -228,44 +228,20 @@ export function PredictionCommentInput({
                   −
                 </button>
 
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
+                <span
                   aria-label="Prediction points"
-                  autoComplete="off"
-                  value={pointsDraft ?? String(betAmount)}
-                  disabled={pointsDisabled}
-                  onFocus={() => setPointsDraft(String(betAmount))}
-                  onChange={(event) => {
-                    const value = event.target.value;
+                  className={`
+        flex h-9 w-[3ch] select-none items-center justify-center
+        text-center text-sm tabular-nums
+        text-zinc-500 dark:text-zinc-300
+        ${pointsDisabled ? "opacity-50" : ""}
+      `}
+                >
+                  {betAmount}
+                </span>
 
-                    if (!/^\d*$/.test(value)) return;
-
-                    // Preserve the typed value, including an empty string.
-                    setPointsDraft(value);
-
-                    // Keep the parent's amount within valid 50-point steps.
-                    setBetAmount(normalizePoints(Number(value)));
-                  }}
-                  onBlur={() => setPointsDraft(null)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      event.currentTarget.blur();
-                    }
-                  }}
-                  className="
-                  h-9 w-[3ch] bg-transparent
-                  text-center text-sm tabular-nums text-zinc-500 dark:text-zinc-300
-                  outline-none
-                  focus-visible:rounded-sm
-                  focus-visible:ring-2 focus-visible:ring-zinc-400
-                  disabled:cursor-default disabled:opacity-50
-                "
-                />
                 {showMax && (
-                  <span className="absolute left-1/2 -translate-x-1/2 -bottom-1 text-[10px] font-medium text-zinc-500">
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium text-zinc-500">
                     max
                   </span>
                 )}
@@ -280,6 +256,7 @@ export function PredictionCommentInput({
                   +
                 </button>
               </div>
+
               <div className="w-full">
                 <span className="jakarta ml-2 whitespace-nowrap text-sm font-normal tabular-nums text-zinc-400 dark:text-zinc-500">
                   {remainingPoints.toLocaleString("en-US")}pts.

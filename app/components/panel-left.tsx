@@ -26,7 +26,7 @@ export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
   const commentsHeadingId = useId();
 
   return (
-    <div className="flex h-full w-full flex-col border-r border-zinc-100 bg-white py-3 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="flex h-full w-full flex-col border-r border-zinc-100 bg-white dark:border-zinc-800 dark:bg-zinc-900">
       <ScrollArea className="min-h-0 flex-1">
         <section aria-labelledby={boardsHeadingId}>
           <h2 id={boardsHeadingId} className="sr-only">
@@ -35,7 +35,7 @@ export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
 
           <p
             aria-hidden="true"
-            className="mb-2 truncate px-5 pt-0.5 text-xs font-normal tracking-wider text-muted-foreground/50"
+            className="mb-2 truncate pt-3.5 px-5 text-xs font-normal tracking-wider text-muted-foreground/50"
           >
             {labels.popular_boards}
           </p>
@@ -43,7 +43,7 @@ export default function PanelLeft({ comments, popularBoards }: PanelLeftProps) {
           <PopularBoards boards={popularBoards} />
         </section>
 
-        <section aria-labelledby={commentsHeadingId} className="mt-2 p-4">
+        <section aria-labelledby={commentsHeadingId} className="p-4">
           <h2 id={commentsHeadingId} className="sr-only">
             {labels.most_liked_comments}
           </h2>

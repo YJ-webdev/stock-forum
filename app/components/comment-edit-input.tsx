@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
@@ -53,8 +53,51 @@ export function CommentEditInput({
     initial.gif,
   );
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+
+    if (!textarea) {
+      return;
+    }
+
+    const resizeTextarea = () => {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    };
+
+    resizeTextarea();
+
+    // Recalculate when the editor width changes.
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", resizeTextarea);
+
+      return () => {
+        window.removeEventListener("resize", resizeTextarea);
+      };
+    }
+
+    let previousWidth = textarea.getBoundingClientRect().width;
+
+    const observer = new ResizeObserver(() => {
+      const width = textarea.getBoundingClientRect().width;
+
+      if (width === previousWidth) {
+        return;
+      }
+
+      previousWidth = width;
+      resizeTextarea();
+    });
+
+    observer.observe(textarea);
+
+    return () => observer.disconnect();
+  }, [comment]);
 
   const hasChanges =
     comment.trim() !== initial.text.trim() ||
@@ -70,41 +113,49 @@ export function CommentEditInput({
 
     startTransition(async () => {
       try {
+        const text = comment.trim();
+        const nodes: JSONContent[] = [];
+
+        if (text) {
+          for (const line of text.split(/\r\n|\r|\n/)) {
+            nodes.push({
+              type: "paragraph",
+              content: line
+                ? [
+                    {
+                      type: "text",
+                      text: line,
+                    },
+                  ]
+                : [],
+            });
+          }
+        }
+
+        if (selectedGif) {
+          nodes.push({
+            type: "image",
+            attrs: {
+              src: selectedGif.src,
+              alt: selectedGif.title,
+            },
+          });
+        }
+
         const content: JSONContent = {
           type: "doc",
-          content: [
-            ...(comment.trim()
-              ? [
-                  {
-                    type: "paragraph",
-                    content: [
-                      {
-                        type: "text",
-                        text: comment.trim(),
-                      },
-                    ],
-                  },
-                ]
-              : []),
-
-            ...(selectedGif
-              ? [
-                  {
-                    type: "image",
-                    attrs: {
-                      src: selectedGif.src,
-                      alt: selectedGif.title,
-                    },
-                  },
-                ]
-              : []),
-          ],
+          content: nodes,
         };
 
         const result = await editComment({
           commentId,
           content,
         });
+
+        if (!result.success) {
+          toast.error(labels.update_failed);
+          return;
+        }
 
         await onSaved(result);
 
@@ -123,6 +174,7 @@ export function CommentEditInput({
     <div className="mt-2">
       <div className="relative rounded-lg bg-zinc-200/40 px-4 dark:bg-zinc-800">
         <textarea
+          ref={textareaRef}
           value={comment}
           onChange={(event) => setComment(event.target.value)}
           disabled={isPending}
@@ -130,7 +182,7 @@ export function CommentEditInput({
           placeholder={labels.placeholder}
           aria-label={labels.placeholder}
           className="
-            min-h-11 w-full resize-none
+            block min-h-11 w-full resize-none overflow-hidden
             bg-transparent py-3
             text-[15px] outline-none
             placeholder:text-zinc-500
@@ -193,6 +245,10 @@ export function CommentEditInput({
               open={gifPickerOpen}
               onOpenChange={setGifPickerOpen}
               onSelect={(gif: GifResult) => {
+                if (isPending) {
+                  return;
+                }
+
                 setSelectedGif({
                   src: gif.src,
                   preview: gif.preview,
@@ -236,31 +292,43 @@ export function CommentEditInput({
   );
 }
 
+function getNodeText(node: JSONContent): string {
+  if (node.type === "text") {
+    return node.text ?? "";
+  }
+
+  if (node.type === "hardBreak") {
+    return "\n";
+  }
+
+  return (node.content ?? []).map(getNodeText).join("");
+}
+
 function getInitialComment(content: JSONContent): {
   text: string;
   gif: EditableGif | null;
 } {
-  let text = "";
+  const paragraphs: string[] = [];
   let gif: EditableGif | null = null;
 
   for (const node of content.content ?? []) {
     if (node.type === "paragraph") {
-      const paragraphText =
-        node.content?.map((child) => child.text ?? "").join("") ?? "";
-
-      if (paragraphText) {
-        text = text ? `${text}\n${paragraphText}` : paragraphText;
-      }
+      paragraphs.push(getNodeText(node));
     }
 
     if (node.type === "image" && node.attrs?.src) {
+      const src = String(node.attrs.src);
+
       gif = {
-        src: String(node.attrs.src),
-        preview: String(node.attrs.src),
+        src,
+        preview: src,
         title: String(node.attrs.alt ?? "GIF"),
       };
     }
   }
 
-  return { text, gif };
+  return {
+    text: paragraphs.join("\n"),
+    gif,
+  };
 }

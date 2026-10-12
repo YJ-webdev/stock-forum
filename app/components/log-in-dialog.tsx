@@ -1,3 +1,5 @@
+"use client";
+
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   Card,
@@ -5,11 +7,12 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 
-import GoogleSignIn from "./google-sign-in";
-import GithubSignIn from "./github-sign-in";
+import { useCurrentUser } from "@/app/context/user-context";
+import { resolveLanguage } from "@/lib/data/languages";
+import { LOGIN_LABELS } from "@/lib/data/translations";
+import OAuthSignIn from "./oauth-sign-in";
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -17,55 +20,84 @@ interface LoginDialogProps {
 }
 
 export const LoginDialog = ({ isOpen, setIsOpen }: LoginDialogProps) => {
-  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Stock Forum";
+  const user = useCurrentUser();
+  const language = resolveLanguage(user?.language);
+  const labels = LOGIN_LABELS[language];
+
+  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "BullBearVote";
+
+  const welcome = labels.welcome.replaceAll("{siteName}", siteName);
+  const notice = labels.notice.replaceAll("{siteName}", siteName);
 
   return (
-    <div>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent
-          className="p-0 shadow-none border-none
-          /* Mobile First: Full Screen */
-          w-screen h-screen max-w-full m-0 rounded-none flex flex-col justify-center
-          /* Tablet & Desktop (sm breakpoint and above): Centered Card */
-          sm:h-auto sm:max-w-md sm:rounded-full
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent
+        className="
+          left-0 top-0 m-0
+          flex h-dvh w-full max-w-none
+          translate-x-0 translate-y-0 flex-col
+          gap-0 overflow-y-auto rounded-none border-none
+          bg-background p-0 shadow-none
+          pt-[env(safe-area-inset-top)]
+          pb-[env(safe-area-inset-bottom)]
+
+          [&>button]:right-4
+          [&>button]:top-[max(1rem,env(safe-area-inset-top))]
+          [&>button]:z-50
+
+          sm:left-1/2 sm:top-1/2
+          sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-md
+          sm:-translate-x-1/2 sm:-translate-y-1/2
+          sm:rounded-2xl sm:py-0
         "
+      >
+        <Card
+          className="
+    my-auto w-full shrink-0
+    rounded-none border-none bg-transparent
+    py-12 shadow-none
+    sm:rounded-2xl sm:py-8
+    border-0 ring-0 outline-none
+focus:ring-0 focus:outline-none
+focus-visible:ring-0 focus-visible:outline-none
+  "
         >
-          <Card
-            className="
-          /* Mobile First: Full Screen */
-          w-screen h-screen max-w-full m-0 rounded-none flex flex-col justify-center
-          /* Tablet & Desktop (sm breakpoint and above): Centered Card */
-          sm:h-auto sm:max-w-md sm:rounded-2xl
-        "
-          >
-            <CardHeader>
-              <DialogTitle>
-                <CardTitle className="font-medium text-lg text-center">
-                  {siteName}에 오신 것을 환영합니다.
-                </CardTitle>
-              </DialogTitle>
-              <CardDescription className="text-center tracking-tight ">
-                구글 또는 깃허브로 로그인하세요
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2">
-              <GoogleSignIn />
-              <div className="items-center justify-cente relative mt-3 -mb-2">
-                <hr />
-                <p className="z-10 mx-auto w-10 -translate-y-3 bg-white dark:bg-transparent text-center text-sm dark:text-gray-400">
-                  or
-                </p>
-              </div>
-              <GithubSignIn />
-            </CardContent>
-            <CardFooter className="text-xs text-muted-foreground text-center">
-              로그인 시, {siteName}에서 사용자가 공유하는 정보에 지속적으로
-              액세스할 수 있으며, OAuth 제공자는 {siteName}이 해당 정보에
-              액세스한 시점을 기록하게 됩니다.
-            </CardFooter>
-          </Card>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <CardHeader>
+            <DialogTitle dir="auto" className="text-center text-lg font-medium">
+              {welcome}
+            </DialogTitle>
+
+            <CardDescription dir="auto" className="text-center tracking-tight">
+              {labels.description}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="flex flex-col gap-2">
+            {process.env.NODE_ENV === "development" ? (
+              <>
+                {/* <div className="relative my-2 flex items-center justify-center">
+                  <hr className="absolute inset-x-0" />
+
+                  <span
+                    dir="auto"
+                    className="relative bg-background px-3 text-sm text-muted-foreground"
+                  >
+                    {labels.or}
+                  </span>
+                </div> */}
+
+                <OAuthSignIn provider="github" />
+              </>
+            ) : (
+              <OAuthSignIn provider="google" />
+            )}
+          </CardContent>
+
+          <CardFooter className="text-center text-xs text-muted-foreground">
+            <p dir="auto">{notice}</p>
+          </CardFooter>
+        </Card>
+      </DialogContent>
+    </Dialog>
   );
 };
