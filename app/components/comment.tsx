@@ -10,6 +10,15 @@ import {
   type SetStateAction,
 } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
@@ -51,6 +60,7 @@ import { PredictionCommentInput } from "./prediction-comment-input";
 import { ReplyInput } from "./reply-input";
 import { ReplyItem } from "./reply-item";
 import type { GifResult } from "./gif-picker";
+import { ProfileCard } from "./profile-card";
 
 type ResolvedLanguage = ReturnType<typeof resolveLanguage>;
 
@@ -880,6 +890,16 @@ export function CommentItem({
     replyCount.toLocaleString(language),
   );
 
+  const profileCard = (
+    <ProfileCard
+      userId={comment.author.id}
+      name={comment.author.name}
+      image={comment.author.image}
+      currentUserId={currentUser?.id}
+      language={currentUser?.language}
+    />
+  );
+
   return (
     <div
       ref={commentRef}
@@ -892,25 +912,68 @@ export function CommentItem({
     `}
     >
       <div className="z-1 flex gap-3">
-        <Avatar className="size-9 shrink-0">
-          <AvatarImage
-            src={comment.author.image ?? undefined}
-            alt={username}
-            className="object-cover"
-          />
+        <Popover>
+          <PopoverTrigger
+            aria-label={username}
+            className="
+      relative z-10 size-9 shrink-0 self-start
+      cursor-pointer rounded-full
+      focus-visible:outline-none
+      focus-visible:ring-2 focus-visible:ring-zinc-400
+      focus-visible:ring-offset-2
+    "
+          >
+            <Avatar className="size-9">
+              <AvatarImage
+                src={comment.author.image ?? undefined}
+                alt={username}
+                className="object-cover"
+              />
 
-          <AvatarFallback className="text-[22px] text-white bg-olive-500 font-normal">
-            {comment.author.name
-              ? comment.author.name.slice(0, 1).toUpperCase()
-              : labels.guest.slice(0, 1).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+              <AvatarFallback className="bg-olive-500 text-[22px] font-normal text-white">
+                {comment.author.name
+                  ? comment.author.name.slice(0, 1).toUpperCase()
+                  : labels.guest.slice(0, 1).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </PopoverTrigger>
+
+          <PopoverContent
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            className="w-80 max-w-[calc(100vw-2rem)] rounded-xl p-0"
+          >
+            {profileCard}
+          </PopoverContent>
+        </Popover>
 
         <div className="min-w-0 flex-1">
           <div className="group/comment relative min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[14px] font-semibold">{username}</span>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
+              <Popover>
+                <PopoverTrigger
+                  className="
+        min-w-0 max-w-full cursor-pointer
+        rounded-sm text-start
+        focus-visible:outline-none
+        focus-visible:ring-2 focus-visible:ring-zinc-400
+      "
+                >
+                  <span className="block truncate text-[14px] font-semibold hover:underline">
+                    {username}
+                  </span>
+                </PopoverTrigger>
 
+                <PopoverContent
+                  align="start"
+                  side="bottom"
+                  sideOffset={8}
+                  className="w-80 max-w-[calc(100vw-2rem)] rounded-xl p-0"
+                >
+                  {profileCard}
+                </PopoverContent>
+              </Popover>
               {marketname && marketSymbol && (
                 <Link
                   href={`/market/${encodeURIComponent(marketSymbol)}`}

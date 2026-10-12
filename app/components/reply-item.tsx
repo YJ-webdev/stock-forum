@@ -258,15 +258,13 @@ export function ReplyItem({
     return () => window.clearTimeout(timeout);
   }, [targetReplyId, reply.id]);
 
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
+  const handleProfileClick = () => {};
 
   return (
     <div id={`reply-${reply.id}`} className="relative scroll-mt-0">
       <div className="group/reply relative flex gap-3">
         <div className="relative z-1 shrink-0">
-          <Avatar className="size-8 shrink-0">
+          <Avatar onClick={handleProfileClick} className="size-8 shrink-0">
             <AvatarImage
               src={reply.author.image ?? undefined}
               alt={username}
@@ -313,7 +311,12 @@ export function ReplyItem({
 
           {/* Header */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[14px] font-semibold">{username}</span>
+            <span
+              onClick={handleProfileClick}
+              className="text-[14px] font-semibold"
+            >
+              {username}
+            </span>
 
             <span className="jakarta text-[13px] text-zinc-500">
               {formatTimeAgo(reply.createdAt, language)}

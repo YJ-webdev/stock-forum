@@ -6590,3 +6590,111 @@ export const HISTORY_CLICK_LABELS: Record<
     unavailable: "यह आइटम अब उपलब्ध नहीं है।",
   },
 };
+
+interface ProfileCardLabels {
+  interested_markets: string;
+  no_markets: string;
+  follow: string;
+  unfollow: string;
+  updating: string;
+  follow_failed: string;
+}
+
+export const PROFILE_CARD_LABELS: Record<Language, ProfileCardLabels> = {
+  en: {
+    interested_markets: "Interested markets",
+    no_markets: "No markets added yet.",
+    follow: "Follow",
+    unfollow: "Unfollow",
+    updating: "Updating...",
+    follow_failed: "Failed to update follow status.",
+  },
+  ko: {
+    interested_markets: "관심 마켓",
+    no_markets: "아직 추가한 마켓이 없습니다.",
+    follow: "팔로우",
+    unfollow: "팔로우 취소",
+    updating: "변경 중...",
+    follow_failed: "팔로우 상태를 변경하지 못했습니다.",
+  },
+  ja: {
+    interested_markets: "関心のある市場",
+    no_markets: "まだ市場が追加されていません。",
+    follow: "フォロー",
+    unfollow: "フォロー解除",
+    updating: "更新中...",
+    follow_failed: "フォロー状態を更新できませんでした。",
+  },
+  zh: {
+    interested_markets: "关注的市场",
+    no_markets: "尚未添加市场。",
+    follow: "关注",
+    unfollow: "取消关注",
+    updating: "更新中...",
+    follow_failed: "无法更新关注状态。",
+  },
+  de: {
+    interested_markets: "Interessante Märkte",
+    no_markets: "Noch keine Märkte hinzugefügt.",
+    follow: "Folgen",
+    unfollow: "Entfolgen",
+    updating: "Wird aktualisiert...",
+    follow_failed: "Der Folgestatus konnte nicht aktualisiert werden.",
+  },
+  fr: {
+    interested_markets: "Marchés suivis",
+    no_markets: "Aucun marché ajouté.",
+    follow: "Suivre",
+    unfollow: "Ne plus suivre",
+    updating: "Mise à jour...",
+    follow_failed: "Impossible de modifier le suivi.",
+  },
+  es: {
+    interested_markets: "Mercados de interés",
+    no_markets: "Aún no hay mercados añadidos.",
+    follow: "Seguir",
+    unfollow: "Dejar de seguir",
+    updating: "Actualizando...",
+    follow_failed: "No se pudo actualizar el seguimiento.",
+  },
+  pt: {
+    interested_markets: "Mercados de interesse",
+    no_markets: "Nenhum mercado adicionado.",
+    follow: "Seguir",
+    unfollow: "Deixar de seguir",
+    updating: "Atualizando...",
+    follow_failed: "Não foi possível atualizar o seguimento.",
+  },
+  it: {
+    interested_markets: "Mercati di interesse",
+    no_markets: "Nessun mercato aggiunto.",
+    follow: "Segui",
+    unfollow: "Non seguire più",
+    updating: "Aggiornamento...",
+    follow_failed: "Impossibile aggiornare lo stato del seguito.",
+  },
+  ru: {
+    interested_markets: "Интересующие рынки",
+    no_markets: "Рынки ещё не добавлены.",
+    follow: "Подписаться",
+    unfollow: "Отписаться",
+    updating: "Обновление...",
+    follow_failed: "Не удалось изменить статус подписки.",
+  },
+  ar: {
+    interested_markets: "الأسواق محل الاهتمام",
+    no_markets: "لم تتم إضافة أسواق بعد.",
+    follow: "متابعة",
+    unfollow: "إلغاء المتابعة",
+    updating: "جارٍ التحديث...",
+    follow_failed: "تعذر تحديث حالة المتابعة.",
+  },
+  hi: {
+    interested_markets: "पसंदीदा बाज़ार",
+    no_markets: "अभी कोई बाज़ार नहीं जोड़ा गया है।",
+    follow: "फ़ॉलो करें",
+    unfollow: "अनफ़ॉलो करें",
+    updating: "अपडेट हो रहा है...",
+    follow_failed: "फ़ॉलो स्थिति अपडेट नहीं हो सकी।",
+  },
+};
