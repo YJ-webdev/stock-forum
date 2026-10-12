@@ -505,7 +505,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
 
       <Dialog open={isPickerOpen} onOpenChange={handlePickerOpenChange}>
         <DialogContent
-          overlayClassName="bg-black/30 backdrop-blur-none!"
+          overlayClassName="bg-black/30 dark:bg-black/60 backdrop-blur-none!"
           className="
             outfit flex h-[85dvh] max-h-170 flex-col gap-0
             overflow-hidden rounded-xl p-0 text-zinc-900
