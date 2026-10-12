@@ -74,22 +74,12 @@ focus-visible:ring-0 focus-visible:outline-none
 
           <CardContent className="flex flex-col gap-2">
             {process.env.NODE_ENV === "development" ? (
-              <>
-                {/* <div className="relative my-2 flex items-center justify-center">
-                  <hr className="absolute inset-x-0" />
-
-                  <span
-                    dir="auto"
-                    className="relative bg-background px-3 text-sm text-muted-foreground"
-                  >
-                    {labels.or}
-                  </span>
-                </div> */}
-
-                <OAuthSignIn provider="github" />
-              </>
+              <OAuthSignIn provider="github" />
             ) : (
-              <OAuthSignIn provider="google" />
+              <>
+                <OAuthSignIn provider="google" />
+                <OAuthSignIn provider="facebook" />
+              </>
             )}
           </CardContent>
 

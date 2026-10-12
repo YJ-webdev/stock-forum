@@ -78,7 +78,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
       {
         title: "Information we collect",
         content: [
-          "When you sign in with Google or GitHub, we receive account information such as your email address, username, profile image, and provider account identifier.",
+          "BullBearVote supports sign-in only through third-party OAuth providers. When you sign in, we receive account information made available by your chosen provider, which may include your email address, name or username, profile image, and provider account identifier. Available providers may change over time.",
           "We store the nationality, language, and watchlist preferences you choose, along with your activity on BullBearVote, including comments, replies, predictions, points history, likes, and reports.",
           "We use cookies to maintain your login session and may use local storage to remember interface preferences, such as your theme. Temporary cached data helps pages and market information load faster.",
         ],
@@ -104,7 +104,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
         content: [
           "You can request account deletion using the contact details below. We may ask you to verify account ownership before processing your request.",
           "When handling your request, we will explain how deletion affects your profile, comments, replies, predictions, and points history, including any information that must be retained and the reasons for retaining it.",
-          "Signing out, clearing your browser cookies, or disconnecting Google or GitHub does not by itself delete your BullBearVote account.",
+          "Signing out, clearing your browser cookies, or disconnecting your sign-in provider does not by itself delete your BullBearVote account.",
         ],
       },
       {
@@ -228,7 +228,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
       {
         title: "수집하는 정보",
         content: [
-          "Google 또는 GitHub로 로그인하면 이메일 주소, 사용자 이름, 프로필 이미지, 제공업체의 계정 식별자 등의 계정 정보를 받습니다.",
+          "BullBearVote는 외부 제공업체를 통한 OAuth 로그인만 지원합니다. 로그인하면 선택한 제공업체가 제공하는 계정 정보를 받으며, 여기에는 이메일 주소, 이름 또는 사용자 이름, 프로필 이미지, 제공업체의 계정 식별자가 포함될 수 있습니다. 지원하는 제공업체는 변경될 수 있습니다.",
           "선택한 국적, 언어, 관심 마켓과 댓글, 답글, 예측, 포인트 내역, 좋아요, 신고 등 BullBearVote 활동을 저장합니다.",
           "로그인 세션 유지에 쿠키를 사용하며 테마 등 화면 설정을 기억하기 위해 로컬 스토리지를 사용할 수 있습니다. 임시 캐시 데이터는 페이지와 시장 정보를 빠르게 불러오는 데 사용됩니다.",
         ],
@@ -254,7 +254,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
         content: [
           "아래 연락처로 계정 삭제를 요청할 수 있습니다. 요청을 처리하기 전에 계정 소유권 확인을 요구할 수 있습니다.",
           "삭제 요청 처리 시 프로필, 댓글, 답글, 예측, 포인트 내역에 미치는 영향과 보관이 필요한 정보 및 그 이유를 설명합니다.",
-          "로그아웃, 브라우저 쿠키 삭제, Google 또는 GitHub 연결 해제만으로 BullBearVote 계정이 삭제되지는 않습니다.",
+          "로그아웃, 브라우저 쿠키 삭제, 로그인 제공업체와의 연결 해제만으로 BullBearVote 계정이 삭제되지는 않습니다.",
         ],
       },
       {
@@ -379,7 +379,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
       {
         title: "収集する情報",
         content: [
-          "GoogleまたはGitHubでログインすると、メールアドレス、ユーザー名、プロフィール画像、認証提供元のアカウント識別子などを受け取ります。",
+          "BullBearVoteは外部の認証提供元によるOAuthログインのみをサポートしています。ログイン時に、選択した認証提供元から提供されるアカウント情報を受け取ります。これにはメールアドレス、氏名またはユーザー名、プロフィール画像、認証提供元のアカウント識別子が含まれる場合があります。利用可能な認証提供元は変更されることがあります。",
           "選択した国籍、言語、ウォッチリストと、コメント、返信、予測、ポイント履歴、いいね、通報などの活動を保存します。",
           "ログイン状態の維持にCookieを使い、テーマなどの表示設定を記憶するためにローカルストレージを使う場合があります。一時キャッシュはページや市場情報の読み込みを速めます。",
         ],
@@ -405,7 +405,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
         content: [
           "下記の連絡先から削除を申請できます。処理前にアカウント所有者の確認をお願いする場合があります。",
           "削除によるプロフィール、コメント、返信、予測、ポイント履歴への影響と、保持が必要な情報および理由をご説明します。",
-          "ログアウト、Cookieの削除、GoogleやGitHubとの連携解除だけではBullBearVoteアカウントは削除されません。",
+          "ログアウト、ブラウザーのCookieの削除、ログインに使用した認証提供元との連携解除だけでは、BullBearVoteアカウントは削除されません。",
         ],
       },
       {
@@ -525,7 +525,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
       {
         title: "我们收集的信息",
         content: [
-          "通过Google或GitHub登录时，我们会收到电子邮箱、用户名、头像和提供商账户标识等信息。",
+          "BullBearVote仅支持通过第三方提供商进行OAuth登录。登录时，我们会接收您选择的提供商提供的账户信息，其中可能包括电子邮箱、姓名或用户名、头像和提供商账户标识。可用的提供商可能会发生变化。",
           "我们保存你选择的国籍、语言和自选市场，以及评论、回复、预测、积分记录、点赞和举报等活动。",
           "我们使用Cookie维持登录会话，并可能使用本地存储记住主题等界面偏好。临时缓存有助于加快页面和市场信息的加载。",
         ],
@@ -551,7 +551,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
         content: [
           "你可通过下方联系方式申请删除账户。处理前，我们可能要求验证账户所有权。",
           "处理申请时，我们会说明删除对头像资料、评论、回复、预测和积分记录的影响，以及必须保留的信息及原因。",
-          "退出登录、清除Cookie或断开Google或GitHub连接，本身并不会删除BullBearVote账户。",
+          "退出登录、清除浏览器Cookie或解除与登录提供商的关联，本身并不会删除您的BullBearVote账户。",
         ],
       },
       {
@@ -676,7 +676,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
       {
         title: "Erhobene Informationen",
         content: [
-          "Bei der Anmeldung mit Google oder GitHub erhalten wir Kontodaten wie E-Mail-Adresse, Benutzername, Profilbild und die Kontokennung des Anbieters.",
+          "BullBearVote unterstützt ausschließlich die Anmeldung über OAuth bei Drittanbietern. Bei der Anmeldung erhalten wir die Kontodaten, die dein gewählter Anbieter bereitstellt. Dazu können E-Mail-Adresse, Name oder Benutzername, Profilbild und die Kontokennung des Anbieters gehören. Die verfügbaren Anbieter können sich ändern.",
           "Wir speichern deine gewählte Nationalität, Sprache und Watchlist sowie Aktivitäten wie Kommentare, Antworten, Prognosen, Punkteverlauf, Likes und Meldungen.",
           "Cookies erhalten deine Anmeldung. Lokaler Speicher kann Einstellungen wie das Design speichern. Temporäre Zwischenspeicher beschleunigen Seiten und Marktinformationen.",
         ],
@@ -702,7 +702,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
         content: [
           "Du kannst über die unten genannten Kontaktdaten eine Löschung beantragen. Vor der Bearbeitung können wir einen Nachweis der Kontoinhaberschaft verlangen.",
           "Wir erläutern die Folgen für Profil, Kommentare, Antworten, Prognosen und Punkteverlauf sowie notwendige Aufbewahrungen und deren Gründe.",
-          "Abmelden, Cookies löschen oder die Verbindung zu Google oder GitHub trennen löscht dein BullBearVote-Konto nicht automatisch.",
+          "Abmelden, das Löschen von Browser-Cookies oder das Trennen der Verbindung zu deinem Anmeldeanbieter löscht dein BullBearVote-Konto nicht automatisch.",
         ],
       },
       {
@@ -827,7 +827,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
       {
         title: "Informations collectées",
         content: [
-          "Lors d’une connexion via Google ou GitHub, nous recevons notamment votre adresse e-mail, nom d’utilisateur, photo et identifiant de compte du fournisseur.",
+          "BullBearVote permet uniquement la connexion via des fournisseurs OAuth tiers. Lors de la connexion, nous recevons les informations de compte transmises par le fournisseur choisi, qui peuvent inclure votre adresse e-mail, nom ou nom d’utilisateur, photo de profil et identifiant de compte du fournisseur. Les fournisseurs disponibles peuvent changer.",
           "Nous conservons la nationalité, la langue et la liste de suivi choisies, ainsi que vos commentaires, réponses, prévisions, historique de points, mentions J’aime et signalements.",
           "Les cookies maintiennent votre session. Le stockage local peut mémoriser des préférences comme le thème. Des caches temporaires accélèrent le chargement des pages et des données de marché.",
         ],
@@ -853,7 +853,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
         content: [
           "Demandez la suppression aux coordonnées ci-dessous. Nous pouvons vérifier que vous êtes titulaire du compte avant de traiter la demande.",
           "Nous expliquerons les effets sur votre profil, commentaires, réponses, prévisions et points, ainsi que les informations à conserver et les raisons.",
-          "Se déconnecter, supprimer les cookies ou dissocier Google ou GitHub ne supprime pas à lui seul votre compte BullBearVote.",
+          "Se déconnecter, supprimer les cookies du navigateur ou dissocier votre fournisseur de connexion ne supprime pas à lui seul votre compte BullBearVote.",
         ],
       },
       {
@@ -977,7 +977,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
       {
         title: "Información que recopilamos",
         content: [
-          "Al iniciar sesión con Google o GitHub recibimos datos como correo electrónico, nombre de usuario, imagen de perfil e identificador de cuenta del proveedor.",
+          "BullBearVote solo admite el inicio de sesión mediante proveedores externos de OAuth. Al iniciar sesión, recibimos la información de cuenta que facilita el proveedor elegido, que puede incluir tu correo electrónico, nombre o nombre de usuario, imagen de perfil e identificador de cuenta del proveedor. Los proveedores disponibles pueden cambiar.",
           "Guardamos tu nacionalidad, idioma y lista de seguimiento, así como comentarios, respuestas, predicciones, historial de puntos, Me gusta y denuncias.",
           "Las cookies mantienen tu sesión. El almacenamiento local puede recordar preferencias como el tema. Los datos temporales en caché aceleran las páginas y la información de mercado.",
         ],
@@ -1003,7 +1003,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
         content: [
           "Puedes solicitarla mediante los datos de contacto de abajo. Podemos pedir que verifiques la titularidad antes de tramitarla.",
           "Explicaremos cómo afecta a tu perfil, comentarios, respuestas, predicciones y puntos, y qué información debe conservarse y por qué.",
-          "Cerrar sesión, borrar cookies o desconectar Google o GitHub no elimina por sí solo tu cuenta BullBearVote.",
+          "Cerrar sesión, borrar las cookies del navegador o desconectar tu proveedor de inicio de sesión no elimina por sí solo tu cuenta BullBearVote.",
         ],
       },
       {
@@ -1127,7 +1127,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
       {
         title: "Informações coletadas",
         content: [
-          "Ao entrar com Google ou GitHub, recebemos dados como e-mail, nome de usuário, foto e identificador de conta do provedor.",
+          "BullBearVote permite apenas o login por meio de provedores externos de OAuth. Ao entrar, recebemos as informações de conta disponibilizadas pelo provedor escolhido, que podem incluir e-mail, nome ou nome de usuário, foto de perfil e identificador de conta do provedor. Os provedores disponíveis podem mudar.",
           "Armazenamos nacionalidade, idioma e lista de acompanhamento escolhidos, além de comentários, respostas, previsões, histórico de pontos, curtidas e denúncias.",
           "Cookies mantêm sua sessão. O armazenamento local pode lembrar preferências como o tema. Caches temporários aceleram páginas e informações de mercado.",
         ],
@@ -1153,7 +1153,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
         content: [
           "Você pode solicitar exclusão pelo contato abaixo. Podemos verificar a titularidade antes de processar o pedido.",
           "Explicaremos os efeitos sobre perfil, comentários, respostas, previsões e pontos, incluindo dados que devem ser mantidos e os motivos.",
-          "Sair da conta, limpar cookies ou desconectar Google ou GitHub não exclui por si só sua conta BullBearVote.",
+          "Sair da conta, limpar os cookies do navegador ou desconectar seu provedor de login não exclui por si só sua conta BullBearVote.",
         ],
       },
       {
@@ -1277,7 +1277,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
       {
         title: "Informazioni raccolte",
         content: [
-          "Accedendo con Google o GitHub riceviamo dati come e-mail, nome utente, immagine e identificativo dell’account del provider.",
+          "BullBearVote supporta esclusivamente l’accesso tramite provider OAuth di terze parti. Al momento dell’accesso riceviamo le informazioni dell’account rese disponibili dal provider scelto, che possono includere indirizzo e-mail, nome o nome utente, immagine del profilo e identificativo dell’account del provider. I provider disponibili possono cambiare.",
           "Salviamo nazionalità, lingua e watchlist scelte, insieme a commenti, risposte, previsioni, cronologia punti, Mi piace e segnalazioni.",
           "I cookie mantengono la sessione. L’archiviazione locale può ricordare preferenze come il tema. Le cache temporanee velocizzano pagine e informazioni di mercato.",
         ],
@@ -1303,7 +1303,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
         content: [
           "Puoi richiederla tramite i contatti sotto. Potremmo verificare la titolarità prima di elaborare la richiesta.",
           "Spiegheremo gli effetti su profilo, commenti, risposte, previsioni e punti, incluse informazioni da conservare e relative ragioni.",
-          "Uscire, cancellare cookie o scollegare Google o GitHub non elimina da solo l’account BullBearVote.",
+          "Uscire, cancellare i cookie del browser o scollegare il provider di accesso non elimina di per sé l’account BullBearVote.",
         ],
       },
       {
@@ -1427,7 +1427,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
       {
         title: "Какие данные мы собираем",
         content: [
-          "При входе через Google или GitHub мы получаем адрес электронной почты, имя пользователя, изображение профиля, идентификатор аккаунта провайдера и другие данные аккаунта.",
+          "BullBearVote поддерживает вход только через сторонних провайдеров OAuth. При входе мы получаем сведения об аккаунте, предоставляемые выбранным провайдером. Они могут включать адрес электронной почты, имя или имя пользователя, изображение профиля и идентификатор аккаунта у провайдера. Список доступных провайдеров может меняться.",
           "Мы сохраняем выбранные гражданство, язык и список наблюдения, а также комментарии, ответы, прогнозы, историю баллов, отметки «Нравится» и жалобы.",
           "Cookie поддерживают сеанс входа. Локальное хранилище может запоминать настройки, например тему. Временный кэш ускоряет загрузку страниц и рыночной информации.",
         ],
@@ -1453,7 +1453,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
         content: [
           "Запрос можно отправить по контактам ниже. Перед обработкой мы можем попросить подтвердить владение аккаунтом.",
           "Мы объясним последствия для профиля, комментариев, ответов, прогнозов и баллов, а также какие данные необходимо сохранить и почему.",
-          "Выход, очистка cookie или отключение Google либо GitHub сами по себе не удаляют аккаунт BullBearVote.",
+          "Выход из аккаунта, очистка cookie браузера или отключение провайдера входа сами по себе не удаляют ваш аккаунт BullBearVote.",
         ],
       },
       {
@@ -1575,7 +1575,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
       {
         title: "المعلومات التي نجمعها",
         content: [
-          "عند الدخول عبر Google أو GitHub نتلقى معلومات الحساب، مثل البريد الإلكتروني واسم المستخدم وصورة الملف ومعرّف الحساب لدى المزوّد.",
+          "يدعم BullBearVote تسجيل الدخول فقط عبر مزوّدي OAuth الخارجيين. عند تسجيل الدخول، نتلقى معلومات الحساب التي يتيحها المزوّد الذي تختاره، وقد تشمل البريد الإلكتروني والاسم أو اسم المستخدم وصورة الملف الشخصي ومعرّف الحساب لدى المزوّد. قد يتغيّر المزوّدون المتاحون بمرور الوقت.",
           "نحفظ الجنسية واللغة وقائمة المتابعة التي تختارها، وأنشطتك مثل التعليقات والردود والتوقعات وسجل النقاط والإعجابات والبلاغات.",
           "نستخدم ملفات تعريف الارتباط للحفاظ على جلسة الدخول، وقد نستخدم التخزين المحلي لتذكّر إعدادات مثل المظهر. تساعد البيانات المؤقتة المخزنة على تسريع الصفحات ومعلومات السوق.",
         ],
@@ -1601,7 +1601,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
         content: [
           "يمكن طلب الحذف عبر بيانات الاتصال أدناه. قد نطلب إثبات ملكية الحساب قبل معالجة الطلب.",
           "سنوضح أثر الحذف على الملف والتعليقات والردود والتوقعات والنقاط، وأي معلومات يجب الاحتفاظ بها وأسباب ذلك.",
-          "تسجيل الخروج أو حذف ملفات الارتباط أو فصل Google أو GitHub لا يحذف حساب BullBearVote بحد ذاته.",
+          "تسجيل الخروج أو حذف ملفات الارتباط من المتصفح أو فصل مزوّد تسجيل الدخول لا يحذف حساب BullBearVote بحد ذاته.",
         ],
       },
       {
@@ -1723,7 +1723,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
       {
         title: "हम कौन सी जानकारी लेते हैं",
         content: [
-          "Google या GitHub से प्रवेश करने पर हमें ईमेल, उपयोगकर्ता नाम, प्रोफ़ाइल तस्वीर और प्रदाता का खाता पहचानकर्ता जैसी जानकारी मिलती है।",
+          "BullBearVote केवल तृतीय-पक्ष OAuth प्रदाताओं के माध्यम से लॉगिन का समर्थन करता है। लॉगिन करने पर हमें आपके चुने हुए प्रदाता द्वारा उपलब्ध कराई गई खाते की जानकारी मिलती है, जिसमें ईमेल पता, नाम या उपयोगकर्ता नाम, प्रोफ़ाइल तस्वीर और प्रदाता का खाता पहचानकर्ता शामिल हो सकते हैं। उपलब्ध प्रदाता समय के साथ बदल सकते हैं।",
           "हम चुनी हुई राष्ट्रीयता, भाषा और वॉचलिस्ट तथा टिप्पणियां, जवाब, पूर्वानुमान, अंक इतिहास, लाइक और रिपोर्ट जैसी गतिविधियां सहेजते हैं।",
           "कुकी से लॉगिन सत्र बनाए रखते हैं। थीम जैसी प्राथमिकताओं के लिए स्थानीय संग्रह का इस्तेमाल हो सकता है। अस्थायी कैश पेज और बाज़ार की जानकारी जल्दी लोड करने में मदद करता है।",
         ],
@@ -1749,7 +1749,7 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
         content: [
           "नीचे दिए संपर्क से खाता हटाने का अनुरोध कर सकते हैं। पहले खाते का स्वामित्व सत्यापित करने को कह सकते हैं।",
           "हम बताएंगे कि हटाने से प्रोफ़ाइल, टिप्पणियों, जवाबों, पूर्वानुमानों और अंकों पर क्या असर होगा और कौन सी जानकारी क्यों रखनी होगी।",
-          "लॉगआउट, कुकी हटाना या Google अथवा GitHub से संबंध तोड़ना अपने आप BullBearVote खाता नहीं हटाता।",
+          "लॉगआउट करने, ब्राउज़र की कुकी हटाने या अपने लॉगिन प्रदाता से संबंध तोड़ने से अपने आप आपका BullBearVote खाता नहीं हटता।",
         ],
       },
       {
