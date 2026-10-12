@@ -501,7 +501,7 @@ function HistoryPanelContent({
                 {section.key !== "today" && (
                   <h3
                     className="
-                      mx-p  rounded-md border border-zinc-300/50
+                      mx-3  rounded-md border border-zinc-300/50
                       bg-zinc-50 px-3 py-2
                       text-xs font-normal text-zinc-500
                       dark:border-zinc-700 dark:bg-zinc-800
@@ -512,11 +512,11 @@ function HistoryPanelContent({
                   </h3>
                 )}
 
-                <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <ul className=" divide-y divide-zinc-100 dark:divide-zinc-800">
                   {section.activities.map((activity) => {
                     const content = (
-                      <>
-                        <span className="ml-1 flex shrink-0 items-start justify-center">
+                      <div className="flex gap-3 group">
+                        <span className="flex shrink-0 items-start justify-center">
                           <ActivityIcon type={activity.type} />
                         </span>
 
@@ -536,7 +536,7 @@ function HistoryPanelContent({
                             {formatTimeAgo(activity.createdAt, language)}
                           </time>
                         </span>
-                      </>
+                      </div>
                     );
 
                     return (
@@ -656,7 +656,8 @@ function HistoryLoader({ labels }: { labels: { loading: string } }) {
 // -----------------------------------------------------------------------------
 
 function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
-  const className = "mt-0.75 size-4 text-zinc-500 dark:text-zinc-400";
+  const className =
+    "mt-0.75 size-4 text-zinc-400 group-hover:text-zinc-500 dark:text-zinc-400 dark:group-hover:text-zinc-300";
 
   switch (type) {
     case "COMMENT_LIKED":
