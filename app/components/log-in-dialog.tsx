@@ -79,6 +79,7 @@ focus-visible:ring-0 focus-visible:outline-none
               <>
                 <OAuthSignIn provider="google" />
                 <OAuthSignIn provider="facebook" />
+                <OAuthSignIn provider="twitter" />
               </>
             )}
           </CardContent>

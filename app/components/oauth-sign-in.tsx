@@ -4,6 +4,7 @@ import { useFormStatus } from "react-dom";
 import { BsGithub } from "react-icons/bs";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
 
 import { handleSignIn } from "@/app/actions/auth";
 import { useCurrentUser } from "@/app/context/user-context";
@@ -25,6 +26,11 @@ const OAUTH_PROVIDERS = {
   facebook: {
     name: "Facebook",
     Icon: FaFacebook,
+    iconSize: 24,
+  },
+  twitter: {
+    name: "Twitter",
+    Icon: FaXTwitter,
     iconSize: 24,
   },
 } as const;
