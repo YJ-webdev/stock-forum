@@ -6698,3 +6698,18 @@ export const PROFILE_CARD_LABELS: Record<Language, ProfileCardLabels> = {
     follow_failed: "फ़ॉलो स्थिति अपडेट नहीं हो सकी।",
   },
 };
+
+export const PROFILE_STATUS_PLACEHOLDERS: Record<Language, string> = {
+  en: "What’s on your mind?",
+  ko: "지금 어떤 생각을 하고 있나요?",
+  ja: "今、何を考えていますか？",
+  zh: "此刻在想些什么？",
+  de: "Was geht dir gerade durch den Kopf?",
+  fr: "Qu’est-ce qui te passe par la tête ?",
+  es: "¿Qué tienes en mente?",
+  pt: "O que está passando pela sua cabeça?",
+  it: "A cosa stai pensando?",
+  ru: "О чём сейчас думаешь?",
+  ar: "ما الذي يدور في بالك؟",
+  hi: "आपके मन में क्या चल रहा है?",
+};

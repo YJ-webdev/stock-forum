@@ -66,7 +66,7 @@ model User {
   language      String    @default("en")
   role          Role      @default(USER)
   ranking UserRanking?
-
+  statusMessage String? @db.VarChar(160)
   
 
   status   UserStatus @default(ACTIVE)

@@ -34,6 +34,7 @@ export type UserMinAggregateOutputType = {
   nationality: string | null
   language: string | null
   role: $Enums.Role | null
+  statusMessage: string | null
   status: $Enums.UserStatus | null
   mutedAt: Date | null
   bannedAt: Date | null
@@ -51,6 +52,7 @@ export type UserMaxAggregateOutputType = {
   nationality: string | null
   language: string | null
   role: $Enums.Role | null
+  statusMessage: string | null
   status: $Enums.UserStatus | null
   mutedAt: Date | null
   bannedAt: Date | null
@@ -68,6 +70,7 @@ export type UserCountAggregateOutputType = {
   nationality: number
   language: number
   role: number
+  statusMessage: number
   status: number
   mutedAt: number
   bannedAt: number
@@ -87,6 +90,7 @@ export type UserMinAggregateInputType = {
   nationality?: true
   language?: true
   role?: true
+  statusMessage?: true
   status?: true
   mutedAt?: true
   bannedAt?: true
@@ -104,6 +108,7 @@ export type UserMaxAggregateInputType = {
   nationality?: true
   language?: true
   role?: true
+  statusMessage?: true
   status?: true
   mutedAt?: true
   bannedAt?: true
@@ -121,6 +126,7 @@ export type UserCountAggregateInputType = {
   nationality?: true
   language?: true
   role?: true
+  statusMessage?: true
   status?: true
   mutedAt?: true
   bannedAt?: true
@@ -211,6 +217,7 @@ export type UserGroupByOutputType = {
   nationality: string | null
   language: string
   role: $Enums.Role
+  statusMessage: string | null
   status: $Enums.UserStatus
   mutedAt: Date | null
   bannedAt: Date | null
@@ -249,6 +256,7 @@ export type UserWhereInput = {
   nationality?: Prisma.StringNullableFilter<"User"> | string | null
   language?: Prisma.StringFilter<"User"> | string
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
+  statusMessage?: Prisma.StringNullableFilter<"User"> | string | null
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   mutedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   bannedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
@@ -285,6 +293,7 @@ export type UserOrderByWithRelationInput = {
   nationality?: Prisma.SortOrderInput | Prisma.SortOrder
   language?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  statusMessage?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   mutedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   bannedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -324,6 +333,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   nationality?: Prisma.StringNullableFilter<"User"> | string | null
   language?: Prisma.StringFilter<"User"> | string
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
+  statusMessage?: Prisma.StringNullableFilter<"User"> | string | null
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   mutedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   bannedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
@@ -360,6 +370,7 @@ export type UserOrderByWithAggregationInput = {
   nationality?: Prisma.SortOrderInput | Prisma.SortOrder
   language?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  statusMessage?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   mutedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   bannedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -383,6 +394,7 @@ export type UserScalarWhereWithAggregatesInput = {
   nationality?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   language?: Prisma.StringWithAggregatesFilter<"User"> | string
   role?: Prisma.EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
+  statusMessage?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   status?: Prisma.EnumUserStatusWithAggregatesFilter<"User"> | $Enums.UserStatus
   mutedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   bannedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
@@ -400,6 +412,7 @@ export type UserCreateInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -436,6 +449,7 @@ export type UserUncheckedCreateInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -472,6 +486,7 @@ export type UserUpdateInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -508,6 +523,7 @@ export type UserUncheckedUpdateInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -544,6 +560,7 @@ export type UserCreateManyInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -561,6 +578,7 @@ export type UserUpdateManyMutationInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -578,6 +596,7 @@ export type UserUncheckedUpdateManyInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -595,6 +614,7 @@ export type UserCountOrderByAggregateInput = {
   nationality?: Prisma.SortOrder
   language?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  statusMessage?: Prisma.SortOrder
   status?: Prisma.SortOrder
   mutedAt?: Prisma.SortOrder
   bannedAt?: Prisma.SortOrder
@@ -612,6 +632,7 @@ export type UserMaxOrderByAggregateInput = {
   nationality?: Prisma.SortOrder
   language?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  statusMessage?: Prisma.SortOrder
   status?: Prisma.SortOrder
   mutedAt?: Prisma.SortOrder
   bannedAt?: Prisma.SortOrder
@@ -629,6 +650,7 @@ export type UserMinOrderByAggregateInput = {
   nationality?: Prisma.SortOrder
   language?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  statusMessage?: Prisma.SortOrder
   status?: Prisma.SortOrder
   mutedAt?: Prisma.SortOrder
   bannedAt?: Prisma.SortOrder
@@ -954,6 +976,7 @@ export type UserCreateWithoutAccountsInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -989,6 +1012,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1040,6 +1064,7 @@ export type UserUpdateWithoutAccountsInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1075,6 +1100,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1110,6 +1136,7 @@ export type UserCreateWithoutSessionsInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1145,6 +1172,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1196,6 +1224,7 @@ export type UserUpdateWithoutSessionsInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1231,6 +1260,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1266,6 +1296,7 @@ export type UserCreateWithoutCommentsInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1301,6 +1332,7 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1352,6 +1384,7 @@ export type UserUpdateWithoutCommentsInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1387,6 +1420,7 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1422,6 +1456,7 @@ export type UserCreateWithoutModerationActionsPerformedInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1457,6 +1492,7 @@ export type UserUncheckedCreateWithoutModerationActionsPerformedInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1497,6 +1533,7 @@ export type UserCreateWithoutModerationActionsReceivedInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1532,6 +1569,7 @@ export type UserUncheckedCreateWithoutModerationActionsReceivedInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1583,6 +1621,7 @@ export type UserUpdateWithoutModerationActionsPerformedInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1618,6 +1657,7 @@ export type UserUncheckedUpdateWithoutModerationActionsPerformedInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1664,6 +1704,7 @@ export type UserUpdateWithoutModerationActionsReceivedInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1699,6 +1740,7 @@ export type UserUncheckedUpdateWithoutModerationActionsReceivedInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1734,6 +1776,7 @@ export type UserCreateWithoutPredictionsInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1769,6 +1812,7 @@ export type UserUncheckedCreateWithoutPredictionsInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1820,6 +1864,7 @@ export type UserUpdateWithoutPredictionsInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1855,6 +1900,7 @@ export type UserUncheckedUpdateWithoutPredictionsInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1890,6 +1936,7 @@ export type UserCreateWithoutRepliesInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1925,6 +1972,7 @@ export type UserUncheckedCreateWithoutRepliesInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -1976,6 +2024,7 @@ export type UserUpdateWithoutRepliesInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2011,6 +2060,7 @@ export type UserUncheckedUpdateWithoutRepliesInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2046,6 +2096,7 @@ export type UserCreateWithoutCommentLikesInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -2081,6 +2132,7 @@ export type UserUncheckedCreateWithoutCommentLikesInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -2132,6 +2184,7 @@ export type UserUpdateWithoutCommentLikesInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2167,6 +2220,7 @@ export type UserUncheckedUpdateWithoutCommentLikesInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2202,6 +2256,7 @@ export type UserCreateWithoutReplyLikesInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -2237,6 +2292,7 @@ export type UserUncheckedCreateWithoutReplyLikesInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -2288,6 +2344,7 @@ export type UserUpdateWithoutReplyLikesInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2323,6 +2380,7 @@ export type UserUncheckedUpdateWithoutReplyLikesInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2358,6 +2416,7 @@ export type UserCreateWithoutBalanceInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -2393,6 +2452,7 @@ export type UserUncheckedCreateWithoutBalanceInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -2444,6 +2504,7 @@ export type UserUpdateWithoutBalanceInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2479,6 +2540,7 @@ export type UserUncheckedUpdateWithoutBalanceInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2514,6 +2576,7 @@ export type UserCreateWithoutWatchlistInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -2549,6 +2612,7 @@ export type UserUncheckedCreateWithoutWatchlistInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -2600,6 +2664,7 @@ export type UserUpdateWithoutWatchlistInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2635,6 +2700,7 @@ export type UserUncheckedUpdateWithoutWatchlistInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2670,6 +2736,7 @@ export type UserCreateWithoutNotificationsReceivedInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -2705,6 +2772,7 @@ export type UserUncheckedCreateWithoutNotificationsReceivedInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -2745,6 +2813,7 @@ export type UserCreateWithoutNotificationsSentInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -2780,6 +2849,7 @@ export type UserUncheckedCreateWithoutNotificationsSentInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -2831,6 +2901,7 @@ export type UserUpdateWithoutNotificationsReceivedInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2866,6 +2937,7 @@ export type UserUncheckedUpdateWithoutNotificationsReceivedInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2912,6 +2984,7 @@ export type UserUpdateWithoutNotificationsSentInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2947,6 +3020,7 @@ export type UserUncheckedUpdateWithoutNotificationsSentInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2982,6 +3056,7 @@ export type UserCreateWithoutPointBalanceInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -3017,6 +3092,7 @@ export type UserUncheckedCreateWithoutPointBalanceInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -3068,6 +3144,7 @@ export type UserUpdateWithoutPointBalanceInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3103,6 +3180,7 @@ export type UserUncheckedUpdateWithoutPointBalanceInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3138,6 +3216,7 @@ export type UserCreateWithoutPointTransactionsInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -3173,6 +3252,7 @@ export type UserUncheckedCreateWithoutPointTransactionsInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -3224,6 +3304,7 @@ export type UserUpdateWithoutPointTransactionsInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3259,6 +3340,7 @@ export type UserUncheckedUpdateWithoutPointTransactionsInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3294,6 +3376,7 @@ export type UserCreateWithoutFollowingInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -3329,6 +3412,7 @@ export type UserUncheckedCreateWithoutFollowingInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -3369,6 +3453,7 @@ export type UserCreateWithoutFollowersInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -3404,6 +3489,7 @@ export type UserUncheckedCreateWithoutFollowersInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -3455,6 +3541,7 @@ export type UserUpdateWithoutFollowingInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3490,6 +3577,7 @@ export type UserUncheckedUpdateWithoutFollowingInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3536,6 +3624,7 @@ export type UserUpdateWithoutFollowersInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3571,6 +3660,7 @@ export type UserUncheckedUpdateWithoutFollowersInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3606,6 +3696,7 @@ export type UserCreateWithoutActivitiesInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -3641,6 +3732,7 @@ export type UserUncheckedCreateWithoutActivitiesInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -3692,6 +3784,7 @@ export type UserUpdateWithoutActivitiesInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3727,6 +3820,7 @@ export type UserUncheckedUpdateWithoutActivitiesInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3762,6 +3856,7 @@ export type UserCreateWithoutRankingInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -3797,6 +3892,7 @@ export type UserUncheckedCreateWithoutRankingInput = {
   nationality?: string | null
   language?: string
   role?: $Enums.Role
+  statusMessage?: string | null
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
@@ -3848,6 +3944,7 @@ export type UserUpdateWithoutRankingInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3883,6 +3980,7 @@ export type UserUncheckedUpdateWithoutRankingInput = {
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   language?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4084,6 +4182,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   nationality?: boolean
   language?: boolean
   role?: boolean
+  statusMessage?: boolean
   status?: boolean
   mutedAt?: boolean
   bannedAt?: boolean
@@ -4121,6 +4220,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   nationality?: boolean
   language?: boolean
   role?: boolean
+  statusMessage?: boolean
   status?: boolean
   mutedAt?: boolean
   bannedAt?: boolean
@@ -4138,6 +4238,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   nationality?: boolean
   language?: boolean
   role?: boolean
+  statusMessage?: boolean
   status?: boolean
   mutedAt?: boolean
   bannedAt?: boolean
@@ -4155,6 +4256,7 @@ export type UserSelectScalar = {
   nationality?: boolean
   language?: boolean
   role?: boolean
+  statusMessage?: boolean
   status?: boolean
   mutedAt?: boolean
   bannedAt?: boolean
@@ -4162,7 +4264,7 @@ export type UserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"isBot" | "id" | "name" | "email" | "emailVerified" | "image" | "nationality" | "language" | "role" | "status" | "mutedAt" | "bannedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"isBot" | "id" | "name" | "email" | "emailVerified" | "image" | "nationality" | "language" | "role" | "statusMessage" | "status" | "mutedAt" | "bannedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   ranking?: boolean | Prisma.User$rankingArgs<ExtArgs>
   moderationActionsReceived?: boolean | Prisma.User$moderationActionsReceivedArgs<ExtArgs>
@@ -4221,6 +4323,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     nationality: string | null
     language: string
     role: $Enums.Role
+    statusMessage: string | null
     status: $Enums.UserStatus
     mutedAt: Date | null
     bannedAt: Date | null
@@ -4677,6 +4780,7 @@ export interface UserFieldRefs {
   readonly nationality: Prisma.FieldRef<"User", 'String'>
   readonly language: Prisma.FieldRef<"User", 'String'>
   readonly role: Prisma.FieldRef<"User", 'Role'>
+  readonly statusMessage: Prisma.FieldRef<"User", 'String'>
   readonly status: Prisma.FieldRef<"User", 'UserStatus'>
   readonly mutedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly bannedAt: Prisma.FieldRef<"User", 'DateTime'>

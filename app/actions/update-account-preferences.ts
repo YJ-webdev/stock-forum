@@ -11,6 +11,7 @@ interface UpdateAccountPreferencesInput {
   image?: string | null;
   nationality: string;
   language: string;
+  statusMessage?: string | null;
 }
 
 export async function updateAccountPreferences({
@@ -18,6 +19,7 @@ export async function updateAccountPreferences({
   image,
   nationality,
   language,
+  statusMessage,
 }: UpdateAccountPreferencesInput) {
   const session = await auth();
 
@@ -43,6 +45,18 @@ export async function updateAccountPreferences({
     throw new Error("Unsupported language.");
   }
 
+  if (
+    statusMessage !== undefined &&
+    statusMessage !== null &&
+    typeof statusMessage !== "string"
+  ) {
+    throw new Error("Invalid status message.");
+  }
+
+  if (typeof statusMessage === "string" && statusMessage.length > 160) {
+    throw new Error("Status message must be 160 characters or fewer.");
+  }
+
   const updatedUser = await prisma.user.update({
     where: {
       id: session.user.id,
@@ -52,6 +66,7 @@ export async function updateAccountPreferences({
       image: image ?? null,
       nationality,
       language,
+      statusMessage,
     },
     select: {
       id: true,
@@ -59,6 +74,7 @@ export async function updateAccountPreferences({
       image: true,
       nationality: true,
       language: true,
+      statusMessage: true,
     },
   });
 

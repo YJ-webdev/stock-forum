@@ -371,7 +371,7 @@ function ProfileCardContent({
       )}
 
       {/* Follow */}
-      {profile && !isMe && (
+      {/* {profile && !isMe && (
         <button
           type="button"
           onClick={() => void handleToggleFollow()}
@@ -415,6 +415,18 @@ function ProfileCardContent({
               ? labels.unfollow
               : labels.follow}
         </button>
+      )} */}
+
+      {profile?.statusMessage && (
+        <p
+          className="
+      mt-3 whitespace-pre-wrap wrap-break-word
+      text-[14px] leading-6
+      text-zinc-600 dark:text-zinc-400
+    "
+        >
+          {profile.statusMessage}
+        </p>
       )}
 
       {/* Load error / retry */}

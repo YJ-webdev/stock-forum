@@ -2115,6 +2115,7 @@ export const UserScalarFieldEnum = {
   nationality: 'nationality',
   language: 'language',
   role: 'role',
+  statusMessage: 'statusMessage',
   status: 'status',
   mutedAt: 'mutedAt',
   bannedAt: 'bannedAt',

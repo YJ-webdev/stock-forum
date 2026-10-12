@@ -17,6 +17,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import {
@@ -31,13 +32,21 @@ import { Separator } from "@/components/ui/separator";
 
 import { NATIONALITIES } from "@/lib/data/nationalities";
 import { LANGUAGES, resolveLanguage } from "@/lib/data/languages";
-import { ACCOUNT_LABELS } from "@/lib/data/translations";
+
+import {
+  ACCOUNT_LABELS,
+  PROFILE_STATUS_PLACEHOLDERS,
+} from "@/lib/data/translations";
 
 import { updateAccountPreferences } from "@/app/actions/update-account-preferences";
+import { updateAccountLanguage } from "@/app/actions/update-account-language";
 import { uploadAvatar } from "@/app/actions/upload-avatar";
 
-import { useCurrentUser, useSetCurrentUser } from "../context/user-context";
-import { updateAccountLanguage } from "../actions/update-account-language";
+import { useCurrentUser, useSetCurrentUser } from "@/app/context/user-context";
+
+// -----------------------------------------------------------------------------
+// TYPES / CONSTANTS
+// -----------------------------------------------------------------------------
 
 interface AccountPanelProps {
   setOnAccount: Dispatch<SetStateAction<boolean>>;
@@ -48,6 +57,11 @@ type CurrentUser = NonNullable<ReturnType<typeof useCurrentUser>>;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_STATUS_LENGTH = 160;
+
+// -----------------------------------------------------------------------------
+// PANEL
+// -----------------------------------------------------------------------------
 
 export function AccountPanel({ setOnAccount }: AccountPanelProps) {
   const user = useCurrentUser();
@@ -56,7 +70,9 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
     return null;
   }
 
-  return <AccountPanelForm user={user} setOnAccount={setOnAccount} />;
+  return (
+    <AccountPanelForm key={user.id} user={user} setOnAccount={setOnAccount} />
+  );
 }
 
 function AccountPanelForm({
@@ -70,11 +86,13 @@ function AccountPanelForm({
 
   const uiLanguage = resolveLanguage(user.language);
   const labels = ACCOUNT_LABELS[uiLanguage];
+  const statusPlaceholder = PROFILE_STATUS_PLACEHOLDERS[uiLanguage];
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(user.name ?? "");
   const [image, setImage] = useState(user.image ?? "");
+  const [statusMessage, setStatusMessage] = useState(user.statusMessage ?? "");
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -84,9 +102,14 @@ function AccountPanelForm({
 
   const [savedName, setSavedName] = useState(user.name ?? "");
   const [savedImage, setSavedImage] = useState(user.image ?? "");
+  const [savedStatusMessage, setSavedStatusMessage] = useState(
+    user.statusMessage ?? "",
+  );
+
   const [savedNationality, setSavedNationality] = useState(
     user.nationality ?? "",
   );
+
   const [savedLanguage, setSavedLanguage] = useState(user.language ?? "en");
 
   const [isPending, startTransition] = useTransition();
@@ -112,7 +135,12 @@ function AccountPanelForm({
     name !== savedName ||
     image !== savedImage ||
     nationality !== savedNationality ||
+    statusMessage !== savedStatusMessage ||
     selectedFile !== null;
+
+  // ---------------------------------------------------------------------------
+  // AVATAR
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     return () => {
@@ -133,7 +161,6 @@ function AccountPanelForm({
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
-    // Allows selecting the same file again.
     event.target.value = "";
 
     if (!file) {
@@ -153,6 +180,10 @@ function AccountPanelForm({
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
   };
+
+  // ---------------------------------------------------------------------------
+  // LANGUAGE
+  // ---------------------------------------------------------------------------
 
   const handleLanguageChange = (value: string | null) => {
     if (
@@ -208,10 +239,17 @@ function AccountPanelForm({
     });
   };
 
+  // ---------------------------------------------------------------------------
+  // SAVE
+  // ---------------------------------------------------------------------------
+
   const handleSave = () => {
-    if (isPending || !hasChanges) return;
+    if (isPending || !hasChanges) {
+      return;
+    }
 
     const trimmedName = name.trim();
+    const trimmedStatusMessage = statusMessage.trim();
 
     if (!trimmedName) {
       toast.error(labels.name_required);
@@ -225,6 +263,11 @@ function AccountPanelForm({
 
     if (!nationality) {
       toast.error(labels.nationality_required);
+      return;
+    }
+
+    if (statusMessage.length > MAX_STATUS_LENGTH) {
+      toast.error(labels.update_failed);
       return;
     }
 
@@ -245,30 +288,35 @@ function AccountPanelForm({
           image: nextImage || null,
           nationality,
           language: savedLanguage,
+          statusMessage: trimmedStatusMessage || null,
         });
 
         const nextName = updatedUser.name ?? "";
         const nextSavedImage = updatedUser.image ?? "";
         const nextNationality = updatedUser.nationality ?? "";
+        const nextStatusMessage = updatedUser.statusMessage ?? "";
 
         setName(nextName);
         setImage(nextSavedImage);
         setNationality(nextNationality);
+        setStatusMessage(nextStatusMessage);
 
         setSavedName(nextName);
         setSavedImage(nextSavedImage);
         setSavedNationality(nextNationality);
+        setSavedStatusMessage(nextStatusMessage);
 
         setSelectedFile(null);
         setPreviewUrl(null);
 
         setCurrentUser((previous) =>
-          previous
+          previous?.id === user.id
             ? {
                 ...previous,
                 name: updatedUser.name,
                 image: updatedUser.image,
                 nationality: updatedUser.nationality,
+                statusMessage: updatedUser.statusMessage,
               }
             : previous,
         );
@@ -282,6 +330,10 @@ function AccountPanelForm({
       }
     });
   };
+
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
 
   return (
     <section
@@ -301,18 +353,19 @@ function AccountPanelForm({
           onClick={() => setOnAccount(false)}
           aria-label={labels.close}
           className="
-              flex size-8 cursor-pointer items-center justify-center
-              rounded-md text-zinc-500 transition-colors
-              hover:bg-zinc-100 hover:text-zinc-900
-              dark:text-zinc-400 dark:hover:bg-zinc-800
-              dark:hover:text-zinc-100
-            "
+            flex size-8 cursor-pointer items-center justify-center
+            rounded-md text-zinc-500 transition-colors
+            hover:bg-zinc-100 hover:text-zinc-900
+            dark:text-zinc-400 dark:hover:bg-zinc-800
+            dark:hover:text-zinc-100
+          "
         >
           <X className="size-4" aria-hidden="true" />
         </button>
       </div>
 
-      <div className="px-5 hide-scrollbar min-h-0 flex-1 overflow-y-auto my-2">
+      <div className="hide-scrollbar my-2 min-h-0 flex-1 overflow-y-auto px-5">
+        {/* Avatar / name */}
         <div className="flex items-center gap-4">
           <div className="shrink-0">
             <input
@@ -320,6 +373,7 @@ function AccountPanelForm({
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={handleFileChange}
+              disabled={isPending}
               className="hidden"
               aria-label={labels.change_avatar}
             />
@@ -408,8 +462,46 @@ function AccountPanelForm({
           </div>
         </div>
 
+        {/* Public profile message */}
+        <div className="mt-4">
+          <label htmlFor="account-status-message" className="sr-only">
+            {statusPlaceholder}
+          </label>
+
+          <textarea
+            id="account-status-message"
+            rows={3}
+            value={statusMessage}
+            onChange={(event) => setStatusMessage(event.target.value)}
+            maxLength={MAX_STATUS_LENGTH}
+            disabled={isPending}
+            placeholder={statusPlaceholder}
+            aria-describedby="account-status-message-count"
+            className="
+              block min-h-24 w-full resize-none
+              rounded-lg border border-zinc-200
+              bg-transparent px-3 py-2.5
+              text-[15px] leading-6 text-zinc-800
+              placeholder:text-zinc-400
+              focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-zinc-400
+              disabled:opacity-50
+              dark:border-zinc-700 dark:text-zinc-200
+              dark:placeholder:text-zinc-500
+            "
+          />
+
+          <p
+            id="account-status-message-count"
+            className="mt-1.5 text-end text-[11px] tabular-nums text-zinc-400 dark:text-zinc-500"
+          >
+            {statusMessage.length}/{MAX_STATUS_LENGTH}
+          </p>
+        </div>
+
+        {/* Email */}
         {user.email && (
-          <div className="mt-4">
+          <div>
             <p className="text-[12px] text-zinc-400 dark:text-zinc-500">
               {labels.email}
             </p>
@@ -420,8 +512,9 @@ function AccountPanelForm({
           </div>
         )}
 
-        <Separator className="mb-7" />
+        <Separator className="mt-5 mb-7" />
 
+        {/* Nationality */}
         <div className="mb-6">
           <div className="mb-2 flex items-center gap-2">
             <Globe2
@@ -474,6 +567,7 @@ function AccountPanelForm({
           </p>
         </div>
 
+        {/* Language */}
         <div>
           <div className="mb-2 flex items-center gap-2">
             <Languages
@@ -523,7 +617,8 @@ function AccountPanelForm({
         </div>
       </div>
 
-      <div className="ms-auto mt-auto shrink-0 pb-5 px-5">
+      {/* Save */}
+      <div className="ms-auto mt-auto shrink-0 px-5 pb-5">
         <Button
           type="button"
           onClick={handleSave}
@@ -536,7 +631,7 @@ function AccountPanelForm({
                 aria-hidden="true"
                 className="
                   size-3.5 animate-spin rounded-full
-                  border-2 border-white/40 border-t-white
+                  border-2 border-current/40 border-t-current
                 "
               />
               {labels.saving}
