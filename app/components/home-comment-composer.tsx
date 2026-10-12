@@ -203,7 +203,7 @@ export function HomeCommentComposer({
   }
 
   return (
-    <div className="mt-8 mb-5">
+    <div className="mt-3 mb-6">
       <div className="flex items-start gap-3">
         <Avatar className="size-9 shrink-0">
           <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? ""} />

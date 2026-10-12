@@ -254,7 +254,7 @@ export function HomeCommunity({
 
   return (
     <div className="outfit w-full min-w-0 pb-10">
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="mt-2 mb-6 flex flex-wrap items-center gap-2">
         {[
           {
             symbol: null,

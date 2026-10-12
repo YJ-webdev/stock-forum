@@ -296,18 +296,17 @@ function ProfileCardContent({
             {displayName}
           </p>
 
-          {profile && (
-            <span
-              className={`
-                mt-1 inline-flex items-center
-                rounded-full border px-2 py-0.5
-                text-[11px] font-medium
-                ${TIER_CLASSES[profile.tier]}
-              `}
-            >
-              {TIER_NAMES[profile.tier]}
-            </span>
-          )}
+          <span
+            aria-hidden={!profile}
+            className={`
+    mt-1 inline-flex items-center
+    rounded-full border px-2 py-0.5
+    text-[11px] font-medium
+    ${profile ? TIER_CLASSES[profile.tier] : "invisible"}
+  `}
+          >
+            {profile ? TIER_NAMES[profile.tier] : TIER_NAMES.UNRANKED}
+          </span>
         </div>
       </div>
 
