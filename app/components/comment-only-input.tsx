@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,6 +55,35 @@ export function CommentOnlyInput({
   const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
   const [comment, setComment] = useState(initialComment);
   const [isPending, startTransition] = useTransition();
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const resize = () => {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    };
+
+    resize();
+
+    let lastWidth = textarea.getBoundingClientRect().width;
+
+    const observer = new ResizeObserver(() => {
+      const width = textarea.getBoundingClientRect().width;
+
+      if (width !== lastWidth) {
+        lastWidth = width;
+        resize();
+      }
+    });
+
+    observer.observe(textarea);
+
+    return () => observer.disconnect();
+  }, [comment]);
 
   const userLanguage = resolveLanguage(currentUser?.language);
   const commentLabels = COMMENT_LABELS[userLanguage];
@@ -152,6 +181,7 @@ export function CommentOnlyInput({
       <div className="min-w-0 flex-1">
         <div className="relative rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
           <textarea
+            ref={textareaRef}
             value={comment}
             onChange={(event) => {
               if (!currentUser) return;
@@ -174,12 +204,12 @@ export function CommentOnlyInput({
               currentUser ? commentLabels.write : commentLabels.login
             }
             className={`
-              min-h-11 w-full resize-none
-              bg-transparent py-3 text-[15px] outline-none
-              placeholder:truncate placeholder:text-zinc-500
-              disabled:opacity-50
-              ${!currentUser ? "cursor-default caret-transparent" : ""}
-            `}
+  block min-h-11 w-full resize-none overflow-hidden
+  bg-transparent py-3 text-[15px] leading-6 outline-none
+  placeholder:truncate placeholder:text-zinc-500
+  disabled:opacity-50
+  ${!currentUser ? "cursor-default caret-transparent" : ""}
+`}
           />
 
           {selectedGif && (

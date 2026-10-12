@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Flag, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -76,6 +76,7 @@ export function PredictionCommentInput({
   initialComment = "",
 }: PredictionCommentInputProps) {
   const gifButtonRef = useRef<HTMLButtonElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const language = resolveLanguage(currentUser?.language);
   const voteLabels = VOTE_LABELS[language];
@@ -85,6 +86,33 @@ export function PredictionCommentInput({
   const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
   const [comment, setComment] = useState(initialComment);
   const [pointsDraft, setPointsDraft] = useState<string | null>(null);
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const resize = () => {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    };
+
+    resize();
+
+    let lastWidth = textarea.getBoundingClientRect().width;
+
+    const observer = new ResizeObserver(() => {
+      const width = textarea.getBoundingClientRect().width;
+
+      if (width !== lastWidth) {
+        lastWidth = width;
+        resize();
+      }
+    });
+
+    observer.observe(textarea);
+
+    return () => observer.disconnect();
+  }, [comment]);
 
   const pointsDisabled = buttonDisabled || isPending || !currentUser;
 
@@ -267,6 +295,7 @@ export function PredictionCommentInput({
 
           {/* Comment */}
           <textarea
+            ref={textareaRef}
             value={comment}
             onChange={(event) => {
               if (!currentUser) return;
@@ -292,9 +321,9 @@ export function PredictionCommentInput({
               currentUser ? commentLabels.write : commentLabels.login
             }
             className={`
-              min-h-11 w-full resize-none
+              block min-h-11 w-full resize-none overflow-hidden
               bg-transparent py-3
-              text-[15px] outline-none
+              text-[15px] leading-6 outline-none
               placeholder:truncate placeholder:text-zinc-500
               ${!currentUser ? "cursor-default caret-transparent" : ""}
             `}

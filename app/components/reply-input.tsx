@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,6 +50,35 @@ export function ReplyInput({
   const [isPending, startTransition] = useTransition();
 
   const gifButtonRef = useRef<HTMLButtonElement>(null);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const resize = () => {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    };
+
+    resize();
+
+    let lastWidth = textarea.getBoundingClientRect().width;
+
+    const observer = new ResizeObserver(() => {
+      const width = textarea.getBoundingClientRect().width;
+
+      if (width !== lastWidth) {
+        lastWidth = width;
+        resize();
+      }
+    });
+
+    observer.observe(textarea);
+
+    return () => observer.disconnect();
+  }, [reply]);
 
   const placeholder = labels.placeholder.replace("{name}", username);
   const hasContent = reply.trim().length > 0 || Boolean(selectedGif);
@@ -126,6 +155,7 @@ export function ReplyInput({
       <div className="min-w-0 flex-1">
         <div className="relative rounded-lg bg-zinc-100 px-3 dark:bg-zinc-800">
           <textarea
+            ref={textareaRef}
             rows={1}
             value={reply}
             disabled={isPending}
@@ -133,12 +163,12 @@ export function ReplyInput({
             placeholder={placeholder}
             aria-label={placeholder}
             className="
-              min-h-10 w-full resize-none
-              bg-transparent py-2.5
-              text-[15px] outline-none
-              placeholder:text-zinc-500
-              disabled:opacity-50
-            "
+    block min-h-10 w-full resize-none overflow-hidden
+    bg-transparent py-2.5
+    text-[15px] leading-6 outline-none
+    placeholder:text-zinc-500
+    disabled:opacity-50
+  "
           />
 
           {/* Selected GIF */}
