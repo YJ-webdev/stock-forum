@@ -64,6 +64,7 @@ import { IoAlertCircle } from "react-icons/io5";
 import {
   FcAbout,
   FcApproval,
+  FcBearish,
   FcCancel,
   FcDebt,
   FcDonate,
@@ -1103,8 +1104,8 @@ function NotificationItem({
             [@media(hover:hover)_and_(pointer:fine)]:group-hover/row:w-10
             [@media(hover:hover)_and_(pointer:fine)]:group-hover/row:opacity-100
 
-            group-has-[:focus-visible]/row:w-10
-            group-has-[:focus-visible]/row:opacity-100
+            group-has-focus-visible/row:w-10
+            group-has-focus-visible/row:opacity-100
 
             [@media(hover:none)_and_(min-width:768px)]:w-10
             [@media(hover:none)_and_(min-width:768px)]:opacity-100
@@ -1396,51 +1397,41 @@ function getNotificationHref(notification: MyNotification): string | null {
   }
 }
 
-// -----------------------------------------------------------------------------
-// ICON
-// -----------------------------------------------------------------------------
-
 function NotificationIcon({ type }: { type: MyNotification["type"] }) {
-  const className = "size-5.5 text-zinc-500 dark:text-zinc-400";
+  const Icon = (() => {
+    switch (type) {
+      case "COMMENT_LIKED":
+      case "REPLY_LIKED":
+        return FcLikePlaceholder;
 
-  switch (type) {
-    case "TIER_UP":
-    case "TIER_DOWN":
-      return <FcIdea className={className} aria-hidden="true" />;
+      case "COMMENT_REPLIED":
+      case "REPLY_REPLIED":
+        return FcAbout;
 
-    case "COMMENT_LIKED":
-    case "REPLY_LIKED":
-      return <FcLikePlaceholder className={className} aria-hidden="true" />;
+      case "COMMENT_REPORTED":
+      case "REPLY_REPORTED":
+        return FcHighPriority;
 
-    case "COMMENT_REPLIED":
-    case "REPLY_REPLIED":
-      return <FcAbout className={className} aria-hidden="true" />;
+      case "PREDICTION_WON":
+        return FcApproval;
 
-    case "COMMENT_REPORTED":
-    case "REPLY_REPORTED":
-      return <FcHighPriority className={className} aria-hidden="true" />;
+      case "PREDICTION_LOST":
+        return FcBearish;
 
-    case "PREDICTION_WON":
-      return <FcApproval className={className} aria-hidden="true" />;
+      case "PREDICTION_PENDING":
+        return FcOvertime;
 
-    case "PREDICTION_LOST":
-      return <FcDebt className={className} aria-hidden="true" />;
+      case "TIER_UP":
+      case "TIER_DOWN":
+      case "PREDICTION_DRAW":
+      case "PREDICTION_VOID":
+      default:
+        return FcIdea;
+    }
+  })();
 
-    case "PREDICTION_PENDING":
-      return <FcOvertime className={className} aria-hidden="true" />;
-
-    case "PREDICTION_DRAW":
-    case "PREDICTION_VOID":
-      return <FcIdea className={className} aria-hidden="true" />;
-
-    default:
-      return <FcIdea className={className} aria-hidden="true" />;
-  }
+  return <Icon className="size-5.5 shrink-0" aria-hidden="true" />;
 }
-
-// -----------------------------------------------------------------------------
-// LOADER / EMPTY
-// -----------------------------------------------------------------------------
 
 function NotificationLoader({ labels }: { labels: PanelLabels }) {
   return (
