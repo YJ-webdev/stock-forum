@@ -90,8 +90,6 @@ export default function LayoutShell({
   const panelBRef = useRef<PanelImperativeHandle>(null);
   const mainScrollRef = useRef<HTMLDivElement>(null);
 
-  const [layoutReady, setLayoutReady] = useState(false);
-
   const [isDesktopPanelOpen, setIsDesktopPanelOpen] = useState(true);
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
 
@@ -120,20 +118,18 @@ export default function LayoutShell({
 
     updateSectionB();
 
-    let frame2 = 0;
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", updateSectionB);
 
-    const frame1 = requestAnimationFrame(() => {
-      frame2 = requestAnimationFrame(() => {
-        setLayoutReady(true);
-      });
-    });
+      return () => {
+        media.removeEventListener("change", updateSectionB);
+      };
+    }
 
-    media.addEventListener("change", updateSectionB);
+    media.addListener(updateSectionB);
 
     return () => {
-      cancelAnimationFrame(frame1);
-      cancelAnimationFrame(frame2);
-      media.removeEventListener("change", updateSectionB);
+      media.removeListener(updateSectionB);
     };
   }, []);
 
@@ -281,12 +277,6 @@ export default function LayoutShell({
             onHistory={handleHistory}
             user={user}
           />
-
-          {!layoutReady && (
-            <div className="fixed inset-x-0 top-18 bottom-0 z-50 flex items-center justify-center bg-white dark:bg-zinc-900">
-              <div className="size-6 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-700 dark:border-zinc-700 dark:border-t-zinc-200" />
-            </div>
-          )}
 
           <Suspense
             fallback={

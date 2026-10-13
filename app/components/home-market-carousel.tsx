@@ -143,6 +143,14 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
 
     if (!element) return;
 
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateScrollButtons);
+
+      return () => {
+        window.removeEventListener("resize", updateScrollButtons);
+      };
+    }
+
     const observer = new ResizeObserver(updateScrollButtons);
 
     observer.observe(element);
@@ -151,7 +159,9 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
       observer.observe(element.firstElementChild);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [markets, updateScrollButtons]);
 
   function openPicker() {

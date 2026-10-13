@@ -43,6 +43,30 @@ interface HomeCommunityProps {
 
 type Comment = HomeComments[number];
 
+const COMMENTS_TIMEOUT_MS = 15_000;
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs = COMMENTS_TIMEOUT_MS,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error("Comments request timed out."));
+    }, timeoutMs);
+
+    promise.then(
+      (result) => {
+        clearTimeout(timer);
+        resolve(result);
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 export function HomeCommunity({
   initialComments,
   initialNextCursor,
@@ -140,10 +164,12 @@ export function HomeCommunity({
 
     async function loadComments() {
       try {
-        const result = await getHomeComments({
-          assetSymbol,
-          sort,
-        });
+        const result = await withTimeout(
+          getHomeComments({
+            assetSymbol,
+            sort,
+          }),
+        );
 
         if (!isCurrentRequest()) return;
 
@@ -219,11 +245,13 @@ export function HomeCommunity({
     setLoadingMore(true);
 
     try {
-      const result = await getHomeComments({
-        assetSymbol,
-        sort,
-        cursor: nextCursor,
-      });
+      const result = await withTimeout(
+        getHomeComments({
+          assetSymbol,
+          sort,
+          cursor: nextCursor,
+        }),
+      );
 
       if (requestVersionRef.current !== requestVersion) return;
 
