@@ -205,7 +205,7 @@ export function BullBearVoteCard({
                 previousClose={data.previousClose}
                 sessionStartMs={sessionStartMs}
                 sessionEndMs={sessionEndMs}
-                width={174}
+                width={180}
                 height={64}
                 lunchStartMs={data.lunchStartMs}
                 lunchEndMs={data.lunchEndMs}

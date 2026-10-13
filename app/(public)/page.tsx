@@ -44,10 +44,7 @@ export default async function Home() {
           <HomeMarketCarousel markets={markets} />
         </section>
 
-        <section
-          aria-labelledby="home-community-heading"
-          className="mt-10 px-3 sm:px-4"
-        >
+        <section aria-labelledby="home-community-heading" className="mt-9 px-4">
           <h2 id="home-community-heading" className="sr-only">
             {labels.community}
           </h2>
