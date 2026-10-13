@@ -22,7 +22,7 @@ export default async function Home() {
   const labels = HOME_LABELS[language];
 
   return (
-    <div className="flex w-full min-w-0 flex-1 flex-col font-sans">
+    <div className="flex w-full min-w-0 flex-1 flex-col ">
       <main className="relative flex w-full min-w-0 flex-1 flex-col">
         <h1 className="sr-only">{labels.dashboard}</h1>
 

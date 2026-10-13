@@ -20,8 +20,8 @@ export const Footer = () => {
   return (
     <footer
       className="
-        flex shrink-0 flex-wrap items-center justify-center
-        gap-x-5 gap-y-1 bg-white px-4
+        flex shrink-0  flex-wrap-reverse  items-center px-4 sm:mx-0 justify-center
+        gap-3 sm:gap-x-5 gap-y-1 bg-white
         pb-[max(0.625rem,env(safe-area-inset-bottom))]
         text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300
       "
@@ -31,7 +31,7 @@ export const Footer = () => {
           key={href}
           href={href}
           className="
-            text-sm tracking-tight transition-colors
+            text-sm tracking-tighter sm:tracking-normal transition-colors
             text-zinc-500 
             hover:text-zinc-950
             dark:hover:text-white

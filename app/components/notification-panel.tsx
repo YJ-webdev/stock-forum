@@ -43,12 +43,18 @@ import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 
 import {
   FcAbout,
+  FcAdvertising,
   FcApproval,
   FcBearish,
+  FcCalculator,
+  FcExpired,
+  FcFlashOn,
   FcHighPriority,
   FcIdea,
   FcLikePlaceholder,
+  FcMinus,
   FcOvertime,
+  FcSms,
 } from "react-icons/fc";
 
 const NOTIFICATION_TIER_NAMES = {
@@ -1357,17 +1363,17 @@ function NotificationIcon({ type }: { type: MyNotification["type"] }) {
 
       case "COMMENT_REPLIED":
       case "REPLY_REPLIED":
-        return FcAbout;
+        return FcSms;
 
       case "COMMENT_REPORTED":
       case "REPLY_REPORTED":
-        return FcHighPriority;
+        return FcAdvertising;
 
       case "PREDICTION_WON":
         return FcApproval;
 
       case "PREDICTION_LOST":
-        return FcBearish;
+        return FcMinus;
 
       case "PREDICTION_PENDING":
         return FcOvertime;

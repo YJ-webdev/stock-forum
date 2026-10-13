@@ -12,9 +12,23 @@ import {
   type SetStateAction,
 } from "react";
 
+import {
+  FcBookmark,
+  FcBrokenLink,
+  FcFullTrash,
+  FcInspection,
+  FcLikePlaceholder,
+  FcLink,
+  FcProcess,
+  FcReadingEbook,
+  FcSelfServiceKiosk,
+  FcSms,
+} from "react-icons/fc";
+
 import { useRouter } from "next/navigation";
 import { History, X } from "lucide-react";
-import { BiSolidChat, BiSolidPencil } from "react-icons/bi";
+import { BiSolidPencil } from "react-icons/bi";
+import { FcAbout } from "react-icons/fc";
 
 import {
   RiDeleteBin6Fill,
@@ -24,7 +38,7 @@ import {
   RiUserUnfollowLine,
 } from "react-icons/ri";
 
-import { TbClipboardCheckFilled, TbFlagFilled } from "react-icons/tb";
+import { TbFlagFilled } from "react-icons/tb";
 import { toast } from "sonner";
 
 import { LoadMoreButton } from "@/app/components/load-more-button";
@@ -901,8 +915,8 @@ function HistoryPanelContent({
                               [@media(hover:hover)_and_(pointer:fine)]:group-hover/row:w-10
                               [@media(hover:hover)_and_(pointer:fine)]:group-hover/row:opacity-100
 
-                              group-has-[:focus-visible]/row:w-10
-                              group-has-[:focus-visible]/row:opacity-100
+                              group-has-focus-visible/row:w-10
+                              group-has-focus-visible/row:opacity-100
 
                               [@media(hover:none)_and_(min-width:768px)]:w-10
                               [@media(hover:none)_and_(min-width:768px)]:opacity-100
@@ -1044,49 +1058,45 @@ function EmptyHistory({ message }: { message: string }) {
 // -----------------------------------------------------------------------------
 
 function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
-  const className = `
-    mt-0.75 size-4 text-zinc-400
-    group-enabled:group-hover:text-zinc-500
-    dark:group-enabled:group-hover:text-zinc-300
-  `;
+  const Icon = (() => {
+    switch (type) {
+      case "COMMENT_LIKED":
+      case "COMMENT_UNLIKED":
+      case "REPLY_LIKED":
+      case "REPLY_UNLIKED":
+        return FcLikePlaceholder;
 
-  switch (type) {
-    case "COMMENT_LIKED":
-    case "COMMENT_UNLIKED":
-    case "REPLY_LIKED":
-    case "REPLY_UNLIKED":
-      return <RiHeartFill className={className} aria-hidden="true" />;
+      case "COMMENT_EDITED":
+      case "REPLY_EDITED":
+        return FcProcess;
 
-    case "COMMENT_EDITED":
-    case "REPLY_EDITED":
-      return <BiSolidPencil className={className} aria-hidden="true" />;
+      case "COMMENT_DELETED":
+      case "REPLY_DELETED":
+        return FcFullTrash;
 
-    case "COMMENT_DELETED":
-    case "REPLY_DELETED":
-      return <RiDeleteBin6Fill className={className} aria-hidden="true" />;
+      case "COMMENT_REPORTED":
+      case "REPLY_REPORTED":
+        return TbFlagFilled;
 
-    case "COMMENT_REPORTED":
-    case "REPLY_REPORTED":
-      return <TbFlagFilled className={className} aria-hidden="true" />;
+      case "WATCHLIST_ADDED":
+      case "WATCHLIST_REMOVED":
+        return FcBookmark;
 
-    case "WATCHLIST_ADDED":
-    case "WATCHLIST_REMOVED":
-      return <RiStarFill className={className} aria-hidden="true" />;
+      case "USER_FOLLOWED":
+        return FcLink;
 
-    case "USER_FOLLOWED":
-      return <RiUserHeartLine className={className} aria-hidden="true" />;
+      case "USER_UNFOLLOWED":
+        return FcBrokenLink;
 
-    case "USER_UNFOLLOWED":
-      return <RiUserUnfollowLine className={className} aria-hidden="true" />;
+      case "PREDICTION_SUBMITTED":
+        return FcInspection;
 
-    case "PREDICTION_SUBMITTED":
-      return (
-        <TbClipboardCheckFilled className={className} aria-hidden="true" />
-      );
+      default:
+        return FcSms;
+    }
+  })();
 
-    default:
-      return <BiSolidChat className={className} aria-hidden="true" />;
-  }
+  return <Icon className="size-5.5 shrink-0" aria-hidden="true" />;
 }
 
 // -----------------------------------------------------------------------------
