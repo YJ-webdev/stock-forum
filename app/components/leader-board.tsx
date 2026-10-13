@@ -142,7 +142,7 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
                   align="start"
                   side="bottom"
                   sideOffset={8}
-                  className="w-80 max-w-[calc(100vw-2rem)] rounded-lg p-0"
+                  className="w-80 max-w-[calc(100vw-2rem)] rounded-xl p-0"
                 >
                   <ProfileCard
                     userId={trader.id}
@@ -195,7 +195,7 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
                     align="start"
                     side="bottom"
                     sideOffset={8}
-                    className="w-80 max-w-[calc(100vw-2rem)] rounded-lg p-0"
+                    className="w-80 max-w-[calc(100vw-2rem)] rounded-xl p-0"
                   >
                     <ProfileCard
                       userId={trader.id}

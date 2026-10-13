@@ -276,7 +276,7 @@ function ProfileCardContent({
     : currentUserId === userId;
 
   return (
-    <div className="p-4 border border-zinc-100 text-zinc-800 dark:text-zinc-200 dark:bg-zinc-800/50 rounded-xl dark:border-zinc-700/50">
+    <div className="p-4  text-zinc-800 dark:text-zinc-200 dark:bg-black rounded-xl  ">
       {/* Image / name / tier */}
       <div className="flex min-w-0 items-center gap-3">
         <Avatar className="size-12 shrink-0">
