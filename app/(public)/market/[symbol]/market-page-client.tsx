@@ -286,9 +286,11 @@ export default function MarketPageClient({
 
     if (
       !Number.isInteger(amount) ||
-      (amount !== 0 && (amount < 50 || amount > 500))
+      amount < 0 ||
+      amount > 500 ||
+      amount % 50 !== 0
     ) {
-      toast.error("Bet amount must be 0 or between 50 and 500 points.");
+      toast.error("Use 0–500 points in steps of 50.");
       return;
     }
 

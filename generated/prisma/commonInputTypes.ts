@@ -460,11 +460,28 @@ export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
   _max?: Prisma.NestedJsonNullableFilter<$PrismaModel>
 }
 
+export type EnumUserTierNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.UserTier | Prisma.EnumUserTierFieldRefInput<$PrismaModel> | null
+  in?: $Enums.UserTier[] | Prisma.ListEnumUserTierFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.UserTier[] | Prisma.ListEnumUserTierFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumUserTierNullableFilter<$PrismaModel> | $Enums.UserTier | null
+}
+
 export type EnumNotificationTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.NotificationType | Prisma.EnumNotificationTypeFieldRefInput<$PrismaModel>
   in?: $Enums.NotificationType[] | Prisma.ListEnumNotificationTypeFieldRefInput<$PrismaModel>
   notIn?: $Enums.NotificationType[] | Prisma.ListEnumNotificationTypeFieldRefInput<$PrismaModel>
   not?: Prisma.NestedEnumNotificationTypeFilter<$PrismaModel> | $Enums.NotificationType
+}
+
+export type EnumUserTierNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.UserTier | Prisma.EnumUserTierFieldRefInput<$PrismaModel> | null
+  in?: $Enums.UserTier[] | Prisma.ListEnumUserTierFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.UserTier[] | Prisma.ListEnumUserTierFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumUserTierNullableWithAggregatesFilter<$PrismaModel> | $Enums.UserTier | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumUserTierNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumUserTierNullableFilter<$PrismaModel>
 }
 
 export type EnumNotificationTypeWithAggregatesFilter<$PrismaModel = never> = {
@@ -933,11 +950,28 @@ export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
 }
 
+export type NestedEnumUserTierNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.UserTier | Prisma.EnumUserTierFieldRefInput<$PrismaModel> | null
+  in?: $Enums.UserTier[] | Prisma.ListEnumUserTierFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.UserTier[] | Prisma.ListEnumUserTierFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumUserTierNullableFilter<$PrismaModel> | $Enums.UserTier | null
+}
+
 export type NestedEnumNotificationTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.NotificationType | Prisma.EnumNotificationTypeFieldRefInput<$PrismaModel>
   in?: $Enums.NotificationType[] | Prisma.ListEnumNotificationTypeFieldRefInput<$PrismaModel>
   notIn?: $Enums.NotificationType[] | Prisma.ListEnumNotificationTypeFieldRefInput<$PrismaModel>
   not?: Prisma.NestedEnumNotificationTypeFilter<$PrismaModel> | $Enums.NotificationType
+}
+
+export type NestedEnumUserTierNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.UserTier | Prisma.EnumUserTierFieldRefInput<$PrismaModel> | null
+  in?: $Enums.UserTier[] | Prisma.ListEnumUserTierFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.UserTier[] | Prisma.ListEnumUserTierFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumUserTierNullableWithAggregatesFilter<$PrismaModel> | $Enums.UserTier | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumUserTierNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumUserTierNullableFilter<$PrismaModel>
 }
 
 export type NestedEnumNotificationTypeWithAggregatesFilter<$PrismaModel = never> = {

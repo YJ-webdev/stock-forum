@@ -2338,6 +2338,7 @@ export const NotificationScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   actorId: 'actorId',
+  tier: 'tier',
   type: 'type',
   title: 'title',
   message: 'message',
@@ -2636,6 +2637,20 @@ export type ListEnumPredictionStatusFieldRefInput<$PrismaModel> = FieldRefInputT
 
 
 /**
+ * Reference to a field of type 'UserTier'
+ */
+export type EnumUserTierFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserTier'>
+    
+
+
+/**
+ * Reference to a field of type 'UserTier[]'
+ */
+export type ListEnumUserTierFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserTier[]'>
+    
+
+
+/**
  * Reference to a field of type 'NotificationType'
  */
 export type EnumNotificationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationType'>
@@ -2674,20 +2689,6 @@ export type EnumUserActivityTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
  * Reference to a field of type 'UserActivityType[]'
  */
 export type ListEnumUserActivityTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserActivityType[]'>
-    
-
-
-/**
- * Reference to a field of type 'UserTier'
- */
-export type EnumUserTierFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserTier'>
-    
-
-
-/**
- * Reference to a field of type 'UserTier[]'
- */
-export type ListEnumUserTierFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserTier[]'>
     
 
 

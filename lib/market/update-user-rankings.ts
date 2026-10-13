@@ -2,7 +2,11 @@
 
 import "server-only";
 
-import { PredictionStatus, UserTier } from "@/generated/prisma/client";
+import {
+  NotificationType,
+  PredictionStatus,
+  UserTier,
+} from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/prisma";
 
@@ -14,6 +18,24 @@ const RANKING_PERIOD_DAYS = 30;
 const MIN_SETTLED_PREDICTIONS = 10;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+const TIER_NAMES: Record<UserTier, string> = {
+  UNRANKED: "Unranked",
+  BRONZE: "Bronze",
+  SILVER: "Silver",
+  GOLD: "Gold",
+  PLATINUM: "Platinum",
+  DIAMOND: "Diamond",
+};
+
+const TIER_ORDER: Record<UserTier, number> = {
+  UNRANKED: 0,
+  BRONZE: 1,
+  SILVER: 2,
+  GOLD: 3,
+  PLATINUM: 4,
+  DIAMOND: 5,
+};
 
 // -----------------------------------------------------------------------------
 // TYPES
@@ -34,6 +56,7 @@ export interface RankingUpdateSummary {
   totalUsers: number;
   rankedUsers: number;
   unrankedUsers: number;
+  tierChangedUsers: number;
   periodStart: string;
   periodEnd: string;
 }
@@ -69,8 +92,8 @@ function getUserTier(rank: number, totalRankedUsers: number): UserTier {
 export async function updateUserRankings(): Promise<RankingUpdateSummary> {
   return prisma.$transaction(
     async (tx) => {
-      // Prevent overlapping jobs from updating rankings simultaneously.
-      // The lock is released automatically when the transaction ends.
+      // Prevent overlapping ranking jobs.
+      // The lock is released when the transaction ends.
       const [lock] = await tx.$queryRaw<{ locked: boolean }[]>`
         SELECT pg_try_advisory_xact_lock(482731, 1) AS locked
       `;
@@ -86,9 +109,15 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
       );
 
       // Include every account, regardless of role or isBot.
+      // Read the previous tier before updating rankings.
       const users = await tx.user.findMany({
         select: {
           id: true,
+          ranking: {
+            select: {
+              tier: true,
+            },
+          },
         },
       });
 
@@ -119,7 +148,7 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
       const statsByUser = new Map<string, UserStats>();
 
       for (const result of results) {
-        // Do not silently treat missing settlement profit as zero.
+        // Missing settlement profit must not be treated as zero.
         if (result._count.pointsChange !== result._count._all) {
           throw new Error(
             `Missing pointsChange for settled predictions: ${result.userId}`,
@@ -195,9 +224,10 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
       }
 
       // -----------------------------------------------------------------------
-      // SAVE ALL USERS
-      // Also reset users who no longer meet the participation requirement.
+      // SAVE RANKINGS / CREATE TIER NOTIFICATIONS
       // -----------------------------------------------------------------------
+
+      let tierChangedUsers = 0;
 
       for (const user of users) {
         const stats = statsByUser.get(user.id) ?? {
@@ -208,12 +238,15 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
 
         const rank = rankByUser.get(user.id) ?? null;
 
-        const data = {
-          tier:
-            rank === null
-              ? UserTier.UNRANKED
-              : getUserTier(rank, eligibleUsers.length),
+        const previousTier = user.ranking?.tier ?? UserTier.UNRANKED;
 
+        const nextTier =
+          rank === null
+            ? UserTier.UNRANKED
+            : getUserTier(rank, eligibleUsers.length);
+
+        const data = {
+          tier: nextTier,
           rank,
 
           netProfit: stats.netProfit,
@@ -224,7 +257,6 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
 
           periodStart,
           periodEnd,
-
           calculatedAt: periodEnd,
         };
 
@@ -240,12 +272,43 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
             ...data,
           },
         });
+
+        if (previousTier === nextTier) {
+          continue;
+        }
+
+        const upgraded = TIER_ORDER[nextTier] > TIER_ORDER[previousTier];
+
+        await tx.notification.create({
+          data: {
+            userId: user.id,
+
+            type: upgraded
+              ? NotificationType.TIER_UP
+              : NotificationType.TIER_DOWN,
+
+            tier: nextTier,
+
+            title: upgraded ? "Tier upgraded" : "Tier downgraded",
+
+            message: upgraded
+              ? `Your tier has been upgraded to ${TIER_NAMES[nextTier]}.`
+              : `Your tier has been downgraded to ${TIER_NAMES[nextTier]}.`,
+
+            eventKey:
+              `tier-change:${user.id}:${periodEnd.toISOString()}:` +
+              `${previousTier}:${nextTier}`,
+          },
+        });
+
+        tierChangedUsers += 1;
       }
 
       return {
         totalUsers: users.length,
         rankedUsers: eligibleUsers.length,
         unrankedUsers: users.length - eligibleUsers.length,
+        tierChangedUsers,
         periodStart: periodStart.toISOString(),
         periodEnd: periodEnd.toISOString(),
       };

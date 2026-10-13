@@ -1,6 +1,12 @@
 "use client";
 
-import { useRef, useState, useTransition, type KeyboardEvent } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  useTransition,
+  type KeyboardEvent,
+} from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -114,14 +120,53 @@ export function ReplyEditInput({
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const resizeTextarea = () => {
+      const maxHeight = 240;
+
+      textarea.style.height = "auto";
+
+      const contentHeight = textarea.scrollHeight;
+
+      textarea.style.height = `${Math.min(contentHeight, maxHeight)}px`;
+      textarea.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
+    };
+
+    resizeTextarea();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", resizeTextarea);
+
+      return () => {
+        window.removeEventListener("resize", resizeTextarea);
+      };
+    }
+
+    let previousWidth = textarea.getBoundingClientRect().width;
+
+    const observer = new ResizeObserver(() => {
+      const width = textarea.getBoundingClientRect().width;
+      if (width === previousWidth) return;
+
+      previousWidth = width;
+      resizeTextarea();
+    });
+
+    observer.observe(textarea);
+
+    return () => observer.disconnect();
+  }, [content]);
 
   return (
-    <div className="mt-2 rounded-lg bg-zinc-100 px-3 dark:bg-zinc-800">
+    <div className="pt-3 rounded-lg bg-zinc-100 px-3 dark:bg-zinc-800">
       {/* Text */}
       <textarea
+        ref={textareaRef}
         rows={1}
         value={content}
         disabled={isPending}
@@ -129,19 +174,22 @@ export function ReplyEditInput({
         onKeyDown={handleKeyDown}
         placeholder={labels.placeholder}
         aria-label={labels.placeholder}
+        style={{
+          marginBottom: 16,
+          overflowX: "hidden",
+        }}
         className="
-          min-h-10 w-full resize-none
-          bg-transparent py-2.5
-          text-[15px] leading-6
-          outline-none
-          placeholder:text-zinc-400
-          disabled:opacity-60
-        "
+    content-scrollbar block min-h-10 w-full resize-none overflow-hidden
+    bg-transparent 
+    text-[15px] leading-6 outline-none
+    placeholder:text-zinc-400
+    disabled:opacity-60
+  "
       />
 
       {/* GIF preview */}
       {gifUrl && (
-        <div className="relative mb-3 w-fit max-w-full">
+        <div className="relative mb-2 w-fit max-w-full">
           <img
             src={gifUrl}
             alt="GIF"

@@ -4,7 +4,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -26,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { CommentItem } from "./comment";
+import { CommentItem } from "./comment-item";
 import { HomeCommentComposer } from "./home-comment-composer";
 import { LoadMoreButton } from "./load-more-button";
 
@@ -254,7 +253,7 @@ export function HomeCommunity({
 
   return (
     <div className="outfit w-full min-w-0 pb-10">
-      <div className="mt-2 mb-6 flex flex-wrap items-center gap-2">
+      <div className="mt-2 mb-7 flex flex-wrap items-center gap-2">
         {[
           {
             symbol: null,
@@ -351,10 +350,6 @@ export function HomeCommunity({
         }}
       />
 
-      <div aria-busy={loading} className="mt-7">
-        {/* 기존 댓글 목록 그대로 */}
-      </div>
-
       <div aria-busy={loading} className="mt-7 mb-10">
         {loading ? (
           <div role="status" className="space-y-6 py-3">
@@ -408,7 +403,7 @@ export function HomeCommunity({
             </p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-3">
             {comments.map((comment) => {
               const asset =
                 comment.assets.find(

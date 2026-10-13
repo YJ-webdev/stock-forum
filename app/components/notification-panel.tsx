@@ -16,19 +16,26 @@ import {
 import { useRouter } from "next/navigation";
 
 import {
+  Award,
   Bell,
   CheckCheck,
   CircleAlert,
   RotateCcw,
   Trash2,
-  TrendingDown,
-  TrendingUp,
   X,
 } from "lucide-react";
+
+import {
+  FaFaceMeh,
+  FaFaceSmile,
+  FaRegFaceSmile,
+  FaXmark,
+} from "react-icons/fa6";
 
 import { BiSolidChat } from "react-icons/bi";
 import { RiHeartFill } from "react-icons/ri";
 import { TbFlagFilled } from "react-icons/tb";
+import { GoAlertFill } from "react-icons/go";
 
 import {
   deleteAllSocialNotifications,
@@ -53,10 +60,34 @@ import {
 
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { formatTimeAgo } from "@/lib/utils/format-time-ago";
+import { IoAlertCircle } from "react-icons/io5";
+import {
+  FcAbout,
+  FcApproval,
+  FcCancel,
+  FcDebt,
+  FcDonate,
+  FcHighPriority,
+  FcIdea,
+  FcLeave,
+  FcLikePlaceholder,
+  FcOvertime,
+  FcSms,
+  FcVoicePresentation,
+} from "react-icons/fc";
 
 // -----------------------------------------------------------------------------
 // TYPES / CONSTANTS
 // -----------------------------------------------------------------------------
+
+const NOTIFICATION_TIER_NAMES = {
+  UNRANKED: "Unranked",
+  BRONZE: "Bronze",
+  SILVER: "Silver",
+  GOLD: "Gold",
+  PLATINUM: "Platinum",
+  DIAMOND: "Diamond",
+} as const;
 
 type ResolvedLanguage = ReturnType<typeof resolveLanguage>;
 type PanelLabels = (typeof NOTIFICATION_LABELS)[ResolvedLanguage];
@@ -1014,7 +1045,7 @@ function NotificationItem({
           focus-visible:ring-zinc-400
         "
       >
-        <span className="mt-0.75 flex shrink-0 items-start justify-center">
+        <span className="flex shrink-0 items-start justify-center">
           <NotificationIcon type={notification.type} />
         </span>
 
@@ -1123,6 +1154,26 @@ function getNotificationText(
   const withName = (template: string) => template.replace("{name}", () => name);
 
   switch (notification.type) {
+    case "TIER_UP":
+    case "TIER_DOWN": {
+      // Older notifications may not have a stored tier.
+      if (!notification.tier) {
+        return {
+          title: notification.title,
+          message: notification.message,
+        };
+      }
+
+      const tierName = NOTIFICATION_TIER_NAMES[notification.tier];
+
+      const template =
+        notification.type === "TIER_UP" ? labels.tier_up : labels.tier_down;
+
+      return {
+        title: template.replace("{tier}", () => tierName),
+        message: null,
+      };
+    }
     case "COMMENT_LIKED":
       return {
         title: labels.liked,
@@ -1350,48 +1401,40 @@ function getNotificationHref(notification: MyNotification): string | null {
 // -----------------------------------------------------------------------------
 
 function NotificationIcon({ type }: { type: MyNotification["type"] }) {
-  const className = "size-4 text-zinc-500 dark:text-zinc-400";
+  const className = "size-5.5 text-zinc-500 dark:text-zinc-400";
 
   switch (type) {
+    case "TIER_UP":
+    case "TIER_DOWN":
+      return <FcIdea className={className} aria-hidden="true" />;
+
     case "COMMENT_LIKED":
     case "REPLY_LIKED":
-      return <RiHeartFill className={className} aria-hidden="true" />;
+      return <FcLikePlaceholder className={className} aria-hidden="true" />;
 
     case "COMMENT_REPLIED":
     case "REPLY_REPLIED":
-      return <BiSolidChat className={className} aria-hidden="true" />;
+      return <FcAbout className={className} aria-hidden="true" />;
 
     case "COMMENT_REPORTED":
     case "REPLY_REPORTED":
-      return <TbFlagFilled className={className} aria-hidden="true" />;
+      return <FcHighPriority className={className} aria-hidden="true" />;
 
     case "PREDICTION_WON":
-      return (
-        <TrendingUp
-          className="size-4 text-emerald-600 dark:text-emerald-400"
-          aria-hidden="true"
-        />
-      );
+      return <FcApproval className={className} aria-hidden="true" />;
 
     case "PREDICTION_LOST":
-      return (
-        <TrendingDown
-          className="size-4 text-rose-600 dark:text-rose-400"
-          aria-hidden="true"
-        />
-      );
+      return <FcDebt className={className} aria-hidden="true" />;
 
     case "PREDICTION_PENDING":
-      return (
-        <CircleAlert className="size-4 text-amber-500" aria-hidden="true" />
-      );
+      return <FcOvertime className={className} aria-hidden="true" />;
 
     case "PREDICTION_DRAW":
     case "PREDICTION_VOID":
-      return <CircleAlert className={className} aria-hidden="true" />;
+      return <FcIdea className={className} aria-hidden="true" />;
 
     default:
-      return <Bell className={className} aria-hidden="true" />;
+      return <FcIdea className={className} aria-hidden="true" />;
   }
 }
 

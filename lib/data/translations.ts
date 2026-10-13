@@ -2409,6 +2409,7 @@ export const HOME_LABELS: Record<
     community: string;
     predict: string;
     share_view: string;
+    latest_comments: string;
   }
 > = {
   en: {
@@ -2417,6 +2418,7 @@ export const HOME_LABELS: Record<
     community: "Community",
     predict: "Make accurate predictions and climb the leaderboard.",
     share_view: "Share your view and start the conversation",
+    latest_comments: "Latest comments",
   },
   ko: {
     dashboard: "글로벌 시장 대시보드",
@@ -2424,6 +2426,7 @@ export const HOME_LABELS: Record<
     community: "커뮤니티",
     predict: "예측을 맞히고 리더보드 상위권에 도전하세요.",
     share_view: "의견을 남기고 대화를 시작해보세요",
+    latest_comments: "최신 댓글",
   },
   ja: {
     dashboard: "世界の市場ダッシュボード",
@@ -2431,6 +2434,7 @@ export const HOME_LABELS: Record<
     community: "コミュニティ",
     predict: "予測を的中させて、リーダーボードの上位を目指しましょう。",
     share_view: "意見を投稿して会話を始めましょう",
+    latest_comments: "最新のコメント",
   },
   zh: {
     dashboard: "全球市场看板",
@@ -2438,6 +2442,7 @@ export const HOME_LABELS: Record<
     community: "社区",
     predict: "准确预测，向排行榜前列发起挑战。",
     share_view: "分享你的看法，开启讨论",
+    latest_comments: "最新的评论",
   },
   de: {
     dashboard: "Globale Marktübersicht",
@@ -2445,6 +2450,7 @@ export const HOME_LABELS: Record<
     community: "Community",
     predict: "Triff richtige Prognosen und steige in der Rangliste auf.",
     share_view: "Teile deine Meinung und starte eine Diskussion",
+    latest_comments: "Neueste Kommentare",
   },
   fr: {
     dashboard: "Tableau de bord des marchés mondiaux",
@@ -2452,6 +2458,7 @@ export const HOME_LABELS: Record<
     community: "Communauté",
     predict: "Faites des prévisions justes et grimpez dans le classement.",
     share_view: "Partagez votre avis et lancez la discussion",
+    latest_comments: "Derniers commentaires",
   },
   es: {
     dashboard: "Panel de mercados globales",
@@ -2459,6 +2466,7 @@ export const HOME_LABELS: Record<
     community: "Comunidad",
     predict: "Acierta tus predicciones y sube en la clasificación.",
     share_view: "Comparte tu opinión e inicia la conversación",
+    latest_comments: "Ultimos comentarios",
   },
   pt: {
     dashboard: "Painel de mercados globais",
@@ -2466,6 +2474,7 @@ export const HOME_LABELS: Record<
     community: "Comunidade",
     predict: "Acerte suas previsões e suba no ranking.",
     share_view: "Compartilhe sua opinião e inicie a conversa",
+    latest_comments: "Últimos comentários",
   },
   it: {
     dashboard: "Panoramica dei mercati globali",
@@ -2473,6 +2482,7 @@ export const HOME_LABELS: Record<
     community: "Community",
     predict: "Fai previsioni corrette e scala la classifica.",
     share_view: "Condividi la tua opinione e avvia la conversazione",
+    latest_comments: "Ultimi commenti",
   },
   ru: {
     dashboard: "Обзор мировых рынков",
@@ -2480,6 +2490,7 @@ export const HOME_LABELS: Record<
     community: "Сообщество",
     predict: "Делайте точные прогнозы и поднимайтесь в рейтинге.",
     share_view: "Поделитесь мнением и начните обсуждение",
+    latest_comments: "Последние комментарии",
   },
   ar: {
     dashboard: "لوحة الأسواق العالمية",
@@ -2487,6 +2498,7 @@ export const HOME_LABELS: Record<
     community: "المجتمع",
     predict: "قدّم توقعات دقيقة وتقدّم في لوحة المتصدرين.",
     share_view: "شارك رأيك وابدأ النقاش",
+    latest_comments: "آخر تعليقات",
   },
   hi: {
     dashboard: "वैश्विक बाज़ार डैशबोर्ड",
@@ -2494,6 +2506,7 @@ export const HOME_LABELS: Record<
     community: "समुदाय",
     predict: "सही पूर्वानुमान लगाएँ और लीडरबोर्ड में ऊपर बढ़ें।",
     share_view: "अपनी राय साझा करें और बातचीत शुरू करें",
+    latest_comments: "नवीनतम टिप्पणियाँ",
   },
 };
 
@@ -3833,8 +3846,9 @@ type NotificationLabels = {
   prediction_draw: string;
   prediction_void: string;
   prediction_pending: string;
+  tier_up: string;
+  tier_down: string;
 };
-
 export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
   en: {
     heading: "Notifications",
@@ -3857,7 +3871,10 @@ export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
     prediction_draw: "Prediction draw",
     prediction_void: "Prediction carried forward",
     prediction_pending: "Prediction pending",
+    tier_up: "Your tier has been upgraded to {tier}.",
+    tier_down: "Your tier has been downgraded to {tier}.",
   },
+
   ko: {
     heading: "알림",
     mark_all_read: "모두 읽음",
@@ -3879,7 +3896,10 @@ export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
     prediction_draw: "예측 무승부",
     prediction_void: "예측 이월",
     prediction_pending: "예측 결과 대기 중",
+    tier_up: "{tier} 티어로 승급했습니다.",
+    tier_down: "{tier} 티어로 강등되었습니다.",
   },
+
   ja: {
     heading: "通知",
     mark_all_read: "すべて既読",
@@ -3901,7 +3921,10 @@ export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
     prediction_draw: "予測引き分け",
     prediction_void: "予測繰り越し",
     prediction_pending: "予測結果待ち",
+    tier_up: "ティアが{tier}に昇格しました。",
+    tier_down: "ティアが{tier}に降格しました。",
   },
+
   zh: {
     heading: "通知",
     mark_all_read: "全部已读",
@@ -3923,7 +3946,10 @@ export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
     prediction_draw: "预测平局",
     prediction_void: "预测顺延",
     prediction_pending: "等待预测结果",
+    tier_up: "你的段位已晋升至{tier}。",
+    tier_down: "你的段位已降至{tier}。",
   },
+
   de: {
     heading: "Benachrichtigungen",
     mark_all_read: "Alle als gelesen",
@@ -3946,7 +3972,10 @@ export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
     prediction_draw: "Prognose unentschieden",
     prediction_void: "Prognose übertragen",
     prediction_pending: "Prognose ausstehend",
+    tier_up: "Du bist in die Stufe {tier} aufgestiegen.",
+    tier_down: "Du bist in die Stufe {tier} abgestiegen.",
   },
+
   fr: {
     heading: "Notifications",
     mark_all_read: "Tout marquer comme lu",
@@ -3969,7 +3998,10 @@ export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
     prediction_draw: "Prévision à égalité",
     prediction_void: "Prévision reportée",
     prediction_pending: "Prévision en attente",
+    tier_up: "Vous avez été promu au niveau {tier}.",
+    tier_down: "Vous avez été rétrogradé au niveau {tier}.",
   },
+
   es: {
     heading: "Notificaciones",
     mark_all_read: "Marcar todas como leídas",
@@ -3992,7 +4024,10 @@ export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
     prediction_draw: "Predicción empatada",
     prediction_void: "Predicción aplazada",
     prediction_pending: "Predicción pendiente",
+    tier_up: "Has ascendido al nivel {tier}.",
+    tier_down: "Has descendido al nivel {tier}.",
   },
+
   pt: {
     heading: "Notificações",
     mark_all_read: "Marcar todas como lidas",
@@ -4015,7 +4050,10 @@ export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
     prediction_draw: "Previsão empatada",
     prediction_void: "Previsão adiada",
     prediction_pending: "Previsão pendente",
+    tier_up: "Você subiu para o nível {tier}.",
+    tier_down: "Você caiu para o nível {tier}.",
   },
+
   it: {
     heading: "Notifiche",
     mark_all_read: "Segna tutte come lette",
@@ -4038,7 +4076,10 @@ export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
     prediction_draw: "Previsione in pareggio",
     prediction_void: "Previsione rinviata",
     prediction_pending: "Previsione in attesa",
+    tier_up: "Sei salito al livello {tier}.",
+    tier_down: "Sei sceso al livello {tier}.",
   },
+
   ru: {
     heading: "Уведомления",
     mark_all_read: "Прочитать все",
@@ -4060,7 +4101,10 @@ export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
     prediction_draw: "Ничья по прогнозу",
     prediction_void: "Прогноз перенесён",
     prediction_pending: "Ожидание результата прогноза",
+    tier_up: "Ваш уровень повышен до {tier}.",
+    tier_down: "Ваш уровень понижен до {tier}.",
   },
+
   ar: {
     heading: "الإشعارات",
     mark_all_read: "تحديد الكل كمقروء",
@@ -4082,7 +4126,10 @@ export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
     prediction_draw: "تعادل التوقع",
     prediction_void: "تم ترحيل التوقع",
     prediction_pending: "التوقع قيد الانتظار",
+    tier_up: "تمت ترقيتك إلى مستوى {tier}.",
+    tier_down: "تم خفض مستواك إلى {tier}.",
   },
+
   hi: {
     heading: "सूचनाएँ",
     mark_all_read: "सभी पढ़ी गई",
@@ -4105,6 +4152,8 @@ export const NOTIFICATION_LABELS: Record<Language, NotificationLabels> = {
     prediction_draw: "पूर्वानुमान बराबरी पर",
     prediction_void: "पूर्वानुमान अगले सत्र में स्थानांतरित",
     prediction_pending: "पूर्वानुमान का परिणाम लंबित",
+    tier_up: "आपका टियर बढ़कर {tier} हो गया है।",
+    tier_down: "आपका टियर घटकर {tier} हो गया है।",
   },
 };
 
@@ -4562,6 +4611,9 @@ export const CONTENT_RESULT_LABELS: Record<
 };
 
 type CommentViewLabels = {
+  hidden_reply: string;
+  read_more: string;
+  read_less: string;
   like: string;
   unlike: string;
   heading: string;
@@ -4588,6 +4640,9 @@ type CommentViewLabels = {
 
 export const COMMENT_VIEW_LABELS: Record<Language, CommentViewLabels> = {
   en: {
+    hidden_reply: "Reply hidden by moderation",
+    read_more: "Read more",
+    read_less: "Read less",
     like: "Like",
     unlike: "Unlike",
     heading: "Comments",
@@ -4612,6 +4667,9 @@ export const COMMENT_VIEW_LABELS: Record<Language, CommentViewLabels> = {
     prediction_remains: "Your prediction remains.",
   },
   ko: {
+    hidden_reply: "관리자에 의해 숨겨진 답글입니다",
+    read_more: "더 보기",
+    read_less: "접기",
     like: "좋아요",
     unlike: "좋아요 취소",
     heading: "댓글",
@@ -4636,6 +4694,9 @@ export const COMMENT_VIEW_LABELS: Record<Language, CommentViewLabels> = {
     prediction_remains: "예측은 유지됩니다.",
   },
   ja: {
+    hidden_reply: "管理者により非表示にされた返信です",
+    read_more: "続きを読む",
+    read_less: "折りたたむ",
     like: "いいね",
     unlike: "いいねを取り消す",
     heading: "コメント",
@@ -4660,6 +4721,9 @@ export const COMMENT_VIEW_LABELS: Record<Language, CommentViewLabels> = {
     prediction_remains: "予測は保持されます。",
   },
   zh: {
+    hidden_reply: "回复已被管理员隐藏",
+    read_more: "展开",
+    read_less: "收起",
     like: "点赞",
     unlike: "取消点赞",
     heading: "评论",
@@ -4684,6 +4748,9 @@ export const COMMENT_VIEW_LABELS: Record<Language, CommentViewLabels> = {
     prediction_remains: "你的预测仍会保留。",
   },
   de: {
+    hidden_reply: "Antwort durch Moderation ausgeblendet",
+    read_more: "Mehr lesen",
+    read_less: "Weniger anzeigen",
     like: "Gefällt mir",
     unlike: "Gefällt mir zurücknehmen",
     heading: "Kommentare",
@@ -4709,6 +4776,9 @@ export const COMMENT_VIEW_LABELS: Record<Language, CommentViewLabels> = {
     prediction_remains: "Deine Prognose bleibt bestehen.",
   },
   fr: {
+    hidden_reply: "Réponse masquée par la modération",
+    read_more: "Lire la suite",
+    read_less: "Réduire",
     like: "J’aime",
     unlike: "Retirer la mention J’aime",
     heading: "Commentaires",
@@ -4733,6 +4803,9 @@ export const COMMENT_VIEW_LABELS: Record<Language, CommentViewLabels> = {
     prediction_remains: "Votre prévision est conservée.",
   },
   es: {
+    hidden_reply: "Respuesta ocultada por moderación",
+    read_more: "Leer más",
+    read_less: "Leer menos",
     like: "Me gusta",
     unlike: "Quitar Me gusta",
     heading: "Comentarios",
@@ -4757,6 +4830,9 @@ export const COMMENT_VIEW_LABELS: Record<Language, CommentViewLabels> = {
     prediction_remains: "Tu predicción se conserva.",
   },
   pt: {
+    hidden_reply: "Resposta ocultada pela moderação",
+    read_more: "Ler mais",
+    read_less: "Ler menos",
     like: "Curtir",
     unlike: "Descurtir",
     heading: "Comentários",
@@ -4781,6 +4857,9 @@ export const COMMENT_VIEW_LABELS: Record<Language, CommentViewLabels> = {
     prediction_remains: "Sua previsão será mantida.",
   },
   it: {
+    hidden_reply: "Risposta nascosta dalla moderazione",
+    read_more: "Leggi di più",
+    read_less: "Mostra meno",
     like: "Mi piace",
     unlike: "Rimuovi Mi piace",
     heading: "Commenti",
@@ -4805,6 +4884,9 @@ export const COMMENT_VIEW_LABELS: Record<Language, CommentViewLabels> = {
     prediction_remains: "La tua previsione viene conservata.",
   },
   ru: {
+    hidden_reply: "Ответ скрыт модератором",
+    read_more: "Читать далее",
+    read_less: "Свернуть",
     like: "Нравится",
     unlike: "Убрать отметку «Нравится»",
     heading: "Комментарии",
@@ -4830,6 +4912,9 @@ export const COMMENT_VIEW_LABELS: Record<Language, CommentViewLabels> = {
     prediction_remains: "Ваш прогноз сохраняется.",
   },
   ar: {
+    hidden_reply: "تم إخفاء الرد بواسطة الإدارة",
+    read_more: "قراءة المزيد",
+    read_less: "عرض أقل",
     like: "إعجاب",
     unlike: "إلغاء الإعجاب",
     heading: "التعليقات",
@@ -4854,6 +4939,9 @@ export const COMMENT_VIEW_LABELS: Record<Language, CommentViewLabels> = {
     prediction_remains: "سيتم الاحتفاظ بتوقعك.",
   },
   hi: {
+    hidden_reply: "मॉडरेशन द्वारा जवाब छिपाया गया है",
+    read_more: "और पढ़ें",
+    read_less: "कम दिखाएँ",
     like: "पसंद करें",
     unlike: "पसंद हटाएँ",
     heading: "टिप्पणियाँ",
@@ -4999,26 +5087,6 @@ export const COMMENT_EDIT_LABELS: Record<
     select_gif: "GIF चुनें",
     update_failed: "टिप्पणी अपडेट नहीं हो सकी।",
   },
-};
-
-export const REPLY_VIEW_LABELS: Record<
-  Language,
-  {
-    hidden_reply: string;
-  }
-> = {
-  en: { hidden_reply: "Reply hidden by moderation" },
-  ko: { hidden_reply: "관리자에 의해 숨겨진 답글입니다" },
-  ja: { hidden_reply: "管理者により非表示にされた返信です" },
-  zh: { hidden_reply: "回复已被管理员隐藏" },
-  de: { hidden_reply: "Antwort durch Moderation ausgeblendet" },
-  fr: { hidden_reply: "Réponse masquée par la modération" },
-  es: { hidden_reply: "Respuesta ocultada por moderación" },
-  pt: { hidden_reply: "Resposta ocultada pela moderação" },
-  it: { hidden_reply: "Risposta nascosta dalla moderazione" },
-  ru: { hidden_reply: "Ответ скрыт модератором" },
-  ar: { hidden_reply: "تم إخفاء الرد بواسطة الإدارة" },
-  hi: { hidden_reply: "मॉडरेशन द्वारा जवाब छिपाया गया है" },
 };
 
 export const REPLY_INPUT_LABELS: Record<

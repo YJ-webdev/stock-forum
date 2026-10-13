@@ -166,6 +166,33 @@
   font-variant-numeric: tabular-nums lining-nums;
 }
 
+.content-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #a1a1aa transparent;
+}
+
+.content-scrollbar::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.content-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content-scrollbar::-webkit-scrollbar-thumb {
+  background: #a1a1aa;
+  border-radius: 999px;
+}
+
+.dark .content-scrollbar {
+  scrollbar-color: #52525b transparent;
+}
+
+.dark .content-scrollbar::-webkit-scrollbar-thumb {
+  background: #52525b;
+}
+
 /* --------------------------------
    TipTap Editor
 --------------------------------- */

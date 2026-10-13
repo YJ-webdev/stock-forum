@@ -190,10 +190,6 @@ export async function createComment({
     throw new Error(labels.login_required);
   }
 
-  // ---------------------------------------------------------------------------
-  // AUTHOR
-  // ---------------------------------------------------------------------------
-
   let userId = session.user.id;
 
   if (botUserId !== undefined) {
@@ -221,10 +217,6 @@ export async function createComment({
     userId = bot.id;
   }
 
-  // ---------------------------------------------------------------------------
-  // SINGLE BOARD
-  // ---------------------------------------------------------------------------
-
   if (
     !Array.isArray(assetSymbols) ||
     assetSymbols.length !== 1 ||
@@ -240,10 +232,6 @@ export async function createComment({
   if (!market) {
     throw new Error(labels.invalid_board);
   }
-
-  // ---------------------------------------------------------------------------
-  // PREDICTION VALIDATION
-  // ---------------------------------------------------------------------------
 
   if (prediction) {
     if (market.assetType !== "index") {
@@ -286,10 +274,6 @@ export async function createComment({
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // CONTENT / MODERATION
-  // ---------------------------------------------------------------------------
-
   const hasContent = content !== null && hasEditorContent(content);
 
   if (!hasContent && !prediction) {
@@ -310,10 +294,6 @@ export async function createComment({
   const commentVisibility = moderationResult.shouldBePrivate
     ? "PRIVATE"
     : "PUBLIC";
-
-  // ---------------------------------------------------------------------------
-  // PREDICTION INPUTS
-  // ---------------------------------------------------------------------------
 
   let predictionNationality: string | null = null;
   let referenceClose: number | null = null;
@@ -363,10 +343,6 @@ export async function createComment({
       timezone: market.timezone ?? "UTC",
     },
   });
-
-  // ---------------------------------------------------------------------------
-  // SAVE
-  // ---------------------------------------------------------------------------
 
   const result = await prisma.$transaction(async (tx) => {
     let createdPrediction: { id: string } | null = null;
@@ -459,10 +435,6 @@ export async function createComment({
       },
       select: { id: true },
     });
-
-    // -------------------------------------------------------------------------
-    // ACTIVITY HISTORY
-    // -------------------------------------------------------------------------
 
     if (hasContent) {
       await recordUserActivity(tx, {

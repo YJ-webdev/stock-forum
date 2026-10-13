@@ -1,6 +1,12 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, useTransition } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  useTransition,
+  type KeyboardEvent,
+} from "react";
 import type { JSONContent } from "@tiptap/react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
@@ -53,26 +59,29 @@ export function CommentEditInput({
     initial.gif,
   );
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const gifButtonRef = useRef<HTMLButtonElement>(null);
+
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
-
-    if (!textarea) {
-      return;
-    }
+    if (!textarea) return;
 
     const resizeTextarea = () => {
+      const maxHeight = 240;
+
       textarea.style.height = "auto";
-      textarea.style.height = `${textarea.scrollHeight}px`;
+
+      const contentHeight = textarea.scrollHeight;
+
+      textarea.style.height = `${Math.min(contentHeight, maxHeight)}px`;
+      textarea.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
     };
 
     resizeTextarea();
 
-    // Recalculate when the editor width changes.
     if (typeof ResizeObserver === "undefined") {
       window.addEventListener("resize", resizeTextarea);
 
@@ -85,10 +94,7 @@ export function CommentEditInput({
 
     const observer = new ResizeObserver(() => {
       const width = textarea.getBoundingClientRect().width;
-
-      if (width === previousWidth) {
-        return;
-      }
+      if (width === previousWidth) return;
 
       previousWidth = width;
       resizeTextarea();
@@ -106,10 +112,20 @@ export function CommentEditInput({
   const hasContent = comment.trim().length > 0 || Boolean(selectedGif);
   const saveDisabled = isPending || !hasChanges || !hasContent;
 
+  const handleGifSelect = (gif: GifResult) => {
+    if (isPending) return;
+
+    setSelectedGif({
+      src: gif.src,
+      preview: gif.preview,
+      title: gif.title,
+    });
+
+    setGifPickerOpen(false);
+  };
+
   const handleSave = () => {
-    if (saveDisabled) {
-      return;
-    }
+    if (saveDisabled) return;
 
     startTransition(async () => {
       try {
@@ -170,122 +186,128 @@ export function CommentEditInput({
     });
   };
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isPending || event.nativeEvent.isComposing) return;
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onCancel();
+      return;
+    }
+
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      handleSave();
+    }
+  };
+
   return (
-    <div className="mt-2">
-      <div className="relative rounded-lg bg-zinc-200/40 px-4 dark:bg-zinc-800">
-        <textarea
-          ref={textareaRef}
-          value={comment}
-          onChange={(event) => setComment(event.target.value)}
-          disabled={isPending}
-          rows={1}
-          placeholder={labels.placeholder}
-          aria-label={labels.placeholder}
-          className="
-            block min-h-11 w-full resize-none overflow-hidden
-            bg-transparent py-3
-            text-[15px] outline-none
-            placeholder:text-zinc-500
-          "
-        />
+    <div className="rounded-lg bg-zinc-100 px-3 pt-3 dark:bg-zinc-800">
+      {/* Text */}
+      <textarea
+        ref={textareaRef}
+        rows={1}
+        value={comment}
+        disabled={isPending}
+        onChange={(event) => setComment(event.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={labels.placeholder}
+        aria-label={labels.placeholder}
+        style={{
+          marginBottom: 16,
+          overflowX: "hidden",
+        }}
+        className="
+          content-scrollbar block min-h-10 w-full resize-none
+          overflow-hidden bg-transparent
+          text-[15px] leading-6 outline-none
+          placeholder:text-zinc-400
+          disabled:opacity-60
+        "
+      />
 
-        {selectedGif && (
-          <div className="relative mb-3 w-fit max-w-full">
-            <img
-              src={selectedGif.preview || selectedGif.src}
-              alt={selectedGif.title}
-              className="
-                block max-h-60 max-w-full
-                rounded-lg object-contain
-              "
-            />
+      {/* GIF preview */}
+      {selectedGif && (
+        <div className="relative mb-2 w-fit max-w-full">
+          <img
+            src={selectedGif.preview || selectedGif.src}
+            alt={selectedGif.title}
+            className="
+              block max-h-52 w-auto max-w-full
+              rounded-lg object-contain
+            "
+          />
 
-            <button
-              type="button"
-              onClick={() => setSelectedGif(null)}
-              disabled={isPending}
-              aria-label={labels.remove_gif}
-              title={labels.remove_gif}
-              className="
-                absolute top-2 right-2
-                flex size-7 cursor-pointer
-                items-center justify-center
-                rounded-full bg-black/60 text-white
-                hover:bg-black/75
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
-            >
-              <X size={15} aria-hidden="true" />
-            </button>
-          </div>
-        )}
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => setSelectedGif(null)}
+            aria-label={labels.remove_gif}
+            title={labels.remove_gif}
+            className="
+              absolute top-2 right-2
+              flex size-7 cursor-pointer items-center justify-center
+              rounded-full bg-black/60 text-white
+              transition-colors hover:bg-black/75
+              disabled:cursor-not-allowed disabled:opacity-50
+            "
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
-        <div className="flex items-center justify-between gap-2 pb-2">
-          <div className="relative">
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={() => setGifPickerOpen((open) => !open)}
-              aria-label={labels.select_gif}
-              aria-expanded={gifPickerOpen}
-              className="
-                cursor-pointer rounded-md px-2 py-1
-                text-sm font-medium text-zinc-500
-                hover:bg-zinc-200
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-                dark:hover:bg-zinc-700
-              "
-            >
-              GIF
-            </button>
+      {/* Bottom actions */}
+      <div className="flex items-center justify-between gap-2 pb-2">
+        <div className="relative">
+          <button
+            ref={gifButtonRef}
+            type="button"
+            disabled={isPending}
+            onClick={() => setGifPickerOpen((previous) => !previous)}
+            aria-label={labels.select_gif}
+            title={labels.select_gif}
+            aria-expanded={gifPickerOpen}
+            className="
+              cursor-pointer rounded-md px-2 py-1
+              text-sm font-medium text-zinc-500
+              hover:bg-zinc-200
+              disabled:cursor-not-allowed disabled:opacity-50
+              dark:hover:bg-zinc-700
+            "
+          >
+            GIF
+          </button>
 
-            <GifPicker
-              open={gifPickerOpen}
-              onOpenChange={setGifPickerOpen}
-              onSelect={(gif: GifResult) => {
-                if (isPending) {
-                  return;
-                }
+          <GifPicker
+            open={gifPickerOpen}
+            onOpenChange={setGifPickerOpen}
+            onSelect={handleGifSelect}
+            triggerRef={gifButtonRef}
+          />
+        </div>
 
-                setSelectedGif({
-                  src: gif.src,
-                  preview: gif.preview,
-                  title: gif.title,
-                });
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={isPending}
+            onClick={onCancel}
+            className="cursor-pointer disabled:cursor-not-allowed"
+          >
+            {labels.cancel}
+          </Button>
 
-                setGifPickerOpen(false);
-              }}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={isPending}
-              onClick={onCancel}
-              className="cursor-pointer"
-            >
-              {labels.cancel}
-            </Button>
-
-            <Button
-              type="button"
-              size="sm"
-              disabled={saveDisabled}
-              onClick={handleSave}
-              className="
-                cursor-pointer
-                disabled:cursor-not-allowed
-                disabled:opacity-40
-              "
-            >
-              {isPending ? labels.saving : labels.save}
-            </Button>
-          </div>
+          <Button
+            type="button"
+            size="sm"
+            disabled={saveDisabled}
+            onClick={handleSave}
+            className="cursor-pointer disabled:cursor-not-allowed"
+          >
+            {isPending ? labels.saving : labels.save}
+          </Button>
         </div>
       </div>
     </div>

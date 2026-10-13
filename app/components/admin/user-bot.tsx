@@ -25,7 +25,7 @@ import {
   getBotUsers,
 } from "@/app/actions/user-bot";
 
-import { CommentItem } from "@/app/components/comment";
+import { CommentItem } from "@/app/components/comment-item";
 import { CommentOnlyInput } from "@/app/components/comment-only-input";
 import { PredictionCommentInput } from "@/app/components/prediction-comment-input";
 import type { GifResult } from "@/app/components/gif-picker";

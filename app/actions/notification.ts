@@ -57,6 +57,7 @@ export async function getNotifications() {
       id: true,
       type: true,
       title: true,
+      tier: true,
       message: true,
       readAt: true,
       createdAt: true,

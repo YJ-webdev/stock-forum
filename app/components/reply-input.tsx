@@ -58,8 +58,14 @@ export function ReplyInput({
     if (!textarea) return;
 
     const resize = () => {
+      const maxHeight = 240;
+
       textarea.style.height = "auto";
-      textarea.style.height = `${textarea.scrollHeight}px`;
+
+      const contentHeight = textarea.scrollHeight;
+
+      textarea.style.height = `${Math.min(contentHeight, maxHeight)}px`;
+      textarea.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
     };
 
     resize();

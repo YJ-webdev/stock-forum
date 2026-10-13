@@ -33,7 +33,6 @@ import {
   COMMENT_VIEW_LABELS,
   CONTENT_RESULT_LABELS,
   CONTENT_STATUS_LABELS,
-  REPLY_VIEW_LABELS,
 } from "@/lib/data/translations";
 
 import { ContentActionsMenu } from "./content-actions-menu";
@@ -41,6 +40,7 @@ import { ProfileCard } from "./profile-card";
 import { ReplyEditInput } from "./reply-edit-input";
 import { ReplyInput } from "./reply-input";
 import type { MarketReply } from "./comment";
+import { getErrorMessage } from "@/lib/utils/get-error-message";
 
 interface ReplyItemProps {
   reply: MarketReply;
@@ -78,7 +78,6 @@ export function ReplyItem({
   const actionLabels = COMMENT_ACTION_LABELS[language];
   const resultLabels = CONTENT_RESULT_LABELS[language];
   const statusLabels = CONTENT_STATUS_LABELS[language];
-  const replyLabels = REPLY_VIEW_LABELS[language];
 
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -416,7 +415,7 @@ export function ReplyItem({
           {/* Content */}
           {reply.moderatedAt ? (
             <p className="mt-1 text-[15px] italic text-zinc-400">
-              {replyLabels.hidden_reply}
+              {labels.hidden_reply}
             </p>
           ) : isEditing ? (
             <ReplyEditInput
@@ -432,7 +431,13 @@ export function ReplyItem({
           ) : (
             <>
               {reply.content && (
-                <ReplyTextContent key={reply.content} content={reply.content} />
+                <ReplyTextContent
+                  key={reply.content}
+                  content={reply.content}
+                  editedLabel={reply.editedAt ? labels.edited : undefined}
+                  readMoreLabel={labels.read_more}
+                  readLessLabel={labels.read_less}
+                />
               )}
 
               {reply.gifUrl && (
@@ -440,16 +445,10 @@ export function ReplyItem({
                   src={reply.gifUrl}
                   alt="GIF"
                   className="
-                    mt-2 h-auto w-45 max-w-full
+                    mt-3 h-auto w-45 max-w-full
                     rounded-lg object-contain
                   "
                 />
-              )}
-
-              {reply.editedAt && (
-                <span className="text-[12px] text-zinc-400">
-                  {labels.edited}
-                </span>
               )}
             </>
           )}
@@ -648,13 +647,29 @@ export function ReplyItem({
 
 // TEXT / READ MORE
 
-function ReplyTextContent({ content }: { content: string }) {
+export function ReplyTextContent({
+  content,
+  editedLabel,
+  readMoreLabel,
+  readLessLabel,
+}: {
+  content: string;
+  editedLabel?: string;
+  readMoreLabel: string;
+  readLessLabel: string;
+}) {
+  const MAX_COLLAPSED_LINES = 4;
+  const MAX_EXPANDED_HEIGHT = 240;
+
   const contentId = useId();
   const displayContent = content.trimEnd();
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const contentViewportRef = useRef<HTMLDivElement>(null);
+
   const measurementRef = useRef<HTMLParagraphElement>(null);
   const measurementTextRef = useRef<HTMLSpanElement>(null);
+  const measurementEditedRef = useRef<HTMLSpanElement>(null);
   const measurementSuffixRef = useRef<HTMLSpanElement>(null);
 
   const [expanded, setExpanded] = useState(false);
@@ -669,6 +684,7 @@ function ReplyTextContent({ content }: { content: string }) {
 
   const buttonClassName = `
     inline-block cursor-pointer rounded-sm
+    p-0 align-top
     text-[13px] font-medium leading-6
     text-zinc-500 hover:text-zinc-900
     dark:text-zinc-400 dark:hover:text-zinc-200
@@ -680,41 +696,60 @@ function ReplyTextContent({ content }: { content: string }) {
     const container = containerRef.current;
     const measurement = measurementRef.current;
     const textElement = measurementTextRef.current;
+    const editedElement = measurementEditedRef.current;
     const suffixElement = measurementSuffixRef.current;
 
-    if (!container || !measurement || !textElement || !suffixElement) {
+    if (
+      !container ||
+      !measurement ||
+      !textElement ||
+      !editedElement ||
+      !suffixElement
+    ) {
       return;
     }
 
     const measure = () => {
-      if (container.getBoundingClientRect().width <= 0) return;
+      const width = container.getBoundingClientRect().width;
+      if (width <= 0) return;
+
+      measurement.style.width = `${width}px`;
 
       const lineHeight = Number.parseFloat(
         window.getComputedStyle(measurement).lineHeight,
       );
 
-      const maxHeight = lineHeight * 4;
+      const maxCollapsedHeight = lineHeight * MAX_COLLAPSED_LINES;
 
-      const measureHeight = (text: string, suffix: string) => {
+      const measureHeight = (text: string, collapsed: boolean) => {
         textElement.textContent = text;
-        suffixElement.textContent = suffix;
+
+        editedElement.textContent =
+          !collapsed && editedLabel ? ` ${editedLabel}` : "";
+
+        editedElement.style.display =
+          !collapsed && editedLabel ? "inline" : "none";
+
+        suffixElement.textContent = collapsed ? `… ${readMoreLabel}` : "";
+
+        suffixElement.style.display = collapsed ? "inline-block" : "none";
 
         return measurement.getBoundingClientRect().height;
       };
 
-      const naturalHeight = measureHeight(displayContent, "");
+      const naturalHeight = measureHeight(displayContent, false);
 
-      if (naturalHeight <= maxHeight + 0.5) {
+      if (naturalHeight <= maxCollapsedHeight + 0.5) {
         setLayout({
           collapsedText: displayContent,
           collapsedHeight: naturalHeight,
           fullHeight: naturalHeight,
           hasOverflow: false,
         });
+
         return;
       }
 
-      // Preserve emoji and combined characters where supported.
       const characters =
         typeof Intl.Segmenter === "function"
           ? Array.from(
@@ -728,15 +763,11 @@ function ReplyTextContent({ content }: { content: string }) {
       let low = 0;
       let high = characters.length;
 
-      // Include the complete suffix in every measurement.
       while (low < high) {
         const middle = Math.ceil((low + high) / 2);
-
         const candidate = characters.slice(0, middle).join("").trimEnd();
 
-        const height = measureHeight(candidate, "… Read more");
-
-        if (height <= maxHeight + 0.5) {
+        if (measureHeight(candidate, true) <= maxCollapsedHeight + 0.5) {
           low = middle;
         } else {
           high = middle - 1;
@@ -745,9 +776,8 @@ function ReplyTextContent({ content }: { content: string }) {
 
       const collapsedText = characters.slice(0, low).join("").trimEnd();
 
-      const collapsedHeight = measureHeight(collapsedText, "… Read more");
-
-      const fullHeight = measureHeight(displayContent, " Read less");
+      const collapsedHeight = measureHeight(collapsedText, true);
+      const fullHeight = measureHeight(displayContent, false);
 
       setLayout((previous) => {
         if (
@@ -770,18 +800,23 @@ function ReplyTextContent({ content }: { content: string }) {
 
     measure();
 
-    let lastWidth = container.getBoundingClientRect().width;
+    let previousWidth = container.getBoundingClientRect().width;
+    let observer: ResizeObserver | undefined;
 
-    const observer = new ResizeObserver(() => {
-      const width = container.getBoundingClientRect().width;
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => {
+        const width = container.getBoundingClientRect().width;
 
-      if (width !== lastWidth) {
-        lastWidth = width;
+        if (width === previousWidth) return;
+
+        previousWidth = width;
         measure();
-      }
-    });
+      });
 
-    observer.observe(container);
+      observer.observe(container);
+    } else {
+      window.addEventListener("resize", measure);
+    }
 
     let active = true;
 
@@ -789,15 +824,19 @@ function ReplyTextContent({ content }: { content: string }) {
       if (active) measure();
     };
 
-    void document.fonts.ready.then(handleFontsLoaded);
-    document.fonts.addEventListener("loadingdone", handleFontsLoaded);
+    if (document.fonts) {
+      void document.fonts.ready.then(handleFontsLoaded);
+      document.fonts.addEventListener("loadingdone", handleFontsLoaded);
+    }
 
     return () => {
       active = false;
-      observer.disconnect();
-      document.fonts.removeEventListener("loadingdone", handleFontsLoaded);
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+
+      document.fonts?.removeEventListener("loadingdone", handleFontsLoaded);
     };
-  }, [displayContent]);
+  }, [displayContent, editedLabel, readMoreLabel]);
 
   useEffect(() => {
     if (!animating) return;
@@ -810,46 +849,80 @@ function ReplyTextContent({ content }: { content: string }) {
   }, [animating, expanded]);
 
   const hasOverflow = layout?.hasOverflow ?? false;
-
-  // Keep the full text during the height transition.
   const showFullText = expanded || animating || !hasOverflow;
 
+  const handleToggle = (nextExpanded: boolean) => {
+    if (animating) return;
+
+    if (!nextExpanded && contentViewportRef.current) {
+      contentViewportRef.current.scrollTop = 0;
+    }
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    setAnimating(!reduceMotion);
+    setExpanded(nextExpanded);
+  };
+
   return (
-    <div ref={containerRef} className="relative mt-0.5 min-w-0">
-      {/* Measure text and suffix together at the actual content width. */}
+    <div ref={containerRef} className="relative min-w-0">
+      {/* Hidden measurement */}
       <p
         ref={measurementRef}
         aria-hidden="true"
+        style={{
+          overflowWrap: "anywhere",
+          wordBreak: "normal",
+        }}
         className="
-          pointer-events-none invisible absolute inset-x-0 top-0
+          pointer-events-none invisible absolute left-0 top-0
           m-0 whitespace-pre-wrap
-          text-[15px] leading-6 wrap-anywhere
+          text-[15px] leading-6
         "
       >
         <span ref={measurementTextRef} />
+
+        <span
+          ref={measurementEditedRef}
+          className="whitespace-nowrap text-[12px] text-zinc-400"
+        />
+
         <span
           ref={measurementSuffixRef}
           className="
-  inline-block align-top whitespace-nowrap
-  text-[13px] font-medium leading-6
-"
+            inline-block align-top whitespace-pre
+            text-[13px] font-medium leading-6
+          "
         />
       </p>
 
+      {/* Text viewport */}
       <div
+        ref={contentViewportRef}
         id={contentId}
-        className="
-          overflow-hidden
-          transition-[height] duration-200 ease-in-out
-          motion-reduce:transition-none
-        "
         style={{
           height: layout
             ? expanded
-              ? layout.fullHeight
+              ? Math.min(layout.fullHeight, MAX_EXPANDED_HEIGHT)
               : layout.collapsedHeight
             : undefined,
+          marginRight: 0,
+          overflowX: "hidden",
+          overflowY:
+            expanded &&
+            !animating &&
+            layout &&
+            layout.fullHeight > MAX_EXPANDED_HEIGHT
+              ? "auto"
+              : "hidden",
         }}
+        className="
+          content-scrollbar
+          transition-[height] duration-200 ease-in-out
+          motion-reduce:transition-none
+        "
         onTransitionEnd={(event) => {
           if (
             event.target === event.currentTarget &&
@@ -860,35 +933,71 @@ function ReplyTextContent({ content }: { content: string }) {
         }}
       >
         <p
+          style={{
+            overflowWrap: "anywhere",
+            wordBreak: "normal",
+          }}
           className="
             m-0 min-w-0 whitespace-pre-wrap
             text-[15px] leading-6
-            text-zinc-900 wrap-anywhere dark:text-zinc-200
+            text-zinc-900 dark:text-zinc-200
           "
         >
-          <span>{showFullText ? displayContent : layout?.collapsedText}</span>
+          <span>
+            {showFullText ? displayContent : layout?.collapsedText}
 
-          {hasOverflow && (
-            <span className="inline-block align-top  whitespace-nowrap text-[13px] font-medium leading-6">
-              {!showFullText && "…"}{" "}
+            {showFullText && editedLabel && (
+              <span className="whitespace-normal text-[12px] text-zinc-400">
+                {" "}
+                <span className="whitespace-nowrap">{editedLabel}</span>
+              </span>
+            )}
+          </span>
+
+          {hasOverflow && !showFullText && (
+            <span
+              className="
+                inline-block align-top whitespace-pre
+                text-[13px] font-medium leading-6
+              "
+            >
+              {"… "}
               <button
                 type="button"
                 aria-controls={contentId}
-                aria-expanded={expanded}
+                aria-expanded={false}
                 disabled={animating}
                 onClick={(event) => {
                   event.stopPropagation();
-                  setAnimating(true);
-                  setExpanded((previous) => !previous);
+                  handleToggle(true);
                 }}
-                className={`${buttonClassName} ${showFullText ? "ml-3" : "ml-1"}`}
+                className={buttonClassName}
               >
-                {showFullText ? "Read less" : "Read more"}
+                {readMoreLabel}
               </button>
             </span>
           )}
         </p>
       </div>
+
+      {/* Outside the paragraph and scroll viewport */}
+      {hasOverflow && expanded && (
+        <div className="mt-1 leading-6">
+          <button
+            type="button"
+            aria-controls={contentId}
+            aria-expanded={true}
+            disabled={animating}
+            onClick={(event) => {
+              event.stopPropagation();
+              handleToggle(false);
+            }}
+            className={buttonClassName}
+          >
+            {readLessLabel}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -896,10 +1005,6 @@ function ReplyTextContent({ content }: { content: string }) {
 
 function getInitials(name: string) {
   return Array.from(name.trim())[0]?.toUpperCase() ?? "?";
-}
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 function formatTimeAgo(date: Date | string, language: Language): string {

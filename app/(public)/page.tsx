@@ -59,7 +59,7 @@ export default async function Home() {
               tracking-wider text-muted-foreground/50
             "
           >
-            {labels.share_view}
+            {labels.latest_comments}
           </p>
 
           <HomeCommunity

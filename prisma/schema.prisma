@@ -413,6 +413,9 @@ enum NotificationType {
 
     COMMENT_REPORTED
   REPLY_REPORTED
+
+    TIER_UP
+    TIER_DOWN
 }
 
 model Notification {
@@ -426,6 +429,8 @@ model Notification {
   // Null for system-generated prediction notifications.
   actorId String?
   actor   User?   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+tier UserTier?
 
   type NotificationType
 
