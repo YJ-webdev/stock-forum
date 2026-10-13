@@ -15,12 +15,14 @@ import {
 import {
   FcBookmark,
   FcBrokenLink,
+  FcDownLeft,
   FcFullTrash,
   FcInspection,
   FcLikePlaceholder,
   FcLink,
   FcProcess,
   FcSms,
+  FcUndo,
   FcVoicePresentation,
 } from "react-icons/fc";
 
@@ -1059,7 +1061,7 @@ function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
 
       case "COMMENT_EDITED":
       case "REPLY_EDITED":
-        return FcProcess;
+        return FcUndo;
 
       case "COMMENT_DELETED":
       case "REPLY_DELETED":
