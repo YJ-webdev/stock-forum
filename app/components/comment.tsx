@@ -427,7 +427,7 @@ export function MarketComments({
             return (
               <div key={comment.id} className="dark:bg-zinc-900">
                 {showSessionBoundary && (
-                  <div className="mb-2 border-t border-dashed border-zinc-200 dark:border-zinc-800" />
+                  <div className="mb-4 border-t border-dashed border-zinc-200 dark:border-zinc-800" />
                 )}
 
                 <CommentItem

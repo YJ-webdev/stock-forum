@@ -13,8 +13,10 @@ import {
 } from "react";
 
 import {
+  FcAdvertising,
   FcBookmark,
   FcBrokenLink,
+  FcCursor,
   FcFullTrash,
   FcInspection,
   FcLikePlaceholder,
@@ -23,6 +25,7 @@ import {
   FcReadingEbook,
   FcSelfServiceKiosk,
   FcSms,
+  FcVoicePresentation,
 } from "react-icons/fc";
 
 import { useRouter } from "next/navigation";
@@ -1076,7 +1079,7 @@ function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
 
       case "COMMENT_REPORTED":
       case "REPLY_REPORTED":
-        return TbFlagFilled;
+        return FcVoicePresentation;
 
       case "WATCHLIST_ADDED":
       case "WATCHLIST_REMOVED":

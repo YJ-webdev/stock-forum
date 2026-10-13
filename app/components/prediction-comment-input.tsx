@@ -338,7 +338,7 @@ export function PredictionCommentInput({
       <div className="min-w-0 flex-1">
         <div className="rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
           {/* Prediction */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-2">
+          <div className="flex flex-nowrap items-center gap-x-3 gap-y-1 pt-2 sm:flex-wrap">
             {/* Bull / Bear */}
             <div
               className={`
@@ -407,7 +407,12 @@ export function PredictionCommentInput({
             </div>
 
             {/* Selected prediction points */}
-            <div className="relative flex shrink-0 items-center">
+            <div
+              className="
+    relative flex min-w-0 flex-1 items-center justify-center
+    sm:flex-none sm:shrink-0 gap-0.5 sm:gap-0
+  "
+            >
               <button
                 type="button"
                 aria-label="Decrease points"
@@ -463,7 +468,7 @@ export function PredictionCommentInput({
             </div>
 
             {/* Actual balance: do not subtract the selected bet here */}
-            <span className="jakarta shrink-0 whitespace-nowrap text-sm font-normal tabular-nums text-zinc-400 dark:text-zinc-500">
+            <span className="hidden sm:block jakarta shrink-0 whitespace-nowrap text-sm font-normal tabular-nums text-zinc-400 dark:text-zinc-500">
               {availablePoints.toLocaleString(language)}pts.
             </span>
           </div>
