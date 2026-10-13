@@ -106,6 +106,7 @@ export async function getNotifications() {
       prediction: {
         select: {
           symbol: true,
+          pointsBet: true,
           referenceClose: true,
           settlementClose: true,
         },

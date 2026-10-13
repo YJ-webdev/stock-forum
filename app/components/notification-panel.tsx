@@ -15,27 +15,7 @@ import {
 
 import { useRouter } from "next/navigation";
 
-import {
-  Award,
-  Bell,
-  CheckCheck,
-  CircleAlert,
-  RotateCcw,
-  Trash2,
-  X,
-} from "lucide-react";
-
-import {
-  FaFaceMeh,
-  FaFaceSmile,
-  FaRegFaceSmile,
-  FaXmark,
-} from "react-icons/fa6";
-
-import { BiSolidChat } from "react-icons/bi";
-import { RiHeartFill } from "react-icons/ri";
-import { TbFlagFilled } from "react-icons/tb";
-import { GoAlertFill } from "react-icons/go";
+import { Bell, CheckCheck, RotateCcw, Trash2, X } from "lucide-react";
 
 import {
   deleteAllSocialNotifications,
@@ -60,26 +40,16 @@ import {
 
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { formatTimeAgo } from "@/lib/utils/format-time-ago";
-import { IoAlertCircle } from "react-icons/io5";
+
 import {
   FcAbout,
   FcApproval,
   FcBearish,
-  FcCancel,
-  FcDebt,
-  FcDonate,
   FcHighPriority,
   FcIdea,
-  FcLeave,
   FcLikePlaceholder,
   FcOvertime,
-  FcSms,
-  FcVoicePresentation,
 } from "react-icons/fc";
-
-// -----------------------------------------------------------------------------
-// TYPES / CONSTANTS
-// -----------------------------------------------------------------------------
 
 const NOTIFICATION_TIER_NAMES = {
   UNRANKED: "Unranked",
@@ -136,10 +106,6 @@ const SECTION_ORDER: DateSectionKey[] = [
 ];
 
 const notificationCache = new Map<string, NotificationCacheEntry>();
-
-// -----------------------------------------------------------------------------
-// SORT / DATE GROUPING
-// -----------------------------------------------------------------------------
 
 function sortNotifications(notifications: MyNotification[]) {
   return [...notifications].sort((a, b) => {
@@ -202,10 +168,6 @@ function groupNotifications(notifications: MyNotification[], now: Date) {
     notifications: groups[key],
   })).filter((section) => section.notifications.length > 0);
 }
-
-// -----------------------------------------------------------------------------
-// PANEL
-// -----------------------------------------------------------------------------
 
 export function NotificationPanel(props: NotificationPanelProps) {
   const userId = props.currentUser?.id;
@@ -305,10 +267,6 @@ function NotificationPanelContent({
 
   const mutationDisabled = isPending || refreshing;
 
-  // ---------------------------------------------------------------------------
-  // LIFECYCLE / DATE
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
     mounted.current = true;
 
@@ -329,10 +287,6 @@ function NotificationPanelContent({
     };
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // STATE / CACHE
-  // ---------------------------------------------------------------------------
-
   function saveNotifications(next: MyNotification[]) {
     notificationsRef.current = next;
 
@@ -350,10 +304,6 @@ function NotificationPanelContent({
       });
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // LOAD
-  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     let cancelled = false;
@@ -423,10 +373,6 @@ function NotificationPanelContent({
     };
   }, [userId, refreshKey, retryKey]);
 
-  // ---------------------------------------------------------------------------
-  // OPEN / MARK READ
-  // ---------------------------------------------------------------------------
-
   function handleNotificationClick(notification: MyNotification) {
     const href = getNotificationHref(notification);
 
@@ -465,10 +411,6 @@ function NotificationPanelContent({
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // MARK ALL READ
-  // ---------------------------------------------------------------------------
-
   function handleMarkAllRead() {
     if (
       mutationDisabled ||
@@ -502,10 +444,6 @@ function NotificationPanelContent({
     });
   }
 
-  // ---------------------------------------------------------------------------
-  // DELETE ONE SOCIAL NOTIFICATION
-  // ---------------------------------------------------------------------------
-
   function handleDeleteNotification(notification: MyNotification) {
     if (
       mutationDisabled ||
@@ -535,10 +473,6 @@ function NotificationPanelContent({
     });
   }
 
-  // ---------------------------------------------------------------------------
-  // DELETE ALL SOCIAL NOTIFICATIONS
-  // ---------------------------------------------------------------------------
-
   function handleDeleteAllSocial() {
     if (
       mutationDisabled ||
@@ -567,10 +501,6 @@ function NotificationPanelContent({
       }
     });
   }
-
-  // ---------------------------------------------------------------------------
-  // DATE HEADER MEASUREMENT
-  // ---------------------------------------------------------------------------
 
   useLayoutEffect(() => {
     const keys = sectionSignature
@@ -697,10 +627,6 @@ function NotificationPanelContent({
 
     return () => window.cancelAnimationFrame(frame);
   }, [sectionRequest, headerHeights]);
-
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
 
   return (
     <section
@@ -944,7 +870,10 @@ function NotificationItem({
   const clickable = Boolean(href) || unread;
 
   const preview = getNotificationPreview(notification);
-  const { title, message } = getNotificationText(notification, language);
+  const { title, message, pointsText, pointsChange } = getNotificationText(
+    notification,
+    language,
+  );
 
   const createdAt = new Date(notification.createdAt);
   const dateTime = Number.isFinite(createdAt.getTime())
@@ -1054,11 +983,23 @@ function NotificationItem({
           <span className="flex items-center gap-2">
             <span
               className={`
-                block min-w-0 flex-1 truncate text-[15px]
+                 min-w-0 flex-1 truncate text-[15px] flex items-center
                 ${unread ? "font-semibold" : "font-medium"}
               `}
             >
               {title}
+
+              {pointsText && (
+                <span
+                  className="ml-2 
+    shrink-0 whitespace-nowrap tabular-nums
+    text-xs! font-thin!
+    text-olive-500 dark:text-olive-400
+  "
+                >
+                  {pointsText}
+                </span>
+              )}
             </span>
 
             {unread && (
@@ -1140,14 +1081,15 @@ function NotificationItem({
   );
 }
 
-// -----------------------------------------------------------------------------
-// TEXT
-// -----------------------------------------------------------------------------
-
 function getNotificationText(
   notification: MyNotification,
   language: ResolvedLanguage,
-): { title: string; message: string | null } {
+): {
+  title: string;
+  message: string | null;
+  pointsText?: string;
+  pointsChange?: number;
+} {
   const labels = NOTIFICATION_LABELS[language];
   const statusLabels = CONTENT_STATUS_LABELS[language];
 
@@ -1157,7 +1099,6 @@ function getNotificationText(
   switch (notification.type) {
     case "TIER_UP":
     case "TIER_DOWN": {
-      // Older notifications may not have a stored tier.
       if (!notification.tier) {
         return {
           title: notification.title,
@@ -1175,6 +1116,7 @@ function getNotificationText(
         message: null,
       };
     }
+
     case "COMMENT_LIKED":
       return {
         title: labels.liked,
@@ -1224,11 +1166,12 @@ function getNotificationText(
         PREDICTION_PENDING: labels.prediction_pending,
       };
 
+      const title = titles[notification.type];
       const prediction = notification.prediction;
 
       if (!prediction) {
         return {
-          title: titles[notification.type],
+          title,
           message: null,
         };
       }
@@ -1239,7 +1182,7 @@ function getNotificationText(
 
       const marketName = market?.name ?? prediction.symbol;
 
-      const formatter = new Intl.NumberFormat(language, {
+      const priceFormatter = new Intl.NumberFormat(language, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
@@ -1247,20 +1190,36 @@ function getNotificationText(
       const from = prediction.referenceClose;
       const to = prediction.settlementClose;
 
+      const isWon = notification.type === "PREDICTION_WON";
+      const isLost = notification.type === "PREDICTION_LOST";
+
       const hasSettlement =
-        notification.type === "PREDICTION_WON" ||
-        notification.type === "PREDICTION_LOST" ||
-        notification.type === "PREDICTION_DRAW";
+        isWon || isLost || notification.type === "PREDICTION_DRAW";
+
+      const priceMessage =
+        hasSettlement &&
+        Number.isFinite(from) &&
+        to !== null &&
+        Number.isFinite(to)
+          ? `${marketName}: ${priceFormatter.format(from)} → ${priceFormatter.format(to)}`
+          : marketName;
+
+      if ((isWon || isLost) && prediction.pointsBet > 0) {
+        const points = new Intl.NumberFormat(language).format(
+          prediction.pointsBet,
+        );
+
+        return {
+          title,
+          message: priceMessage,
+          pointsText: `${isWon ? "+" : "−"}${points}`,
+          pointsChange: isWon ? prediction.pointsBet : -prediction.pointsBet,
+        };
+      }
 
       return {
-        title: titles[notification.type],
-        message:
-          hasSettlement &&
-          Number.isFinite(from) &&
-          to !== null &&
-          Number.isFinite(to)
-            ? `${marketName}: ${formatter.format(from)} → ${formatter.format(to)}`
-            : marketName,
+        title,
+        message: priceMessage,
       };
     }
 
@@ -1271,10 +1230,6 @@ function getNotificationText(
       };
   }
 }
-
-// -----------------------------------------------------------------------------
-// PREVIEW
-// -----------------------------------------------------------------------------
 
 function getNotificationPreview(notification: MyNotification): string | null {
   switch (notification.type) {
@@ -1328,10 +1283,6 @@ function extractTextFromTipTap(value: unknown): string {
 
   return node.content.map(extractTextFromTipTap).join(" ");
 }
-
-// -----------------------------------------------------------------------------
-// LINK
-// -----------------------------------------------------------------------------
 
 function getNotificationHref(notification: MyNotification): string | null {
   switch (notification.type) {
