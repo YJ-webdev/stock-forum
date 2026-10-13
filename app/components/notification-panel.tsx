@@ -696,12 +696,12 @@ function NotificationPanelContent({
           aria-label={labels.close}
           className="
             flex size-8 cursor-pointer items-center justify-center
-            rounded-md bg-zinc-100 text-zinc-500
-            transition-colors hover:bg-zinc-200 hover:text-zinc-900
+              text-zinc-500
+            transition-colors  hover:text-zinc-900
             focus-visible:outline-none
             focus-visible:ring-2 focus-visible:ring-zinc-400
-            dark:bg-zinc-800 dark:text-zinc-400
-            dark:hover:bg-zinc-700 dark:hover:text-zinc-100
+             dark:text-zinc-400
+             dark:hover:text-zinc-100
           "
         >
           <X className="size-4" aria-hidden="true" />

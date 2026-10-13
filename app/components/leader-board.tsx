@@ -47,7 +47,7 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
   return (
     <section
       aria-labelledby={headingId}
-      className="flex min-h-0 w-full flex-col overflow-hidden pt-3.5"
+      className="flex h-full min-h-0 w-full flex-col overflow-hidden pt-3.5"
     >
       <h2 id={headingId} className="sr-only">
         {labels.title}
@@ -66,11 +66,11 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
 
       <div
         className={`
-          flex min-h-0 w-full flex-col
-          overflow-x-hidden px-2.25
-          scrollbar-gutter-stable
-          ${openProfile ? "overflow-y-hidden" : "overflow-y-auto"}
-        `}
+    flex min-h-0 w-full flex-1 flex-col
+    overflow-x-hidden px-2.25
+    scrollbar-gutter-stable
+    ${openProfile ? "overflow-y-hidden" : "overflow-y-auto"}
+  `}
       >
         {traders.map((trader) => {
           const isMe = trader.id === user?.id;

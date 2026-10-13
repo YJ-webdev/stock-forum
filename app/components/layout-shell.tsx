@@ -374,7 +374,7 @@ export default function LayoutShell({
     min-h-0 min-w-0
     ${
       showLeaderboard
-        ? "flex max-h-[45%] flex-col overflow-hidden"
+        ? "flex h-[45%] shrink-0 flex-col overflow-hidden"
         : "flex-1 overflow-x-hidden overflow-y-auto"
     }
   `}
