@@ -50,6 +50,7 @@ import { useCurrentUser, useSetCurrentUser } from "@/app/context/user-context";
 
 interface AccountPanelProps {
   setOnAccount: Dispatch<SetStateAction<boolean>>;
+  onNavigate?: () => void;
 }
 
 type CurrentUser = NonNullable<ReturnType<typeof useCurrentUser>>;
@@ -63,7 +64,7 @@ const MAX_STATUS_LENGTH = 160;
 // PANEL
 // -----------------------------------------------------------------------------
 
-export function AccountPanel({ setOnAccount }: AccountPanelProps) {
+export function AccountPanel({ setOnAccount, onNavigate }: AccountPanelProps) {
   const user = useCurrentUser();
 
   if (!user) {
@@ -71,13 +72,19 @@ export function AccountPanel({ setOnAccount }: AccountPanelProps) {
   }
 
   return (
-    <AccountPanelForm key={user.id} user={user} setOnAccount={setOnAccount} />
+    <AccountPanelForm
+      key={user.id}
+      user={user}
+      setOnAccount={setOnAccount}
+      onNavigate={onNavigate}
+    />
   );
 }
 
 function AccountPanelForm({
   user,
   setOnAccount,
+  onNavigate,
 }: AccountPanelProps & {
   user: CurrentUser;
 }) {
@@ -324,6 +331,8 @@ function AccountPanelForm({
         router.refresh();
 
         toast.success(ACCOUNT_LABELS[resolveLanguage(savedLanguage)].updated);
+
+        onNavigate?.();
       } catch (error) {
         console.error("Failed to update account:", error);
         toast.error(labels.update_failed);

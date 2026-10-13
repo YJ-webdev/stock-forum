@@ -74,6 +74,7 @@ type Language = ReturnType<typeof resolveLanguage>;
 type HistoryError = "load_failed" | "load_more_failed";
 
 interface HistoryPanelProps {
+  onNavigate?: () => void;
   refreshKey: number;
   setOnHistory: Dispatch<SetStateAction<boolean>>;
   currentUser: {
@@ -219,6 +220,7 @@ function HistoryPanelContent({
   refreshKey,
   setOnHistory,
   currentUser,
+  onNavigate,
 }: HistoryPanelProps) {
   const router = useRouter();
   const userId = currentUser?.id;
@@ -664,6 +666,7 @@ function HistoryPanelContent({
 
     if (activity.href) {
       router.push(activity.href);
+      onNavigate?.();
     } else {
       window.alert(clickLabels.reply_deleted);
     }

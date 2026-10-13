@@ -70,6 +70,7 @@ type ResolvedLanguage = ReturnType<typeof resolveLanguage>;
 type PanelLabels = (typeof NOTIFICATION_LABELS)[ResolvedLanguage];
 
 interface NotificationPanelProps {
+  onNavigate?: () => void;
   refreshKey: number;
   setOnNotification: Dispatch<SetStateAction<boolean>>;
   currentUser?: {
@@ -193,6 +194,7 @@ function NotificationPanelContent({
   refreshKey,
   setOnNotification,
   currentUser,
+  onNavigate,
 }: NotificationPanelProps) {
   const router = useRouter();
   const userId = currentUser?.id;
@@ -414,6 +416,7 @@ function NotificationPanelContent({
 
     if (href) {
       router.push(href);
+      onNavigate?.();
     }
   }
 

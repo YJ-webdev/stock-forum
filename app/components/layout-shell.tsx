@@ -223,6 +223,12 @@ export default function LayoutShell({
     setHistoryRefreshKey((current) => current + 1);
   }
 
+  function closeMobileActivePanel() {
+    if (window.matchMedia("(min-width: 1024px)").matches) return;
+
+    setActivePanel(null);
+  }
+
   const hasActivePanel = onWrite || onAccount || onNotification || onHistory;
 
   const mobilePanelOpen = Boolean(user) && hasActivePanel;
@@ -236,7 +242,12 @@ export default function LayoutShell({
     }
 
     if (onAccount) {
-      return <AccountPanel setOnAccount={setOnAccount} />;
+      return (
+        <AccountPanel
+          setOnAccount={setOnAccount}
+          onNavigate={closeMobileActivePanel}
+        />
+      );
     }
 
     if (onNotification) {
@@ -245,6 +256,7 @@ export default function LayoutShell({
           refreshKey={notificationRefreshKey}
           setOnNotification={setOnNotification}
           currentUser={user}
+          onNavigate={closeMobileActivePanel}
         />
       );
     }
@@ -255,6 +267,7 @@ export default function LayoutShell({
           refreshKey={historyRefreshKey}
           setOnHistory={setOnHistory}
           currentUser={user}
+          onNavigate={closeMobileActivePanel}
         />
       );
     }
@@ -386,12 +399,40 @@ export default function LayoutShell({
           {mobilePanelOpen && (
             <div
               className="
-                fixed inset-x-0 top-18 bottom-0 z-40
-                flex min-h-0 flex-col overflow-hidden
-                bg-white dark:bg-zinc-900
-                sm:left-auto sm:w-3/5 sm:shadow-2xl
-                lg:hidden
-              "
+      fixed inset-x-0 top-18 bottom-0 z-40
+      flex min-h-0 flex-col overflow-hidden
+      bg-white dark:bg-zinc-900
+      sm:left-auto sm:w-3/5 sm:shadow-2xl
+      lg:hidden
+    "
+              onClick={(event) => {
+                if (
+                  event.defaultPrevented ||
+                  event.ctrlKey ||
+                  event.metaKey ||
+                  event.shiftKey ||
+                  event.altKey
+                ) {
+                  return;
+                }
+
+                const target = event.target;
+
+                if (!(target instanceof Element)) return;
+
+                const link = target.closest<HTMLAnchorElement>("a[href]");
+
+                if (
+                  !link ||
+                  !event.currentTarget.contains(link) ||
+                  link.hasAttribute("download") ||
+                  (link.target && link.target !== "_self")
+                ) {
+                  return;
+                }
+
+                closeMobileActivePanel();
+              }}
             >
               <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
                 {renderActivePanel()}
