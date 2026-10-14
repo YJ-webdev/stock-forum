@@ -236,7 +236,9 @@ export async function getMarketVoteStats({
   const nationalityCounts = new Map<string, number>();
 
   for (const prediction of predictions) {
-    const nationality = prediction.nationality?.trim().toUpperCase() || "OTHER";
+    const value = prediction.nationality?.trim().toUpperCase();
+
+    const nationality = !value || value === "OTHERS" ? "OTHER" : value;
 
     nationalityCounts.set(
       nationality,
@@ -286,7 +288,7 @@ export async function getMarketVoteStats({
 
 interface SubmitMarketVoteInput {
   symbol: string;
-  nationality: string;
+  nationality?: string | null;
   direction: VoteDirection;
   pointsBet: number;
   referenceClose: number;
@@ -308,10 +310,6 @@ export async function submitMarketVote({
   }
 
   const userId = session.user.id;
-
-  if (!nationality?.trim()) {
-    throw new Error("Please set your nationality before voting.");
-  }
 
   if (
     direction !== PredictionDirection.BULL &&
@@ -380,7 +378,7 @@ export async function submitMarketVote({
         pointsBet,
         referenceClose,
         sessionDate,
-        nationality,
+        nationality: nationality?.trim().toUpperCase() || "OTHER",
       },
       select: {
         id: true,
