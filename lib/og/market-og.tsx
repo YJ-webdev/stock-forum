@@ -6,10 +6,35 @@ import { unstable_cache } from "next/cache";
 import { GET as getCandles } from "@/app/api/candles/route";
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
 export const OG_SIZE = {
   width: 1200,
   height: 630,
 };
+
+async function loadOutfitFonts() {
+  const [regular, bold] = await Promise.all([
+    readFile(join(process.cwd(), "public/fonts/Outfit-Regular.ttf")),
+    readFile(join(process.cwd(), "public/fonts/Outfit-Bold.ttf")),
+  ]);
+
+  return [
+    {
+      name: "Outfit",
+      data: Uint8Array.from(regular).buffer,
+      weight: 400 as const,
+      style: "normal" as const,
+    },
+    {
+      name: "Outfit",
+      data: Uint8Array.from(bold).buffer,
+      weight: 700 as const,
+      style: "normal" as const,
+    },
+  ];
+}
 
 interface Point {
   timestampMs: number;
@@ -182,6 +207,8 @@ function formatTime(value: number | null) {
 }
 
 export async function createMarketOg(symbol: string) {
+  const fonts = await loadOutfitFonts();
+
   const market = ALL_MARKET_SYMBOLS.find((item) => item.symbol === symbol);
 
   const name = market?.name ?? symbol;
@@ -226,7 +253,7 @@ export async function createMarketOg(symbol: string) {
         padding: "44px 64px",
         background: "#101214",
         color: "#fafafa",
-        fontFamily: "sans-serif",
+        fontFamily: "Outfit",
       }}
     >
       <div
@@ -385,8 +412,8 @@ export async function createMarketOg(symbol: string) {
     </div>,
     {
       ...OG_SIZE,
+      fonts,
       headers: {
-        // Retry sooner if the data provider is unavailable.
         "Cache-Control": data
           ? "public, max-age=300, s-maxage=300"
           : "public, max-age=30, s-maxage=30",
