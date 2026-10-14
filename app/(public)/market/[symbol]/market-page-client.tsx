@@ -177,7 +177,6 @@ export default function MarketPageClient({
   const user = useCurrentUser();
   const isLoggedIn = !!user;
   const userLanguage = resolveLanguage(user?.language);
-  const nationality = user?.nationality ?? null;
 
   const chartLabels = CHART_LABELS[userLanguage];
   const statisticsLabels = STATISTICS_LABELS[userLanguage];

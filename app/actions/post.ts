@@ -295,7 +295,7 @@ export async function createComment({
     ? "PRIVATE"
     : "PUBLIC";
 
-  let predictionNationality = "OTHERS";
+  let predictionNationality = "OTHER";
   let referenceClose: number | null = null;
 
   if (prediction) {
