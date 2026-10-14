@@ -268,11 +268,6 @@ function AccountPanelForm({
       return;
     }
 
-    if (!nationality) {
-      toast.error(labels.nationality_required);
-      return;
-    }
-
     if (statusMessage.length > MAX_STATUS_LENGTH) {
       toast.error(labels.update_failed);
       return;

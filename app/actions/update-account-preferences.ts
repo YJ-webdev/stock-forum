@@ -37,10 +37,6 @@ export async function updateAccountPreferences({
     throw new Error("Display name must be 30 characters or fewer.");
   }
 
-  if (!nationality) {
-    throw new Error("Nationality is required.");
-  }
-
   if (!LANGUAGES.some((item) => item.value === language)) {
     throw new Error("Unsupported language.");
   }

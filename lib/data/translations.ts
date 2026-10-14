@@ -1356,6 +1356,7 @@ export const ONBOARDING_LABELS: Record<
     finish: string;
     success: string;
     failed: string;
+    skip: string;
   }
 > = {
   en: {
@@ -1378,6 +1379,7 @@ export const ONBOARDING_LABELS: Record<
     finish: "Finish",
     success: "Profile setup complete.",
     failed: "Failed to complete profile setup.",
+    skip: "Skip",
   },
   ko: {
     profile: "프로필",
@@ -1398,6 +1400,7 @@ export const ONBOARDING_LABELS: Record<
     finish: "완료",
     success: "프로필 설정이 완료되었습니다.",
     failed: "프로필 설정을 완료하지 못했습니다.",
+    skip: "건너뛰기",
   },
   ja: {
     profile: "プロフィール",
@@ -1419,6 +1422,7 @@ export const ONBOARDING_LABELS: Record<
     finish: "完了",
     success: "プロフィール設定が完了しました。",
     failed: "プロフィール設定を完了できませんでした。",
+    skip: "スキップ",
   },
   zh: {
     profile: "个人资料",
@@ -1439,6 +1443,7 @@ export const ONBOARDING_LABELS: Record<
     finish: "完成",
     success: "个人资料设置完成。",
     failed: "无法完成个人资料设置。",
+    skip: "跳过",
   },
   de: {
     profile: "Profil",
@@ -1460,6 +1465,7 @@ export const ONBOARDING_LABELS: Record<
     finish: "Abschließen",
     success: "Profileinrichtung abgeschlossen.",
     failed: "Die Profileinrichtung konnte nicht abgeschlossen werden.",
+    skip: "Überspringen",
   },
   fr: {
     profile: "Profil",
@@ -1481,6 +1487,7 @@ export const ONBOARDING_LABELS: Record<
     finish: "Terminer",
     success: "Configuration du profil terminée.",
     failed: "Impossible de terminer la configuration du profil.",
+    skip: "Passer",
   },
   es: {
     profile: "Perfil",
@@ -1502,6 +1509,7 @@ export const ONBOARDING_LABELS: Record<
     finish: "Finalizar",
     success: "Configuración del perfil completada.",
     failed: "No se pudo completar la configuración del perfil.",
+    skip: "Saltar",
   },
   pt: {
     profile: "Perfil",
@@ -1523,6 +1531,7 @@ export const ONBOARDING_LABELS: Record<
     finish: "Concluir",
     success: "Configuração do perfil concluída.",
     failed: "Não foi possível concluir a configuração do perfil.",
+    skip: "Pular",
   },
   it: {
     profile: "Profilo",
@@ -1544,6 +1553,7 @@ export const ONBOARDING_LABELS: Record<
     finish: "Completa",
     success: "Configurazione del profilo completata.",
     failed: "Impossibile completare la configurazione del profilo.",
+    skip: "Salta",
   },
   ru: {
     profile: "Профиль",
@@ -1565,6 +1575,7 @@ export const ONBOARDING_LABELS: Record<
     finish: "Завершить",
     success: "Настройка профиля завершена.",
     failed: "Не удалось завершить настройку профиля.",
+    skip: "Пропустить",
   },
   ar: {
     profile: "الملف الشخصي",
@@ -1586,6 +1597,7 @@ export const ONBOARDING_LABELS: Record<
     finish: "إنهاء",
     success: "اكتمل إعداد الملف الشخصي.",
     failed: "تعذّر إكمال إعداد الملف الشخصي.",
+    skip: "تخطي",
   },
   hi: {
     profile: "प्रोफ़ाइल",
@@ -1608,6 +1620,7 @@ export const ONBOARDING_LABELS: Record<
     finish: "पूरा करें",
     success: "प्रोफ़ाइल सेटअप पूरा हो गया है।",
     failed: "प्रोफ़ाइल सेटअप पूरा नहीं हो सका।",
+    skip: "छोड़ें",
   },
 };
 

@@ -102,11 +102,6 @@ export function CreateBotUser({
       return;
     }
 
-    if (!nationality) {
-      toast.error("Select a nationality.");
-      return;
-    }
-
     submittingRef.current = true;
     setIsPending(true);
 

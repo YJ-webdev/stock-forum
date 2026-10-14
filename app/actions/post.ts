@@ -295,7 +295,7 @@ export async function createComment({
     ? "PRIVATE"
     : "PUBLIC";
 
-  let predictionNationality: string | null = null;
+  let predictionNationality = "OTHERS";
   let referenceClose: number | null = null;
 
   if (prediction) {
@@ -308,11 +308,7 @@ export async function createComment({
       throw new Error(labels.user_not_found);
     }
 
-    if (!user.nationality) {
-      throw new Error(labels.nationality_required);
-    }
-
-    predictionNationality = user.nationality;
+    predictionNationality = user.nationality?.trim() || "OTHERS";
 
     // External data is fetched before opening the transaction.
     referenceClose = await getReferenceClose(
@@ -364,10 +360,6 @@ export async function createComment({
 
       if (referenceClose === null) {
         throw new Error(labels.previous_close_unavailable);
-      }
-
-      if (!predictionNationality) {
-        throw new Error(labels.nationality_required);
       }
 
       createdPrediction = await tx.prediction.create({

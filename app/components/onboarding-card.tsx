@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
@@ -53,14 +53,41 @@ export function OnboardingCard() {
     "^DJI",
   ]);
 
+  const [dismissed, setDismissed] = useState(false);
+  const [storageReady, setStorageReady] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const labels = ONBOARDING_LABELS[resolveLanguage(language)];
+  const userId = user?.id;
+  const storageKey = userId
+    ? `bullbearvote:onboarding-dismissed:${userId}`
+    : null;
+
+  useEffect(() => {
+    if (!storageKey) {
+      setStorageReady(false);
+      setDismissed(false);
+      return;
+    }
+
+    try {
+      setDismissed(sessionStorage.getItem(storageKey) === "1");
+    } catch {
+      setDismissed(false);
+    }
+
+    setStorageReady(true);
+  }, [storageKey]);
+
+  const labels = ONBOARDING_LABELS[language];
   const siteName = process.env.NEXT_PUBLIC_SITE_NAME ?? "BullBearVote";
 
   const countryNames = new Intl.DisplayNames([language], {
     type: "region",
   });
+
+  const selectedCountry = NATIONALITIES.find(
+    (country) => country.value === nationality,
+  );
 
   function getCountryName(value: string, fallback: string) {
     if (!/^[A-Z]{2}$/.test(value)) return fallback;
@@ -68,11 +95,23 @@ export function OnboardingCard() {
     return countryNames.of(value) ?? fallback;
   }
 
-  const selectedCountry = NATIONALITIES.find(
-    (country) => country.value === nationality,
-  );
+  function dismissOnboarding() {
+    if (storageKey) {
+      try {
+        sessionStorage.setItem(storageKey, "1");
+      } catch {
+        // Still close the dialog if browser storage is unavailable.
+      }
+    }
 
-  if (!user || user.nationality) return null;
+    setDismissed(true);
+  }
+
+  function handleSkip() {
+    if (isPending) return;
+
+    setStep(2);
+  }
 
   function toggleMarket(symbol: string) {
     if (isPending) return;
@@ -80,7 +119,9 @@ export function OnboardingCard() {
     setSelectedSymbols((previous) =>
       previous.includes(symbol)
         ? previous.filter((item) => item !== symbol)
-        : [...previous, symbol],
+        : previous.length < 20
+          ? [...previous, symbol]
+          : previous,
     );
   }
 
@@ -111,12 +152,12 @@ export function OnboardingCard() {
     if (nextLanguage === language) return;
 
     const previousLanguage = language;
-    const userId = user.id;
+    const currentUserId = user.id;
 
     setLanguage(nextLanguage);
 
     setCurrentUser((previous) =>
-      previous?.id === userId
+      previous?.id === currentUserId
         ? { ...previous, language: nextLanguage }
         : previous,
     );
@@ -129,7 +170,7 @@ export function OnboardingCard() {
         setLanguage(previousLanguage);
 
         setCurrentUser((previous) =>
-          previous?.id === userId
+          previous?.id === currentUserId
             ? { ...previous, language: previousLanguage }
             : previous,
         );
@@ -141,7 +182,7 @@ export function OnboardingCard() {
   }
 
   function handleContinue() {
-    if (!nationality || isPending) return;
+    if (isPending) return;
 
     setStep(2);
   }
@@ -153,34 +194,47 @@ export function OnboardingCard() {
   }
 
   function handleComplete() {
-    if (!user || !nationality || isPending) return;
+    if (!user || isPending) return;
 
-    const userId = user.id;
+    const currentUserId = user.id;
 
     startTransition(async () => {
       try {
-        const updatedUser = await updateAccountPreferences({
-          name: user.name ?? "",
-          image: user.image ?? null,
-          nationality,
-          language,
-        });
+        // Nationality is optional. Save preferences only when selected.
+        // Language changes are already saved by handleLanguageChange.
+        if (nationality) {
+          const updatedUser = await updateAccountPreferences({
+            name: user.name ?? "",
+            image: user.image ?? null,
+            nationality,
+            language,
+          });
 
-        if (selectedSymbols.length > 0) {
-          await addMarketsToWatchlist(selectedSymbols);
+          // Wait until watchlist saving succeeds before updating context.
+          if (selectedSymbols.length > 0) {
+            await addMarketsToWatchlist(selectedSymbols);
+          }
+
+          dismissOnboarding();
+
+          setCurrentUser((previous) =>
+            previous?.id === currentUserId
+              ? {
+                  ...previous,
+                  name: updatedUser.name,
+                  image: updatedUser.image,
+                  nationality: updatedUser.nationality,
+                  language: updatedUser.language,
+                }
+              : previous,
+          );
+        } else {
+          if (selectedSymbols.length > 0) {
+            await addMarketsToWatchlist(selectedSymbols);
+          }
+
+          dismissOnboarding();
         }
-
-        setCurrentUser((previous) =>
-          previous?.id === userId
-            ? {
-                ...previous,
-                name: updatedUser.name,
-                image: updatedUser.image,
-                nationality: updatedUser.nationality,
-                language: updatedUser.language,
-              }
-            : previous,
-        );
 
         router.refresh();
         toast.success(labels.success);
@@ -189,6 +243,10 @@ export function OnboardingCard() {
         toast.error(labels.failed);
       }
     });
+  }
+
+  if (!user || user.nationality || !storageReady || dismissed) {
+    return null;
   }
 
   return (
@@ -319,7 +377,6 @@ export function OnboardingCard() {
                     className="mb-2 block text-sm font-normal"
                   >
                     {labels.nationality}
-                    <span className="ml-1 text-rose-500">*</span>
                   </label>
 
                   <Select
@@ -391,23 +448,24 @@ export function OnboardingCard() {
 
               <div className="flex-1 sm:hidden" />
 
-              <div className="mt-8 shrink-0">
+              <div className="mt-8 shrink-0 space-y-2">
                 <Button
                   type="button"
                   className="h-11 w-full text-[15px]"
-                  disabled={!nationality || isPending}
+                  disabled={isPending}
                   onClick={handleContinue}
                 >
-                  <span className="flex items-center gap-2">
-                    {labels.continue}
-                    {nationality && (
-                      <Check
-                        className="size-4"
-                        strokeWidth={2}
-                        aria-hidden="true"
-                      />
-                    )}
-                  </span>
+                  {labels.continue}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-10 w-full text-sm text-muted-foreground"
+                  disabled={isPending}
+                  onClick={handleSkip}
+                >
+                  {labels.skip}
                 </Button>
               </div>
             </>

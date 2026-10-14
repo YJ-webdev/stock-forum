@@ -272,11 +272,6 @@ export default function MarketPageClient({
       return;
     }
 
-    if (!nationality) {
-      toast.error("Please set your nationality before voting.");
-      return;
-    }
-
     if (selectedVote !== null) {
       toast.error("You have already voted for this round.");
       return;
