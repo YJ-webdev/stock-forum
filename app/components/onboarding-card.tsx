@@ -30,10 +30,10 @@ import {
 import { ONBOARDING_LABELS } from "@/lib/data/translations";
 
 import { updateAccountPreferences } from "@/app/actions/update-account-preferences";
-import { useCurrentUser, useSetCurrentUser } from "../context/user-context";
-import { addMarketsToWatchlist } from "../actions/watchlist";
-import { MarketPicker } from "./market-picker";
 import { updateAccountLanguage } from "../actions/update-account-language";
+import { addMarketsToWatchlist } from "../actions/watchlist";
+import { useCurrentUser, useSetCurrentUser } from "../context/user-context";
+import { MarketPicker } from "./market-picker";
 
 type OnboardingStep = 1 | 2;
 
@@ -63,7 +63,6 @@ export function OnboardingCard() {
   });
 
   function getCountryName(value: string, fallback: string) {
-    // ISO 국가 코드(예: KR, US, JP)만 변환
     if (!/^[A-Z]{2}$/.test(value)) return fallback;
 
     return countryNames.of(value) ?? fallback;
@@ -85,6 +84,18 @@ export function OnboardingCard() {
     );
   }
 
+  function handleNationalityChange(value: string | null) {
+    if (
+      !value ||
+      isPending ||
+      !NATIONALITIES.some((country) => country.value === value)
+    ) {
+      return;
+    }
+
+    setNationality(value);
+  }
+
   function handleLanguageChange(value: string | null) {
     if (
       !user ||
@@ -102,7 +113,6 @@ export function OnboardingCard() {
     const previousLanguage = language;
     const userId = user.id;
 
-    // 선택 즉시 온보딩과 사이트 전체에 반영
     setLanguage(nextLanguage);
 
     setCurrentUser((previous) =>
@@ -145,6 +155,8 @@ export function OnboardingCard() {
   function handleComplete() {
     if (!user || !nationality || isPending) return;
 
+    const userId = user.id;
+
     startTransition(async () => {
       try {
         const updatedUser = await updateAccountPreferences({
@@ -159,7 +171,7 @@ export function OnboardingCard() {
         }
 
         setCurrentUser((previous) =>
-          previous
+          previous?.id === userId
             ? {
                 ...previous,
                 name: updatedUser.name,
@@ -173,8 +185,7 @@ export function OnboardingCard() {
         router.refresh();
         toast.success(labels.success);
       } catch (error) {
-        console.error(error);
-
+        console.error("Failed to complete onboarding:", error);
         toast.error(labels.failed);
       }
     });
@@ -312,9 +323,9 @@ export function OnboardingCard() {
                   </label>
 
                   <Select
-                    value={language}
+                    value={nationality}
                     disabled={isPending}
-                    onValueChange={handleLanguageChange}
+                    onValueChange={handleNationalityChange}
                   >
                     <SelectTrigger
                       id="onboarding-nationality"
@@ -351,11 +362,7 @@ export function OnboardingCard() {
                   <Select
                     value={language}
                     disabled={isPending}
-                    onValueChange={(value) => {
-                      if (value !== null) {
-                        setLanguage(resolveLanguage(value));
-                      }
-                    }}
+                    onValueChange={handleLanguageChange}
                   >
                     <SelectTrigger
                       id="onboarding-language"
