@@ -107,12 +107,6 @@ export function OnboardingCard() {
     setDismissed(true);
   }
 
-  function handleSkip() {
-    if (isPending) return;
-
-    setStep(2);
-  }
-
   function toggleMarket(symbol: string) {
     if (isPending) return;
 
@@ -448,24 +442,24 @@ export function OnboardingCard() {
 
               <div className="flex-1 sm:hidden" />
 
-              <div className="mt-8 shrink-0 space-y-2">
+              <div className="mt-8 shrink-0">
                 <Button
                   type="button"
                   className="h-11 w-full text-[15px]"
                   disabled={isPending}
                   onClick={handleContinue}
                 >
-                  {labels.continue}
-                </Button>
+                  <span className="flex items-center gap-2">
+                    {nationality ? labels.continue : labels.skip}
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-10 w-full text-sm text-muted-foreground"
-                  disabled={isPending}
-                  onClick={handleSkip}
-                >
-                  {labels.skip}
+                    {nationality && (
+                      <Check
+                        className="size-4"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </span>
                 </Button>
               </div>
             </>
