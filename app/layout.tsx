@@ -1,20 +1,33 @@
+// app/layout.tsx
+
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
+
 import {
   Figtree,
-  Red_Hat_Display,
-  Plus_Jakarta_Sans,
   IBM_Plex_Mono,
   Outfit,
+  Plus_Jakarta_Sans,
+  Red_Hat_Display,
 } from "next/font/google";
-import "@/app/globals.css";
-import { cn } from "@/lib/utils";
-import { ThemeProvider } from "./components/theme-provider";
+
 import { Toaster } from "sonner";
+
+import "@/app/globals.css";
+
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+
+import { ThemeProvider } from "./components/theme-provider";
 
 const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-outfit",
+});
+
+const figtree = Figtree({
+  subsets: ["latin"],
+  variable: "--font-sans",
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -22,12 +35,11 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
   variable: "--font-ibm-plex-mono",
 });
-const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
 const redHatDisplay = Red_Hat_Display({
   subsets: ["latin"],
-  variable: "--font-red-hat-display",
   weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-red-hat-display",
 });
 
 const jakartaSans = Plus_Jakarta_Sans({
@@ -35,33 +47,59 @@ const jakartaSans = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
 });
 
+const SITE_NAME = "BullBearVote";
+const SITE_URL = "https://bullbearvote.com";
+
+const SITE_TITLE = `${SITE_NAME} | Market Predictions & Community`;
+
+const SITE_DESCRIPTION =
+  "Bull or Bear? Predict the next session for global stock indices, track your watchlist, and discuss markets with the community.";
+
 export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Financial Market Dashboard",
+  metadataBase: new URL(SITE_URL),
+
+  applicationName: SITE_NAME,
+
+  title: {
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+
+  description: SITE_DESCRIPTION,
+
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+
+  twitter: {
+    card: "summary",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+interface RootLayoutProps {
+  children: ReactNode;
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={cn(
-        "h-full antialiased",
+        "h-full font-sans antialiased",
         outfit.variable,
         figtree.variable,
-        "font-sans",
         ibmPlexMono.variable,
         redHatDisplay.variable,
         jakartaSans.variable,
       )}
-      suppressHydrationWarning
     >
-      <body
-        className={`${redHatDisplay.variable} min-h-full flex flex-col bg-background text-foreground`}
-      >
+      <body className="flex min-h-full flex-col bg-background text-foreground">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -77,10 +115,16 @@ export default function RootLayout({
             className="left-1/2! right-auto! translate-none! transform-[translateX(-50%)]!"
             toastOptions={{
               classNames: {
-                toast:
-                  "left-1/2! right-auto! -translate-x-1/2! w-max! max-w-[calc(100vw-32px)]! border-none! px-5! py-4! text-[15px]!",
-                title:
-                  "min-w-0! text-[15px]! font-medium! whitespace-normal! break-words! sm:whitespace-nowrap!",
+                toast: cn(
+                  "left-1/2! right-auto! -translate-x-1/2!",
+                  "w-max! max-w-[calc(100vw-32px)]!",
+                  "border-none! px-5! py-4! text-[15px]!",
+                ),
+                title: cn(
+                  "min-w-0! text-[15px]! font-medium!",
+                  "whitespace-normal! break-words!",
+                  "sm:whitespace-nowrap!",
+                ),
                 description: "text-sm! whitespace-normal! break-words!",
               },
             }}

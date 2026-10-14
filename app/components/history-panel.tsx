@@ -15,12 +15,10 @@ import {
 import {
   FcBookmark,
   FcBrokenLink,
-  FcDownLeft,
   FcFullTrash,
   FcInspection,
   FcLikePlaceholder,
   FcLink,
-  FcProcess,
   FcSms,
   FcUndo,
   FcVoicePresentation,

@@ -1,55 +1,86 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
+// app/admin/layout.tsx
+
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+
 import Link from "next/link";
-import { ShieldAlert, ArrowLeft } from "lucide-react";
+import { redirect } from "next/navigation";
+
+import { ArrowLeft, ShieldAlert } from "lucide-react";
+
+import { auth } from "@/auth";
 import { Role } from "@/generated/prisma/enums";
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const metadata: Metadata = {
+  title: "Admin Console",
+
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
+interface AdminLayoutProps {
+  children: ReactNode;
+}
+
+export default async function AdminLayout({ children }: AdminLayoutProps) {
   const session = await auth();
 
-  // 1. Unauthenticated users -> Redirect to login
   if (!session?.user) {
-    redirect("/login?callbackUrl=/admin");
+    redirect("/");
   }
 
-  // 2. Non-ADMIN users -> Redirect to home page
   if (session.user.role !== Role.ADMIN) {
     redirect("/");
   }
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      {/* Admin Topbar Header */}
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background px-6 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-            <ShieldAlert className="h-4 w-4" />
+      <header
+        className="
+          sticky top-0 z-40 flex min-h-14 flex-wrap
+          items-center justify-between gap-3
+          border-b bg-background px-4 py-3
+          shadow-sm sm:px-6
+        "
+      >
+        <div className="flex shrink-0 items-center gap-3">
+          <div
+            className="
+              flex size-7 items-center justify-center rounded-lg
+              bg-rose-500/10 text-rose-600 dark:text-rose-400
+            "
+          >
+            <ShieldAlert className="size-4" aria-hidden="true" />
           </div>
+
           <span className="text-sm font-bold tracking-tight">
             Admin Console
           </span>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-xs text-muted-foreground">
+
+        <div className="flex min-w-0 items-center gap-4">
+          <span className="hidden min-w-0 truncate text-xs text-muted-foreground sm:block">
             Logged in as{" "}
             <strong className="text-foreground">{session.user.email}</strong>
           </span>
-          <a
+
+          <Link
             href="/"
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="
+              flex shrink-0 items-center gap-1
+              text-xs text-muted-foreground
+              transition-colors hover:text-foreground
+            "
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="size-3.5" aria-hidden="true" />
             Back to Dashboard
-          </a>
+          </Link>
         </div>
       </header>
 
-      {/* Main Admin Body */}
-      <div className="flex-1 p-6">{children}</div>
+      <div className="min-w-0 flex-1 p-4 sm:p-6">{children}</div>
     </div>
   );
 }

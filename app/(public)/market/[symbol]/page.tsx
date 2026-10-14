@@ -1,16 +1,14 @@
-import MarketPageClient from "./market-page-client";
+// app/(public)/market/[symbol]/page.tsx
 
-import {
-  getMarketVote,
-  getMarketVoteStats,
-  type MarketVoteStats,
-  type VoteDirection,
-} from "@/app/actions/market-vote";
+import type { Metadata } from "next";
 
+import { getMarketVote, getMarketVoteStats } from "@/app/actions/market-vote";
 import { isMarketInWatchlist } from "@/app/actions/watchlist";
 
-import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
+import { getVotingWindow } from "@/lib/utils/get-voting-window";
+
+import MarketPageClient from "./market-page-client";
 
 interface PageProps {
   params: Promise<{
@@ -18,44 +16,87 @@ interface PageProps {
   }>;
 }
 
-export default async function Page({ params }: PageProps) {
+async function resolveMarket(params: PageProps["params"]) {
   const { symbol } = await params;
-
   const decodedSymbol = decodeURIComponent(symbol);
 
-  const symbolMeta = ALL_MARKET_SYMBOLS.find(
+  const market = ALL_MARKET_SYMBOLS.find(
     (item) => item.symbol === decodedSymbol,
   );
 
-  const canPredict = symbolMeta?.assetType === "index";
+  return {
+    symbol: decodedSymbol,
+    market,
+    canPredict: market?.assetType === "index",
+  };
+}
 
-  let initialVoteStats: MarketVoteStats | null = null;
-  let initialVote: VoteDirection | null = null;
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { symbol, market, canPredict } = await resolveMarket(params);
 
-  const initialIsWatchlist = await isMarketInWatchlist(decodedSymbol);
+  const name = market?.name ?? symbol;
 
-  if (canPredict) {
-    const votingWindow = getVotingWindow(decodedSymbol, Date.now());
-    const sessionDate = votingWindow.predictionFor;
+  const title = canPredict
+    ? `${name} Predictions & Discussion`
+    : `${name} Market Discussion`;
 
-    if (sessionDate) {
-      [initialVoteStats, initialVote] = await Promise.all([
-        getMarketVoteStats({
-          symbol: decodedSymbol,
-          sessionDate,
-        }),
+  const description = canPredict
+    ? `Bull or Bear on ${name}? Predict the next market session, explore community sentiment, and join the discussion on BullBearVote.`
+    : `Follow ${name}, add it to your watchlist, and share your market views with the BullBearVote community.`;
 
-        getMarketVote({
-          symbol: decodedSymbol,
-          sessionDate,
-        }),
-      ]);
-    }
-  }
+  const url = `/market/${encodeURIComponent(symbol)}`;
+  const shareTitle = `${title} | BullBearVote`;
+
+  return {
+    title,
+    description,
+
+    alternates: {
+      canonical: url,
+    },
+
+    openGraph: {
+      type: "website",
+      siteName: "BullBearVote",
+      url,
+      title: shareTitle,
+      description,
+    },
+
+    twitter: {
+      card: "summary",
+      title: shareTitle,
+      description,
+    },
+  };
+}
+
+export default async function Page({ params }: PageProps) {
+  const { symbol, canPredict } = await resolveMarket(params);
+
+  const sessionDate = canPredict
+    ? getVotingWindow(symbol, Date.now()).predictionFor
+    : null;
+
+  const [initialIsWatchlist, initialVoteStats, initialVote] = await Promise.all(
+    [
+      isMarketInWatchlist(symbol),
+
+      sessionDate
+        ? getMarketVoteStats({ symbol, sessionDate })
+        : Promise.resolve(null),
+
+      sessionDate
+        ? getMarketVote({ symbol, sessionDate })
+        : Promise.resolve(null),
+    ],
+  );
 
   return (
     <MarketPageClient
-      symbol={decodedSymbol}
+      symbol={symbol}
       initialVoteStats={initialVoteStats}
       initialVote={initialVote}
       initialIsWatchlist={initialIsWatchlist}
