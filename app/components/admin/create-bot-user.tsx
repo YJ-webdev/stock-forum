@@ -307,7 +307,7 @@ export function CreateBotUser({
 
             <Button
               type="submit"
-              disabled={busy || !name.trim() || !nationality}
+              disabled={busy || !name.trim()}
               className="cursor-pointer"
             >
               {isPending ? "Creating..." : "Create bot"}

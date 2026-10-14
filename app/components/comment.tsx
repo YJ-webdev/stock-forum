@@ -313,11 +313,6 @@ export function MarketComments({
       return;
     }
 
-    if (!user.nationality) {
-      toast.error(actionLabels.nationality_required);
-      return;
-    }
-
     if (prediction.isMarketOpen) {
       toast.error(labels.voting_closed);
       return;
@@ -337,7 +332,9 @@ export function MarketComments({
 
     if (
       !Number.isInteger(betAmount) ||
-      (betAmount !== 0 && (betAmount < 50 || betAmount > 500))
+      betAmount < 0 ||
+      betAmount > 500 ||
+      betAmount % 50 !== 0
     ) {
       toast.error(labels.invalid_bet);
       return;

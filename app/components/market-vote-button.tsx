@@ -238,11 +238,6 @@ export function MarketVoteButton({
     if (submittingRef.current) return;
     if (!requireLogin() || !canStartPrediction()) return;
 
-    if (!user?.nationality) {
-      toast.error(toastLabels.nationality_required);
-      return;
-    }
-
     if (!draftDirection) {
       toast.error(interfaceLabels.choose_direction);
       return;
@@ -265,7 +260,9 @@ export function MarketVoteButton({
 
     if (
       !Number.isInteger(submittedAmount) ||
-      (submittedAmount !== 0 && (submittedAmount < 50 || submittedAmount > 500))
+      submittedAmount < 0 ||
+      submittedAmount > 500 ||
+      submittedAmount % 50 !== 0
     ) {
       toast.error(toastLabels.invalid_amount);
       return;
