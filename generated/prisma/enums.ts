@@ -90,7 +90,8 @@ export const NotificationType = {
   COMMENT_REPORTED: 'COMMENT_REPORTED',
   REPLY_REPORTED: 'REPLY_REPORTED',
   TIER_UP: 'TIER_UP',
-  TIER_DOWN: 'TIER_DOWN'
+  TIER_DOWN: 'TIER_DOWN',
+  USER_BANNED: 'USER_BANNED'
 } as const
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]

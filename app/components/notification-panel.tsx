@@ -42,13 +42,8 @@ import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 
 import {
-  FcAbout,
   FcAdvertising,
   FcApproval,
-  FcBearish,
-  FcCalculator,
-  FcExpired,
-  FcFlashOn,
   FcHighPriority,
   FcIdea,
   FcLikePlaceholder,
@@ -891,6 +886,7 @@ function NotificationItem({
 
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const suppressClickUntil = useRef(0);
+  const isBanNotification = notification.type === "USER_BANNED";
 
   return (
     <li
@@ -1020,11 +1016,15 @@ function NotificationItem({
           </span>
 
           {message && (
-            <span className="mt-1 block truncate text-sm text-zinc-500 dark:text-zinc-400">
+            <span
+              className={`
+      mt-1 block text-sm text-zinc-500 dark:text-zinc-400
+      ${isBanNotification ? "whitespace-pre-wrap wrap-break-word" : "truncate"}
+    `}
+            >
               {message}
             </span>
           )}
-
           {preview && (
             <span className="mt-1 block truncate text-sm text-zinc-400 dark:text-zinc-500">
               “{preview}”
@@ -1295,6 +1295,9 @@ function extractTextFromTipTap(value: unknown): string {
 
 function getNotificationHref(notification: MyNotification): string | null {
   switch (notification.type) {
+    case "USER_BANNED":
+      return null;
+
     case "COMMENT_LIKED":
     case "COMMENT_REPORTED": {
       const symbol = notification.comment?.assets[0]?.asset.symbol;
@@ -1380,6 +1383,9 @@ function NotificationIcon({ type }: { type: MyNotification["type"] }) {
 
       case "PREDICTION_PENDING":
         return FcOvertime;
+
+      case "USER_BANNED":
+        return FcHighPriority;
 
       case "TIER_UP":
       case "TIER_DOWN":

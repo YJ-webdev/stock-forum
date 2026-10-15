@@ -32,6 +32,7 @@ export interface ProfileUser {
   id: string;
   name: string;
   image: string | null;
+  isBanned?: boolean;
 }
 
 interface ProfileCardProps {
@@ -198,7 +199,10 @@ export function UserProfileTrigger({
         <BanUserDialog
           key={banTarget.id}
           target={banTarget}
-          onClose={() => setBanTarget(null)}
+          onClose={() => {
+            profileCache.clear();
+            setBanTarget(null);
+          }}
         />
       )}
     </>
@@ -318,6 +322,7 @@ function ProfileCardContent({
     : currentUserId === userId;
 
   const canModerate = isAdmin && !isMe;
+  const isBanned = profile?.status === "BANNED";
 
   return (
     <div className="rounded-xl p-4 text-zinc-800 dark:bg-black dark:text-zinc-200">
@@ -455,32 +460,46 @@ function ProfileCardContent({
             type="button"
             disabled={!onBanRequest || loading || loadFailed || !profile}
             onClick={() => {
-              if (!profile || loadFailed) {
-                return;
-              }
+              if (!profile || loadFailed) return;
 
               onBanRequest?.({
                 id: profile.id,
                 name: displayName,
                 image: displayImage ?? null,
+                isBanned,
               });
             }}
-            className="
-              flex min-h-11 w-full cursor-pointer
-              items-center justify-center gap-2
-              rounded-b-xl px-3 py-2
-              text-sm font-medium text-red-600
-              transition-colors
-              hover:bg-red-50
-              focus-visible:outline-none
-              focus-visible:ring-2 focus-visible:ring-inset
+            className={`
+        flex min-h-11 w-full cursor-pointer
+        items-center justify-center gap-2
+        rounded-b-xl px-3 py-2
+        text-sm font-medium transition-colors
+        focus-visible:outline-none
+        focus-visible:ring-2 focus-visible:ring-inset
+        disabled:cursor-not-allowed disabled:opacity-50
+        ${
+          isBanned
+            ? `
+              text-emerald-600 hover:bg-emerald-50
+              focus-visible:ring-emerald-400
+              dark:text-emerald-400
+              dark:hover:bg-emerald-950/40
+            `
+            : `
+              text-red-600 hover:bg-red-50
               focus-visible:ring-red-400
-              disabled:cursor-not-allowed disabled:opacity-50
               dark:text-red-400 dark:hover:bg-red-950/40
-            "
+            `
+        }
+      `}
           >
-            <Ban className="size-4" aria-hidden="true" />
-            Ban user
+            {isBanned ? (
+              <RotateCcw className="size-4" aria-hidden="true" />
+            ) : (
+              <Ban className="size-4" aria-hidden="true" />
+            )}
+
+            {isBanned ? "Unban user" : "Ban user"}
           </button>
         </div>
       )}

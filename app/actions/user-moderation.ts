@@ -133,10 +133,130 @@ export async function banUser(input: BanUserInput) {
       });
     }
 
-    await tx.moderationAction.create({
+    const moderationAction = await tx.moderationAction.create({
       data: {
         type: "BAN_USER",
         moderatorId: session.user.id,
+        targetUserId: userId,
+        reason,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    await tx.notification.create({
+      data: {
+        userId,
+        actorId: session.user.id,
+        type: "USER_BANNED",
+        title: "Your chat access has been restricted",
+        message:
+          `You can no longer post or edit comment and reply content. ` +
+          `You can still make predictions without comment content.\n\n` +
+          `Reason: ${reason}`,
+        eventKey: `user-banned:${moderationAction.id}`,
+      },
+    });
+
+    return { success: true };
+  });
+}
+
+export async function unbanUser(input: BanUserInput) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  if (
+    !input ||
+    typeof input.userId !== "string" ||
+    typeof input.reason !== "string"
+  ) {
+    throw new Error("Invalid unban request.");
+  }
+
+  const moderatorId = session.user.id;
+  const userId = input.userId.trim();
+  const reason = input.reason.trim();
+
+  if (!userId) {
+    throw new Error("Select a user to unban.");
+  }
+
+  if (!reason || reason.length > 500) {
+    throw new Error("Enter a reason between 1 and 500 characters.");
+  }
+
+  if (userId === moderatorId) {
+    throw new Error("You cannot unban yourself.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const lockedUserIds = [...new Set([moderatorId, userId])].sort();
+
+    for (const lockedUserId of lockedUserIds) {
+      await tx.$queryRaw`
+        SELECT "id"
+        FROM "User"
+        WHERE "id" = ${lockedUserId}
+        FOR UPDATE
+      `;
+    }
+
+    const moderator = await tx.user.findUnique({
+      where: { id: moderatorId },
+      select: {
+        role: true,
+        status: true,
+        deletedAt: true,
+      },
+    });
+
+    if (
+      !moderator ||
+      moderator.role !== "ADMIN" ||
+      moderator.status !== "ACTIVE" ||
+      moderator.deletedAt
+    ) {
+      throw new Error("You do not have permission to unban users.");
+    }
+
+    const target = await tx.user.findUnique({
+      where: { id: userId },
+      select: {
+        status: true,
+        deletedAt: true,
+      },
+    });
+
+    if (!target || target.deletedAt) {
+      throw new Error("This account is no longer available.");
+    }
+
+    if (target.status !== "BANNED") {
+      throw new Error("This user is not banned.");
+    }
+
+    await tx.chatBanIdentity.deleteMany({
+      where: { userId },
+    });
+
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        status: "ACTIVE",
+        bannedAt: null,
+        mutedAt: null,
+      },
+    });
+
+    await tx.moderationAction.create({
+      data: {
+        type: "UNBAN_USER",
+        moderatorId,
         targetUserId: userId,
         reason,
       },

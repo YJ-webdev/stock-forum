@@ -427,6 +427,8 @@ enum NotificationType {
 
   TIER_UP
   TIER_DOWN
+
+  USER_BANNED
 }
 
 model Notification {

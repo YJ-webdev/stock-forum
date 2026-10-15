@@ -22,6 +22,7 @@ export async function getUserProfileCard(targetUserId: string) {
         name: true,
         image: true,
         statusMessage: true,
+        status: true,
 
         ranking: {
           select: {
@@ -75,6 +76,7 @@ export async function getUserProfileCard(targetUserId: string) {
     isFollowing: Boolean(follow),
     viewerId,
     statusMessage: user.statusMessage,
+    status: user.status,
   };
 }
 
