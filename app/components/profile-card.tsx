@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 
 import { Ban, RotateCcw } from "lucide-react";
 
