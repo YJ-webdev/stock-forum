@@ -43,7 +43,7 @@ export function OnboardingCard() {
   const router = useRouter();
 
   const [step, setStep] = useState<OnboardingStep>(1);
-  const [nationality, setNationality] = useState("");
+  const [nationality, setNationality] = useState("OTHER");
   const [language, setLanguage] = useState<Language>(
     resolveLanguage(user?.language),
   );
