@@ -1,5 +1,3 @@
-// app/components/home-comment-composer.tsx
-
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
@@ -39,7 +37,7 @@ function buildContent(text: string, gif: GifResult | null): JSONContent {
     type: "doc",
     content: [
       ...(trimmedText
-        ? trimmedText.split(/\r?\n/).map((line) => ({
+        ? trimmedText.split(/\r\n|\r|\n/).map((line) => ({
             type: "paragraph",
             content: line ? [{ type: "text", text: line }] : [],
           }))
@@ -72,6 +70,7 @@ export function HomeCommentComposer({
   const editorId = useId();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const gifButtonRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
 
   const viewerId = user?.id ?? null;
@@ -85,30 +84,34 @@ export function HomeCommentComposer({
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const isChatRestricted = user?.status === "BANNED";
+  const editorDisabled = submitting || isChatRestricted || !viewerId;
+  const editorOpen = expanded && !isChatRestricted && Boolean(viewerId);
+
   const selectedMarket = ALL_MARKET_SYMBOLS.find(
     (market) => market.symbol === symbol,
   );
 
   const hasContent = Boolean(text.trim() || selectedGif);
-  const canPublish = Boolean(selectedMarket && hasContent && !submitting);
+  const canPublish = Boolean(selectedMarket && hasContent && !editorDisabled);
 
   useEffect(() => {
-    if (expanded) {
+    if (editorOpen) {
       inputRef.current?.focus({ preventScroll: true });
     }
-  }, [expanded]);
+  }, [editorOpen]);
 
   useEffect(() => {
     const input = inputRef.current;
 
-    if (!input || !expanded) return;
+    if (!input || !editorOpen) return;
 
     input.style.height = "auto";
     input.style.height = `${Math.max(
       112,
       Math.min(input.scrollHeight, 320),
     )}px`;
-  }, [text, expanded]);
+  }, [text, editorOpen]);
 
   useEffect(() => {
     setText("");
@@ -118,6 +121,13 @@ export function HomeCommentComposer({
     setExpanded(false);
   }, [viewerId]);
 
+  useEffect(() => {
+    if (!isChatRestricted) return;
+
+    setGifPickerOpen(false);
+    setExpanded(false);
+  }, [isChatRestricted]);
+
   function restoreTriggerFocus() {
     requestAnimationFrame(() => {
       triggerRef.current?.focus({ preventScroll: true });
@@ -125,6 +135,8 @@ export function HomeCommentComposer({
   }
 
   function openEditor() {
+    if (isChatRestricted || submittingRef.current) return;
+
     if (!user?.id) {
       toast.error(copy.login);
       return;
@@ -147,7 +159,7 @@ export function HomeCommentComposer({
   }
 
   async function publish() {
-    if (submittingRef.current) return;
+    if (submittingRef.current || isChatRestricted) return;
 
     if (!user?.id) {
       toast.error(copy.login);
@@ -214,7 +226,7 @@ export function HomeCommentComposer({
               dark:bg-zinc-800 dark:text-zinc-300
             "
           >
-            {user?.name?.trim().charAt(0).toUpperCase() || "?"}
+            {Array.from(user?.name?.trim() ?? "")[0]?.toUpperCase() || "?"}
           </AvatarFallback>
         </Avatar>
 
@@ -223,10 +235,11 @@ export function HomeCommentComposer({
           <button
             ref={triggerRef}
             type="button"
-            aria-expanded={expanded}
+            disabled={isChatRestricted || submitting}
+            aria-expanded={editorOpen}
             aria-controls={editorId}
-            aria-hidden={expanded}
-            inert={expanded}
+            aria-hidden={editorOpen}
+            inert={editorOpen}
             onClick={openEditor}
             className={`
               absolute inset-x-0 top-0
@@ -237,17 +250,22 @@ export function HomeCommentComposer({
               transition-[opacity,background-color,border-color]
               duration-200 ease-out
               motion-reduce:transition-none
-              hover:border-zinc-400 hover:bg-zinc-50
+              enabled:hover:border-zinc-400
+              enabled:hover:bg-zinc-50
               focus-visible:outline-none focus-visible:ring-2
               focus-visible:ring-zinc-400
+              disabled:cursor-not-allowed disabled:opacity-50
               dark:border-zinc-700 dark:text-zinc-500
-              dark:hover:border-zinc-600 dark:hover:bg-zinc-800/50
-              ${expanded ? "pointer-events-none opacity-0" : "opacity-100"}
+              dark:enabled:hover:border-zinc-600
+              dark:enabled:hover:bg-zinc-800/50
+              ${editorOpen ? "pointer-events-none opacity-0" : "opacity-100"}
             `}
           >
             <span className="truncate">
-              {text.trim() ||
-                (selectedGif ? copy.gif_draft : labels.share_view)}
+              {isChatRestricted
+                ? labels.share_view
+                : text.trim() ||
+                  (selectedGif ? copy.gif_draft : labels.share_view)}
             </span>
 
             <SquarePen
@@ -259,15 +277,15 @@ export function HomeCommentComposer({
 
           {/* Animated editor */}
           <div
-            aria-hidden={!expanded}
-            inert={!expanded}
+            aria-hidden={!editorOpen}
+            inert={!editorOpen}
             className={`
               grid
               transition-[grid-template-rows,opacity]
               duration-300 ease-in-out
               motion-reduce:transition-none
               ${
-                expanded
+                editorOpen
                   ? "grid-rows-[1fr] opacity-100"
                   : "pointer-events-none grid-rows-[0fr] opacity-0"
               }
@@ -287,8 +305,12 @@ export function HomeCommentComposer({
 
                   <Select
                     value={symbol || null}
-                    onValueChange={(value) => setSymbol(value ?? "")}
-                    disabled={submitting}
+                    onValueChange={(value) => {
+                      if (editorDisabled || submittingRef.current) return;
+
+                      setSymbol(value ?? "");
+                    }}
+                    disabled={editorDisabled}
                   >
                     <SelectTrigger
                       aria-label={copy.market}
@@ -302,7 +324,8 @@ export function HomeCommentComposer({
                     <SelectContent
                       align="start"
                       className="
-                        max-h-72 w-full rounded-xl border-zinc-200 bg-white
+                        max-h-72 w-full rounded-xl
+                        border-zinc-200 bg-white
                         dark:border-zinc-700 dark:bg-zinc-900
                       "
                     >
@@ -322,10 +345,14 @@ export function HomeCommentComposer({
                 <textarea
                   ref={inputRef}
                   value={text}
-                  onChange={(event) => setText(event.target.value)}
+                  onChange={(event) => {
+                    if (editorDisabled || submittingRef.current) return;
+
+                    setText(event.target.value);
+                  }}
                   placeholder={labels.share_view}
                   aria-label={labels.share_view}
-                  disabled={submitting}
+                  disabled={editorDisabled}
                   rows={4}
                   className="
                     block min-h-28 w-full resize-none overflow-y-auto
@@ -333,7 +360,7 @@ export function HomeCommentComposer({
                     px-3.5 py-3 text-base leading-6 text-zinc-900
                     placeholder:text-zinc-400
                     focus:border-zinc-400 focus:outline-none
-                    disabled:opacity-60
+                    disabled:cursor-not-allowed disabled:opacity-60
                     dark:border-zinc-700 dark:text-zinc-100
                     dark:placeholder:text-zinc-500
                     dark:focus:border-zinc-500
@@ -353,8 +380,12 @@ export function HomeCommentComposer({
                     <button
                       type="button"
                       aria-label={copy.remove_gif}
-                      disabled={submitting}
-                      onClick={() => setSelectedGif(null)}
+                      disabled={editorDisabled}
+                      onClick={() => {
+                        if (editorDisabled || submittingRef.current) return;
+
+                        setSelectedGif(null);
+                      }}
                       className="
                         absolute top-2 right-2 flex size-7
                         cursor-pointer items-center justify-center
@@ -362,7 +393,7 @@ export function HomeCommentComposer({
                         transition-colors hover:bg-black/80
                         focus-visible:outline-none
                         focus-visible:ring-2 focus-visible:ring-white
-                        disabled:cursor-default disabled:opacity-50
+                        disabled:cursor-not-allowed disabled:opacity-50
                       "
                     >
                       <X className="size-4" aria-hidden="true" />
@@ -373,34 +404,46 @@ export function HomeCommentComposer({
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <div className="relative">
                     <button
+                      ref={gifButtonRef}
                       type="button"
-                      disabled={submitting}
-                      onClick={() => setGifPickerOpen((open) => !open)}
+                      disabled={editorDisabled}
+                      onClick={() => {
+                        if (editorDisabled || submittingRef.current) return;
+
+                        setGifPickerOpen((open) => !open);
+                      }}
                       aria-label={copy.select_gif}
-                      aria-expanded={gifPickerOpen}
+                      aria-expanded={
+                        editorOpen && !editorDisabled && gifPickerOpen
+                      }
                       className="
                         h-8.5 cursor-pointer rounded-md px-2
                         text-sm font-medium text-zinc-500
                         transition-colors hover:bg-zinc-100
                         focus-visible:outline-none
                         focus-visible:ring-2 focus-visible:ring-zinc-400
-                        disabled:cursor-default disabled:opacity-50
+                        disabled:cursor-not-allowed disabled:opacity-50
                         dark:text-zinc-400 dark:hover:bg-zinc-800
                       "
                     >
                       GIF
                     </button>
 
-                    <GifPicker
-                      open={gifPickerOpen}
-                      onOpenChange={setGifPickerOpen}
-                      onSelect={(gif: GifResult) => {
-                        if (submittingRef.current) return;
+                    {!editorDisabled && editorOpen && (
+                      <GifPicker
+                        triggerRef={gifButtonRef}
+                        open={gifPickerOpen}
+                        onOpenChange={setGifPickerOpen}
+                        onSelect={(gif: GifResult) => {
+                          if (editorDisabled || submittingRef.current) {
+                            return;
+                          }
 
-                        setSelectedGif(gif);
-                        setGifPickerOpen(false);
-                      }}
-                    />
+                          setSelectedGif(gif);
+                          setGifPickerOpen(false);
+                        }}
+                      />
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2">

@@ -91,6 +91,12 @@ const CHART_WIDTH = 1072;
 const CHART_HEIGHT = 220;
 const PADDING = 12;
 
+async function loadOgLogo() {
+  const logo = await readFile(join(process.cwd(), "public/favicon.png"));
+
+  return `data:image/png;base64,${logo.toString("base64")}`;
+}
+
 function buildChart(data: CandleData) {
   const points = data.points;
 
@@ -207,7 +213,7 @@ function formatTime(value: number | null) {
 }
 
 export async function createMarketOg(symbol: string) {
-  const fonts = await loadOutfitFonts();
+  const [fonts, logo] = await Promise.all([loadOutfitFonts(), loadOgLogo()]);
 
   const market = ALL_MARKET_SYMBOLS.find((item) => item.symbol === symbol);
 
@@ -270,16 +276,16 @@ export async function createMarketOg(symbol: string) {
             gap: 14,
           }}
         >
-          <svg width="44" height="44" viewBox="0 0 44 44">
-            <rect x="1" y="2" width="34" height="19" rx="9.5" fill="#398fba" />
-            <path
-              d="M20 12 L20 34 L26 29 L31 40 L36 38 L31 27 L40 26 Z"
-              fill="#e4e4e7"
-              stroke="#18181b"
-              strokeWidth="3"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <img
+            src={logo}
+            alt=""
+            width={44}
+            height={44}
+            style={{
+              objectFit: "contain",
+              flexShrink: 0,
+            }}
+          />
 
           <span style={{ fontSize: 28, fontWeight: 700 }}>BullBearVote</span>
         </div>

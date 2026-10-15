@@ -1,6 +1,8 @@
 // app/components/layout-shell.tsx
 "use client";
 
+import { OAuthFragmentCleanup } from "./oauth-fragment-cleanup";
+
 import dynamic from "next/dynamic";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
@@ -278,6 +280,7 @@ export default function LayoutShell({
   return (
     <UserProvider user={user}>
       <PointBalanceProvider>
+        <OAuthFragmentCleanup />
         <OnboardingCard />
 
         <div className="relative box-border flex h-screen min-h-0 flex-col overflow-hidden pt-18 supports-[height:100dvh]:h-dvh">
