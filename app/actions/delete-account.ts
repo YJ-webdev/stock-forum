@@ -50,12 +50,17 @@ export async function deleteAccount(confirmation: string) {
       select: {
         email: true,
         image: true,
+        role: true,
         deletedAt: true,
       },
     });
 
     if (!user || user.deletedAt) {
       return null;
+    }
+
+    if (user.role === "ADMIN") {
+      throw new Error("Administrator accounts cannot be deleted.");
     }
 
     const now = new Date();

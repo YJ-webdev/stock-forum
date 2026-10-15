@@ -43,6 +43,7 @@ import { updateAccountLanguage } from "@/app/actions/update-account-language";
 import { uploadAvatar } from "@/app/actions/upload-avatar";
 
 import { useCurrentUser, useSetCurrentUser } from "@/app/context/user-context";
+import { DeleteAccountButton } from "./delete-account-button";
 
 // -----------------------------------------------------------------------------
 // TYPES / CONSTANTS
@@ -621,22 +622,30 @@ function AccountPanelForm({
         </div>
       </div>
 
-      {/* Save */}
-      <div className="ms-auto mt-auto shrink-0 px-5 pb-5">
+      {/* Account actions */}
+      <div
+        className="
+    mt-auto flex shrink-0 flex-wrap
+    items-center justify-between gap-3
+    px-5 pb-5 pt-3
+  "
+      >
+        {user.role !== "ADMIN" && <DeleteAccountButton disabled={isPending} />}
+
         <Button
           type="button"
           onClick={handleSave}
           disabled={!hasChanges || isPending}
-          className="px-5 py-4 text-[15px]"
+          className="ms-auto px-5 py-4 text-[15px]"
         >
           {isPending ? (
             <span className="flex items-center gap-2">
               <span
                 aria-hidden="true"
                 className="
-                  size-3.5 animate-spin rounded-full
-                  border-2 border-current/40 border-t-current
-                "
+            size-3.5 animate-spin rounded-full
+            border-2 border-current/40 border-t-current
+          "
               />
               {labels.saving}
             </span>
