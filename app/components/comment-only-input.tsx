@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState, useTransition } from "react";
+import type { JSONContent } from "@tiptap/react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -11,9 +12,10 @@ import { VotingCountdown } from "./voting-countdown";
 import { GifPicker, type GifResult } from "@/app/components/gif-picker";
 
 import { createComment, type MarketPageComments } from "../actions/post";
+import { useCurrentUser } from "@/app/context/user-context";
+
 import { resolveLanguage } from "@/lib/data/languages";
 import { COMMENT_LABELS } from "@/lib/data/translations";
-import type { JSONContent } from "@tiptap/react";
 
 interface CommentOnlyInputProps {
   initialComment?: string;
@@ -40,6 +42,8 @@ interface CommentOnlyInputProps {
   ) => void | Promise<void>;
 }
 
+const MAX_TEXTAREA_HEIGHT = 240;
+
 export function CommentOnlyInput({
   assetSymbol,
   targetMs,
@@ -51,39 +55,68 @@ export function CommentOnlyInput({
   initialComment = "",
   submitComment = createComment,
 }: CommentOnlyInputProps) {
+  const user = useCurrentUser();
+
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
   const [comment, setComment] = useState(initialComment);
   const [isPending, startTransition] = useTransition();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const gifButtonRef = useRef<HTMLButtonElement>(null);
+  const submittingRef = useRef(false);
+
+  const userLanguage = resolveLanguage(user?.language ?? currentUser?.language);
+  const commentLabels = COMMENT_LABELS[userLanguage];
+
+  const isLoggedIn = Boolean(user);
+  const isChatRestricted = user?.status === "BANNED";
+  const editorDisabled = isPending || isChatRestricted;
+  const hasContent = comment.trim().length > 0 || Boolean(selectedGif);
+
+  const displayName = user?.name ?? currentUser?.name;
+  const displayImage = user?.image ?? currentUser?.image;
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
+
     if (!textarea) return;
 
-    const resize = () => {
-      const maxHeight = 240;
+    function resizeTextarea() {
+      if (!textarea) return;
 
       textarea.style.height = "auto";
 
       const contentHeight = textarea.scrollHeight;
 
-      textarea.style.height = `${Math.min(contentHeight, maxHeight)}px`;
-      textarea.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
-    };
+      textarea.style.height = `${Math.min(
+        contentHeight,
+        MAX_TEXTAREA_HEIGHT,
+      )}px`;
 
-    resize();
+      textarea.style.overflowY =
+        contentHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden";
+    }
 
-    let lastWidth = textarea.getBoundingClientRect().width;
+    resizeTextarea();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", resizeTextarea);
+
+      return () => {
+        window.removeEventListener("resize", resizeTextarea);
+      };
+    }
+
+    let previousWidth = textarea.getBoundingClientRect().width;
 
     const observer = new ResizeObserver(() => {
       const width = textarea.getBoundingClientRect().width;
 
-      if (width !== lastWidth) {
-        lastWidth = width;
-        resize();
-      }
+      if (width === previousWidth) return;
+
+      previousWidth = width;
+      resizeTextarea();
     });
 
     observer.observe(textarea);
@@ -91,152 +124,185 @@ export function CommentOnlyInput({
     return () => observer.disconnect();
   }, [comment]);
 
-  const userLanguage = resolveLanguage(currentUser?.language);
-  const commentLabels = COMMENT_LABELS[userLanguage];
-
-  const requireLogin = () => {
-    if (currentUser) return true;
+  function requireLogin() {
+    if (isLoggedIn) return true;
 
     toast.error(commentLabels.login.replace(/\.{3}$/, ""), {
       id: "login-required",
     });
 
     return false;
-  };
+  }
 
-  const handleComment = () => {
-    if (isPending || !requireLogin()) return;
-    if (!comment.trim() && !selectedGif) return;
+  function handleGifSelect(gif: GifResult) {
+    if (editorDisabled || submittingRef.current || !requireLogin()) {
+      return;
+    }
+
+    setSelectedGif(gif);
+    setGifPickerOpen(false);
+  }
+
+  function handleComment() {
+    if (editorDisabled || submittingRef.current || !requireLogin()) {
+      return;
+    }
+
+    if (!hasContent) return;
+
+    submittingRef.current = true;
+    setGifPickerOpen(false);
 
     startTransition(async () => {
-      let createdComment: MarketPageComments[number] | undefined;
-
       try {
-        const content = {
+        const text = comment.trim();
+        const nodes: JSONContent[] = [];
+
+        if (text) {
+          for (const line of text.split(/\r\n|\r|\n/)) {
+            nodes.push({
+              type: "paragraph",
+              content: line ? [{ type: "text", text: line }] : [],
+            });
+          }
+        }
+
+        if (selectedGif) {
+          nodes.push({
+            type: "image",
+            attrs: {
+              src: selectedGif.src,
+              alt: selectedGif.title,
+            },
+          });
+        }
+
+        const content: JSONContent = {
           type: "doc",
-          content: [
-            ...(comment.trim()
-              ? [
-                  {
-                    type: "paragraph",
-                    content: [
-                      {
-                        type: "text",
-                        text: comment.trim(),
-                      },
-                    ],
-                  },
-                ]
-              : []),
-            ...(selectedGif
-              ? [
-                  {
-                    type: "image",
-                    attrs: {
-                      src: selectedGif.src,
-                      alt: selectedGif.title,
-                    },
-                  },
-                ]
-              : []),
-          ],
+          content: nodes,
         };
 
-        const result = await submitComment({
-          content,
-          assetSymbols: [assetSymbol],
-        });
+        let createdComment: MarketPageComments[number] | undefined;
 
-        createdComment = result.comment ?? undefined;
-      } catch (error) {
-        console.error("Failed to create comment:", error);
-        toast.error(commentLabels.failed);
-        return;
-      }
-
-      setComment("");
-      setSelectedGif(null);
-      setGifPickerOpen(false);
-
-      toast.success(commentLabels.success);
-
-      if (createdComment) {
         try {
-          await onCommentCreated(createdComment);
+          const result = await submitComment({
+            content,
+            assetSymbols: [assetSymbol],
+          });
+
+          createdComment = result.comment ?? undefined;
         } catch (error) {
-          console.error("Failed to update comment list:", error);
+          console.error("Failed to create comment:", error);
+
+          toast.error(
+            error instanceof Error && error.message
+              ? error.message
+              : commentLabels.failed,
+          );
+
+          return;
         }
+
+        setComment("");
+        setSelectedGif(null);
+        setGifPickerOpen(false);
+
+        toast.success(commentLabels.success);
+
+        if (createdComment) {
+          try {
+            await onCommentCreated(createdComment);
+          } catch (error) {
+            console.error("Failed to update comment list:", error);
+          }
+        }
+      } finally {
+        submittingRef.current = false;
       }
     });
-  };
+  }
 
   return (
     <div className="mb-8 flex gap-3">
       <Avatar className="size-9 shrink-0" aria-hidden="true">
         <AvatarImage
-          src={currentUser?.image ?? undefined}
+          src={displayImage ?? undefined}
           alt=""
           className="object-cover"
         />
 
-        <AvatarFallback className="text-lg bg-olive-500 text-white font-normal">
-          {currentUser?.name ? currentUser.name.slice(0, 1).toUpperCase() : "G"}
+        <AvatarFallback className="bg-olive-500 text-lg font-normal text-white">
+          {displayName ? Array.from(displayName)[0]?.toUpperCase() || "G" : "G"}
         </AvatarFallback>
       </Avatar>
 
       <div className="min-w-0 flex-1">
         <div className="relative rounded-lg bg-zinc-100 px-4 dark:bg-zinc-800">
+          {/* Text */}
           <textarea
             ref={textareaRef}
+            rows={1}
             value={comment}
             onChange={(event) => {
-              if (!currentUser) return;
+              if (!isLoggedIn || editorDisabled || submittingRef.current) {
+                return;
+              }
+
               setComment(event.target.value);
             }}
-            readOnly={!currentUser}
-            disabled={isPending}
-            tabIndex={currentUser ? 0 : -1}
+            readOnly={!isLoggedIn}
+            disabled={editorDisabled}
+            tabIndex={isLoggedIn ? 0 : -1}
             aria-label={commentLabels.comment}
             onFocus={(event) => {
-              if (!currentUser) {
+              if (!isLoggedIn) {
                 event.currentTarget.blur();
               }
             }}
             onClick={() => {
-              if (!currentUser) requireLogin();
+              if (!isLoggedIn) requireLogin();
             }}
-            rows={1}
-            placeholder={
-              currentUser ? commentLabels.write : commentLabels.login
-            }
+            placeholder={isLoggedIn ? commentLabels.write : commentLabels.login}
             className={`
-  block min-h-11 w-full resize-none overflow-hidden
-  bg-transparent py-3 text-[15px] leading-6 outline-none
-  placeholder:truncate placeholder:text-zinc-500
-  disabled:opacity-50
-  ${!currentUser ? "cursor-default caret-transparent" : ""}
-`}
+              content-scrollbar block min-h-11 w-full resize-none
+              overflow-hidden bg-transparent py-3
+              text-[15px] leading-6 outline-none
+              placeholder:truncate placeholder:text-zinc-500
+              disabled:cursor-not-allowed disabled:opacity-50
+              ${!isLoggedIn ? "cursor-default caret-transparent" : ""}
+            `}
           />
 
+          {/* Selected GIF */}
           {selectedGif && (
             <div className="relative mb-3 w-fit max-w-full">
               <img
                 src={selectedGif.preview || selectedGif.src}
                 alt={selectedGif.title}
-                className="block max-h-60 max-w-full rounded-lg object-contain"
+                className="
+                  block max-h-60 max-w-full
+                  rounded-lg object-contain
+                "
               />
 
               <button
                 type="button"
-                disabled={isPending}
-                onClick={() => setSelectedGif(null)}
-                aria-label="GIF ×"
+                disabled={editorDisabled}
+                onClick={() => {
+                  if (!isLoggedIn || editorDisabled || submittingRef.current) {
+                    return;
+                  }
+
+                  setSelectedGif(null);
+                }}
+                aria-label="Remove GIF"
+                title="Remove GIF"
                 className="
-                  absolute right-2 top-2
+                  absolute top-2 right-2
                   flex size-7 cursor-pointer items-center justify-center
                   rounded-full bg-black/60 text-white
                   hover:bg-black/75
-                  disabled:cursor-default disabled:opacity-50
+                  disabled:cursor-not-allowed disabled:opacity-50
                 "
               >
                 <X size={15} aria-hidden="true" />
@@ -245,32 +311,43 @@ export function CommentOnlyInput({
           )}
 
           <div className="@container flex items-center justify-between gap-2 pb-2">
+            {/* GIF */}
             <div className="relative flex shrink-0 items-center gap-1">
               <button
+                ref={gifButtonRef}
                 type="button"
-                disabled={isPending}
+                disabled={editorDisabled}
                 onClick={() => {
-                  if (!requireLogin()) return;
+                  if (
+                    editorDisabled ||
+                    submittingRef.current ||
+                    !requireLogin()
+                  ) {
+                    return;
+                  }
+
                   setGifPickerOpen((open) => !open);
                 }}
+                aria-label="Select GIF"
+                aria-expanded={isLoggedIn && !editorDisabled && gifPickerOpen}
                 className="
                   cursor-pointer rounded-md px-2 py-1
                   text-sm font-medium text-zinc-500
                   hover:bg-zinc-200 dark:hover:bg-zinc-700
-                  disabled:cursor-default disabled:opacity-50
+                  disabled:cursor-not-allowed disabled:opacity-50
                 "
               >
                 GIF
               </button>
 
-              <GifPicker
-                open={gifPickerOpen}
-                onOpenChange={setGifPickerOpen}
-                onSelect={(gif) => {
-                  setSelectedGif(gif);
-                  setGifPickerOpen(false);
-                }}
-              />
+              {isLoggedIn && !editorDisabled && (
+                <GifPicker
+                  open={gifPickerOpen}
+                  onOpenChange={setGifPickerOpen}
+                  onSelect={handleGifSelect}
+                  triggerRef={gifButtonRef}
+                />
+              )}
             </div>
 
             <div className="flex shrink-0 items-baseline gap-2">
@@ -289,9 +366,12 @@ export function CommentOnlyInput({
               <Button
                 type="button"
                 size="sm"
-                disabled={isPending || (!comment.trim() && !selectedGif)}
+                disabled={editorDisabled || !hasContent}
                 onClick={handleComment}
-                className="shrink-0 cursor-pointer"
+                className="
+                  shrink-0 cursor-pointer
+                  disabled:cursor-not-allowed
+                "
               >
                 {isPending ? commentLabels.posting : commentLabels.comment}
               </Button>

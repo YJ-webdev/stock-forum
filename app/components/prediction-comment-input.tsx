@@ -23,6 +23,8 @@ import { COMMENT_LABELS, VOTE_LABELS } from "@/lib/data/translations";
 import { VotingCountdown } from "./voting-countdown";
 import { GifPicker, type GifResult } from "./gif-picker";
 
+import { useCurrentUser } from "@/app/context/user-context";
+
 type VoteDirection = "BULL" | "BEAR";
 
 interface PredictionCommentInputProps {
@@ -92,6 +94,11 @@ export function PredictionCommentInput({
   showCountdown,
   initialComment = "",
 }: PredictionCommentInputProps) {
+  const user = useCurrentUser();
+
+  const isChatRestricted = user?.status === "BANNED";
+  const chatDisabled = isPending || isChatRestricted;
+
   const gifButtonRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -246,10 +253,10 @@ export function PredictionCommentInput({
   }, [pointsDisabled, stopPointsHold]);
 
   useEffect(() => {
-    if (isPending || !currentUser) {
+    if (chatDisabled || !currentUser) {
       setGifPickerOpen(false);
     }
-  }, [isPending, currentUser]);
+  }, [chatDisabled, currentUser]);
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -317,8 +324,11 @@ export function PredictionCommentInput({
       return;
     }
 
-    // The parent handles validation and the server performs deduction.
-    submitVote(comment, selectedGif);
+    // Chat-banned users can submit predictions without content.
+    submitVote(
+      isChatRestricted ? "" : comment,
+      isChatRestricted ? null : selectedGif,
+    );
   };
 
   return (
@@ -476,14 +486,15 @@ export function PredictionCommentInput({
           {/* Comment */}
           <textarea
             ref={textareaRef}
-            value={comment}
-            disabled={isPending}
+            value={isChatRestricted ? "" : comment}
+            disabled={chatDisabled}
             onChange={(event) => {
-              if (!currentUser || isPending) return;
+              if (!currentUser || chatDisabled) return;
+
               setComment(event.target.value);
             }}
             readOnly={!currentUser}
-            tabIndex={currentUser ? 0 : -1}
+            tabIndex={currentUser && !isChatRestricted ? 0 : -1}
             onFocus={(event) => {
               if (!currentUser) event.currentTarget.blur();
             }}
@@ -497,18 +508,17 @@ export function PredictionCommentInput({
             }
             style={{ overflowX: "hidden" }}
             className={`
-              content-scrollbar block min-h-11 w-full
-              resize-none overflow-hidden
-              bg-transparent py-3
-              text-[15px] leading-6 outline-none
-              placeholder:truncate placeholder:text-zinc-500
-              disabled:opacity-60
-              ${!currentUser ? "cursor-default caret-transparent" : ""}
-            `}
+    content-scrollbar block min-h-11 w-full
+    resize-none overflow-hidden bg-transparent py-3
+    text-[15px] leading-6 outline-none
+    placeholder:truncate placeholder:text-zinc-500
+    disabled:cursor-not-allowed disabled:opacity-60
+    ${!currentUser ? "cursor-default caret-transparent" : ""}
+  `}
           />
 
           {/* Selected GIF */}
-          {selectedGif && (
+          {!isChatRestricted && selectedGif && (
             <div className="relative mb-3 w-fit max-w-full">
               <img
                 src={selectedGif.preview || selectedGif.src}
@@ -522,8 +532,12 @@ export function PredictionCommentInput({
               <button
                 type="button"
                 aria-label="Remove GIF"
-                disabled={isPending}
-                onClick={() => setSelectedGif(null)}
+                disabled={chatDisabled}
+                onClick={() => {
+                  if (chatDisabled) return;
+
+                  setSelectedGif(null);
+                }}
                 className="
                   absolute right-2 top-2
                   flex size-7 cursor-pointer
@@ -544,31 +558,39 @@ export function PredictionCommentInput({
               <button
                 ref={gifButtonRef}
                 type="button"
-                disabled={isPending || !currentUser}
+                disabled={chatDisabled || !currentUser}
                 aria-label="Select GIF"
-                aria-expanded={gifPickerOpen}
-                onClick={() => setGifPickerOpen((open) => !open)}
+                aria-expanded={
+                  gifPickerOpen && !chatDisabled && Boolean(currentUser)
+                }
+                onClick={() => {
+                  if (chatDisabled || !currentUser) return;
+
+                  setGifPickerOpen((open) => !open);
+                }}
                 className="
-                  cursor-pointer rounded-md px-2 py-1
-                  text-sm font-medium text-zinc-500
-                  hover:bg-zinc-200 dark:hover:bg-zinc-700
-                  disabled:cursor-not-allowed disabled:opacity-50
-                "
+      cursor-pointer rounded-md px-2 py-1
+      text-sm font-medium text-zinc-500
+      hover:bg-zinc-200 dark:hover:bg-zinc-700
+      disabled:cursor-not-allowed disabled:opacity-50
+    "
               >
                 GIF
               </button>
 
-              <GifPicker
-                triggerRef={gifButtonRef}
-                open={gifPickerOpen && !isPending && Boolean(currentUser)}
-                onOpenChange={setGifPickerOpen}
-                onSelect={(gif) => {
-                  if (isPending || !currentUser) return;
+              {!chatDisabled && currentUser && (
+                <GifPicker
+                  triggerRef={gifButtonRef}
+                  open={gifPickerOpen}
+                  onOpenChange={setGifPickerOpen}
+                  onSelect={(gif) => {
+                    if (chatDisabled || !currentUser) return;
 
-                  setSelectedGif(gif);
-                  setGifPickerOpen(false);
-                }}
-              />
+                    setSelectedGif(gif);
+                    setGifPickerOpen(false);
+                  }}
+                />
+              )}
             </div>
 
             <div className="flex shrink-0 items-baseline gap-2">

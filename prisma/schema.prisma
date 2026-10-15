@@ -66,8 +66,8 @@ model User {
   role          Role         @default(USER)
   ranking       UserRanking?
   statusMessage String?      @db.VarChar(160)
-
   status    UserStatus @default(ACTIVE)
+
   mutedAt   DateTime?
   bannedAt  DateTime?
   deletedAt DateTime?

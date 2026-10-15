@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { createReply } from "@/app/actions/post";
 import { GifPicker, type GifResult } from "@/app/components/gif-picker";
+import { useCurrentUser } from "@/app/context/user-context";
 
 import { resolveLanguage } from "@/lib/data/languages";
 import {
@@ -31,6 +32,8 @@ interface ReplyInputProps {
   onReplyCreated: (reply: MarketReply) => void | Promise<void>;
 }
 
+const MAX_TEXTAREA_HEIGHT = 240;
+
 export function ReplyInput({
   commentId,
   username,
@@ -39,46 +42,69 @@ export function ReplyInput({
   onReplyCreated,
   parentId = null,
 }: ReplyInputProps) {
-  const language = resolveLanguage(currentUser?.language);
+  const user = useCurrentUser();
+
+  const language = resolveLanguage(user?.language ?? currentUser?.language);
+
   const labels = REPLY_INPUT_LABELS[language];
   const actionLabels = COMMENT_ACTION_LABELS[language];
 
   const [reply, setReply] = useState("");
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
-
   const [isPending, startTransition] = useTransition();
 
   const gifButtonRef = useRef<HTMLButtonElement>(null);
-
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const submittingRef = useRef(false);
+
+  const isChatRestricted = user?.status === "BANNED";
+  const editorDisabled = isPending || isChatRestricted;
+
+  const placeholder = labels.placeholder.replace("{name}", () => username);
+  const hasContent = reply.trim().length > 0 || Boolean(selectedGif);
+  const submitDisabled = editorDisabled || !hasContent;
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
+
     if (!textarea) return;
 
-    const resize = () => {
-      const maxHeight = 240;
+    function resizeTextarea() {
+      if (!textarea) return;
 
       textarea.style.height = "auto";
 
       const contentHeight = textarea.scrollHeight;
 
-      textarea.style.height = `${Math.min(contentHeight, maxHeight)}px`;
-      textarea.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
-    };
+      textarea.style.height = `${Math.min(
+        contentHeight,
+        MAX_TEXTAREA_HEIGHT,
+      )}px`;
 
-    resize();
+      textarea.style.overflowY =
+        contentHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden";
+    }
 
-    let lastWidth = textarea.getBoundingClientRect().width;
+    resizeTextarea();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", resizeTextarea);
+
+      return () => {
+        window.removeEventListener("resize", resizeTextarea);
+      };
+    }
+
+    let previousWidth = textarea.getBoundingClientRect().width;
 
     const observer = new ResizeObserver(() => {
       const width = textarea.getBoundingClientRect().width;
 
-      if (width !== lastWidth) {
-        lastWidth = width;
-        resize();
-      }
+      if (width === previousWidth) return;
+
+      previousWidth = width;
+      resizeTextarea();
     });
 
     observer.observe(textarea);
@@ -86,17 +112,17 @@ export function ReplyInput({
     return () => observer.disconnect();
   }, [reply]);
 
-  const placeholder = labels.placeholder.replace("{name}", username);
-  const hasContent = reply.trim().length > 0 || Boolean(selectedGif);
+  function handleGifSelect(gif: GifResult) {
+    if (editorDisabled || submittingRef.current) return;
 
-  // ---------------------------------------------------------------------------
-  // SUBMIT
-  // ---------------------------------------------------------------------------
+    setSelectedGif(gif);
+    setGifPickerOpen(false);
+  }
 
-  const handleReply = () => {
-    if (isPending) return;
+  function handleReply() {
+    if (editorDisabled || submittingRef.current) return;
 
-    if (!currentUser) {
+    if (!user) {
       toast.error(actionLabels.login_required);
       return;
     }
@@ -105,6 +131,9 @@ export function ReplyInput({
       toast.error(labels.empty_reply);
       return;
     }
+
+    submittingRef.current = true;
+    setGifPickerOpen(false);
 
     startTransition(async () => {
       try {
@@ -117,7 +146,6 @@ export function ReplyInput({
 
         setReply("");
         setSelectedGif(null);
-        setGifPickerOpen(false);
 
         const newReply: MarketReply = {
           ...result.reply,
@@ -135,46 +163,51 @@ export function ReplyInput({
             ? error.message
             : labels.post_failed,
         );
+      } finally {
+        submittingRef.current = false;
       }
     });
-  };
+  }
 
-  const handleCancel = () => {
+  function handleCancel() {
+    if (isPending || submittingRef.current) return;
+
     setReply("");
     setSelectedGif(null);
     setGifPickerOpen(false);
 
     onCancel();
-  };
-
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
+  }
 
   return (
     <div className="mt-3 flex gap-2">
       <Avatar
-        label={currentUser?.name ?? labels.guest}
-        image={currentUser?.image}
+        label={user?.name ?? currentUser?.name ?? labels.guest}
+        image={user?.image ?? currentUser?.image}
       />
 
       <div className="min-w-0 flex-1">
         <div className="relative rounded-lg bg-zinc-100 px-3 dark:bg-zinc-800">
+          {/* Text */}
           <textarea
             ref={textareaRef}
             rows={1}
             value={reply}
-            disabled={isPending}
-            onChange={(event) => setReply(event.target.value)}
+            disabled={editorDisabled}
+            onChange={(event) => {
+              if (editorDisabled || submittingRef.current) return;
+
+              setReply(event.target.value);
+            }}
             placeholder={placeholder}
             aria-label={placeholder}
             className="
-    block min-h-10 w-full resize-none overflow-hidden
-    bg-transparent py-2.5
-    text-[15px] leading-6 outline-none
-    placeholder:text-zinc-500
-    disabled:opacity-50
-  "
+              content-scrollbar block min-h-10 w-full resize-none
+              overflow-hidden bg-transparent py-2.5
+              text-[15px] leading-6 outline-none
+              placeholder:text-zinc-500
+              disabled:cursor-not-allowed disabled:opacity-50
+            "
           />
 
           {/* Selected GIF */}
@@ -191,19 +224,20 @@ export function ReplyInput({
 
               <button
                 type="button"
-                disabled={isPending}
-                onClick={() => setSelectedGif(null)}
+                disabled={editorDisabled}
+                onClick={() => {
+                  if (editorDisabled || submittingRef.current) return;
+
+                  setSelectedGif(null);
+                }}
                 aria-label={labels.remove_gif}
                 title={labels.remove_gif}
                 className="
-                  absolute right-2 top-2
-                  flex size-7 cursor-pointer
-                  items-center justify-center
-                  rounded-full
-                  bg-black/60 text-white
+                  absolute top-2 right-2
+                  flex size-7 cursor-pointer items-center justify-center
+                  rounded-full bg-black/60 text-white
                   hover:bg-black/75
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
+                  disabled:cursor-not-allowed disabled:opacity-50
                 "
               >
                 <X size={15} aria-hidden="true" />
@@ -217,35 +251,34 @@ export function ReplyInput({
               <button
                 ref={gifButtonRef}
                 type="button"
-                disabled={isPending}
-                onClick={() => setGifPickerOpen((open) => !open)}
+                disabled={editorDisabled}
+                onClick={() => {
+                  if (editorDisabled || submittingRef.current) return;
+
+                  setGifPickerOpen((open) => !open);
+                }}
                 aria-label={labels.select_gif}
                 title={labels.select_gif}
-                aria-expanded={gifPickerOpen}
+                aria-expanded={!editorDisabled && gifPickerOpen}
                 className="
-                  cursor-pointer rounded-md
-                  px-2 py-1
+                  cursor-pointer rounded-md px-2 py-1
                   text-xs font-medium text-zinc-500
                   hover:bg-zinc-200
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
+                  disabled:cursor-not-allowed disabled:opacity-50
                   dark:hover:bg-zinc-700
                 "
               >
                 GIF
               </button>
 
-              <GifPicker
-                open={gifPickerOpen}
-                onOpenChange={setGifPickerOpen}
-                triggerRef={gifButtonRef}
-                onSelect={(gif) => {
-                  if (isPending) return;
-
-                  setSelectedGif(gif);
-                  setGifPickerOpen(false);
-                }}
-              />
+              {!editorDisabled && (
+                <GifPicker
+                  open={gifPickerOpen}
+                  onOpenChange={setGifPickerOpen}
+                  triggerRef={gifButtonRef}
+                  onSelect={handleGifSelect}
+                />
+              )}
             </div>
 
             {/* Actions */}
@@ -264,7 +297,7 @@ export function ReplyInput({
               <Button
                 type="button"
                 size="sm"
-                disabled={isPending || !hasContent}
+                disabled={submitDisabled}
                 onClick={handleReply}
                 className="cursor-pointer disabled:cursor-not-allowed"
               >
@@ -277,10 +310,6 @@ export function ReplyInput({
     </div>
   );
 }
-
-// -----------------------------------------------------------------------------
-// AVATAR
-// -----------------------------------------------------------------------------
 
 function Avatar({ label, image }: { label: string; image?: string | null }) {
   if (image) {
@@ -298,15 +327,13 @@ function Avatar({ label, image }: { label: string; image?: string | null }) {
       role="img"
       aria-label={label}
       className="
-        flex size-8 shrink-0
-        items-center justify-center
-        rounded-full
-        bg-zinc-200
+        flex size-8 shrink-0 items-center justify-center
+        rounded-full bg-zinc-200
         text-xs font-medium text-zinc-700
         dark:bg-zinc-700 dark:text-zinc-200
       "
     >
-      {label.slice(0, 2).toUpperCase()}
+      {Array.from(label).slice(0, 2).join("").toUpperCase()}
     </div>
   );
 }

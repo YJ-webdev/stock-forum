@@ -40,6 +40,8 @@ interface EditableGif {
   title: string;
 }
 
+const MAX_TEXTAREA_HEIGHT = 240;
+
 export function CommentEditInput({
   commentId,
   initialContent,
@@ -64,21 +66,38 @@ export function CommentEditInput({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const gifButtonRef = useRef<HTMLButtonElement>(null);
+  const submittingRef = useRef(false);
+
+  const isChatRestricted = user?.status === "BANNED";
+  const editorDisabled = isPending || isChatRestricted;
+
+  const hasChanges =
+    comment.trim() !== initial.text.trim() ||
+    (selectedGif?.src ?? null) !== (initial.gif?.src ?? null);
+
+  const hasContent = comment.trim().length > 0 || Boolean(selectedGif);
+  const saveDisabled = editorDisabled || !hasChanges || !hasContent;
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
+
     if (!textarea) return;
 
-    const resizeTextarea = () => {
-      const maxHeight = 240;
+    function resizeTextarea() {
+      if (!textarea) return;
 
       textarea.style.height = "auto";
 
       const contentHeight = textarea.scrollHeight;
 
-      textarea.style.height = `${Math.min(contentHeight, maxHeight)}px`;
-      textarea.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
-    };
+      textarea.style.height = `${Math.min(
+        contentHeight,
+        MAX_TEXTAREA_HEIGHT,
+      )}px`;
+
+      textarea.style.overflowY =
+        contentHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden";
+    }
 
     resizeTextarea();
 
@@ -94,6 +113,7 @@ export function CommentEditInput({
 
     const observer = new ResizeObserver(() => {
       const width = textarea.getBoundingClientRect().width;
+
       if (width === previousWidth) return;
 
       previousWidth = width;
@@ -105,15 +125,8 @@ export function CommentEditInput({
     return () => observer.disconnect();
   }, [comment]);
 
-  const hasChanges =
-    comment.trim() !== initial.text.trim() ||
-    (selectedGif?.src ?? null) !== (initial.gif?.src ?? null);
-
-  const hasContent = comment.trim().length > 0 || Boolean(selectedGif);
-  const saveDisabled = isPending || !hasChanges || !hasContent;
-
-  const handleGifSelect = (gif: GifResult) => {
-    if (isPending) return;
+  function handleGifSelect(gif: GifResult) {
+    if (editorDisabled || submittingRef.current) return;
 
     setSelectedGif({
       src: gif.src,
@@ -122,10 +135,13 @@ export function CommentEditInput({
     });
 
     setGifPickerOpen(false);
-  };
+  }
 
-  const handleSave = () => {
-    if (saveDisabled) return;
+  function handleSave() {
+    if (saveDisabled || submittingRef.current) return;
+
+    submittingRef.current = true;
+    setGifPickerOpen(false);
 
     startTransition(async () => {
       try {
@@ -174,7 +190,6 @@ export function CommentEditInput({
         }
 
         await onSaved(result);
-
         toast.success(resultLabels.edited);
       } catch (error) {
         toast.error(
@@ -182,11 +197,13 @@ export function CommentEditInput({
             ? error.message
             : labels.update_failed,
         );
+      } finally {
+        submittingRef.current = false;
       }
     });
-  };
+  }
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (isPending || event.nativeEvent.isComposing) return;
 
     if (event.key === "Escape") {
@@ -195,11 +212,13 @@ export function CommentEditInput({
       return;
     }
 
+    if (isChatRestricted) return;
+
     if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
       handleSave();
     }
-  };
+  }
 
   return (
     <div className="rounded-lg bg-zinc-100 px-3 pt-3 dark:bg-zinc-800">
@@ -208,8 +227,12 @@ export function CommentEditInput({
         ref={textareaRef}
         rows={1}
         value={comment}
-        disabled={isPending}
-        onChange={(event) => setComment(event.target.value)}
+        disabled={editorDisabled}
+        onChange={(event) => {
+          if (editorDisabled || submittingRef.current) return;
+
+          setComment(event.target.value);
+        }}
         onKeyDown={handleKeyDown}
         placeholder={labels.placeholder}
         aria-label={labels.placeholder}
@@ -222,7 +245,7 @@ export function CommentEditInput({
           overflow-hidden bg-transparent
           text-[15px] leading-6 outline-none
           placeholder:text-zinc-400
-          disabled:opacity-60
+          disabled:cursor-not-allowed disabled:opacity-60
         "
       />
 
@@ -240,8 +263,12 @@ export function CommentEditInput({
 
           <button
             type="button"
-            disabled={isPending}
-            onClick={() => setSelectedGif(null)}
+            disabled={editorDisabled}
+            onClick={() => {
+              if (editorDisabled || submittingRef.current) return;
+
+              setSelectedGif(null);
+            }}
             aria-label={labels.remove_gif}
             title={labels.remove_gif}
             className="
@@ -263,11 +290,15 @@ export function CommentEditInput({
           <button
             ref={gifButtonRef}
             type="button"
-            disabled={isPending}
-            onClick={() => setGifPickerOpen((previous) => !previous)}
+            disabled={editorDisabled}
+            onClick={() => {
+              if (editorDisabled || submittingRef.current) return;
+
+              setGifPickerOpen((previous) => !previous);
+            }}
             aria-label={labels.select_gif}
             title={labels.select_gif}
-            aria-expanded={gifPickerOpen}
+            aria-expanded={!editorDisabled && gifPickerOpen}
             className="
               cursor-pointer rounded-md px-2 py-1
               text-sm font-medium text-zinc-500
@@ -279,12 +310,14 @@ export function CommentEditInput({
             GIF
           </button>
 
-          <GifPicker
-            open={gifPickerOpen}
-            onOpenChange={setGifPickerOpen}
-            onSelect={handleGifSelect}
-            triggerRef={gifButtonRef}
-          />
+          {!editorDisabled && (
+            <GifPicker
+              open={gifPickerOpen}
+              onOpenChange={setGifPickerOpen}
+              onSelect={handleGifSelect}
+              triggerRef={gifButtonRef}
+            />
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -293,7 +326,11 @@ export function CommentEditInput({
             size="sm"
             variant="ghost"
             disabled={isPending}
-            onClick={onCancel}
+            onClick={() => {
+              if (submittingRef.current) return;
+
+              onCancel();
+            }}
             className="cursor-pointer disabled:cursor-not-allowed"
           >
             {labels.cancel}
