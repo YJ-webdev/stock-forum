@@ -1,5 +1,3 @@
-// lib/market/update-user-rankings.ts
-
 import "server-only";
 
 import {
@@ -93,7 +91,6 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
   return prisma.$transaction(
     async (tx) => {
       // Prevent overlapping ranking jobs.
-      // The lock is released when the transaction ends.
       const [lock] = await tx.$queryRaw<{ locked: boolean }[]>`
         SELECT pg_try_advisory_xact_lock(482731, 1) AS locked
       `;
@@ -102,15 +99,34 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
         throw new Error("A ranking update is already running.");
       }
 
+      // Coordinate ranking writes with account deletion and settlement.
+      // Use a consistent lock order and a fixed set of users for this run.
+      const lockedUsers = await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id"
+        FROM "User"
+        WHERE "deletedAt" IS NULL
+        ORDER BY "id"
+        FOR UPDATE
+      `;
+
+      const userIds = lockedUsers.map((user) => user.id);
+
       const periodEnd = new Date();
 
       const periodStart = new Date(
         periodEnd.getTime() - RANKING_PERIOD_DAYS * DAY_MS,
       );
 
-      // Include every account, regardless of role or isBot.
-      // Read the previous tier before updating rankings.
+      // Include non-deleted accounts regardless of role or isBot.
+      // Read their previous tiers before updating rankings.
       const users = await tx.user.findMany({
+        where: {
+          id: {
+            in: userIds,
+          },
+          deletedAt: null,
+        },
+
         select: {
           id: true,
           ranking: {
@@ -119,12 +135,24 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
             },
           },
         },
+
+        orderBy: {
+          id: "asc",
+        },
       });
 
       const results = await tx.prediction.groupBy({
         by: ["userId", "status"],
 
         where: {
+          userId: {
+            in: userIds,
+          },
+
+          user: {
+            deletedAt: null,
+          },
+
           status: {
             in: [PredictionStatus.WON, PredictionStatus.LOST],
           },
@@ -248,7 +276,6 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
         const data = {
           tier: nextTier,
           rank,
-
           netProfit: stats.netProfit,
 
           settledCount: stats.wonCount + stats.lostCount,

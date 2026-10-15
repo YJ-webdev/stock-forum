@@ -64,16 +64,6 @@ export async function getHomeMarkets(): Promise<HomeMarketEntry[]> {
     return [];
   }
 
-  console.log(
-    "[WATCHLIST HIDDEN]",
-    watchlist
-      .filter(
-        ({ symbol }) =>
-          !ALL_MARKET_SYMBOLS.some((market) => market.symbol === symbol),
-      )
-      .map(({ symbol }) => symbol),
-  );
-
   const watchlistSymbols = new Set(watchlist.map((item) => item.symbol));
 
   const candidateSymbols = userId

@@ -16,7 +16,7 @@ export interface User {
   image?: string | null;
   nationality?: string | null;
   language?: string | null;
-  role: string;
+  role: "ADMIN" | "USER";
   statusMessage?: string | null;
   ranking: UserRanking | null;
 }

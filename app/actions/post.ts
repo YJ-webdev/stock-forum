@@ -190,15 +190,20 @@ export async function createComment({
     throw new Error(labels.login_required);
   }
 
-  let userId = session.user.id;
+  const sessionUserId = session.user.id;
+  let userId = sessionUserId;
 
+  // Admins can publish as a bot.
   if (botUserId !== undefined) {
     const admin = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
+      where: { id: sessionUserId },
+      select: {
+        role: true,
+        deletedAt: true,
+      },
     });
 
-    if (admin?.role !== "ADMIN") {
+    if (!admin || admin.deletedAt || admin.role !== "ADMIN") {
       throw new Error(labels.permission_denied);
     }
 
@@ -207,16 +212,18 @@ export async function createComment({
       select: {
         id: true,
         isBot: true,
+        deletedAt: true,
       },
     });
 
-    if (!bot?.isBot) {
+    if (!bot?.isBot || bot.deletedAt) {
       throw new Error("Invalid bot user.");
     }
 
     userId = bot.id;
   }
 
+  // Each comment belongs to exactly one board.
   if (
     !Array.isArray(assetSymbols) ||
     assetSymbols.length !== 1 ||
@@ -274,10 +281,28 @@ export async function createComment({
     }
   }
 
+  // hasEditorContent must recognize GIF/image nodes as content.
   const hasContent = content !== null && hasEditorContent(content);
 
   if (!hasContent && !prediction) {
     throw new Error(labels.write_comment);
+  }
+
+  const author = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      status: true,
+      deletedAt: true,
+    },
+  });
+
+  if (!author || author.deletedAt) {
+    throw new Error("Account unavailable.");
+  }
+
+  // Chat restrictions do not block predictions without content.
+  if (hasContent && (author.status === "BANNED" || author.status === "MUTED")) {
+    throw new Error("You cannot post comments while chat is restricted.");
   }
 
   const commentContent: Prisma.InputJsonValue = hasContent
@@ -291,26 +316,15 @@ export async function createComment({
     hasContent && content !== null ? getContentText(content) : "";
 
   const moderationResult = moderateContent(moderationText);
+
   const commentVisibility = moderationResult.shouldBePrivate
     ? "PRIVATE"
     : "PUBLIC";
 
-  let predictionNationality = "OTHER";
   let referenceClose: number | null = null;
 
+  // Fetch external data before opening the transaction.
   if (prediction) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { nationality: true },
-    });
-
-    if (!user) {
-      throw new Error(labels.user_not_found);
-    }
-
-    predictionNationality = user.nationality?.trim() || "OTHERS";
-
-    // External data is fetched before opening the transaction.
     referenceClose = await getReferenceClose(
       market.symbol,
       prediction.sessionDate,
@@ -341,26 +355,96 @@ export async function createComment({
   });
 
   const result = await prisma.$transaction(async (tx) => {
+    // Lock both the caller and author in a consistent order.
+    // Ban/unban and account deletion must use the same row locks.
+    const lockedUserIds = [...new Set([sessionUserId, userId])].sort();
+
+    for (const lockedUserId of lockedUserIds) {
+      await tx.$queryRaw`
+        SELECT "id"
+        FROM "User"
+        WHERE "id" = ${lockedUserId}
+        FOR UPDATE
+      `;
+    }
+
+    // Recheck the caller's account and bot permissions.
+    if (botUserId !== undefined) {
+      const currentAdmin = await tx.user.findUnique({
+        where: { id: sessionUserId },
+        select: {
+          role: true,
+          deletedAt: true,
+        },
+      });
+
+      if (
+        !currentAdmin ||
+        currentAdmin.deletedAt ||
+        currentAdmin.role !== "ADMIN"
+      ) {
+        throw new Error(labels.permission_denied);
+      }
+    }
+
+    const currentAuthor = await tx.user.findUnique({
+      where: { id: userId },
+      select: {
+        status: true,
+        deletedAt: true,
+        nationality: true,
+        isBot: true,
+      },
+    });
+
+    if (!currentAuthor || currentAuthor.deletedAt) {
+      throw new Error("Account unavailable.");
+    }
+
+    if (botUserId !== undefined && !currentAuthor.isBot) {
+      throw new Error("Invalid bot user.");
+    }
+
+    if (
+      hasContent &&
+      (currentAuthor.status === "BANNED" || currentAuthor.status === "MUTED")
+    ) {
+      throw new Error("You cannot post comments while chat is restricted.");
+    }
+
     let createdPrediction: { id: string } | null = null;
 
     if (prediction) {
-      // Recheck after the market-data request.
+      // Recheck the voting window after the external request.
       const votingWindow = getVotingWindow(market.symbol, Date.now());
 
       if (!votingWindow.canVote || !votingWindow.predictionFor) {
         throw new Error("Voting is closed.");
       }
 
+      const expectedSession = new Date(votingWindow.predictionFor);
+
       if (
-        new Date(votingWindow.predictionFor).getTime() !==
-        prediction.sessionDate.getTime()
+        !Number.isFinite(expectedSession.getTime()) ||
+        expectedSession.getTime() !== prediction.sessionDate.getTime()
       ) {
         throw new Error(labels.invalid_prediction_session);
       }
 
-      if (referenceClose === null) {
+      if (
+        referenceClose === null ||
+        !Number.isFinite(referenceClose) ||
+        referenceClose <= 0
+      ) {
         throw new Error(labels.previous_close_unavailable);
       }
+
+      const nationalityValue = currentAuthor.nationality?.trim().toUpperCase();
+
+      const predictionNationality =
+        !nationalityValue || nationalityValue === "OTHERS"
+          ? "OTHER"
+          : nationalityValue;
 
       createdPrediction = await tx.prediction.create({
         data: {
@@ -391,7 +475,9 @@ export async function createComment({
             points: { gte: prediction.pointsBet },
           },
           data: {
-            points: { decrement: prediction.pointsBet },
+            points: {
+              decrement: prediction.pointsBet,
+            },
           },
         });
 
@@ -474,7 +560,6 @@ export async function createComment({
     comment: createdComment,
   };
 }
-
 export async function getMarketComments(
   assetSymbol: string,
   cursor?: {
@@ -814,6 +899,7 @@ export async function editComment({
   content: JSONContent;
 }) {
   const session = await auth();
+
   const labels =
     COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
@@ -824,6 +910,27 @@ export async function editComment({
   const userId = session.user.id;
 
   return prisma.$transaction(async (tx) => {
+    // Use the same user lock as posting and banning.
+    await tx.$queryRaw`
+      SELECT "id"
+      FROM "User"
+      WHERE "id" = ${userId}
+      FOR UPDATE
+    `;
+
+    const author = await tx.user.findUnique({
+      where: { id: userId },
+      select: {
+        status: true,
+        deletedAt: true,
+      },
+    });
+
+    if (!author || author.deletedAt) {
+      throw new Error("Account unavailable.");
+    }
+
+    // Preserve coordination with comment deletion.
     await tx.$queryRaw`
       SELECT 1 AS locked
       FROM pg_advisory_xact_lock(
@@ -838,9 +945,12 @@ export async function editComment({
         predictionId: true,
         withdrawnAt: true,
         moderatedAt: true,
+        visibility: true,
         assets: {
           take: 1,
-          select: { assetSymbol: true },
+          select: {
+            assetSymbol: true,
+          },
         },
       },
     });
@@ -863,9 +973,28 @@ export async function editComment({
       throw new Error(labels.write_comment);
     }
 
+    if (
+      hasContent &&
+      (author.status === "BANNED" || author.status === "MUTED")
+    ) {
+      throw new Error(
+        "You cannot edit comment content while chat is restricted.",
+      );
+    }
+
     const updatedContent: JSONContent = hasContent
       ? content
       : { type: "doc", content: [] };
+
+    const moderationText = hasContent ? getContentText(updatedContent) : "";
+
+    const moderationResult = moderateContent(moderationText);
+
+    // Editing must not automatically publicize private content.
+    const visibility =
+      comment.visibility === "PRIVATE" || moderationResult.shouldBePrivate
+        ? "PRIVATE"
+        : "PUBLIC";
 
     const editedAt = new Date();
 
@@ -876,6 +1005,7 @@ export async function editComment({
           JSON.stringify(updatedContent),
         ) as Prisma.InputJsonValue,
         hasContent,
+        visibility,
         editedAt,
       },
     });
@@ -891,6 +1021,7 @@ export async function editComment({
     return {
       success: true,
       content: updatedContent,
+      visibility,
       editedAt,
     };
   });
@@ -1024,6 +1155,7 @@ export async function createReply({
   gifUrl?: string | null;
 }) {
   const session = await auth();
+
   const labels =
     COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
@@ -1039,11 +1171,36 @@ export async function createReply({
   }
 
   const moderationResult = moderateContent(trimmedContent);
+
   const replyVisibility = moderationResult.shouldBePrivate
     ? "PRIVATE"
     : "PUBLIC";
 
   return prisma.$transaction(async (tx) => {
+    // Serialize reply creation with bans and account deletion.
+    await tx.$queryRaw`
+      SELECT "id"
+      FROM "User"
+      WHERE "id" = ${userId}
+      FOR UPDATE
+    `;
+
+    const author = await tx.user.findUnique({
+      where: { id: userId },
+      select: {
+        status: true,
+        deletedAt: true,
+      },
+    });
+
+    if (!author || author.deletedAt) {
+      throw new Error("Account unavailable.");
+    }
+
+    if (author.status === "BANNED" || author.status === "MUTED") {
+      throw new Error("You cannot post replies while chat is restricted.");
+    }
+
     const comment = await tx.comment.findUnique({
       where: { id: commentId },
       select: {
@@ -1052,7 +1209,9 @@ export async function createReply({
         moderatedAt: true,
         assets: {
           take: 1,
-          select: { assetSymbol: true },
+          select: {
+            assetSymbol: true,
+          },
         },
       },
     });
@@ -1152,6 +1311,7 @@ export async function editReply({
   gifUrl?: string | null;
 }) {
   const session = await auth();
+
   const labels =
     COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
@@ -1167,6 +1327,29 @@ export async function editReply({
   }
 
   return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT "id"
+      FROM "User"
+      WHERE "id" = ${userId}
+      FOR UPDATE
+    `;
+
+    const author = await tx.user.findUnique({
+      where: { id: userId },
+      select: {
+        status: true,
+        deletedAt: true,
+      },
+    });
+
+    if (!author || author.deletedAt) {
+      throw new Error("Account unavailable.");
+    }
+
+    if (author.status === "BANNED" || author.status === "MUTED") {
+      throw new Error("You cannot edit replies while chat is restricted.");
+    }
+
     const reply = await tx.reply.findUnique({
       where: { id: replyId },
       select: {
@@ -1175,11 +1358,14 @@ export async function editReply({
         content: true,
         gifUrl: true,
         moderatedAt: true,
+        visibility: true,
         comment: {
           select: {
             assets: {
               take: 1,
-              select: { assetSymbol: true },
+              select: {
+                assetSymbol: true,
+              },
             },
           },
         },
@@ -1198,7 +1384,7 @@ export async function editReply({
       throw new Error(labels.reply_not_editable);
     }
 
-    // 내용이 그대로면 수정 시각과 History를 변경하지 않음.
+    // Preserve the original timestamp and history for unchanged content.
     if (reply.content === trimmedContent && reply.gifUrl === gifUrl) {
       const unchangedReply = await tx.reply.findUniqueOrThrow({
         where: { id: replyId },
@@ -1211,11 +1397,19 @@ export async function editReply({
       };
     }
 
+    const moderationResult = moderateContent(trimmedContent);
+
+    const visibility =
+      reply.visibility === "PRIVATE" || moderationResult.shouldBePrivate
+        ? "PRIVATE"
+        : "PUBLIC";
+
     const updatedReply = await tx.reply.update({
       where: { id: replyId },
       data: {
         content: trimmedContent,
         gifUrl,
+        visibility,
         editedAt: new Date(),
       },
       select: REPLY_SELECT,

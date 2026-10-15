@@ -4,33 +4,25 @@ import { useId, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
 import type { LeaderboardUser } from "@/app/actions/leaderboard";
-
-import { ProfileCard } from "./profile-card";
 
 import { resolveLanguage } from "@/lib/data/languages";
 import { LEADERBOARD_LABELS } from "@/lib/data/translations";
 
+import { User } from "@/types/user";
+import { ProfileUser, UserProfileTrigger } from "./profile-card";
+
 interface LeaderBoardProps {
   traders: LeaderboardUser[];
-
-  user: {
-    id: string;
-    language?: string | null;
-  } | null;
+  user: User | null;
+  onBanRequest?: (target: ProfileUser) => void;
 }
 
 function getInitials(name: string) {
   return Array.from(name.trim())[0]?.toUpperCase() ?? "?";
 }
 
-export function LeaderBoard({ traders, user }: LeaderBoardProps) {
+export function LeaderBoard({ traders, user, onBanRequest }: LeaderBoardProps) {
   const headingId = useId();
 
   const [openProfile, setOpenProfile] = useState<string | null>(null);
@@ -95,36 +87,39 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
                 </span>
               </div>
 
-              {/* Avatar */}
-              <Popover
-                modal={false}
+              <UserProfileTrigger
+                target={trader}
+                currentUserId={user?.id}
+                language={user?.language}
                 open={openProfile === avatarKey}
                 onOpenChange={(open) => handleOpenChange(avatarKey, open)}
+                isAdmin={user?.role === "ADMIN"}
               >
-                <PopoverTrigger
+                <button
+                  type="button"
                   aria-label={trader.name}
                   className="
-                    size-9 shrink-0 cursor-pointer rounded-full
-                    focus-visible:outline-none
-                    focus-visible:ring-2 focus-visible:ring-zinc-400
-                    focus-visible:ring-offset-2
-                  "
+      size-9 shrink-0 cursor-pointer rounded-full
+      focus-visible:outline-none
+      focus-visible:ring-2 focus-visible:ring-zinc-400
+      focus-visible:ring-offset-2
+    "
                 >
                   <Avatar
                     className={`
-                      size-9
-                      ${
-                        isMe
-                          ? "opacity-100 grayscale-0"
-                          : `
-                            lg:opacity-50 lg:grayscale
-                            lg:group-hover:opacity-100
-                            lg:group-hover:grayscale-0
-                            lg:group-focus-within:opacity-100
-                            lg:group-focus-within:grayscale-0
-                          `
-                      }
-                    `}
+        size-9
+        ${
+          isMe
+            ? "opacity-100 grayscale-0"
+            : `
+              lg:opacity-50 lg:grayscale
+              lg:group-hover:opacity-100
+              lg:group-hover:grayscale-0
+              lg:group-focus-within:opacity-100
+              lg:group-focus-within:grayscale-0
+            `
+        }
+      `}
                   >
                     <AvatarImage
                       src={trader.image ?? undefined}
@@ -136,45 +131,34 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
                       {getInitials(trader.name)}
                     </AvatarFallback>
                   </Avatar>
-                </PopoverTrigger>
-
-                <PopoverContent
-                  align="start"
-                  side="bottom"
-                  sideOffset={8}
-                  className="w-80 max-w-[calc(100vw-2rem)] rounded-xl p-0"
-                >
-                  <ProfileCard
-                    userId={trader.id}
-                    name={trader.name}
-                    image={trader.image}
-                    currentUserId={user?.id}
-                    language={user?.language}
-                  />
-                </PopoverContent>
-              </Popover>
+                </button>
+              </UserProfileTrigger>
 
               {/* Name / accuracy */}
               <div className="min-w-0 flex-1">
-                <Popover
-                  modal={false}
+                <UserProfileTrigger
+                  target={trader}
+                  currentUserId={user?.id}
+                  language={user?.language}
                   open={openProfile === nameKey}
                   onOpenChange={(open) => handleOpenChange(nameKey, open)}
+                  isAdmin={user?.role === "ADMIN"}
                 >
-                  <PopoverTrigger
+                  <button
+                    type="button"
                     className="
-                      flex w-full min-w-0 cursor-pointer
-                      items-center gap-2 rounded-sm text-start
-                      focus-visible:outline-none
-                      focus-visible:ring-2 focus-visible:ring-zinc-400
-                    "
+      flex w-full min-w-0 cursor-pointer
+      items-center gap-2 rounded-sm text-start
+      focus-visible:outline-none
+      focus-visible:ring-2 focus-visible:ring-zinc-400
+    "
                   >
                     <span
                       className="
-                        min-w-0 truncate text-[15px] font-normal
-                        text-zinc-800 hover:underline
-                        dark:font-light dark:text-zinc-200
-                      "
+        min-w-0 truncate text-[15px] font-normal
+        text-zinc-800 hover:underline
+        dark:font-light dark:text-zinc-200
+      "
                     >
                       {trader.name}
                     </span>
@@ -182,30 +166,15 @@ export function LeaderBoard({ traders, user }: LeaderBoardProps) {
                     {isMe && (
                       <span
                         className="
-                          shrink-0 rounded-full bg-olive-700
-                          px-1.5 py-0.5 text-[11px] text-zinc-100
-                        "
+          shrink-0 rounded-full bg-olive-700
+          px-1.5 py-0.5 text-[11px] text-zinc-100
+        "
                       >
                         {labels.me}
                       </span>
                     )}
-                  </PopoverTrigger>
-
-                  <PopoverContent
-                    align="start"
-                    side="bottom"
-                    sideOffset={8}
-                    className="w-80 max-w-[calc(100vw-2rem)] rounded-xl p-0"
-                  >
-                    <ProfileCard
-                      userId={trader.id}
-                      name={trader.name}
-                      image={trader.image}
-                      currentUserId={user?.id}
-                      language={user?.language}
-                    />
-                  </PopoverContent>
-                </Popover>
+                  </button>
+                </UserProfileTrigger>
 
                 <div className="mt-0.5 flex min-w-0 items-center gap-1 text-[12px] text-zinc-500">
                   <span className="truncate">

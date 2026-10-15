@@ -62,6 +62,11 @@ export type Session = Prisma.SessionModel
  */
 export type VerificationToken = Prisma.VerificationTokenModel
 /**
+ * Model ChatBanIdentity
+ * 
+ */
+export type ChatBanIdentity = Prisma.ChatBanIdentityModel
+/**
  * Model Comment
  * 
  */

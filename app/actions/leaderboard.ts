@@ -25,6 +25,10 @@ export async function getTopBetters(limit = 5): Promise<LeaderboardUser[]> {
 
   try {
     const users = await prisma.user.findMany({
+      where: {
+        deletedAt: null,
+      },
+
       select: {
         id: true,
         name: true,
@@ -70,6 +74,10 @@ export async function getTopBetters(limit = 5): Promise<LeaderboardUser[]> {
 
       take,
     });
+
+    if (users.length === 0) {
+      return [];
+    }
 
     const wins = await prisma.prediction.groupBy({
       by: ["userId"],

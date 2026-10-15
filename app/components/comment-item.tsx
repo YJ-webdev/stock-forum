@@ -10,11 +10,6 @@ import { RiHeartFill } from "react-icons/ri";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 import { toggleCommentLike } from "@/app/actions/like";
 import {
@@ -36,7 +31,7 @@ import {
 
 import { CommentEditInput } from "./comment-edit-input";
 import { ContentActionsMenu } from "./content-actions-menu";
-import { ProfileCard } from "./profile-card";
+import { ProfileCard, ProfileUser, UserProfileTrigger } from "./profile-card";
 import { ReplyInput } from "./reply-input";
 import { ReplyItem, ReplyTextContent } from "./reply-item";
 
@@ -50,8 +45,6 @@ type Comment = MarketPageComments[number];
 export type CommentUser = {
   id: string;
   role?: string | null;
-  image?: string | null;
-  name?: string | null;
   language?: string | null;
 };
 
@@ -69,6 +62,7 @@ export interface CommentItemProps {
   onUpdate: (commentId: string, updater: (comment: Comment) => Comment) => void;
 
   onRemove: (commentId: string) => void;
+  onBanRequest?: (target: ProfileUser) => void;
 }
 
 export function CommentItem({
@@ -82,7 +76,9 @@ export function CommentItem({
   highlightTargetComment,
   marketname,
   marketSymbol,
+  onBanRequest,
 }: CommentItemProps) {
+  const currentUserId = currentUser?.id;
   const language = resolveLanguage(currentUser?.language);
   const labels = COMMENT_VIEW_LABELS[language];
   const actionLabels = COMMENT_ACTION_LABELS[language];
@@ -376,16 +372,6 @@ export function CommentItem({
     replyCount.toLocaleString(language),
   );
 
-  const profileCard = (
-    <ProfileCard
-      userId={comment.author.id}
-      name={comment.author.name}
-      image={comment.author.image}
-      currentUserId={currentUser?.id}
-      language={currentUser?.language}
-    />
-  );
-
   return (
     <div
       ref={commentRef}
@@ -398,16 +384,26 @@ export function CommentItem({
     `}
     >
       <div className="z-1 flex gap-3">
-        <Popover>
-          <PopoverTrigger
+        <UserProfileTrigger
+          target={{
+            id: comment.author.id,
+            name: username,
+            image: comment.author.image ?? null,
+          }}
+          currentUserId={currentUserId}
+          language={language}
+          isAdmin={isAdmin}
+        >
+          <button
+            type="button"
             aria-label={username}
             className="
-      relative z-10 size-9 shrink-0 self-start
-      cursor-pointer rounded-full
-      focus-visible:outline-none
-      focus-visible:ring-2 focus-visible:ring-zinc-400
-      focus-visible:ring-offset-2
-    "
+        relative z-10 size-9 shrink-0 self-start
+        cursor-pointer rounded-full
+        focus-visible:outline-none
+        focus-visible:ring-2 focus-visible:ring-zinc-400
+        focus-visible:ring-offset-2
+      "
           >
             <Avatar className="size-9">
               <AvatarImage
@@ -417,49 +413,40 @@ export function CommentItem({
               />
 
               <AvatarFallback className="bg-olive-500 text-[22px] font-normal text-white">
-                {comment.author.name
-                  ? comment.author.name.slice(0, 1).toUpperCase()
-                  : labels.guest.slice(0, 1).toUpperCase()}
+                {Array.from(username)[0]?.toUpperCase() ??
+                  Array.from(labels.guest)[0]?.toUpperCase() ??
+                  "?"}
               </AvatarFallback>
             </Avatar>
-          </PopoverTrigger>
-
-          <PopoverContent
-            align="start"
-            side="bottom"
-            sideOffset={8}
-            className="w-80 max-w-[calc(100vw-2rem)] rounded-xl p-0"
-          >
-            {profileCard}
-          </PopoverContent>
-        </Popover>
-
+          </button>
+        </UserProfileTrigger>
         <div className="min-w-0 flex-1">
           <div className="group/comment relative min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-1.5">
-              <Popover>
-                <PopoverTrigger
+              <UserProfileTrigger
+                target={{
+                  id: comment.author.id,
+                  name: username,
+                  image: comment.author.image ?? null,
+                }}
+                currentUserId={currentUserId}
+                language={language}
+                isAdmin={isAdmin}
+              >
+                <button
+                  type="button"
                   className="
-  min-w-0 max-w-full shrink cursor-pointer
-  rounded-sm text-start
-  focus-visible:outline-none
-  focus-visible:ring-2 focus-visible:ring-zinc-400
-"
+              min-w-0 max-w-full shrink cursor-pointer
+              rounded-sm text-start
+              focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-zinc-400
+            "
                 >
                   <span className="block truncate text-[14px] font-semibold hover:underline">
                     {username}
                   </span>
-                </PopoverTrigger>
-
-                <PopoverContent
-                  align="start"
-                  side="bottom"
-                  sideOffset={8}
-                  className="w-80 max-w-[calc(100vw-2rem)] rounded-xl p-0"
-                >
-                  {profileCard}
-                </PopoverContent>
-              </Popover>
+                </button>
+              </UserProfileTrigger>
               {marketname && marketSymbol && (
                 <Link
                   href={`/market/${encodeURIComponent(marketSymbol)}`}

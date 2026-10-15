@@ -38,6 +38,7 @@ export type UserMinAggregateOutputType = {
   status: $Enums.UserStatus | null
   mutedAt: Date | null
   bannedAt: Date | null
+  deletedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -56,6 +57,7 @@ export type UserMaxAggregateOutputType = {
   status: $Enums.UserStatus | null
   mutedAt: Date | null
   bannedAt: Date | null
+  deletedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -74,6 +76,7 @@ export type UserCountAggregateOutputType = {
   status: number
   mutedAt: number
   bannedAt: number
+  deletedAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -94,6 +97,7 @@ export type UserMinAggregateInputType = {
   status?: true
   mutedAt?: true
   bannedAt?: true
+  deletedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -112,6 +116,7 @@ export type UserMaxAggregateInputType = {
   status?: true
   mutedAt?: true
   bannedAt?: true
+  deletedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -130,6 +135,7 @@ export type UserCountAggregateInputType = {
   status?: true
   mutedAt?: true
   bannedAt?: true
+  deletedAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -221,6 +227,7 @@ export type UserGroupByOutputType = {
   status: $Enums.UserStatus
   mutedAt: Date | null
   bannedAt: Date | null
+  deletedAt: Date | null
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
@@ -260,6 +267,7 @@ export type UserWhereInput = {
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   mutedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   bannedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  deletedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   ranking?: Prisma.XOR<Prisma.UserRankingNullableScalarRelationFilter, Prisma.UserRankingWhereInput> | null
@@ -281,6 +289,7 @@ export type UserWhereInput = {
   followers?: Prisma.UserFollowListRelationFilter
   pointBalance?: Prisma.XOR<Prisma.PointBalanceNullableScalarRelationFilter, Prisma.PointBalanceWhereInput> | null
   pointTransactions?: Prisma.PointTransactionListRelationFilter
+  chatBanIdentities?: Prisma.ChatBanIdentityListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -297,6 +306,7 @@ export type UserOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   mutedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   bannedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   ranking?: Prisma.UserRankingOrderByWithRelationInput
@@ -318,6 +328,7 @@ export type UserOrderByWithRelationInput = {
   followers?: Prisma.UserFollowOrderByRelationAggregateInput
   pointBalance?: Prisma.PointBalanceOrderByWithRelationInput
   pointTransactions?: Prisma.PointTransactionOrderByRelationAggregateInput
+  chatBanIdentities?: Prisma.ChatBanIdentityOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -337,6 +348,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   mutedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   bannedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  deletedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   ranking?: Prisma.XOR<Prisma.UserRankingNullableScalarRelationFilter, Prisma.UserRankingWhereInput> | null
@@ -358,6 +370,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   followers?: Prisma.UserFollowListRelationFilter
   pointBalance?: Prisma.XOR<Prisma.PointBalanceNullableScalarRelationFilter, Prisma.PointBalanceWhereInput> | null
   pointTransactions?: Prisma.PointTransactionListRelationFilter
+  chatBanIdentities?: Prisma.ChatBanIdentityListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -374,6 +387,7 @@ export type UserOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   mutedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   bannedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
@@ -398,6 +412,7 @@ export type UserScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumUserStatusWithAggregatesFilter<"User"> | $Enums.UserStatus
   mutedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   bannedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -416,6 +431,7 @@ export type UserCreateInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -437,6 +453,7 @@ export type UserCreateInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -453,6 +470,7 @@ export type UserUncheckedCreateInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -474,6 +492,7 @@ export type UserUncheckedCreateInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -490,6 +509,7 @@ export type UserUpdateInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -511,6 +531,7 @@ export type UserUpdateInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -527,6 +548,7 @@ export type UserUncheckedUpdateInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -548,6 +570,7 @@ export type UserUncheckedUpdateInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -564,6 +587,7 @@ export type UserCreateManyInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -582,6 +606,7 @@ export type UserUpdateManyMutationInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -600,6 +625,7 @@ export type UserUncheckedUpdateManyInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -618,6 +644,7 @@ export type UserCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   mutedAt?: Prisma.SortOrder
   bannedAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -636,6 +663,7 @@ export type UserMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   mutedAt?: Prisma.SortOrder
   bannedAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -654,6 +682,7 @@ export type UserMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   mutedAt?: Prisma.SortOrder
   bannedAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -722,6 +751,20 @@ export type UserUpdateOneRequiredWithoutSessionsNestedInput = {
   upsert?: Prisma.UserUpsertWithoutSessionsInput
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSessionsInput, Prisma.UserUpdateWithoutSessionsInput>, Prisma.UserUncheckedUpdateWithoutSessionsInput>
+}
+
+export type UserCreateNestedOneWithoutChatBanIdentitiesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutChatBanIdentitiesInput, Prisma.UserUncheckedCreateWithoutChatBanIdentitiesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutChatBanIdentitiesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutChatBanIdentitiesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutChatBanIdentitiesInput, Prisma.UserUncheckedCreateWithoutChatBanIdentitiesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutChatBanIdentitiesInput
+  upsert?: Prisma.UserUpsertWithoutChatBanIdentitiesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutChatBanIdentitiesInput, Prisma.UserUpdateWithoutChatBanIdentitiesInput>, Prisma.UserUncheckedUpdateWithoutChatBanIdentitiesInput>
 }
 
 export type UserCreateNestedOneWithoutCommentsInput = {
@@ -980,6 +1023,7 @@ export type UserCreateWithoutAccountsInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -1000,6 +1044,7 @@ export type UserCreateWithoutAccountsInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAccountsInput = {
@@ -1016,6 +1061,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -1036,6 +1082,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAccountsInput = {
@@ -1068,6 +1115,7 @@ export type UserUpdateWithoutAccountsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -1088,6 +1136,7 @@ export type UserUpdateWithoutAccountsInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -1104,6 +1153,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -1124,6 +1174,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionsInput = {
@@ -1140,6 +1191,7 @@ export type UserCreateWithoutSessionsInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -1160,6 +1212,7 @@ export type UserCreateWithoutSessionsInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -1176,6 +1229,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -1196,6 +1250,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -1228,6 +1283,7 @@ export type UserUpdateWithoutSessionsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -1248,6 +1304,7 @@ export type UserUpdateWithoutSessionsInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -1264,12 +1321,182 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
+  replyLikes?: Prisma.ReplyLikeUncheckedUpdateManyWithoutUserNestedInput
+  commentLikes?: Prisma.CommentLikeUncheckedUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
+  activities?: Prisma.UserActivityUncheckedUpdateManyWithoutUserNestedInput
+  following?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
+  pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
+  pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutChatBanIdentitiesInput = {
+  isBot?: boolean
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  nationality?: string | null
+  language?: string
+  role?: $Enums.Role
+  statusMessage?: string | null
+  status?: $Enums.UserStatus
+  mutedAt?: Date | string | null
+  bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
+  moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
+  moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
+  replyLikes?: Prisma.ReplyLikeCreateNestedManyWithoutUserInput
+  commentLikes?: Prisma.CommentLikeCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
+  activities?: Prisma.UserActivityCreateNestedManyWithoutUserInput
+  following?: Prisma.UserFollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
+  pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
+  pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutChatBanIdentitiesInput = {
+  isBot?: boolean
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  nationality?: string | null
+  language?: string
+  role?: $Enums.Role
+  statusMessage?: string | null
+  status?: $Enums.UserStatus
+  mutedAt?: Date | string | null
+  bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
+  moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
+  moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
+  replyLikes?: Prisma.ReplyLikeUncheckedCreateNestedManyWithoutUserInput
+  commentLikes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
+  activities?: Prisma.UserActivityUncheckedCreateNestedManyWithoutUserInput
+  following?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
+  pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
+  pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutChatBanIdentitiesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutChatBanIdentitiesInput, Prisma.UserUncheckedCreateWithoutChatBanIdentitiesInput>
+}
+
+export type UserUpsertWithoutChatBanIdentitiesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutChatBanIdentitiesInput, Prisma.UserUncheckedUpdateWithoutChatBanIdentitiesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutChatBanIdentitiesInput, Prisma.UserUncheckedCreateWithoutChatBanIdentitiesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutChatBanIdentitiesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutChatBanIdentitiesInput, Prisma.UserUncheckedUpdateWithoutChatBanIdentitiesInput>
+}
+
+export type UserUpdateWithoutChatBanIdentitiesInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
+  moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
+  moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
+  replyLikes?: Prisma.ReplyLikeUpdateManyWithoutUserNestedInput
+  commentLikes?: Prisma.CommentLikeUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
+  activities?: Prisma.UserActivityUpdateManyWithoutUserNestedInput
+  following?: Prisma.UserFollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
+  pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
+  pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutChatBanIdentitiesInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
+  moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
+  moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   replies?: Prisma.ReplyUncheckedUpdateManyWithoutAuthorNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
   replyLikes?: Prisma.ReplyLikeUncheckedUpdateManyWithoutUserNestedInput
@@ -1300,6 +1527,7 @@ export type UserCreateWithoutCommentsInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -1320,6 +1548,7 @@ export type UserCreateWithoutCommentsInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCommentsInput = {
@@ -1336,6 +1565,7 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -1356,6 +1586,7 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCommentsInput = {
@@ -1388,6 +1619,7 @@ export type UserUpdateWithoutCommentsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -1408,6 +1640,7 @@ export type UserUpdateWithoutCommentsInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCommentsInput = {
@@ -1424,6 +1657,7 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -1444,6 +1678,7 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutModerationActionsPerformedInput = {
@@ -1460,6 +1695,7 @@ export type UserCreateWithoutModerationActionsPerformedInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -1480,6 +1716,7 @@ export type UserCreateWithoutModerationActionsPerformedInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutModerationActionsPerformedInput = {
@@ -1496,6 +1733,7 @@ export type UserUncheckedCreateWithoutModerationActionsPerformedInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -1516,6 +1754,7 @@ export type UserUncheckedCreateWithoutModerationActionsPerformedInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutModerationActionsPerformedInput = {
@@ -1537,6 +1776,7 @@ export type UserCreateWithoutModerationActionsReceivedInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -1557,6 +1797,7 @@ export type UserCreateWithoutModerationActionsReceivedInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutModerationActionsReceivedInput = {
@@ -1573,6 +1814,7 @@ export type UserUncheckedCreateWithoutModerationActionsReceivedInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -1593,6 +1835,7 @@ export type UserUncheckedCreateWithoutModerationActionsReceivedInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutModerationActionsReceivedInput = {
@@ -1625,6 +1868,7 @@ export type UserUpdateWithoutModerationActionsPerformedInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -1645,6 +1889,7 @@ export type UserUpdateWithoutModerationActionsPerformedInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutModerationActionsPerformedInput = {
@@ -1661,6 +1906,7 @@ export type UserUncheckedUpdateWithoutModerationActionsPerformedInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -1681,6 +1927,7 @@ export type UserUncheckedUpdateWithoutModerationActionsPerformedInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithoutModerationActionsReceivedInput = {
@@ -1708,6 +1955,7 @@ export type UserUpdateWithoutModerationActionsReceivedInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -1728,6 +1976,7 @@ export type UserUpdateWithoutModerationActionsReceivedInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutModerationActionsReceivedInput = {
@@ -1744,6 +1993,7 @@ export type UserUncheckedUpdateWithoutModerationActionsReceivedInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -1764,6 +2014,7 @@ export type UserUncheckedUpdateWithoutModerationActionsReceivedInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPredictionsInput = {
@@ -1780,6 +2031,7 @@ export type UserCreateWithoutPredictionsInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -1800,6 +2052,7 @@ export type UserCreateWithoutPredictionsInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPredictionsInput = {
@@ -1816,6 +2069,7 @@ export type UserUncheckedCreateWithoutPredictionsInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -1836,6 +2090,7 @@ export type UserUncheckedCreateWithoutPredictionsInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPredictionsInput = {
@@ -1868,6 +2123,7 @@ export type UserUpdateWithoutPredictionsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -1888,6 +2144,7 @@ export type UserUpdateWithoutPredictionsInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPredictionsInput = {
@@ -1904,6 +2161,7 @@ export type UserUncheckedUpdateWithoutPredictionsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -1924,6 +2182,7 @@ export type UserUncheckedUpdateWithoutPredictionsInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRepliesInput = {
@@ -1940,6 +2199,7 @@ export type UserCreateWithoutRepliesInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -1960,6 +2220,7 @@ export type UserCreateWithoutRepliesInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRepliesInput = {
@@ -1976,6 +2237,7 @@ export type UserUncheckedCreateWithoutRepliesInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -1996,6 +2258,7 @@ export type UserUncheckedCreateWithoutRepliesInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRepliesInput = {
@@ -2028,6 +2291,7 @@ export type UserUpdateWithoutRepliesInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -2048,6 +2312,7 @@ export type UserUpdateWithoutRepliesInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRepliesInput = {
@@ -2064,6 +2329,7 @@ export type UserUncheckedUpdateWithoutRepliesInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -2084,6 +2350,7 @@ export type UserUncheckedUpdateWithoutRepliesInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCommentLikesInput = {
@@ -2100,6 +2367,7 @@ export type UserCreateWithoutCommentLikesInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -2120,6 +2388,7 @@ export type UserCreateWithoutCommentLikesInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCommentLikesInput = {
@@ -2136,6 +2405,7 @@ export type UserUncheckedCreateWithoutCommentLikesInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -2156,6 +2426,7 @@ export type UserUncheckedCreateWithoutCommentLikesInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCommentLikesInput = {
@@ -2188,6 +2459,7 @@ export type UserUpdateWithoutCommentLikesInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -2208,6 +2480,7 @@ export type UserUpdateWithoutCommentLikesInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCommentLikesInput = {
@@ -2224,6 +2497,7 @@ export type UserUncheckedUpdateWithoutCommentLikesInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -2244,6 +2518,7 @@ export type UserUncheckedUpdateWithoutCommentLikesInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutReplyLikesInput = {
@@ -2260,6 +2535,7 @@ export type UserCreateWithoutReplyLikesInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -2280,6 +2556,7 @@ export type UserCreateWithoutReplyLikesInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutReplyLikesInput = {
@@ -2296,6 +2573,7 @@ export type UserUncheckedCreateWithoutReplyLikesInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -2316,6 +2594,7 @@ export type UserUncheckedCreateWithoutReplyLikesInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutReplyLikesInput = {
@@ -2348,6 +2627,7 @@ export type UserUpdateWithoutReplyLikesInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -2368,6 +2648,7 @@ export type UserUpdateWithoutReplyLikesInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutReplyLikesInput = {
@@ -2384,6 +2665,7 @@ export type UserUncheckedUpdateWithoutReplyLikesInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -2404,6 +2686,7 @@ export type UserUncheckedUpdateWithoutReplyLikesInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutBalanceInput = {
@@ -2420,6 +2703,7 @@ export type UserCreateWithoutBalanceInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -2440,6 +2724,7 @@ export type UserCreateWithoutBalanceInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutBalanceInput = {
@@ -2456,6 +2741,7 @@ export type UserUncheckedCreateWithoutBalanceInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -2476,6 +2762,7 @@ export type UserUncheckedCreateWithoutBalanceInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutBalanceInput = {
@@ -2508,6 +2795,7 @@ export type UserUpdateWithoutBalanceInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -2528,6 +2816,7 @@ export type UserUpdateWithoutBalanceInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutBalanceInput = {
@@ -2544,6 +2833,7 @@ export type UserUncheckedUpdateWithoutBalanceInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -2564,6 +2854,7 @@ export type UserUncheckedUpdateWithoutBalanceInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutWatchlistInput = {
@@ -2580,6 +2871,7 @@ export type UserCreateWithoutWatchlistInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -2600,6 +2892,7 @@ export type UserCreateWithoutWatchlistInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWatchlistInput = {
@@ -2616,6 +2909,7 @@ export type UserUncheckedCreateWithoutWatchlistInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -2636,6 +2930,7 @@ export type UserUncheckedCreateWithoutWatchlistInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWatchlistInput = {
@@ -2668,6 +2963,7 @@ export type UserUpdateWithoutWatchlistInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -2688,6 +2984,7 @@ export type UserUpdateWithoutWatchlistInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWatchlistInput = {
@@ -2704,6 +3001,7 @@ export type UserUncheckedUpdateWithoutWatchlistInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -2724,6 +3022,7 @@ export type UserUncheckedUpdateWithoutWatchlistInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutNotificationsReceivedInput = {
@@ -2740,6 +3039,7 @@ export type UserCreateWithoutNotificationsReceivedInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -2760,6 +3060,7 @@ export type UserCreateWithoutNotificationsReceivedInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutNotificationsReceivedInput = {
@@ -2776,6 +3077,7 @@ export type UserUncheckedCreateWithoutNotificationsReceivedInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -2796,6 +3098,7 @@ export type UserUncheckedCreateWithoutNotificationsReceivedInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutNotificationsReceivedInput = {
@@ -2817,6 +3120,7 @@ export type UserCreateWithoutNotificationsSentInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -2837,6 +3141,7 @@ export type UserCreateWithoutNotificationsSentInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutNotificationsSentInput = {
@@ -2853,6 +3158,7 @@ export type UserUncheckedCreateWithoutNotificationsSentInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -2873,6 +3179,7 @@ export type UserUncheckedCreateWithoutNotificationsSentInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutNotificationsSentInput = {
@@ -2905,6 +3212,7 @@ export type UserUpdateWithoutNotificationsReceivedInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -2925,6 +3233,7 @@ export type UserUpdateWithoutNotificationsReceivedInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotificationsReceivedInput = {
@@ -2941,6 +3250,7 @@ export type UserUncheckedUpdateWithoutNotificationsReceivedInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -2961,6 +3271,7 @@ export type UserUncheckedUpdateWithoutNotificationsReceivedInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithoutNotificationsSentInput = {
@@ -2988,6 +3299,7 @@ export type UserUpdateWithoutNotificationsSentInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -3008,6 +3320,7 @@ export type UserUpdateWithoutNotificationsSentInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotificationsSentInput = {
@@ -3024,6 +3337,7 @@ export type UserUncheckedUpdateWithoutNotificationsSentInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -3044,6 +3358,7 @@ export type UserUncheckedUpdateWithoutNotificationsSentInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPointBalanceInput = {
@@ -3060,6 +3375,7 @@ export type UserCreateWithoutPointBalanceInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -3080,6 +3396,7 @@ export type UserCreateWithoutPointBalanceInput = {
   following?: Prisma.UserFollowCreateNestedManyWithoutFollowerInput
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPointBalanceInput = {
@@ -3096,6 +3413,7 @@ export type UserUncheckedCreateWithoutPointBalanceInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -3116,6 +3434,7 @@ export type UserUncheckedCreateWithoutPointBalanceInput = {
   following?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowerInput
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPointBalanceInput = {
@@ -3148,6 +3467,7 @@ export type UserUpdateWithoutPointBalanceInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -3168,6 +3488,7 @@ export type UserUpdateWithoutPointBalanceInput = {
   following?: Prisma.UserFollowUpdateManyWithoutFollowerNestedInput
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPointBalanceInput = {
@@ -3184,6 +3505,7 @@ export type UserUncheckedUpdateWithoutPointBalanceInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -3204,6 +3526,7 @@ export type UserUncheckedUpdateWithoutPointBalanceInput = {
   following?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowerNestedInput
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPointTransactionsInput = {
@@ -3220,6 +3543,7 @@ export type UserCreateWithoutPointTransactionsInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -3240,6 +3564,7 @@ export type UserCreateWithoutPointTransactionsInput = {
   following?: Prisma.UserFollowCreateNestedManyWithoutFollowerInput
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPointTransactionsInput = {
@@ -3256,6 +3581,7 @@ export type UserUncheckedCreateWithoutPointTransactionsInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -3276,6 +3602,7 @@ export type UserUncheckedCreateWithoutPointTransactionsInput = {
   following?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowerInput
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPointTransactionsInput = {
@@ -3308,6 +3635,7 @@ export type UserUpdateWithoutPointTransactionsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -3328,6 +3656,7 @@ export type UserUpdateWithoutPointTransactionsInput = {
   following?: Prisma.UserFollowUpdateManyWithoutFollowerNestedInput
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPointTransactionsInput = {
@@ -3344,6 +3673,7 @@ export type UserUncheckedUpdateWithoutPointTransactionsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -3364,6 +3694,7 @@ export type UserUncheckedUpdateWithoutPointTransactionsInput = {
   following?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowerNestedInput
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutFollowingInput = {
@@ -3380,6 +3711,7 @@ export type UserCreateWithoutFollowingInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -3400,6 +3732,7 @@ export type UserCreateWithoutFollowingInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutFollowingInput = {
@@ -3416,6 +3749,7 @@ export type UserUncheckedCreateWithoutFollowingInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -3436,6 +3770,7 @@ export type UserUncheckedCreateWithoutFollowingInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutFollowingInput = {
@@ -3457,6 +3792,7 @@ export type UserCreateWithoutFollowersInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -3477,6 +3813,7 @@ export type UserCreateWithoutFollowersInput = {
   following?: Prisma.UserFollowCreateNestedManyWithoutFollowerInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutFollowersInput = {
@@ -3493,6 +3830,7 @@ export type UserUncheckedCreateWithoutFollowersInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -3513,6 +3851,7 @@ export type UserUncheckedCreateWithoutFollowersInput = {
   following?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowerInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutFollowersInput = {
@@ -3545,6 +3884,7 @@ export type UserUpdateWithoutFollowingInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -3565,6 +3905,7 @@ export type UserUpdateWithoutFollowingInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFollowingInput = {
@@ -3581,6 +3922,7 @@ export type UserUncheckedUpdateWithoutFollowingInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -3601,6 +3943,7 @@ export type UserUncheckedUpdateWithoutFollowingInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithoutFollowersInput = {
@@ -3628,6 +3971,7 @@ export type UserUpdateWithoutFollowersInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -3648,6 +3992,7 @@ export type UserUpdateWithoutFollowersInput = {
   following?: Prisma.UserFollowUpdateManyWithoutFollowerNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFollowersInput = {
@@ -3664,6 +4009,7 @@ export type UserUncheckedUpdateWithoutFollowersInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -3684,6 +4030,7 @@ export type UserUncheckedUpdateWithoutFollowersInput = {
   following?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowerNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutActivitiesInput = {
@@ -3700,6 +4047,7 @@ export type UserCreateWithoutActivitiesInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
@@ -3720,6 +4068,7 @@ export type UserCreateWithoutActivitiesInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutActivitiesInput = {
@@ -3736,6 +4085,7 @@ export type UserUncheckedCreateWithoutActivitiesInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
@@ -3756,6 +4106,7 @@ export type UserUncheckedCreateWithoutActivitiesInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutActivitiesInput = {
@@ -3788,6 +4139,7 @@ export type UserUpdateWithoutActivitiesInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
@@ -3808,6 +4160,7 @@ export type UserUpdateWithoutActivitiesInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutActivitiesInput = {
@@ -3824,6 +4177,7 @@ export type UserUncheckedUpdateWithoutActivitiesInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
@@ -3844,6 +4198,7 @@ export type UserUncheckedUpdateWithoutActivitiesInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRankingInput = {
@@ -3860,6 +4215,7 @@ export type UserCreateWithoutRankingInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
@@ -3880,6 +4236,7 @@ export type UserCreateWithoutRankingInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRankingInput = {
@@ -3896,6 +4253,7 @@ export type UserUncheckedCreateWithoutRankingInput = {
   status?: $Enums.UserStatus
   mutedAt?: Date | string | null
   bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
@@ -3916,6 +4274,7 @@ export type UserUncheckedCreateWithoutRankingInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRankingInput = {
@@ -3948,6 +4307,7 @@ export type UserUpdateWithoutRankingInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
@@ -3968,6 +4328,7 @@ export type UserUpdateWithoutRankingInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRankingInput = {
@@ -3984,6 +4345,7 @@ export type UserUncheckedUpdateWithoutRankingInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
@@ -4004,6 +4366,7 @@ export type UserUncheckedUpdateWithoutRankingInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -4028,6 +4391,7 @@ export type UserCountOutputType = {
   following: number
   followers: number
   pointTransactions: number
+  chatBanIdentities: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4047,6 +4411,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   following?: boolean | UserCountOutputTypeCountFollowingArgs
   followers?: boolean | UserCountOutputTypeCountFollowersArgs
   pointTransactions?: boolean | UserCountOutputTypeCountPointTransactionsArgs
+  chatBanIdentities?: boolean | UserCountOutputTypeCountChatBanIdentitiesArgs
 }
 
 /**
@@ -4171,6 +4536,13 @@ export type UserCountOutputTypeCountPointTransactionsArgs<ExtArgs extends runtim
   where?: Prisma.PointTransactionWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountChatBanIdentitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ChatBanIdentityWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   isBot?: boolean
@@ -4186,6 +4558,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   status?: boolean
   mutedAt?: boolean
   bannedAt?: boolean
+  deletedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   ranking?: boolean | Prisma.User$rankingArgs<ExtArgs>
@@ -4207,6 +4580,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   followers?: boolean | Prisma.User$followersArgs<ExtArgs>
   pointBalance?: boolean | Prisma.User$pointBalanceArgs<ExtArgs>
   pointTransactions?: boolean | Prisma.User$pointTransactionsArgs<ExtArgs>
+  chatBanIdentities?: boolean | Prisma.User$chatBanIdentitiesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -4224,6 +4598,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   status?: boolean
   mutedAt?: boolean
   bannedAt?: boolean
+  deletedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -4242,6 +4617,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   status?: boolean
   mutedAt?: boolean
   bannedAt?: boolean
+  deletedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -4260,11 +4636,12 @@ export type UserSelectScalar = {
   status?: boolean
   mutedAt?: boolean
   bannedAt?: boolean
+  deletedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"isBot" | "id" | "name" | "email" | "emailVerified" | "image" | "nationality" | "language" | "role" | "statusMessage" | "status" | "mutedAt" | "bannedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"isBot" | "id" | "name" | "email" | "emailVerified" | "image" | "nationality" | "language" | "role" | "statusMessage" | "status" | "mutedAt" | "bannedAt" | "deletedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   ranking?: boolean | Prisma.User$rankingArgs<ExtArgs>
   moderationActionsReceived?: boolean | Prisma.User$moderationActionsReceivedArgs<ExtArgs>
@@ -4285,6 +4662,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   followers?: boolean | Prisma.User$followersArgs<ExtArgs>
   pointBalance?: boolean | Prisma.User$pointBalanceArgs<ExtArgs>
   pointTransactions?: boolean | Prisma.User$pointTransactionsArgs<ExtArgs>
+  chatBanIdentities?: boolean | Prisma.User$chatBanIdentitiesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -4312,6 +4690,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     followers: Prisma.$UserFollowPayload<ExtArgs>[]
     pointBalance: Prisma.$PointBalancePayload<ExtArgs> | null
     pointTransactions: Prisma.$PointTransactionPayload<ExtArgs>[]
+    chatBanIdentities: Prisma.$ChatBanIdentityPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     isBot: boolean
@@ -4327,6 +4706,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     status: $Enums.UserStatus
     mutedAt: Date | null
     bannedAt: Date | null
+    deletedAt: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["user"]>
@@ -4742,6 +5122,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   followers<T extends Prisma.User$followersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$followersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserFollowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   pointBalance<T extends Prisma.User$pointBalanceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$pointBalanceArgs<ExtArgs>>): Prisma.Prisma__PointBalanceClient<runtime.Types.Result.GetResult<Prisma.$PointBalancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   pointTransactions<T extends Prisma.User$pointTransactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$pointTransactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PointTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  chatBanIdentities<T extends Prisma.User$chatBanIdentitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$chatBanIdentitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatBanIdentityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4784,6 +5165,7 @@ export interface UserFieldRefs {
   readonly status: Prisma.FieldRef<"User", 'UserStatus'>
   readonly mutedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly bannedAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly deletedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }
@@ -5617,6 +5999,30 @@ export type User$pointTransactionsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.PointTransactionScalarFieldEnum | Prisma.PointTransactionScalarFieldEnum[]
+}
+
+/**
+ * User.chatBanIdentities
+ */
+export type User$chatBanIdentitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ChatBanIdentity
+   */
+  select?: Prisma.ChatBanIdentitySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ChatBanIdentity
+   */
+  omit?: Prisma.ChatBanIdentityOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ChatBanIdentityInclude<ExtArgs> | null
+  where?: Prisma.ChatBanIdentityWhereInput
+  orderBy?: Prisma.ChatBanIdentityOrderByWithRelationInput | Prisma.ChatBanIdentityOrderByWithRelationInput[]
+  cursor?: Prisma.ChatBanIdentityWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ChatBanIdentityScalarFieldEnum | Prisma.ChatBanIdentityScalarFieldEnum[]
 }
 
 /**

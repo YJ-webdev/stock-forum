@@ -21,13 +21,8 @@ import {
 } from "@/app/actions/post";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
-import { resolveLanguage, type Language } from "@/lib/data/languages";
+import { resolveLanguage } from "@/lib/data/languages";
 import {
   COMMENT_ACTION_LABELS,
   COMMENT_VIEW_LABELS,
@@ -35,15 +30,23 @@ import {
   CONTENT_STATUS_LABELS,
 } from "@/lib/data/translations";
 
+import { formatTimeAgo } from "@/lib/utils/format-time-ago";
+import { getErrorMessage } from "@/lib/utils/get-error-message";
+
 import { ContentActionsMenu } from "./content-actions-menu";
-import { ProfileCard } from "./profile-card";
+import { UserProfileTrigger, type ProfileUser } from "./profile-card";
 import { ReplyEditInput } from "./reply-edit-input";
 import { ReplyInput } from "./reply-input";
+
 import type { MarketReply } from "./comment";
-import { getErrorMessage } from "@/lib/utils/get-error-message";
+
+// -----------------------------------------------------------------------------
+// TYPES
+// -----------------------------------------------------------------------------
 
 interface ReplyItemProps {
   reply: MarketReply;
+  replies: MarketReply[];
 
   currentUser: {
     id: string;
@@ -55,20 +58,24 @@ interface ReplyItemProps {
 
   onReplyUpdated: () => Promise<void>;
   onReplyCreated: (reply: MarketReply) => void;
-
-  replies: MarketReply[];
+  onBanRequest?: (target: ProfileUser) => void;
 
   depth?: number;
   isLast?: boolean;
   targetReplyId?: string | null;
 }
 
+// -----------------------------------------------------------------------------
+// REPLY ITEM
+// -----------------------------------------------------------------------------
+
 export function ReplyItem({
   reply,
+  replies,
   currentUser,
   onReplyUpdated,
   onReplyCreated,
-  replies,
+  onBanRequest,
   depth = 0,
   targetReplyId = null,
 }: ReplyItemProps) {
@@ -97,13 +104,16 @@ export function ReplyItem({
   const [isLikePending, startLikeTransition] = useTransition();
 
   const username = reply.author.name ?? labels.guest;
-
   const isAuthor = currentUser?.id === reply.author.id;
   const isAdmin = currentUser?.role === "ADMIN";
 
-  const childReplies = replies.filter(
-    (childReply) => childReply.parentId === reply.id,
-  );
+  const profileTarget: ProfileUser = {
+    id: reply.author.id,
+    name: username,
+    image: reply.author.image ?? null,
+  };
+
+  const childReplies = replies.filter((child) => child.parentId === reply.id);
 
   const hasChild = childReplies.length > 0;
 
@@ -113,20 +123,28 @@ export function ReplyItem({
   );
 
   const containsTargetReply =
-    targetReplyId !== null &&
-    getDescendants(reply.id, replies).some(
-      (descendant) => descendant.id === targetReplyId,
-    );
+    targetReplyId !== null && hasDescendant(reply.id, targetReplyId, replies);
 
-  const collapseThreadEvents = {
+  const railColor = threadHovered
+    ? "bg-zinc-400 dark:bg-zinc-500"
+    : "bg-zinc-200 dark:bg-zinc-700";
+
+  const curveColor = threadHovered
+    ? "border-zinc-400 dark:border-zinc-500"
+    : "border-zinc-200 dark:border-zinc-700";
+
+  const threadHoverEvents = {
     onMouseEnter: () => setThreadHovered(true),
     onMouseLeave: () => setThreadHovered(false),
+  };
+
+  const collapseThreadEvents = {
+    ...threadHoverEvents,
     onClick: () => setChildrenCollapsed(true),
   };
 
   const expandThreadEvents = {
-    onMouseEnter: () => setThreadHovered(true),
-    onMouseLeave: () => setThreadHovered(false),
+    ...threadHoverEvents,
     onClick: () => setChildrenCollapsed(false),
   };
 
@@ -136,9 +154,11 @@ export function ReplyItem({
     );
   }
 
+  // ---------------------------------------------------------------------------
   // DELETE / MODERATION
+  // ---------------------------------------------------------------------------
 
-  const handleDelete = async () => {
+  async function handleDelete() {
     if (isDeleting) return;
 
     setIsDeleting(true);
@@ -153,45 +173,37 @@ export function ReplyItem({
     } finally {
       setIsDeleting(false);
     }
-  };
+  }
 
-  const handleHide = async () => {
+  async function handleModeration(action: "hide" | "restore") {
     if (isModerating) return;
 
     setIsModerating(true);
 
     try {
-      await hideReply(reply.id);
+      if (action === "hide") {
+        await hideReply(reply.id);
+      } else {
+        await restoreReply(reply.id);
+      }
+
       await onReplyUpdated();
 
-      toast.success(resultLabels.hidden);
+      toast.success(
+        action === "hide" ? resultLabels.hidden : resultLabels.restored,
+      );
     } catch (error) {
       toast.error(getErrorMessage(error, labels.action_failed));
     } finally {
       setIsModerating(false);
     }
-  };
+  }
 
-  const handleRestore = async () => {
-    if (isModerating) return;
-
-    setIsModerating(true);
-
-    try {
-      await restoreReply(reply.id);
-      await onReplyUpdated();
-
-      toast.success(resultLabels.restored);
-    } catch (error) {
-      toast.error(getErrorMessage(error, labels.action_failed));
-    } finally {
-      setIsModerating(false);
-    }
-  };
-
+  // ---------------------------------------------------------------------------
   // LIKE
+  // ---------------------------------------------------------------------------
 
-  const handleReplyLike = () => {
+  function handleReplyLike() {
     if (!currentUser) {
       toast.error(actionLabels.login_required);
       return;
@@ -203,7 +215,6 @@ export function ReplyItem({
     const previousCount = likeCount;
 
     setLikedByMe(!previousLiked);
-
     setLikeCount((count) =>
       previousLiked ? Math.max(0, count - 1) : count + 1,
     );
@@ -223,11 +234,13 @@ export function ReplyItem({
         toast.error(getErrorMessage(error, labels.action_failed));
       }
     });
-  };
+  }
 
+  // ---------------------------------------------------------------------------
   // REPORT
+  // ---------------------------------------------------------------------------
 
-  const handleReportReply = async () => {
+  async function handleReportReply() {
     if (!currentUser) {
       toast.error(actionLabels.login_required);
       return;
@@ -250,9 +263,11 @@ export function ReplyItem({
     } finally {
       setIsReporting(false);
     }
-  };
+  }
 
+  // ---------------------------------------------------------------------------
   // DEEP LINK
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     if (containsTargetReply) {
@@ -276,14 +291,17 @@ export function ReplyItem({
   return (
     <div id={`reply-${reply.id}`} className="relative scroll-mt-0">
       <div className="group/reply relative flex gap-3">
-        {/* Avatar / profile */}
+        {/* Avatar */}
         <div className="relative z-1 shrink-0">
-          <Popover
-            modal={false}
+          <UserProfileTrigger
+            target={profileTarget}
+            currentUserId={currentUser?.id}
+            language={currentUser?.language}
+            isAdmin={isAdmin}
             open={openProfile === "avatar"}
             onOpenChange={(open) => handleProfileOpenChange("avatar", open)}
           >
-            <PopoverTrigger
+            <button
               type="button"
               aria-label={username}
               className="
@@ -304,26 +322,12 @@ export function ReplyItem({
                   {getInitials(username)}
                 </AvatarFallback>
               </Avatar>
-            </PopoverTrigger>
-
-            <PopoverContent
-              align="start"
-              side="bottom"
-              sideOffset={8}
-              className="w-80 max-w-[calc(100vw-2rem)] rounded-lg p-0"
-            >
-              <ProfileCard
-                userId={reply.author.id}
-                name={username}
-                image={reply.author.image}
-                currentUserId={currentUser?.id}
-                language={currentUser?.language}
-              />
-            </PopoverContent>
-          </Popover>
+            </button>
+          </UserProfileTrigger>
         </div>
 
         <div className="relative min-w-0 flex-1">
+          {/* Thread rail */}
           {hasChild && (
             <button
               type="button"
@@ -344,12 +348,8 @@ export function ReplyItem({
               <span
                 className={`
                   pointer-events-none absolute
-                  left-2 top-0 -bottom-6 w-px transition-colors
-                  ${
-                    threadHovered
-                      ? "bg-zinc-400 dark:bg-zinc-500"
-                      : "bg-zinc-200 dark:bg-zinc-700"
-                  }
+                  left-2 top-0 -bottom-6 w-px
+                  transition-colors ${railColor}
                 `}
               />
             </button>
@@ -357,12 +357,15 @@ export function ReplyItem({
 
           {/* Header */}
           <div className="flex min-w-0 items-center gap-1.5">
-            <Popover
-              modal={false}
+            <UserProfileTrigger
+              target={profileTarget}
+              currentUserId={currentUser?.id}
+              language={currentUser?.language}
+              isAdmin={isAdmin}
               open={openProfile === "name"}
               onOpenChange={(open) => handleProfileOpenChange("name", open)}
             >
-              <PopoverTrigger
+              <button
                 type="button"
                 className="
                   min-w-0 cursor-pointer rounded-sm text-start
@@ -373,23 +376,8 @@ export function ReplyItem({
                 <span className="block truncate text-[14px] font-semibold hover:underline">
                   {username}
                 </span>
-              </PopoverTrigger>
-
-              <PopoverContent
-                align="start"
-                side="bottom"
-                sideOffset={8}
-                className="w-80 max-w-[calc(100vw-2rem)] rounded-lg p-0"
-              >
-                <ProfileCard
-                  userId={reply.author.id}
-                  name={username}
-                  image={reply.author.image}
-                  currentUserId={currentUser?.id}
-                  language={currentUser?.language}
-                />
-              </PopoverContent>
-            </Popover>
+              </button>
+            </UserProfileTrigger>
 
             <span className="jakarta shrink-0 text-[13px] text-zinc-500">
               {formatTimeAgo(reply.createdAt, language)}
@@ -405,8 +393,8 @@ export function ReplyItem({
               isReporting={isReporting}
               onEdit={() => setIsEditing(true)}
               onDelete={handleDelete}
-              onHide={handleHide}
-              onRestore={handleRestore}
+              onHide={() => handleModeration("hide")}
+              onRestore={() => handleModeration("restore")}
               onReport={handleReportReply}
               hoverGroup="reply"
             />
@@ -497,8 +485,8 @@ export function ReplyItem({
                 }}
                 className="
                   cursor-pointer text-sm font-medium
-                  text-zinc-400 dark:text-zinc-500
-                  hover:text-zinc-900 dark:hover:text-zinc-200
+                  text-zinc-400 hover:text-zinc-900
+                  dark:text-zinc-500 dark:hover:text-zinc-200
                 "
               >
                 {labels.reply}
@@ -535,132 +523,124 @@ export function ReplyItem({
       </div>
 
       {/* Child replies */}
-      {hasChild && (
-        <>
-          {childrenCollapsed ? (
-            <button
-              type="button"
-              aria-label={labels.show_replies}
-              aria-expanded={false}
-              {...expandThreadEvents}
+      {hasChild &&
+        (childrenCollapsed ? (
+          <button
+            type="button"
+            aria-label={labels.show_replies}
+            aria-expanded={false}
+            {...expandThreadEvents}
+            className="relative ml-2 mt-6 block h-7 cursor-pointer"
+          >
+            <span
+              className={`
+                pointer-events-none absolute left-2 top-0
+                h-4 w-8 rounded-bl-xl border-b border-l
+                transition-colors ${curveColor}
+              `}
+            />
+
+            <span
               className="
-                relative ml-2 mt-6 block h-7 cursor-pointer
+                ml-11 flex h-4 items-end whitespace-nowrap
+                text-sm font-medium text-zinc-500
+                dark:text-zinc-400
               "
             >
-              <span
-                className={`
-                  pointer-events-none absolute left-2 top-0
-                  h-4 w-8 rounded-bl-xl border-b border-l
-                  transition-colors
-                  ${
-                    threadHovered
-                      ? "border-zinc-400 dark:border-zinc-500"
-                      : "border-zinc-200 dark:border-zinc-700"
-                  }
-                `}
-              />
+              {childReplyCountLabel}
+            </span>
+          </button>
+        ) : (
+          <div className="relative mt-6">
+            {childReplies.map((childReply, index) => {
+              const isLastChild = index === childReplies.length - 1;
 
-              <span
-                className="
-                  ml-11 flex h-4 items-end whitespace-nowrap
-                  text-sm font-medium text-zinc-500
-                  dark:text-zinc-400
-                "
-              >
-                {childReplyCountLabel}
-              </span>
-            </button>
-          ) : (
-            <div className="relative mt-6">
-              {childReplies.map((childReply, index) => {
-                const isLastChild = index === childReplies.length - 1;
-
-                return (
-                  <div key={childReply.id} className="relative pl-12">
-                    {/* Vertical rail */}
-                    <button
-                      type="button"
-                      aria-label={labels.collapse_replies}
-                      {...collapseThreadEvents}
+              return (
+                <div key={childReply.id} className="relative pl-12">
+                  {/* Vertical rail */}
+                  <button
+                    type="button"
+                    aria-label={labels.collapse_replies}
+                    {...collapseThreadEvents}
+                    className={`
+                      absolute left-2 -top-6 z-0 w-5 cursor-pointer
+                      ${isLastChild ? "h-7" : "-bottom-1"}
+                    `}
+                  >
+                    <span
                       className={`
-                        absolute left-2 -top-6 z-0
-                        w-5 cursor-pointer
-                        ${isLastChild ? "h-7" : "-bottom-1"}
+                        pointer-events-none absolute
+                        left-2 -top-2 bottom-0 w-px
+                        transition-colors ${railColor}
                       `}
-                    >
-                      <span
-                        className={`
-                          pointer-events-none absolute
-                          left-2 -top-2 bottom-0 w-px transition-colors
-                          ${
-                            threadHovered
-                              ? "bg-zinc-400 dark:bg-zinc-500"
-                              : "bg-zinc-200 dark:bg-zinc-700"
-                          }
-                        `}
-                      />
-                    </button>
-
-                    {/* Curve */}
-                    <button
-                      type="button"
-                      aria-label={labels.collapse_replies}
-                      {...collapseThreadEvents}
-                      className="
-                        absolute left-2 top-0 z-0
-                        h-4 w-10 cursor-pointer
-                      "
-                    >
-                      <span
-                        className={`
-                          pointer-events-none absolute left-2 top-0
-                          h-4 w-8 rounded-bl-xl border-b border-l
-                          transition-colors
-                          ${
-                            threadHovered
-                              ? "border-zinc-400 dark:border-zinc-500"
-                              : "border-zinc-200 dark:border-zinc-700"
-                          }
-                        `}
-                      />
-                    </button>
-
-                    <ReplyItem
-                      reply={childReply}
-                      replies={replies}
-                      currentUser={currentUser}
-                      onReplyUpdated={onReplyUpdated}
-                      onReplyCreated={onReplyCreated}
-                      depth={depth + 1}
-                      targetReplyId={targetReplyId}
                     />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
+                  </button>
+
+                  {/* Curve */}
+                  <button
+                    type="button"
+                    aria-label={labels.collapse_replies}
+                    {...collapseThreadEvents}
+                    className="
+                      absolute left-2 top-0 z-0
+                      h-4 w-10 cursor-pointer
+                    "
+                  >
+                    <span
+                      className={`
+                        pointer-events-none absolute left-2 top-0
+                        h-4 w-8 rounded-bl-xl border-b border-l
+                        transition-colors ${curveColor}
+                      `}
+                    />
+                  </button>
+
+                  <ReplyItem
+                    reply={childReply}
+                    replies={replies}
+                    currentUser={currentUser}
+                    onReplyUpdated={onReplyUpdated}
+                    onReplyCreated={onReplyCreated}
+                    onBanRequest={onBanRequest}
+                    depth={depth + 1}
+                    targetReplyId={targetReplyId}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ))}
     </div>
   );
 }
 
+// -----------------------------------------------------------------------------
 // TEXT / READ MORE
+// -----------------------------------------------------------------------------
+
+interface ReplyTextContentProps {
+  content: string;
+  editedLabel?: string;
+  readMoreLabel: string;
+  readLessLabel: string;
+}
+
+interface TextLayout {
+  collapsedText: string;
+  collapsedHeight: number;
+  fullHeight: number;
+  hasOverflow: boolean;
+}
+
+const MAX_COLLAPSED_LINES = 4;
+const MAX_EXPANDED_HEIGHT = 240;
 
 export function ReplyTextContent({
   content,
   editedLabel,
   readMoreLabel,
   readLessLabel,
-}: {
-  content: string;
-  editedLabel?: string;
-  readMoreLabel: string;
-  readLessLabel: string;
-}) {
-  const MAX_COLLAPSED_LINES = 4;
-  const MAX_EXPANDED_HEIGHT = 240;
-
+}: ReplyTextContentProps) {
   const contentId = useId();
   const displayContent = content.trimEnd();
 
@@ -674,17 +654,10 @@ export function ReplyTextContent({
 
   const [expanded, setExpanded] = useState(false);
   const [animating, setAnimating] = useState(false);
-
-  const [layout, setLayout] = useState<{
-    collapsedText: string;
-    collapsedHeight: number;
-    fullHeight: number;
-    hasOverflow: boolean;
-  } | null>(null);
+  const [layout, setLayout] = useState<TextLayout | null>(null);
 
   const buttonClassName = `
-    inline-block cursor-pointer rounded-sm
-    p-0 align-top
+    inline-block cursor-pointer rounded-sm p-0 align-top
     text-[13px] font-medium leading-6
     text-zinc-500 hover:text-zinc-900
     dark:text-zinc-400 dark:hover:text-zinc-200
@@ -709,8 +682,19 @@ export function ReplyTextContent({
       return;
     }
 
-    const measure = () => {
+    function measure() {
+      if (
+        !container ||
+        !measurement ||
+        !textElement ||
+        !editedElement ||
+        !suffixElement
+      ) {
+        return;
+      }
+
       const width = container.getBoundingClientRect().width;
+
       if (width <= 0) return;
 
       measurement.style.width = `${width}px`;
@@ -721,7 +705,11 @@ export function ReplyTextContent({
 
       const maxCollapsedHeight = lineHeight * MAX_COLLAPSED_LINES;
 
-      const measureHeight = (text: string, collapsed: boolean) => {
+      function measureHeight(text: string, collapsed: boolean) {
+        if (!measurement || !textElement || !editedElement || !suffixElement) {
+          return 0;
+        }
+
         textElement.textContent = text;
 
         editedElement.textContent =
@@ -735,16 +723,27 @@ export function ReplyTextContent({
         suffixElement.style.display = collapsed ? "inline-block" : "none";
 
         return measurement.getBoundingClientRect().height;
-      };
+      }
 
       const naturalHeight = measureHeight(displayContent, false);
 
       if (naturalHeight <= maxCollapsedHeight + 0.5) {
-        setLayout({
-          collapsedText: displayContent,
-          collapsedHeight: naturalHeight,
-          fullHeight: naturalHeight,
-          hasOverflow: false,
+        setLayout((previous) => {
+          if (
+            previous?.collapsedText === displayContent &&
+            previous.collapsedHeight === naturalHeight &&
+            previous.fullHeight === naturalHeight &&
+            !previous.hasOverflow
+          ) {
+            return previous;
+          }
+
+          return {
+            collapsedText: displayContent,
+            collapsedHeight: naturalHeight,
+            fullHeight: naturalHeight,
+            hasOverflow: false,
+          };
         });
 
         return;
@@ -765,6 +764,7 @@ export function ReplyTextContent({
 
       while (low < high) {
         const middle = Math.ceil((low + high) / 2);
+
         const candidate = characters.slice(0, middle).join("").trimEnd();
 
         if (measureHeight(candidate, true) <= maxCollapsedHeight + 0.5) {
@@ -796,7 +796,7 @@ export function ReplyTextContent({
           hasOverflow: true,
         };
       });
-    };
+    }
 
     measure();
 
@@ -820,9 +820,9 @@ export function ReplyTextContent({
 
     let active = true;
 
-    const handleFontsLoaded = () => {
+    function handleFontsLoaded() {
       if (active) measure();
-    };
+    }
 
     if (document.fonts) {
       void document.fonts.ready.then(handleFontsLoaded);
@@ -832,8 +832,8 @@ export function ReplyTextContent({
     return () => {
       active = false;
       observer?.disconnect();
-      window.removeEventListener("resize", measure);
 
+      window.removeEventListener("resize", measure);
       document.fonts?.removeEventListener("loadingdone", handleFontsLoaded);
     };
   }, [displayContent, editedLabel, readMoreLabel]);
@@ -851,7 +851,7 @@ export function ReplyTextContent({
   const hasOverflow = layout?.hasOverflow ?? false;
   const showFullText = expanded || animating || !hasOverflow;
 
-  const handleToggle = (nextExpanded: boolean) => {
+  function handleToggle(nextExpanded: boolean) {
     if (animating) return;
 
     if (!nextExpanded && contentViewportRef.current) {
@@ -864,7 +864,7 @@ export function ReplyTextContent({
 
     setAnimating(!reduceMotion);
     setExpanded(nextExpanded);
-  };
+  }
 
   return (
     <div ref={containerRef} className="relative min-w-0">
@@ -878,8 +878,7 @@ export function ReplyTextContent({
         }}
         className="
           pointer-events-none invisible absolute left-0 top-0
-          m-0 whitespace-pre-wrap
-          text-[15px] leading-6
+          m-0 whitespace-pre-wrap text-[15px] leading-6
         "
       >
         <span ref={measurementTextRef} />
@@ -980,7 +979,7 @@ export function ReplyTextContent({
         </p>
       </div>
 
-      {/* Outside the paragraph and scroll viewport */}
+      {/* Read less stays outside the scroll viewport */}
       {hasOverflow && expanded && (
         <div className="mt-1 leading-6">
           <button
@@ -1001,65 +1000,46 @@ export function ReplyTextContent({
     </div>
   );
 }
+
+// -----------------------------------------------------------------------------
 // HELPERS
+// -----------------------------------------------------------------------------
 
 function getInitials(name: string) {
   return Array.from(name.trim())[0]?.toUpperCase() ?? "?";
 }
 
-function formatTimeAgo(date: Date | string, language: Language): string {
-  const time = new Date(date).getTime();
-
-  if (!Number.isFinite(time)) return "";
-
-  const seconds = Math.floor(Math.max(0, Date.now() - time) / 1000);
-
-  const formatter = new Intl.RelativeTimeFormat(language, {
-    numeric: "auto",
-    style: "short",
-  });
-
-  if (seconds < 60) {
-    return formatter.format(0, "second");
-  }
-
-  const minutes = Math.floor(seconds / 60);
-
-  if (minutes < 60) {
-    return formatter.format(-minutes, "minute");
-  }
-
-  const hours = Math.floor(minutes / 60);
-
-  if (hours < 24) {
-    return formatter.format(-hours, "hour");
-  }
-
-  const days = Math.floor(hours / 24);
-
-  if (days < 7) {
-    return formatter.format(-days, "day");
-  }
-
-  return new Date(time).toLocaleDateString(language);
-}
-
-function getDescendants(
+function hasDescendant(
   parentId: string,
+  targetId: string,
   replies: MarketReply[],
-): MarketReply[] {
-  const result: MarketReply[] = [];
+): boolean {
+  const childrenByParent = new Map<string, string[]>();
 
-  const walk = (id: string) => {
-    const children = replies.filter((reply) => reply.parentId === id);
+  for (const reply of replies) {
+    if (!reply.parentId) continue;
 
-    for (const child of children) {
-      result.push(child);
-      walk(child.id);
+    const children = childrenByParent.get(reply.parentId);
+
+    if (children) {
+      children.push(reply.id);
+    } else {
+      childrenByParent.set(reply.parentId, [reply.id]);
     }
-  };
+  }
 
-  walk(parentId);
+  const pending = [...(childrenByParent.get(parentId) ?? [])];
+  const visited = new Set<string>([parentId]);
 
-  return result;
+  while (pending.length > 0) {
+    const id = pending.pop();
+
+    if (!id || visited.has(id)) continue;
+    if (id === targetId) return true;
+
+    visited.add(id);
+    pending.push(...(childrenByParent.get(id) ?? []));
+  }
+
+  return false;
 }

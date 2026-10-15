@@ -54,24 +54,23 @@ enum ContentVisibility {
   PRIVATE
 }
 
-
 model User {
-   isBot Boolean @default(false)
-  id            String    @id @default(cuid())
+  isBot         Boolean      @default(false)
+  id            String       @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?      @unique
   emailVerified DateTime?
   image         String?
   nationality   String?
-  language      String    @default("en")
-  role          Role      @default(USER)
-  ranking UserRanking?
-  statusMessage String? @db.VarChar(160)
-  
+  language      String       @default("en")
+  role          Role         @default(USER)
+  ranking       UserRanking?
+  statusMessage String?      @db.VarChar(160)
 
-  status   UserStatus @default(ACTIVE)
-  mutedAt  DateTime?
-  bannedAt DateTime?
+  status    UserStatus @default(ACTIVE)
+  mutedAt   DateTime?
+  bannedAt  DateTime?
+  deletedAt DateTime?
 
   moderationActionsReceived  ModerationAction[] @relation("ModerationTargetUser")
   moderationActionsPerformed ModerationAction[] @relation("ModerationModerator")
@@ -88,13 +87,15 @@ model User {
   notificationsReceived Notification[]  @relation("NotificationRecipient")
   notificationsSent     Notification[]  @relation("NotificationActor")
 
-    activities UserActivity[]
+  activities UserActivity[]
 
   following UserFollow[] @relation("UserFollowing")
   followers UserFollow[] @relation("UserFollowers")
 
   pointBalance      PointBalance?
   pointTransactions PointTransaction[]
+
+  chatBanIdentities ChatBanIdentity[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -135,11 +136,24 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model ChatBanIdentity {
+  id String @id @default(cuid())
+
+  identityHash String @unique
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
 model Comment {
-  id      String @id @default(cuid())
-  content Json
-    visibility ContentVisibility @default(PUBLIC)
-hasContent Boolean @default(false)
+  id         String            @id @default(cuid())
+  content    Json
+  visibility ContentVisibility @default(PUBLIC)
+  hasContent Boolean           @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -239,10 +253,9 @@ model CommentAsset {
 model Reply {
   id String @id @default(cuid())
 
-  content String
-  gifUrl  String?
-    visibility ContentVisibility @default(PUBLIC)
-
+  content    String
+  gifUrl     String?
+  visibility ContentVisibility @default(PUBLIC)
 
   // Comment this reply belongs to
   commentId String
@@ -346,27 +359,25 @@ model CountryAiBrief {
   updatedAt DateTime @updatedAt
 }
 
-
 model MarketNews {
   id String @id @default(cuid())
 
   marketSymbol String
 
-  title   String
-  summary String? @db.Text
-    imageUrl String?
+  title    String
+  summary  String? @db.Text
+  imageUrl String?
 
-
-  source  String
+  source     String
   sourceIcon String?
-  url     String
+  url        String
 
   publishedAt DateTime
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  market MarketAsset @relation(fields: [marketSymbol],references: [symbol],onDelete: Cascade)
+  market MarketAsset @relation(fields: [marketSymbol], references: [symbol], onDelete: Cascade)
 
   @@unique([marketSymbol, url])
   @@index([marketSymbol, publishedAt])
@@ -411,11 +422,11 @@ enum NotificationType {
   COMMENT_REPLIED
   REPLY_REPLIED
 
-    COMMENT_REPORTED
+  COMMENT_REPORTED
   REPLY_REPORTED
 
-    TIER_UP
-    TIER_DOWN
+  TIER_UP
+  TIER_DOWN
 }
 
 model Notification {
@@ -430,7 +441,7 @@ model Notification {
   actorId String?
   actor   User?   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
 
-tier UserTier?
+  tier UserTier?
 
   type NotificationType
 
@@ -503,9 +514,9 @@ model UserFollow {
   followingId String
   createdAt   DateTime @default(now())
 
-  follower User @relation("UserFollowing",fields: [followerId],references: [id],onDelete: Cascade)
+  follower User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
 
-  following User @relation("UserFollowers",fields: [followingId],references: [id],onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
   @@index([followerId, createdAt, id])
@@ -513,9 +524,9 @@ model UserFollow {
 }
 
 model UserActivity {
-  id           String           @id @default(cuid())
-  userId       String
-  type         UserActivityType
+  id     String           @id @default(cuid())
+  userId String
+  type   UserActivityType
 
   targetUserId String?
   marketSymbol String?
@@ -523,10 +534,10 @@ model UserActivity {
   replyId      String?
   predictionId String?
 
-  metadata     Json?
-  createdAt    DateTime         @default(now())
+  metadata  Json?
+  createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt, id])
 }
@@ -555,7 +566,7 @@ enum UserActivityType {
   USER_UNFOLLOWED
 
   COMMENT_REPORTED
-REPLY_REPORTED
+  REPLY_REPORTED
 }
 
 model UserRanking {
@@ -566,18 +577,14 @@ model UserRanking {
 
   tier UserTier @default(UNRANKED)
 
-
   rank Int?
 
-
   netProfit Int @default(0)
-
 
   settledCount Int @default(0)
   wonCount     Int @default(0)
   lostCount    Int @default(0)
 
-  
   periodStart DateTime
   periodEnd   DateTime
 

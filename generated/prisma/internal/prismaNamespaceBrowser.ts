@@ -55,6 +55,7 @@ export const ModelName = {
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
+  ChatBanIdentity: 'ChatBanIdentity',
   Comment: 'Comment',
   ModerationAction: 'ModerationAction',
   Prediction: 'Prediction',
@@ -105,6 +106,7 @@ export const UserScalarFieldEnum = {
   status: 'status',
   mutedAt: 'mutedAt',
   bannedAt: 'bannedAt',
+  deletedAt: 'deletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -147,6 +149,16 @@ export const VerificationTokenScalarFieldEnum = {
 } as const
 
 export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFieldEnum)[keyof typeof VerificationTokenScalarFieldEnum]
+
+
+export const ChatBanIdentityScalarFieldEnum = {
+  id: 'id',
+  identityHash: 'identityHash',
+  userId: 'userId',
+  createdAt: 'createdAt'
+} as const
+
+export type ChatBanIdentityScalarFieldEnum = (typeof ChatBanIdentityScalarFieldEnum)[keyof typeof ChatBanIdentityScalarFieldEnum]
 
 
 export const CommentScalarFieldEnum = {

@@ -2,13 +2,10 @@
 
 import { use } from "react";
 
-import { LeaderBoard } from "./leader-board";
-
+import type { User } from "@/types/user";
 import type { LayoutSideData } from "../actions/query";
 
-type User = {
-  id: string;
-};
+import { LeaderBoard } from "./leader-board";
 
 interface LeaderBoardStreamProps {
   sideDataPromise: Promise<LayoutSideData>;
@@ -21,5 +18,14 @@ export function LeaderBoardStream({
 }: LeaderBoardStreamProps) {
   const { traders } = use(sideDataPromise);
 
-  return <LeaderBoard traders={traders} user={user} />;
+  return (
+    <LeaderBoard
+      traders={traders}
+      user={user}
+      onBanRequest={(target) => {
+        // 차단 확인 다이얼로그 연결 전 임시 처리.
+        console.log("Ban target:", target);
+      }}
+    />
+  );
 }

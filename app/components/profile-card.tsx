@@ -1,28 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
 
-import { RotateCcw, UserCheck, UserPlus } from "lucide-react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 
-import { toast } from "sonner";
+import { Ban, RotateCcw } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 import {
   getUserProfileCard,
   type UserProfileCardData,
 } from "@/app/actions/profile";
 
-import { followUser, unfollowUser } from "@/app/actions/follow";
-
 import { resolveLanguage } from "@/lib/data/languages";
 
 import { HISTORY_LABELS, PROFILE_CARD_LABELS } from "@/lib/data/translations";
+import { BanUserDialog } from "./ban-user-dialog";
 
 // -----------------------------------------------------------------------------
 // TYPES
 // -----------------------------------------------------------------------------
+
+export interface ProfileUser {
+  id: string;
+  name: string;
+  image: string | null;
+}
 
 interface ProfileCardProps {
   userId: string;
@@ -30,6 +40,24 @@ interface ProfileCardProps {
   image?: string | null;
   currentUserId?: string | null;
   language?: string | null;
+
+  isAdmin?: boolean;
+  onBanRequest?: (target: ProfileUser) => void;
+}
+
+interface UserProfileTriggerProps {
+  target: ProfileUser;
+
+  currentUserId?: string;
+  language?: string | null;
+
+  children: ReactElement;
+
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+
+  isAdmin?: boolean;
+  onBanRequest?: (target: ProfileUser) => void;
 }
 
 // -----------------------------------------------------------------------------
@@ -53,6 +81,7 @@ function getCacheKey(userId: string, viewerId: string | null) {
 
 function saveCache(key: string, data: UserProfileCardData, fetchedAt: number) {
   profileCache.delete(key);
+
   profileCache.set(key, {
     data,
     fetchedAt,
@@ -102,7 +131,82 @@ const TIER_CLASSES: Record<UserProfileCardData["tier"], string> = {
 };
 
 // -----------------------------------------------------------------------------
-// COMPONENT
+// PROFILE TRIGGER / POPOVER
+// -----------------------------------------------------------------------------
+
+export function UserProfileTrigger({
+  target,
+  currentUserId,
+  language,
+  children,
+  open,
+  onOpenChange,
+  isAdmin = false,
+  onBanRequest,
+}: UserProfileTriggerProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const [banTarget, setBanTarget] = useState<ProfileUser | null>(null);
+
+  const profileOpen = open ?? internalOpen;
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (open === undefined) {
+      setInternalOpen(nextOpen);
+    }
+
+    onOpenChange?.(nextOpen);
+  }
+
+  function handleBanRequest(selectedUser: ProfileUser) {
+    handleOpenChange(false);
+
+    if (onBanRequest) {
+      onBanRequest(selectedUser);
+      return;
+    }
+
+    setBanTarget(selectedUser);
+  }
+
+  return (
+    <>
+      <Popover modal={false} open={profileOpen} onOpenChange={handleOpenChange}>
+        <PopoverTrigger render={children} />
+
+        <PopoverContent
+          align="start"
+          side="bottom"
+          sideOffset={8}
+          className="
+            w-80 max-w-[calc(100vw-2rem)]
+            overflow-hidden rounded-xl p-0
+          "
+        >
+          <ProfileCard
+            userId={target.id}
+            name={target.name}
+            image={target.image}
+            currentUserId={currentUserId}
+            language={language}
+            isAdmin={isAdmin}
+            onBanRequest={handleBanRequest}
+          />
+        </PopoverContent>
+      </Popover>
+
+      {banTarget && (
+        <BanUserDialog
+          key={banTarget.id}
+          target={banTarget}
+          onClose={() => setBanTarget(null)}
+        />
+      )}
+    </>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// PROFILE CARD
 // -----------------------------------------------------------------------------
 
 export function ProfileCard(props: ProfileCardProps) {
@@ -120,6 +224,8 @@ function ProfileCardContent({
   image: initialImage,
   currentUserId,
   language: languageProp,
+  isAdmin = false,
+  onBanRequest,
 }: ProfileCardProps) {
   const language = resolveLanguage(languageProp);
 
@@ -137,18 +243,6 @@ function ProfileCardContent({
   const [loading, setLoading] = useState(!initialCache);
   const [loadFailed, setLoadFailed] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-  const [isPending, setIsPending] = useState(false);
-
-  const mountedRef = useRef(false);
-  const followPendingRef = useRef(false);
-
-  useEffect(() => {
-    mountedRef.current = true;
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
 
   // ---------------------------------------------------------------------------
   // LOAD
@@ -211,60 +305,8 @@ function ProfileCardContent({
   }, [userId, cacheKey, retryKey]);
 
   // ---------------------------------------------------------------------------
-  // FOLLOW / UNFOLLOW
-  // ---------------------------------------------------------------------------
-
-  async function handleToggleFollow() {
-    if (!profile || loadFailed || followPendingRef.current) {
-      return;
-    }
-
-    if (!profile.viewerId) {
-      toast.error(commonLabels.login_required);
-      return;
-    }
-
-    if (profile.viewerId === profile.id) {
-      return;
-    }
-
-    followPendingRef.current = true;
-    setIsPending(true);
-
-    try {
-      const result = profile.isFollowing
-        ? await unfollowUser(profile.id)
-        : await followUser(profile.id);
-
-      const nextProfile: UserProfileCardData = {
-        ...profile,
-        isFollowing: result.isFollowing,
-      };
-
-      const actualKey = getCacheKey(profile.id, profile.viewerId);
-      const cached = profileCache.get(actualKey);
-
-      saveCache(actualKey, nextProfile, cached?.fetchedAt ?? 0);
-
-      if (mountedRef.current) {
-        setProfile(nextProfile);
-      }
-    } catch {
-      if (mountedRef.current) {
-        toast.error(labels.follow_failed);
-      }
-    } finally {
-      followPendingRef.current = false;
-
-      if (mountedRef.current) {
-        setIsPending(false);
-      }
-    }
-  }
-
-  // ---------------------------------------------------------------------------
   // DISPLAY
-  // -----------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
 
   const displayName =
     (profile ? profile.name : initialName)?.trim() || commonLabels.user;
@@ -275,8 +317,10 @@ function ProfileCardContent({
     ? profile.viewerId === profile.id
     : currentUserId === userId;
 
+  const canModerate = isAdmin && !isMe;
+
   return (
-    <div className="p-4  text-zinc-800 dark:text-zinc-200 dark:bg-black rounded-xl  ">
+    <div className="rounded-xl p-4 text-zinc-800 dark:bg-black dark:text-zinc-200">
       {/* Image / name / tier */}
       <div className="flex min-w-0 items-center gap-3">
         <Avatar className="size-12 shrink-0">
@@ -299,11 +343,11 @@ function ProfileCardContent({
           <span
             aria-hidden={!profile}
             className={`
-    mt-1 inline-flex items-center
-    rounded-full border px-2 py-0.5
-    text-[11px] font-medium
-    ${profile ? TIER_CLASSES[profile.tier] : "invisible"}
-  `}
+              mt-1 inline-flex items-center
+              rounded-full border px-2 py-0.5
+              text-[11px] font-medium
+              ${profile ? TIER_CLASSES[profile.tier] : "invisible"}
+            `}
           >
             {profile ? TIER_NAMES[profile.tier] : TIER_NAMES.UNRANKED}
           </span>
@@ -369,60 +413,13 @@ function ProfileCardContent({
         </div>
       )}
 
-      {/* Follow */}
-      {/* {profile && !isMe && (
-        <button
-          type="button"
-          onClick={() => void handleToggleFollow()}
-          disabled={isPending || loadFailed}
-          aria-busy={isPending}
-          className={`
-            mt-4 flex min-h-9 w-full cursor-pointer
-            items-center justify-center gap-2
-            rounded-full border px-3 py-2
-            text-sm font-medium transition-colors
-            focus-visible:outline-none
-            focus-visible:ring-2 focus-visible:ring-zinc-400
-            disabled:cursor-default disabled:opacity-50
-            ${
-              profile.isFollowing
-                ? `
-                  border-zinc-200 bg-transparent text-zinc-600
-                  hover:bg-zinc-100
-                  dark:border-zinc-700 dark:text-zinc-300
-                  dark:hover:bg-zinc-800
-                `
-                : `
-                  border-zinc-800 bg-zinc-800 text-white
-                  hover:border-zinc-700 hover:bg-zinc-700
-                  dark:border-zinc-200 dark:bg-zinc-200
-                  dark:text-zinc-900
-                  dark:hover:border-white dark:hover:bg-white
-                `
-            }
-          `}
-        >
-          {profile.isFollowing ? (
-            <UserCheck className="size-4" aria-hidden="true" />
-          ) : (
-            <UserPlus className="size-4" aria-hidden="true" />
-          )}
-
-          {isPending
-            ? labels.updating
-            : profile.isFollowing
-              ? labels.unfollow
-              : labels.follow}
-        </button>
-      )} */}
-
+      {/* Status message */}
       {profile?.statusMessage && (
         <p
           className="
-      mt-3 whitespace-pre-wrap wrap-break-word
-      text-[14px] leading-6
-      text-zinc-600 dark:text-zinc-400
-    "
+            mt-3 whitespace-pre-wrap wrap-break-word px-1
+            text-[14px] text-zinc-600 dark:text-zinc-400
+          "
         >
           {profile.statusMessage}
         </p>
@@ -436,7 +433,7 @@ function ProfileCardContent({
           <button
             type="button"
             onClick={() => setRetryKey((current) => current + 1)}
-            disabled={loading || isPending}
+            disabled={loading}
             className="
               mt-2 inline-flex cursor-pointer items-center gap-1.5
               text-xs text-zinc-500 underline
@@ -447,6 +444,43 @@ function ProfileCardContent({
           >
             <RotateCcw className="size-3" aria-hidden="true" />
             {commonLabels.retry}
+          </button>
+        </div>
+      )}
+
+      {/* Admin moderation */}
+      {canModerate && (
+        <div className="-mx-4 -mb-4 mt-4 border-t border-border">
+          <button
+            type="button"
+            disabled={!onBanRequest || loading || loadFailed || !profile}
+            onClick={() => {
+              if (!profile || loadFailed) {
+                return;
+              }
+
+              onBanRequest?.({
+                id: profile.id,
+                name: displayName,
+                image: displayImage ?? null,
+              });
+            }}
+            className="
+              flex min-h-11 w-full cursor-pointer
+              items-center justify-center gap-2
+              rounded-b-xl px-3 py-2
+              text-sm font-medium text-red-600
+              transition-colors
+              hover:bg-red-50
+              focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-inset
+              focus-visible:ring-red-400
+              disabled:cursor-not-allowed disabled:opacity-50
+              dark:text-red-400 dark:hover:bg-red-950/40
+            "
+          >
+            <Ban className="size-4" aria-hidden="true" />
+            Ban user
           </button>
         </div>
       )}

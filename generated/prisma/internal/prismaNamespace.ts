@@ -401,6 +401,7 @@ export const ModelName = {
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
+  ChatBanIdentity: 'ChatBanIdentity',
   Comment: 'Comment',
   ModerationAction: 'ModerationAction',
   Prediction: 'Prediction',
@@ -434,7 +435,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "comment" | "moderationAction" | "prediction" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "countryAiBrief" | "marketNews" | "accountBalance" | "watchlist" | "notification" | "pointBalance" | "pointTransaction" | "userFollow" | "userActivity" | "userRanking"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "chatBanIdentity" | "comment" | "moderationAction" | "prediction" | "commentAsset" | "reply" | "commentLike" | "replyLike" | "marketAsset" | "countryAiBrief" | "marketNews" | "accountBalance" | "watchlist" | "notification" | "pointBalance" | "pointTransaction" | "userFollow" | "userActivity" | "userRanking"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -731,6 +732,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.VerificationTokenCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.VerificationTokenCountAggregateOutputType> | number
+        }
+      }
+    }
+    ChatBanIdentity: {
+      payload: Prisma.$ChatBanIdentityPayload<ExtArgs>
+      fields: Prisma.ChatBanIdentityFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ChatBanIdentityFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatBanIdentityPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ChatBanIdentityFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatBanIdentityPayload>
+        }
+        findFirst: {
+          args: Prisma.ChatBanIdentityFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatBanIdentityPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ChatBanIdentityFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatBanIdentityPayload>
+        }
+        findMany: {
+          args: Prisma.ChatBanIdentityFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatBanIdentityPayload>[]
+        }
+        create: {
+          args: Prisma.ChatBanIdentityCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatBanIdentityPayload>
+        }
+        createMany: {
+          args: Prisma.ChatBanIdentityCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ChatBanIdentityCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatBanIdentityPayload>[]
+        }
+        delete: {
+          args: Prisma.ChatBanIdentityDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatBanIdentityPayload>
+        }
+        update: {
+          args: Prisma.ChatBanIdentityUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatBanIdentityPayload>
+        }
+        deleteMany: {
+          args: Prisma.ChatBanIdentityDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ChatBanIdentityUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ChatBanIdentityUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatBanIdentityPayload>[]
+        }
+        upsert: {
+          args: Prisma.ChatBanIdentityUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatBanIdentityPayload>
+        }
+        aggregate: {
+          args: Prisma.ChatBanIdentityAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateChatBanIdentity>
+        }
+        groupBy: {
+          args: Prisma.ChatBanIdentityGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChatBanIdentityGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ChatBanIdentityCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChatBanIdentityCountAggregateOutputType> | number
         }
       }
     }
@@ -2119,6 +2194,7 @@ export const UserScalarFieldEnum = {
   status: 'status',
   mutedAt: 'mutedAt',
   bannedAt: 'bannedAt',
+  deletedAt: 'deletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -2161,6 +2237,16 @@ export const VerificationTokenScalarFieldEnum = {
 } as const
 
 export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFieldEnum)[keyof typeof VerificationTokenScalarFieldEnum]
+
+
+export const ChatBanIdentityScalarFieldEnum = {
+  id: 'id',
+  identityHash: 'identityHash',
+  userId: 'userId',
+  createdAt: 'createdAt'
+} as const
+
+export type ChatBanIdentityScalarFieldEnum = (typeof ChatBanIdentityScalarFieldEnum)[keyof typeof ChatBanIdentityScalarFieldEnum]
 
 
 export const CommentScalarFieldEnum = {
@@ -2860,6 +2946,7 @@ export type GlobalOmitConfig = {
   account?: Prisma.AccountOmit
   session?: Prisma.SessionOmit
   verificationToken?: Prisma.VerificationTokenOmit
+  chatBanIdentity?: Prisma.ChatBanIdentityOmit
   comment?: Prisma.CommentOmit
   moderationAction?: Prisma.ModerationActionOmit
   prediction?: Prisma.PredictionOmit
