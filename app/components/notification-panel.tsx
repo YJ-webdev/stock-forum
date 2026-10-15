@@ -1,5 +1,3 @@
-// app/components/notification-panel.tsx
-
 "use client";
 
 import {
@@ -12,9 +10,7 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-
 import { useRouter } from "next/navigation";
-
 import { Bell, CheckCheck, RotateCcw, Trash2, X } from "lucide-react";
 
 import {
@@ -28,7 +24,6 @@ import {
 
 import { LoadMoreButton } from "@/app/components/load-more-button";
 import { resolveLanguage } from "@/lib/data/languages";
-
 import {
   CONTENT_STATUS_LABELS,
   DATE_SECTION_LABELS,
@@ -43,11 +38,12 @@ import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 
 import {
   FcAdvertising,
-  FcApproval,
-  FcHighPriority,
-  FcIdea,
+  FcBearish,
+  FcBullish,
+  FcCancel,
+  FcLibrary,
   FcLikePlaceholder,
-  FcMinus,
+  FcNeutralTrading,
   FcOvertime,
   FcSms,
 } from "react-icons/fc";
@@ -91,11 +87,12 @@ const NOTIFICATION_CACHE_TIME = 30_000;
 const SMALL_TOUCH_QUERY =
   "(max-width: 767px) and (hover: none) and (pointer: coarse)";
 
-const SOCIAL_TYPES = new Set<MyNotification["type"]>([
-  "COMMENT_LIKED",
-  "REPLY_LIKED",
-  "COMMENT_REPLIED",
-  "REPLY_REPLIED",
+const PREDICTION_TYPES = new Set<MyNotification["type"]>([
+  "PREDICTION_WON",
+  "PREDICTION_LOST",
+  "PREDICTION_DRAW",
+  "PREDICTION_VOID",
+  "PREDICTION_PENDING",
 ]);
 
 const SECTION_ORDER: DateSectionKey[] = [
@@ -108,6 +105,10 @@ const SECTION_ORDER: DateSectionKey[] = [
 ];
 
 const notificationCache = new Map<string, NotificationCacheEntry>();
+
+function canDeleteNotification(type: MyNotification["type"]) {
+  return !PREDICTION_TYPES.has(type);
+}
 
 function sortNotifications(notifications: MyNotification[]) {
   return [...notifications].sort((a, b) => {
@@ -207,7 +208,6 @@ function NotificationPanelContent({
   const [notifications, setNotifications] = useState<MyNotification[]>(
     initialCache?.notifications ?? [],
   );
-
   const [visibleCount, setVisibleCount] = useState(NOTIFICATION_PAGE_SIZE);
   const [loading, setLoading] = useState(!initialCache);
   const [refreshing, setRefreshing] = useState(false);
@@ -234,11 +234,9 @@ function NotificationPanelContent({
   const [isPending, startTransition] = useTransition();
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
-
   const headerRefs = useRef<
     Partial<Record<DateSectionKey, HTMLHeadingElement | null>>
   >({});
-
   const recordStartRefs = useRef<
     Partial<Record<DateSectionKey, HTMLDivElement | null>>
   >({});
@@ -249,6 +247,7 @@ function NotificationPanelContent({
 
   const sortedNotifications = sortNotifications(notifications);
   const visibleNotifications = sortedNotifications.slice(0, visibleCount);
+
   const notificationSections = groupNotifications(
     visibleNotifications,
     sectionNow,
@@ -260,8 +259,8 @@ function NotificationPanelContent({
 
   const hasMoreNotifications = sortedNotifications.length > visibleCount;
 
-  const hasSocialNotifications = notifications.some((notification) =>
-    SOCIAL_TYPES.has(notification.type),
+  const hasDeletableNotifications = notifications.some((notification) =>
+    canDeleteNotification(notification.type),
   );
 
   const hasUnreadNotifications = notifications.some(
@@ -342,9 +341,7 @@ function NotificationPanelContent({
       try {
         const result = await getNotifications();
 
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         if (userId) {
           notificationCache.set(userId, {
@@ -452,7 +449,7 @@ function NotificationPanelContent({
     if (
       mutationDisabled ||
       mutationBusy.current ||
-      !SOCIAL_TYPES.has(notification.type)
+      !canDeleteNotification(notification.type)
     ) {
       return;
     }
@@ -462,7 +459,6 @@ function NotificationPanelContent({
     const previous = notificationsRef.current;
 
     saveNotifications(previous.filter((item) => item.id !== notification.id));
-
     setSwipedNotificationId(null);
 
     startTransition(async () => {
@@ -477,11 +473,11 @@ function NotificationPanelContent({
     });
   }
 
-  function handleDeleteAllSocial() {
+  function handleDeleteAll() {
     if (
       mutationDisabled ||
       mutationBusy.current ||
-      !notificationsRef.current.some((item) => SOCIAL_TYPES.has(item.type))
+      !notificationsRef.current.some((item) => canDeleteNotification(item.type))
     ) {
       return;
     }
@@ -490,15 +486,16 @@ function NotificationPanelContent({
 
     const previous = notificationsRef.current;
 
-    saveNotifications(previous.filter((item) => !SOCIAL_TYPES.has(item.type)));
-
+    saveNotifications(
+      previous.filter((item) => !canDeleteNotification(item.type)),
+    );
     setSwipedNotificationId(null);
 
     startTransition(async () => {
       try {
         await deleteAllSocialNotifications();
       } catch (error) {
-        console.error("Failed to delete social notifications:", error);
+        console.error("Failed to delete notifications:", error);
         saveNotifications(previous);
       } finally {
         mutationBusy.current = false;
@@ -517,9 +514,7 @@ function NotificationPanelContent({
       for (const key of keys) {
         const header = headerRefs.current[key];
 
-        if (!header) {
-          continue;
-        }
+        if (!header) continue;
 
         const height = Number.parseFloat(
           window.getComputedStyle(header).height,
@@ -552,9 +547,7 @@ function NotificationPanelContent({
     for (const key of keys) {
       const header = headerRefs.current[key];
 
-      if (header) {
-        observer.observe(header);
-      }
+      if (header) observer.observe(header);
     }
 
     return () => observer.disconnect();
@@ -575,14 +568,12 @@ function NotificationPanelContent({
       (section) => section.key === key,
     );
 
-    if (index < 0) {
-      return;
-    }
+    if (index < 0) return;
 
     const container = scrollRef.current;
     const start = recordStartRefs.current[key];
-
     const collapsed = Boolean(collapsedSections[key]);
+
     let scrolledPastStart = false;
 
     if (container && start) {
@@ -608,9 +599,7 @@ function NotificationPanelContent({
   }
 
   useLayoutEffect(() => {
-    if (!sectionRequest) {
-      return;
-    }
+    if (!sectionRequest) return;
 
     const frame = window.requestAnimationFrame(() => {
       const start = recordStartRefs.current[sectionRequest.key];
@@ -663,11 +652,11 @@ function NotificationPanelContent({
           </button>
         )}
 
-        {!loading && hasSocialNotifications && (
+        {!loading && hasDeletableNotifications && (
           <button
             type="button"
             disabled={mutationDisabled}
-            onClick={handleDeleteAllSocial}
+            onClick={handleDeleteAll}
             aria-label={labels.clear}
             title={labels.clear}
             className="
@@ -691,12 +680,10 @@ function NotificationPanelContent({
           aria-label={labels.close}
           className="
             flex size-8 cursor-pointer items-center justify-center
-              text-zinc-500
-            transition-colors  hover:text-zinc-900
+            text-zinc-500 transition-colors hover:text-zinc-900
             focus-visible:outline-none
             focus-visible:ring-2 focus-visible:ring-zinc-400
-             dark:text-zinc-400
-             dark:hover:text-zinc-100
+            dark:text-zinc-400 dark:hover:text-zinc-100
           "
         >
           <X className="size-4" aria-hidden="true" />
@@ -718,7 +705,6 @@ function NotificationPanelContent({
           <>
             {notificationSections.map((section, index) => {
               const collapsed = Boolean(collapsedSections[section.key]);
-
               const labelsBottom =
                 getHeaderTop(index) + getHeaderHeight(section.key);
 
@@ -759,9 +745,7 @@ function NotificationPanelContent({
                         recordStartRefs.current[section.key] = element;
                       }}
                       aria-hidden="true"
-                      style={{
-                        scrollMarginTop: labelsBottom,
-                      }}
+                      style={{ scrollMarginTop: labelsBottom }}
                       className="h-px -mb-px w-full"
                     />
                   )}
@@ -843,10 +827,6 @@ function NotificationPanelContent({
   );
 }
 
-// -----------------------------------------------------------------------------
-// ITEM
-// -----------------------------------------------------------------------------
-
 function NotificationItem({
   notification,
   language,
@@ -869,12 +849,13 @@ function NotificationItem({
   const labels = NOTIFICATION_LABELS[language];
 
   const unread = notification.readAt === null;
-  const isSocial = SOCIAL_TYPES.has(notification.type);
+  const deletable = canDeleteNotification(notification.type);
   const href = getNotificationHref(notification);
   const clickable = Boolean(href) || unread;
+  const isBanNotification = notification.type === "USER_BANNED";
 
   const preview = getNotificationPreview(notification);
-  const { title, message, pointsText, pointsChange } = getNotificationText(
+  const { title, message, pointsText } = getNotificationText(
     notification,
     language,
   );
@@ -886,7 +867,6 @@ function NotificationItem({
 
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const suppressClickUntil = useRef(0);
-  const isBanNotification = notification.type === "USER_BANNED";
 
   return (
     <li
@@ -897,7 +877,8 @@ function NotificationItem({
       `}
       onTouchStart={(event) => {
         if (
-          !isSocial ||
+          !deletable ||
+          isPending ||
           !window.matchMedia(SMALL_TOUCH_QUERY).matches ||
           event.touches.length !== 1
         ) {
@@ -916,15 +897,11 @@ function NotificationItem({
         const start = swipeStart.current;
         swipeStart.current = null;
 
-        if (!start) {
-          return;
-        }
+        if (!start) return;
 
         const touch = event.changedTouches[0];
 
-        if (!touch) {
-          return;
-        }
+        if (!touch) return;
 
         const dx = touch.clientX - start.x;
         const dy = touch.clientY - start.y;
@@ -969,10 +946,9 @@ function NotificationItem({
         onClick={onClick}
         disabled={!clickable}
         className="
-          flex min-w-0 flex-1 gap-3
-          px-4 py-4 text-start transition-colors
-          enabled:cursor-pointer
-          enabled:hover:bg-zinc-50
+          flex min-w-0 flex-1 gap-3 px-4 py-4
+          text-start transition-colors
+          enabled:cursor-pointer enabled:hover:bg-zinc-50
           dark:enabled:hover:bg-zinc-800/40
           disabled:cursor-default
           focus-visible:outline-none
@@ -988,7 +964,8 @@ function NotificationItem({
           <span className="flex items-center gap-2">
             <span
               className={`
-                 min-w-0 flex-1 truncate text-[15px] flex items-center
+                flex min-w-0 flex-1 items-center
+                truncate text-[15px]
                 ${unread ? "font-semibold" : "font-medium"}
               `}
             >
@@ -996,11 +973,11 @@ function NotificationItem({
 
               {pointsText && (
                 <span
-                  className="ml-2 
-    shrink-0 whitespace-nowrap tabular-nums
-    text-xs! font-thin!
-    text-olive-500 dark:text-olive-400
-  "
+                  className="
+                    ml-2 shrink-0 whitespace-nowrap tabular-nums
+                    text-xs! font-thin!
+                    text-olive-500 dark:text-olive-400
+                  "
                 >
                   {pointsText}
                 </span>
@@ -1018,13 +995,18 @@ function NotificationItem({
           {message && (
             <span
               className={`
-      mt-1 block text-sm text-zinc-500 dark:text-zinc-400
-      ${isBanNotification ? "whitespace-pre-wrap wrap-break-word" : "truncate"}
-    `}
+                mt-1 block text-sm text-zinc-500 dark:text-zinc-400
+                ${
+                  isBanNotification
+                    ? "whitespace-pre-wrap wrap-break-word"
+                    : "truncate"
+                }
+              `}
             >
               {message}
             </span>
           )}
+
           {preview && (
             <span className="mt-1 block truncate text-sm text-zinc-400 dark:text-zinc-500">
               “{preview}”
@@ -1040,7 +1022,7 @@ function NotificationItem({
         </span>
       </button>
 
-      {isSocial && (
+      {deletable && (
         <div
           className={`
             order-last flex shrink-0 overflow-hidden
@@ -1071,8 +1053,7 @@ function NotificationItem({
             className="
               flex w-10 shrink-0 cursor-pointer
               items-center justify-center self-stretch
-              bg-red-500 text-white
-              transition-colors
+              bg-red-500 text-white transition-colors
               hover:bg-red-600 active:bg-red-700
               disabled:cursor-default disabled:bg-red-400
               focus-visible:outline-none
@@ -1116,7 +1097,6 @@ function getNotificationText(
       }
 
       const tierName = NOTIFICATION_TIER_NAMES[notification.tier];
-
       const template =
         notification.type === "TIER_UP" ? labels.tier_up : labels.tier_down;
 
@@ -1179,16 +1159,12 @@ function getNotificationText(
       const prediction = notification.prediction;
 
       if (!prediction) {
-        return {
-          title,
-          message: null,
-        };
+        return { title, message: null };
       }
 
       const market = ALL_MARKET_SYMBOLS.find(
         (item) => item.symbol === prediction.symbol,
       );
-
       const marketName = market?.name ?? prediction.symbol;
 
       const priceFormatter = new Intl.NumberFormat(language, {
@@ -1201,7 +1177,6 @@ function getNotificationText(
 
       const isWon = notification.type === "PREDICTION_WON";
       const isLost = notification.type === "PREDICTION_LOST";
-
       const hasSettlement =
         isWon || isLost || notification.type === "PREDICTION_DRAW";
 
@@ -1226,10 +1201,7 @@ function getNotificationText(
         };
       }
 
-      return {
-        title,
-        message: priceMessage,
-      };
+      return { title, message: priceMessage };
     }
 
     default:
@@ -1256,9 +1228,7 @@ function getNotificationPreview(notification: MyNotification): string | null {
 }
 
 function getContentText(content: unknown): string | null {
-  if (!content) {
-    return null;
-  }
+  if (!content) return null;
 
   if (typeof content === "string") {
     return content.trim() || null;
@@ -1272,9 +1242,7 @@ function getContentText(content: unknown): string | null {
 }
 
 function extractTextFromTipTap(value: unknown): string {
-  if (!value || typeof value !== "object") {
-    return "";
-  }
+  if (!value || typeof value !== "object") return "";
 
   const node = value as {
     type?: string;
@@ -1286,9 +1254,7 @@ function extractTextFromTipTap(value: unknown): string {
     return node.text ?? "";
   }
 
-  if (!Array.isArray(node.content)) {
-    return "";
-  }
+  if (!Array.isArray(node.content)) return "";
 
   return node.content.map(extractTextFromTipTap).join(" ");
 }
@@ -1303,13 +1269,9 @@ function getNotificationHref(notification: MyNotification): string | null {
       const symbol = notification.comment?.assets[0]?.asset.symbol;
       const commentId = notification.commentId;
 
-      if (!symbol || !commentId) {
-        return null;
-      }
+      if (!symbol || !commentId) return null;
 
-      const query = new URLSearchParams({
-        comment: commentId,
-      });
+      const query = new URLSearchParams({ comment: commentId });
 
       if (notification.type === "COMMENT_REPORTED") {
         query.set("from", "report");
@@ -1323,15 +1285,11 @@ function getNotificationHref(notification: MyNotification): string | null {
     case "REPLY_REPLIED":
     case "REPLY_REPORTED": {
       const symbol = notification.reply?.comment.assets[0]?.asset.symbol;
-
       const commentId =
         notification.commentId ?? notification.reply?.comment.id;
-
       const replyId = notification.replyId;
 
-      if (!symbol || !commentId || !replyId) {
-        return null;
-      }
+      if (!symbol || !commentId || !replyId) return null;
 
       const query = new URLSearchParams({
         comment: commentId,
@@ -1376,23 +1334,23 @@ function NotificationIcon({ type }: { type: MyNotification["type"] }) {
         return FcAdvertising;
 
       case "PREDICTION_WON":
-        return FcApproval;
+        return FcBullish;
 
       case "PREDICTION_LOST":
-        return FcMinus;
+        return FcBearish;
 
       case "PREDICTION_PENDING":
         return FcOvertime;
 
       case "USER_BANNED":
-        return FcHighPriority;
+        return FcCancel;
 
       case "TIER_UP":
       case "TIER_DOWN":
-      case "PREDICTION_DRAW":
-      case "PREDICTION_VOID":
+        return FcLibrary;
+
       default:
-        return FcIdea;
+        return FcNeutralTrading;
     }
   })();
 
@@ -1413,7 +1371,6 @@ function NotificationLoader({ labels }: { labels: PanelLabels }) {
           dark:border-zinc-700 dark:border-t-zinc-200
         "
       />
-
       <span className="sr-only">{labels.loading}</span>
     </div>
   );
@@ -1426,7 +1383,6 @@ function EmptyNotifications({ message }: { message: string }) {
         className="mb-3 size-6 text-zinc-300 dark:text-zinc-700"
         aria-hidden="true"
       />
-
       <p className="text-sm text-zinc-500 dark:text-zinc-400">{message}</p>
     </div>
   );
