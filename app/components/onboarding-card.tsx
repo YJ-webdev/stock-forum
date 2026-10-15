@@ -43,7 +43,7 @@ export function OnboardingCard() {
   const router = useRouter();
 
   const [step, setStep] = useState<OnboardingStep>(1);
-  const [nationality, setNationality] = useState("OTHER");
+  const [nationality, setNationality] = useState("");
   const [language, setLanguage] = useState<Language>(
     resolveLanguage(user?.language),
   );
@@ -191,44 +191,35 @@ export function OnboardingCard() {
     if (!user || isPending) return;
 
     const currentUserId = user.id;
+    const selectedNationality = nationality.trim() || "OTHER";
 
     startTransition(async () => {
       try {
-        // Nationality is optional. Save preferences only when selected.
-        // Language changes are already saved by handleLanguageChange.
-        if (nationality) {
-          const updatedUser = await updateAccountPreferences({
-            name: user.name ?? "",
-            image: user.image ?? null,
-            nationality,
-            language,
-          });
-
-          // Wait until watchlist saving succeeds before updating context.
-          if (selectedSymbols.length > 0) {
-            await addMarketsToWatchlist(selectedSymbols);
-          }
-
-          dismissOnboarding();
-
-          setCurrentUser((previous) =>
-            previous?.id === currentUserId
-              ? {
-                  ...previous,
-                  name: updatedUser.name,
-                  image: updatedUser.image,
-                  nationality: updatedUser.nationality,
-                  language: updatedUser.language,
-                }
-              : previous,
-          );
-        } else {
-          if (selectedSymbols.length > 0) {
-            await addMarketsToWatchlist(selectedSymbols);
-          }
-
-          dismissOnboarding();
+        if (selectedSymbols.length > 0) {
+          await addMarketsToWatchlist(selectedSymbols);
         }
+
+        const updatedUser = await updateAccountPreferences({
+          name: user.name ?? "",
+          image: user.image ?? null,
+          nationality: selectedNationality,
+          language,
+          statusMessage: user.statusMessage ?? null,
+        });
+
+        dismissOnboarding();
+
+        setCurrentUser((previous) =>
+          previous?.id === currentUserId
+            ? {
+                ...previous,
+                name: updatedUser.name,
+                image: updatedUser.image,
+                nationality: updatedUser.nationality,
+                language: updatedUser.language,
+              }
+            : previous,
+        );
 
         router.refresh();
         toast.success(labels.success);
@@ -239,7 +230,10 @@ export function OnboardingCard() {
     });
   }
 
-  if (!user || user.nationality || !storageReady || dismissed) {
+  const needsOnboarding =
+    !!user && (user.nationality == null || user.nationality === "");
+
+  if (!needsOnboarding || !storageReady || dismissed) {
     return null;
   }
 
