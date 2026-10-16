@@ -1,5 +1,3 @@
-// app/components/search-input.tsx
-
 "use client";
 
 import {
@@ -42,14 +40,20 @@ export default function SearchInput({
   const resultsScrollRef = useRef<HTMLDivElement>(null);
   const touchYRef = useRef<number | null>(null);
 
+  const onOpenChangeRef = useRef(onOpenChange);
+  const tourPreviewRef = useRef(false);
+
   const [mounted, setMounted] = useState(false);
   const [input, setInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-
   const [searchResultSymbols, setSearchResultSymbols] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-
   const [panelMaxHeight, setPanelMaxHeight] = useState<number | null>(null);
+  const [tourPreview, setTourPreview] = useState(false);
+
+  useEffect(() => {
+    onOpenChangeRef.current = onOpenChange;
+  }, [onOpenChange]);
 
   const resetSearchNavigation = useCallback(() => {
     setInput("");
@@ -59,25 +63,31 @@ export default function SearchInput({
   }, []);
 
   const handleOpen = useCallback(() => {
+    if (tourPreviewRef.current) return;
+
     if (!isOpen) {
       resetSearchNavigation();
-      onOpenChange(true);
+      onOpenChangeRef.current(true);
     }
 
     inputRef.current?.focus({ preventScroll: true });
-  }, [isOpen, onOpenChange, resetSearchNavigation]);
+  }, [isOpen, resetSearchNavigation]);
 
   const handleClose = useCallback(() => {
+    if (tourPreviewRef.current) return;
+
     inputRef.current?.blur();
-    onOpenChange(false);
+    onOpenChangeRef.current(false);
     resetSearchNavigation();
-  }, [onOpenChange, resetSearchNavigation]);
+  }, [resetSearchNavigation]);
 
   const handleAssetSelected = useCallback(() => {
     handleClose();
   }, [handleClose]);
 
   function handleNavigate(symbol: string) {
+    if (tourPreviewRef.current) return;
+
     handleAssetSelected();
 
     router.push(`/market/${encodeURIComponent(symbol)}`, {
@@ -86,6 +96,8 @@ export default function SearchInput({
   }
 
   function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
+    if (tourPreviewRef.current) return;
+
     const value = event.target.value;
 
     setInput(value);
@@ -94,6 +106,8 @@ export default function SearchInput({
   }
 
   function handleInputKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (tourPreviewRef.current) return;
+
     if (event.key === "ArrowDown") {
       event.preventDefault();
 
@@ -120,8 +134,35 @@ export default function SearchInput({
     setMounted(true);
   }, []);
 
+  // Open the search panel for HomeTour without focusing the input.
+  useEffect(() => {
+    function handleTourSearch(event: Event) {
+      const detail = (event as CustomEvent<{ open: boolean } | undefined>)
+        .detail;
+
+      if (typeof detail?.open !== "boolean") return;
+
+      tourPreviewRef.current = detail.open;
+
+      inputRef.current?.blur();
+      resetSearchNavigation();
+
+      setTourPreview(detail.open);
+      onOpenChangeRef.current(detail.open);
+    }
+
+    window.addEventListener("bullbearvote:tour-search", handleTourSearch);
+
+    return () => {
+      window.removeEventListener("bullbearvote:tour-search", handleTourSearch);
+    };
+  }, [resetSearchNavigation]);
+
   useEffect(() => {
     function handleGlobalKeyDown(event: globalThis.KeyboardEvent) {
+      // HomeTour handles keyboard focus and Escape during preview.
+      if (tourPreviewRef.current) return;
+
       const isSearchShortcut =
         event.key.toLowerCase() === "k" && (event.ctrlKey || event.metaKey);
 
@@ -148,8 +189,63 @@ export default function SearchInput({
     };
   }, [isOpen, handleOpen, handleClose]);
 
+  // Measure the panel for normal search and tutorial preview.
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setPanelMaxHeight(null);
+      return;
+    }
+
+    const viewport = window.visualViewport;
+    let resizeFrame = 0;
+
+    function updatePanelHeight() {
+      const panel = searchPanelRef.current;
+
+      if (!panel) return;
+
+      const visibleBottom = viewport
+        ? viewport.offsetTop + viewport.height
+        : window.innerHeight;
+
+      const panelTop = panel.getBoundingClientRect().top;
+      const nextHeight = Math.max(0, Math.floor(visibleBottom - panelTop));
+
+      setPanelMaxHeight((previous) =>
+        previous === nextHeight ? previous : nextHeight,
+      );
+    }
+
+    function schedulePanelUpdate() {
+      window.cancelAnimationFrame(resizeFrame);
+      resizeFrame = window.requestAnimationFrame(updatePanelHeight);
+    }
+
+    schedulePanelUpdate();
+
+    const observer = new ResizeObserver(schedulePanelUpdate);
+
+    if (searchPanelRef.current) {
+      observer.observe(searchPanelRef.current);
+    }
+
+    viewport?.addEventListener("resize", schedulePanelUpdate);
+    viewport?.addEventListener("scroll", schedulePanelUpdate);
+    window.addEventListener("resize", schedulePanelUpdate);
+
+    return () => {
+      window.cancelAnimationFrame(resizeFrame);
+      observer.disconnect();
+
+      viewport?.removeEventListener("resize", schedulePanelUpdate);
+      viewport?.removeEventListener("scroll", schedulePanelUpdate);
+      window.removeEventListener("resize", schedulePanelUpdate);
+    };
+  }, [isOpen]);
+
+  // HomeTour manages scroll locking during tutorial preview.
+  useEffect(() => {
+    if (!isOpen || tourPreview) return;
 
     const body = document.body;
     const root = document.documentElement;
@@ -173,27 +269,6 @@ export default function SearchInput({
     body.style.width = "100%";
     body.style.overflow = "hidden";
     root.style.overflow = "hidden";
-
-    const viewport = window.visualViewport;
-    let resizeFrame = 0;
-
-    function updatePanelHeight() {
-      const panel = searchPanelRef.current;
-      if (!panel) return;
-
-      const visibleBottom = viewport
-        ? viewport.offsetTop + viewport.height
-        : window.innerHeight;
-
-      const panelTop = panel.getBoundingClientRect().top;
-
-      setPanelMaxHeight(Math.max(0, Math.floor(visibleBottom - panelTop)));
-    }
-
-    function schedulePanelUpdate() {
-      cancelAnimationFrame(resizeFrame);
-      resizeFrame = requestAnimationFrame(updatePanelHeight);
-    }
 
     function handleTouchStart(event: TouchEvent) {
       touchYRef.current = event.touches[0]?.clientY ?? null;
@@ -236,6 +311,7 @@ export default function SearchInput({
 
       while (element && panel.contains(element)) {
         const overflowY = window.getComputedStyle(element).overflowY;
+
         const canScroll =
           /^(auto|scroll|overlay)$/.test(overflowY) &&
           element.scrollHeight > element.clientHeight + 1;
@@ -244,6 +320,7 @@ export default function SearchInput({
           const maxScroll = element.scrollHeight - element.clientHeight;
 
           const canMoveUp = deltaY > 0 && element.scrollTop > 0;
+
           const canMoveDown = deltaY < 0 && element.scrollTop < maxScroll - 1;
 
           if (deltaY === 0 || canMoveUp || canMoveDown) {
@@ -275,38 +352,22 @@ export default function SearchInput({
       }
     }
 
-    schedulePanelUpdate();
-
-    const observer = new ResizeObserver(schedulePanelUpdate);
-
-    if (searchPanelRef.current) {
-      observer.observe(searchPanelRef.current);
-    }
-
-    viewport?.addEventListener("resize", schedulePanelUpdate);
-    viewport?.addEventListener("scroll", schedulePanelUpdate);
-    window.addEventListener("resize", schedulePanelUpdate);
-
     document.addEventListener("touchstart", handleTouchStart, {
       passive: true,
     });
+
     document.addEventListener("touchmove", handleTouchMove, {
       passive: false,
     });
+
     document.addEventListener("touchend", handleTouchEnd);
     document.addEventListener("touchcancel", handleTouchEnd);
+
     document.addEventListener("wheel", handleWheel, {
       passive: false,
     });
 
     return () => {
-      cancelAnimationFrame(resizeFrame);
-      observer.disconnect();
-
-      viewport?.removeEventListener("resize", schedulePanelUpdate);
-      viewport?.removeEventListener("scroll", schedulePanelUpdate);
-      window.removeEventListener("resize", schedulePanelUpdate);
-
       document.removeEventListener("touchstart", handleTouchStart);
       document.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("touchend", handleTouchEnd);
@@ -320,23 +381,28 @@ export default function SearchInput({
 
       window.scrollTo(scrollX, scrollY);
     };
-  }, [isOpen]);
+  }, [isOpen, tourPreview]);
 
   return (
     <>
       {mounted &&
         isOpen &&
+        !tourPreview &&
         createPortal(
           <div
             aria-hidden="true"
-            className="fixed inset-0 z-20 touch-none bg-transparent backdrop-blur-[1px]"
+            className="
+              fixed inset-0 z-20 touch-none
+              bg-transparent backdrop-blur-[1px]
+            "
             onClick={handleClose}
           />,
           document.body,
         )}
 
-      <div data-tour="search" className="relative z-40 w-full">
+      <div className="relative z-40 w-full">
         <div
+          data-tour="search"
           className="
             flex h-12 w-full cursor-text items-center
             rounded-full bg-zinc-100 px-5 dark:bg-zinc-800
@@ -352,6 +418,7 @@ export default function SearchInput({
             id="market-search-input"
             type="text"
             value={input}
+            readOnly={tourPreview}
             placeholder={labels.placeholder}
             aria-label={labels.search_markets}
             aria-controls={isOpen ? "market-search-results" : undefined}
@@ -369,9 +436,14 @@ export default function SearchInput({
             "
             onChange={handleInputChange}
             onFocus={() => {
+              if (tourPreviewRef.current) {
+                inputRef.current?.blur();
+                return;
+              }
+
               if (!isOpen) {
                 resetSearchNavigation();
-                onOpenChange(true);
+                onOpenChangeRef.current(true);
               }
             }}
             onKeyDown={handleInputKeyDown}
@@ -384,6 +456,7 @@ export default function SearchInput({
 
         {isOpen && (
           <div
+            data-tour="search"
             ref={searchPanelRef}
             id="market-search-results"
             role="region"
@@ -411,7 +484,10 @@ export default function SearchInput({
           >
             <div
               ref={resultsScrollRef}
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+              className="
+                min-h-0 flex-1 overflow-y-auto
+                overscroll-contain
+              "
             >
               <MarketOverview
                 query={searchQuery}

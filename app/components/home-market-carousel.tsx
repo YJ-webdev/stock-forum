@@ -463,13 +463,13 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
       ${SCROLL_BUTTON_FACE_CLASS}
       ${
         canScrollLeft
-          ? "text-zinc-800 group-hover/scroll:bg-zinc-100 dark:text-zinc-300 dark:group-hover/scroll:bg-zinc-800"
+          ? "text-black group-hover/scroll:bg-zinc-100 dark:text-white dark:group-hover/scroll:bg-zinc-800"
           : "text-zinc-300 dark:text-zinc-600"
       }
     `}
               >
                 {canScrollLeft ? (
-                  <ChevronLeft className="size-5" strokeWidth={1.75} />
+                  <ChevronLeft className="size-5 " strokeWidth={1.75} />
                 ) : (
                   <ChevronFirst className="size-5" strokeWidth={1.75} />
                 )}
@@ -497,7 +497,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
       ${SCROLL_BUTTON_FACE_CLASS}
       ${
         canScrollRight
-          ? "text-zinc-800 group-hover/scroll:bg-zinc-100 dark:text-zinc-300 dark:group-hover/scroll:bg-zinc-800"
+          ? "text-black group-hover/scroll:bg-zinc-100 dark:text-white dark:group-hover/scroll:bg-zinc-800"
           : "text-zinc-300 dark:text-zinc-600"
       }
     `}

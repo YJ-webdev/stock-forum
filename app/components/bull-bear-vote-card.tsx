@@ -149,6 +149,7 @@ export function BullBearVoteCard({
 
   return (
     <article
+      data-tour="predict"
       aria-busy={loading && !data}
       className="relative w-44 shrink-0 text-zinc-900 dark:text-zinc-300"
     >
@@ -225,7 +226,7 @@ export function BullBearVoteCard({
           )}
         </div>
 
-        <div className="relative h-16 pt-1.5">
+        <div className="relative h-18 pt-1.5">
           {market.assetType === "index" && (
             <div className="relative z-20 flex flex-col gap-2.5">
               <MarketSentiment symbol={market.symbol} userLanguage={language} />

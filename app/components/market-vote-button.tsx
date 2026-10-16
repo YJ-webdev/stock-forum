@@ -43,7 +43,7 @@ interface VoteState {
 const VOTE_BUTTON_CLASS = `
   inline-flex h-8.5 min-w-0 flex-1 cursor-pointer
   items-center justify-center gap-1.5
-  rounded-full px-3 text-[14px] font-normal text-white transition-colors
+  rounded-full px-3 text-[14px] font-normal text-white dark:text-white transition-colors
   focus-visible:outline-none
   focus-visible:ring-2 focus-visible:ring-zinc-400
   focus-visible:ring-offset-2 focus-visible:ring-offset-white
@@ -496,7 +496,6 @@ export function MarketVoteButton({
         votingWindow.canVote && (
           <div className="flex w-full items-center justify-between gap-2">
             <button
-              data-tour="predict"
               type="button"
               disabled={voteButtonDisabled}
               aria-expanded={isOpen}
@@ -513,7 +512,6 @@ export function MarketVoteButton({
             </button>
 
             <button
-              data-tour="predict"
               type="button"
               disabled={voteButtonDisabled}
               aria-expanded={isOpen}

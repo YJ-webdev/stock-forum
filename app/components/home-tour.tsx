@@ -1,18 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
 
 import { useCurrentUser } from "@/app/context/user-context";
 
 const STORAGE_KEY = "bullbearvote:home-tour:v1";
-
-const FADE_DURATION = 160;
-const DESKTOP_QUERY = "(min-width: 1024px)";
 const VIEWPORT_PADDING = 16;
-const TOOLTIP_GAP = 18;
+const TOOLTIP_GAP = 16;
 
 const STEPS = [
   { id: "predict", desktopOnly: false },
@@ -22,7 +27,6 @@ const STEPS = [
 ] as const;
 
 type StepId = (typeof STEPS)[number]["id"];
-type Phase = "hidden" | "visible";
 
 interface HomeTourProps {
   enabled?: boolean;
@@ -34,13 +38,19 @@ interface TourLabels {
   next: string;
   finish: string;
   close: string;
-  steps: Record<
-    StepId,
-    {
-      title: string;
-      description: string;
-    }
-  >;
+  steps: Record<StepId, { title: string; description: string }>;
+}
+
+interface TooltipPosition {
+  left: number;
+  top: number;
+  ready: boolean;
+  animate: boolean;
+}
+
+interface HighlightTarget {
+  element: HTMLElement;
+  radius: number;
 }
 
 const LABELS: Record<"en" | "ko", TourLabels> = {
@@ -57,9 +67,9 @@ const LABELS: Record<"en" | "ko", TourLabels> = {
           "Predict the next session before the market opens. Choose Bull or Bear and put your market view to the test.",
       },
       search: {
-        title: "Find your market",
+        title: "Click to explore markets",
         description:
-          "Search for markets around the world. You can also open search with Ctrl + K or ⌘ + K.",
+          "Click the search bar to open this panel. Browse markets by category or type to find a specific market.",
       },
       leaderboard: {
         title: "Climb the leaderboard",
@@ -86,9 +96,9 @@ const LABELS: Record<"en" | "ko", TourLabels> = {
           "장이 열리기 전에 다음 장의 방향을 예측해 보세요. Bull 또는 Bear를 선택하고 나의 시장 전망을 확인해 보세요.",
       },
       search: {
-        title: "관심 있는 시장 찾기",
+        title: "검색창을 눌러보세요",
         description:
-          "전 세계 시장을 검색해 보세요. Ctrl + K 또는 ⌘ + K로도 검색창을 열 수 있어요.",
+          "검색창을 누르면 아래 시장 목록이 열려요. 카테고리별로 둘러보거나 원하는 시장을 검색할 수 있어요.",
       },
       leaderboard: {
         title: "리더보드에 도전하세요",
@@ -106,14 +116,12 @@ const LABELS: Record<"en" | "ko", TourLabels> = {
 
 function isVisible(element: HTMLElement) {
   const rect = element.getBoundingClientRect();
+
+  if (rect.width <= 0 || rect.height <= 0) return false;
+
   const style = window.getComputedStyle(element);
 
-  return (
-    rect.width > 0 &&
-    rect.height > 0 &&
-    style.display !== "none" &&
-    style.visibility !== "hidden"
-  );
+  return style.display !== "none" && style.visibility !== "hidden";
 }
 
 function getTargets(id: StepId): HTMLElement[] {
@@ -124,8 +132,8 @@ function getTargets(id: StepId): HTMLElement[] {
   const first = matches[0];
 
   if (!first) return [];
+  if (id === "search") return matches;
 
-  // A group can contain multiple separate highlighted elements.
   const group = first.closest<HTMLElement>(`[data-tour-group="${id}"]`);
 
   if (group) {
@@ -134,7 +142,6 @@ function getTargets(id: StepId): HTMLElement[] {
     ).filter(isVisible);
   }
 
-  // Keep Bull/Bear buttons together without selecting other cards.
   if (id === "predict" && first.parentElement) {
     const siblings = Array.from(
       first.parentElement.querySelectorAll<HTMLElement>(
@@ -148,8 +155,8 @@ function getTargets(id: StepId): HTMLElement[] {
   return [first];
 }
 
-function getAvailableSteps() {
-  const isDesktop = window.matchMedia(DESKTOP_QUERY).matches;
+function getAvailableSteps(): StepId[] {
+  const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
 
   return STEPS.filter(
     (step) =>
@@ -157,123 +164,109 @@ function getAvailableSteps() {
   ).map((step) => step.id);
 }
 
-function copyComputedStyles(source: Element, destination: Element) {
-  const computed = window.getComputedStyle(source);
-  const target = destination as HTMLElement | SVGElement;
-
-  for (let index = 0; index < computed.length; index += 1) {
-    const property = computed.item(index);
-
-    target.style.setProperty(property, computed.getPropertyValue(property));
-  }
-
-  // The visual copy must stay still and never accept interaction.
-  target.style.setProperty("animation", "none", "important");
-  target.style.setProperty("transition", "none", "important");
-  target.style.setProperty("pointer-events", "none", "important");
-
-  destination.removeAttribute("id");
-  destination.removeAttribute("autofocus");
-  destination.removeAttribute("data-tour");
-  destination.removeAttribute("data-tour-group");
-
-  const sourceChildren = source.children;
-  const destinationChildren = destination.children;
-
-  for (let index = 0; index < sourceChildren.length; index += 1) {
-    const destinationChild = destinationChildren[index];
-
-    if (destinationChild) {
-      copyComputedStyles(sourceChildren[index], destinationChild);
-    }
-  }
-}
-
-function createVisualCopy(source: HTMLElement) {
-  const clone = source.cloneNode(true) as HTMLElement;
-
-  copyComputedStyles(source, clone);
-
-  clone.setAttribute("aria-hidden", "true");
-  clone.setAttribute("inert", "");
-
-  // Positioning is controlled by the fixed wrapper.
-  clone.style.setProperty("position", "relative", "important");
-  clone.style.setProperty("inset", "auto", "important");
-  clone.style.setProperty("margin", "0", "important");
-  clone.style.setProperty("transform", "none", "important");
-  clone.style.setProperty("width", "100%", "important");
-  clone.style.setProperty("height", "100%", "important");
-  clone.style.setProperty("box-sizing", "border-box", "important");
-
-  return clone;
+function setSearchPreview(open: boolean) {
+  window.dispatchEvent(
+    new CustomEvent("bullbearvote:tour-search", {
+      detail: { open },
+    }),
+  );
 }
 
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(Math.max(value, minimum), Math.max(minimum, maximum));
 }
 
+function getRadius(element: HTMLElement) {
+  const value = window.getComputedStyle(element).borderTopLeftRadius;
+
+  if (value.endsWith("%")) {
+    const rect = element.getBoundingClientRect();
+
+    return Math.min(rect.width, rect.height) * (Number.parseFloat(value) / 100);
+  }
+
+  return Number.parseFloat(value) || 0;
+}
+
+function roundedRect(
+  context: CanvasRenderingContext2D,
+  rect: DOMRect,
+  radius: number,
+) {
+  const { left, top, width, height } = rect;
+  const r = Math.min(radius, width / 2, height / 2);
+
+  context.beginPath();
+  context.moveTo(left + r, top);
+  context.lineTo(left + width - r, top);
+  context.quadraticCurveTo(left + width, top, left + width, top + r);
+  context.lineTo(left + width, top + height - r);
+  context.quadraticCurveTo(
+    left + width,
+    top + height,
+    left + width - r,
+    top + height,
+  );
+  context.lineTo(left + r, top + height);
+  context.quadraticCurveTo(left, top + height, left, top + height - r);
+  context.lineTo(left, top + r);
+  context.quadraticCurveTo(left, top, left + r, top);
+  context.closePath();
+}
+
 export function HomeTour({ enabled = true }: HomeTourProps) {
   const pathname = usePathname();
   const user = useCurrentUser();
+  const reducedMotion = useReducedMotion();
 
   const titleId = useId();
   const descriptionId = useId();
 
   const portalRef = useRef<HTMLDivElement>(null);
-  const highlightsRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
-
-  const transitionTimerRef = useRef<number | undefined>(undefined);
-
-  const busyRef = useRef(false);
+  const positionedRef = useRef(false);
 
   const [open, setOpen] = useState(false);
   const [steps, setSteps] = useState<StepId[]>([]);
   const [stepIndex, setStepIndex] = useState(0);
-  const [phase, setPhase] = useState<Phase>("hidden");
-  const [transitioning, setTransitioning] = useState(false);
+
+  const [position, setPosition] = useState<TooltipPosition>({
+    left: VIEWPORT_PADDING,
+    top: VIEWPORT_PADDING,
+    ready: false,
+    animate: false,
+  });
+
+  const activeStep = steps[stepIndex];
+  const isLastStep = stepIndex === steps.length - 1;
 
   const language = user?.language === "ko" ? "ko" : "en";
   const labels = LABELS[language];
-
-  const activeStep = steps[stepIndex];
   const content = activeStep ? labels.steps[activeStep] : null;
-  const isLastStep = stepIndex === steps.length - 1;
 
   const finishTour = useCallback(() => {
-    window.clearTimeout(transitionTimerRef.current);
-
     try {
       localStorage.setItem(STORAGE_KEY, "1");
     } catch {
-      // Closing still works when browser storage is unavailable.
+      // Closing still works without browser storage.
     }
 
-    busyRef.current = false;
-    setTransitioning(false);
     setOpen(false);
-    setPhase("hidden");
   }, []);
 
-  // Wait for streamed targets and onboarding to finish.
   useEffect(() => {
     if (!enabled || pathname !== "/") return;
 
-    let completed = false;
-
     try {
-      completed = localStorage.getItem(STORAGE_KEY) === "1";
+      if (localStorage.getItem(STORAGE_KEY) === "1") return;
     } catch {
-      completed = false;
+      // Continue when browser storage is unavailable.
     }
-
-    if (completed) return;
 
     let stopped = false;
     let timer: number | undefined;
-
     const startedAt = Date.now();
 
     function tryStart() {
@@ -287,20 +280,28 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
         const available = getAvailableSteps();
 
         if (available.length > 0) {
+          positionedRef.current = false;
+
+          setPosition({
+            left: VIEWPORT_PADDING,
+            top: VIEWPORT_PADDING,
+            ready: false,
+            animate: false,
+          });
+
           setSteps(available);
           setStepIndex(0);
-          setPhase("hidden");
           setOpen(true);
           return;
         }
       }
 
       if (Date.now() - startedAt < 60_000) {
-        timer = window.setTimeout(tryStart, 400);
+        timer = window.setTimeout(tryStart, 300);
       }
     }
 
-    timer = window.setTimeout(tryStart, 700);
+    timer = window.setTimeout(tryStart, 500);
 
     return () => {
       stopped = true;
@@ -310,42 +311,50 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
 
   useEffect(() => {
     if (pathname !== "/" || !enabled) {
-      window.clearTimeout(transitionTimerRef.current);
-      busyRef.current = false;
-      setTransitioning(false);
       setOpen(false);
     }
   }, [pathname, enabled]);
 
-  useEffect(
-    () => () => {
-      window.clearTimeout(transitionTimerRef.current);
-    },
-    [],
-  );
-
   function changeStep(nextIndex: number) {
-    if (busyRef.current || nextIndex < 0 || nextIndex >= steps.length) {
-      return;
-    }
+    if (nextIndex < 0 || nextIndex >= steps.length) return;
 
-    busyRef.current = true;
-    setTransitioning(true);
-    setPhase("hidden");
-
-    const reducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
-    transitionTimerRef.current = window.setTimeout(
-      () => {
-        setStepIndex(nextIndex);
-      },
-      reducedMotion ? 0 : FADE_DURATION,
-    );
+    // Change immediately without waiting for an animation.
+    setStepIndex(nextIndex);
   }
 
-  // Block background interaction and keep focus inside the tour.
+  useLayoutEffect(() => {
+    if (!open || activeStep !== "composer") return;
+
+    const buttons = getTargets("composer").filter(
+      (element): element is HTMLButtonElement =>
+        element instanceof HTMLButtonElement,
+    );
+
+    const originals = buttons.map((button) => ({
+      button,
+      color: button.style.getPropertyValue("color"),
+      priority: button.style.getPropertyPriority("color"),
+    }));
+
+    const color = document.documentElement.classList.contains("dark")
+      ? "#f4f4f5" // zinc-100
+      : "#18181b"; // zinc-900
+
+    for (const button of buttons) {
+      button.style.setProperty("color", color, "important");
+    }
+
+    return () => {
+      for (const { button, color, priority } of originals) {
+        if (color) {
+          button.style.setProperty("color", color, priority);
+        } else {
+          button.style.removeProperty("color");
+        }
+      }
+    };
+  }, [open, activeStep]);
+
   useEffect(() => {
     if (!open) return;
 
@@ -394,17 +403,17 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
 
       if (!first || !last) return;
 
+      const focusOutside = !portal!.contains(document.activeElement);
+
       if (
         event.shiftKey &&
-        (document.activeElement === first ||
-          !portal!.contains(document.activeElement))
+        (document.activeElement === first || focusOutside)
       ) {
         event.preventDefault();
         last.focus();
       } else if (
         !event.shiftKey &&
-        (document.activeElement === last ||
-          !portal!.contains(document.activeElement))
+        (document.activeElement === last || focusOutside)
       ) {
         event.preventDefault();
         first.focus();
@@ -429,69 +438,129 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
     };
   }, [open, finishTour]);
 
-  // Build the copies once per step, then track their actual positions.
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!open || activeStep !== "search") return;
+
+    setSearchPreview(true);
+
+    return () => {
+      setSearchPreview(false);
+    };
+  }, [open, activeStep]);
+
+  // Temporarily show the leaderboard in full color and opacity,
+  // with clear default text colors. Restore everything on exit.
+  useLayoutEffect(() => {
+    if (!open || activeStep !== "leaderboard") return;
+
+    const elements = new Set<HTMLElement | SVGElement>();
+
+    for (const target of getTargets("leaderboard")) {
+      elements.add(target);
+
+      target
+        .querySelectorAll<HTMLElement | SVGElement>("*")
+        .forEach((element) => elements.add(element));
+    }
+
+    const properties = [
+      "filter",
+      "-webkit-filter",
+      "opacity",
+      "color",
+    ] as const;
+
+    const originals = Array.from(elements).map((element) => ({
+      element,
+      styles: properties.map((property) => ({
+        property,
+        value: element.style.getPropertyValue(property),
+        priority: element.style.getPropertyPriority(property),
+      })),
+    }));
+
+    const textColor = document.documentElement.classList.contains("dark")
+      ? "#f4f4f5"
+      : "#18181b";
+
+    for (const element of elements) {
+      element.style.setProperty("filter", "none", "important");
+      element.style.setProperty("-webkit-filter", "none", "important");
+      element.style.setProperty("opacity", "1", "important");
+
+      const isAvatar =
+        element.matches('[data-slot^="avatar"]') ||
+        element.closest('[data-slot^="avatar"]');
+
+      if (!isAvatar) {
+        element.style.setProperty("color", textColor, "important");
+      }
+    }
+
+    return () => {
+      for (const { element, styles } of originals) {
+        for (const { property, value, priority } of styles) {
+          if (value) {
+            element.style.setProperty(property, value, priority);
+          } else {
+            element.style.removeProperty(property);
+          }
+        }
+      }
+    };
+  }, [open, activeStep]);
+
+  useLayoutEffect(() => {
     if (!open || !activeStep) return;
 
-    const highlightLayer = highlightsRef.current;
+    const step = activeStep;
+    const canvas = canvasRef.current;
     const tooltip = tooltipRef.current;
+    const context = canvas?.getContext("2d");
 
-    if (!highlightLayer || !tooltip) return;
+    if (!canvas || !tooltip || !context) return;
 
-    const targets = getTargets(activeStep);
-
-    if (targets.length === 0) {
-      finishTour();
-      return;
-    }
-
-    highlightLayer.replaceChildren();
-
-    const wrappers = targets.map((target) => {
-      const wrapper = document.createElement("div");
-
-      wrapper.style.position = "fixed";
-      wrapper.style.pointerEvents = "none";
-      wrapper.style.boxSizing = "border-box";
-
-      wrapper.appendChild(createVisualCopy(target));
-      highlightLayer.appendChild(wrapper);
-
-      return wrapper;
-    });
-
-    // Scroll only when the target is outside the usable viewport.
-    const initialRect = targets[0].getBoundingClientRect();
-    const tooltipHeight = tooltip.offsetHeight;
-
-    if (
-      initialRect.top < VIEWPORT_PADDING ||
-      initialRect.bottom > window.innerHeight - tooltipHeight - TOOLTIP_GAP
-    ) {
-      targets[0].scrollIntoView({
-        behavior: "instant",
-        block: "center",
-        inline: "nearest",
-      });
-    }
-
+    let stopped = false;
     let frame = 0;
-    let revealFrame = 0;
     let previousGeometry = "";
+    let highlights: HighlightTarget[] = [];
 
-    function updatePosition() {
-      if (!tooltip || !highlightLayer) return;
+    const startedAt = performance.now();
 
-      const rects = targets.map((target) => target.getBoundingClientRect());
+    function update() {
+      if (stopped) return;
 
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
+      const elements = getTargets(step);
+
+      const targetsChanged =
+        elements.length !== highlights.length ||
+        elements.some(
+          (element, index) => element !== highlights[index]?.element,
+        );
+
+      if (targetsChanged) {
+        highlights = elements.map((element) => ({
+          element,
+          radius: getRadius(element),
+        }));
+      }
+
+      const rects = highlights.map(({ element }) =>
+        element.getBoundingClientRect(),
+      );
+
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      const tooltipWidth = tooltip!.offsetWidth;
+      const tooltipHeight = tooltip!.offsetHeight;
 
       const geometry = [
-        viewportWidth,
-        viewportHeight,
-        tooltip.offsetWidth,
-        tooltip.offsetHeight,
+        width,
+        height,
+        ratio,
+        tooltipWidth,
+        tooltipHeight,
         ...rects.flatMap((rect) => [
           rect.left,
           rect.top,
@@ -503,112 +572,174 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
       if (geometry !== previousGeometry) {
         previousGeometry = geometry;
 
-        rects.forEach((rect, index) => {
-          const wrapper = wrappers[index];
+        const pixelWidth = Math.round(width * ratio);
+        const pixelHeight = Math.round(height * ratio);
 
-          wrapper.style.left = `${rect.left}px`;
-          wrapper.style.top = `${rect.top}px`;
-          wrapper.style.width = `${rect.width}px`;
-          wrapper.style.height = `${rect.height}px`;
-
-          wrapper.style.visibility =
-            rect.width > 0 && rect.height > 0 ? "visible" : "hidden";
-        });
-
-        const left = Math.min(...rects.map((rect) => rect.left));
-        const right = Math.max(...rects.map((rect) => rect.right));
-        const top = Math.min(...rects.map((rect) => rect.top));
-        const bottom = Math.max(...rects.map((rect) => rect.bottom));
-
-        const width = tooltip.offsetWidth;
-        const height = tooltip.offsetHeight;
-
-        const availableBelow =
-          viewportHeight - bottom - TOOLTIP_GAP - VIEWPORT_PADDING;
-        const availableAbove = top - TOOLTIP_GAP - VIEWPORT_PADDING;
-
-        let tooltipTop: number;
-
-        if (availableBelow >= height) {
-          tooltipTop = bottom + TOOLTIP_GAP;
-        } else if (availableAbove >= height) {
-          tooltipTop = top - height - TOOLTIP_GAP;
-        } else {
-          tooltipTop = viewportHeight - height - VIEWPORT_PADDING;
+        if (canvas!.width !== pixelWidth || canvas!.height !== pixelHeight) {
+          canvas!.width = pixelWidth;
+          canvas!.height = pixelHeight;
         }
 
-        const tooltipLeft = clamp(
-          (left + right) / 2 - width / 2,
-          VIEWPORT_PADDING,
-          viewportWidth - width - VIEWPORT_PADDING,
-        );
+        context!.setTransform(ratio, 0, 0, ratio, 0, 0);
+        context!.globalCompositeOperation = "source-over";
+        context!.clearRect(0, 0, width, height);
+        context!.fillStyle = "rgba(0, 0, 0, 0.6)";
+        context!.fillRect(0, 0, width, height);
 
-        tooltip.style.left = `${tooltipLeft}px`;
-        tooltip.style.top = `${clamp(
-          tooltipTop,
-          VIEWPORT_PADDING,
-          viewportHeight - height - VIEWPORT_PADDING,
-        )}px`;
+        context!.globalCompositeOperation = "destination-out";
+
+        // Erase the highlight area completely.
+        context!.fillStyle = "#000";
+
+        rects.forEach((rect, index) => {
+          roundedRect(context!, rect, highlights[index].radius);
+          context!.fill();
+        });
+
+        context!.globalCompositeOperation = "source-over";
+
+        context!.globalCompositeOperation = "source-over";
+
+        if (rects.length > 0) {
+          const left = Math.min(...rects.map((rect) => rect.left));
+          const right = Math.max(...rects.map((rect) => rect.right));
+          const top = Math.min(...rects.map((rect) => rect.top));
+          const bottom = Math.max(...rects.map((rect) => rect.bottom));
+
+          let centerX = (left + right) / 2;
+          let tooltipTop: number;
+
+          const inputIndex = highlights.findIndex(
+            ({ element }) => element.id !== "market-search-results",
+          );
+
+          const inputRect = inputIndex >= 0 ? rects[inputIndex] : undefined;
+
+          if (step === "search" && inputRect) {
+            centerX = inputRect.left + inputRect.width / 2;
+            tooltipTop = inputRect.bottom + 12;
+          } else if (
+            height - bottom - TOOLTIP_GAP - VIEWPORT_PADDING >=
+            tooltipHeight
+          ) {
+            tooltipTop = bottom + TOOLTIP_GAP;
+          } else if (top - TOOLTIP_GAP - VIEWPORT_PADDING >= tooltipHeight) {
+            tooltipTop = top - tooltipHeight - TOOLTIP_GAP;
+          } else {
+            tooltipTop = height - tooltipHeight - VIEWPORT_PADDING;
+          }
+
+          const nextLeft = clamp(
+            centerX - tooltipWidth / 2,
+            VIEWPORT_PADDING,
+            width - tooltipWidth - VIEWPORT_PADDING,
+          );
+
+          const nextTop = clamp(
+            tooltipTop,
+            VIEWPORT_PADDING,
+            height - tooltipHeight - VIEWPORT_PADDING,
+          );
+
+          const animate = positionedRef.current;
+          positionedRef.current = true;
+
+          setPosition((previous) => {
+            if (
+              previous.ready &&
+              previous.left === nextLeft &&
+              previous.top === nextTop
+            ) {
+              return previous;
+            }
+
+            return {
+              left: nextLeft,
+              top: nextTop,
+              ready: true,
+              animate,
+            };
+          });
+        }
       }
 
-      frame = window.requestAnimationFrame(updatePosition);
+      if (highlights.length === 0 && performance.now() - startedAt > 1500) {
+        finishTour();
+        return;
+      }
+
+      frame = window.requestAnimationFrame(update);
     }
 
-    updatePosition();
+    const first = getTargets(step)[0];
 
-    revealFrame = window.requestAnimationFrame(() => {
-      setPhase("visible");
-      busyRef.current = false;
-      setTransitioning(false);
-      nextButtonRef.current?.focus({ preventScroll: true });
-    });
+    if (first && step !== "search") {
+      const rect = first.getBoundingClientRect();
+
+      if (
+        rect.top < VIEWPORT_PADDING ||
+        rect.bottom > window.innerHeight - tooltip.offsetHeight - TOOLTIP_GAP
+      ) {
+        first.scrollIntoView({
+          behavior: "instant",
+          block: "center",
+          inline: "nearest",
+        });
+      }
+    }
+
+    update();
 
     return () => {
+      stopped = true;
       window.cancelAnimationFrame(frame);
-      window.cancelAnimationFrame(revealFrame);
-      highlightLayer.replaceChildren();
     };
   }, [open, activeStep, language, finishTour]);
 
   if (!open || !content) return null;
 
   return createPortal(
-    <div ref={portalRef} className="fixed inset-0 z-1000 isolate">
-      {/* This stays mounted while moving between steps. */}
-      <div aria-hidden="true" className="absolute inset-0 bg-black/60" />
-
-      {/* Styled visual copies appear above the backdrop. */}
-      <div
-        ref={highlightsRef}
+    <div ref={portalRef} className="fixed inset-0 z-[1000] isolate">
+      <canvas
+        ref={canvasRef}
         aria-hidden="true"
-        className={`
-          pointer-events-none absolute inset-0
-          transition-opacity duration-150 ease-out
-          motion-reduce:transition-none
-          ${phase === "visible" ? "opacity-100" : "opacity-0"}
-        `}
+        className="absolute inset-0 h-full w-full"
       />
 
-      <div
+      <motion.div
         ref={tooltipRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className={`
-          fixed w-85 max-w-[calc(100vw-32px)]
+        initial={false}
+        animate={{
+          x: position.left,
+          y: position.top,
+        }}
+        transition={
+          reducedMotion || !position.animate
+            ? { duration: 0 }
+            : {
+                type: "tween",
+                duration: 0.22,
+                ease: [0.16, 1, 0.3, 1],
+                delay: 0,
+              }
+        }
+        style={{
+          visibility: position.ready ? "visible" : "hidden",
+        }}
+        className="
+          fixed top-0 left-0 z-10
+          w-[340px] max-w-[calc(100vw-32px)]
           max-h-[calc(100dvh-32px)] overflow-y-auto
           rounded-2xl border border-zinc-200
           bg-white p-5 text-zinc-900 shadow-2xl
-          transition-[opacity,transform] duration-150 ease-out
-          motion-reduce:transition-none
-          dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100
-          ${
-            phase === "visible"
-              ? "translate-y-0 opacity-100"
-              : "pointer-events-none translate-y-1 opacity-0"
-          }
-        `}
+          will-change-transform
+          dark:border-zinc-700 dark:bg-zinc-900
+          dark:text-zinc-100
+        "
       >
         <div className="mb-3 flex items-center justify-between gap-3">
           <span className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
@@ -633,19 +764,26 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
           </button>
         </div>
 
-        <h2 id={titleId} className="text-[17px] font-medium leading-6">
-          {content.title}
-        </h2>
-
-        <p
-          id={descriptionId}
-          className="
-            mt-2 text-[14px] leading-6
-            text-zinc-600 dark:text-zinc-400
-          "
+        <motion.div
+          key={`${activeStep}-${language}`}
+          initial={reducedMotion ? false : { opacity: 0.85 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: reducedMotion ? 0 : 0.1 }}
         >
-          {content.description}
-        </p>
+          <h2 id={titleId} className="text-[17px] font-medium leading-6">
+            {content.title}
+          </h2>
+
+          <p
+            id={descriptionId}
+            className="
+              mt-2 text-[14px] leading-6
+              text-zinc-600 dark:text-zinc-400
+            "
+          >
+            {content.description}
+          </p>
+        </motion.div>
 
         <div className="mt-5 flex items-center justify-between gap-3">
           <button
@@ -667,7 +805,6 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
             {stepIndex > 0 && (
               <button
                 type="button"
-                disabled={transitioning}
                 onClick={() => changeStep(stepIndex - 1)}
                 className="
                   flex h-9 cursor-pointer items-center
@@ -676,7 +813,6 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
                   hover:bg-zinc-100 hover:text-zinc-900
                   focus-visible:outline-none focus-visible:ring-2
                   focus-visible:ring-zinc-400
-                  disabled:cursor-default
                   dark:text-zinc-300 dark:hover:bg-zinc-800
                   dark:hover:text-white
                 "
@@ -689,7 +825,6 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
             <button
               ref={nextButtonRef}
               type="button"
-              disabled={transitioning}
               onClick={() => {
                 if (isLastStep) {
                   finishTour();
@@ -701,12 +836,10 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
                 flex h-9 cursor-pointer items-center
                 justify-center gap-1.5 rounded-lg
                 bg-zinc-900 px-3.5 text-xs font-medium
-                text-white transition-colors
-                hover:bg-zinc-700
+                text-white transition-colors hover:bg-zinc-700
                 focus-visible:outline-none focus-visible:ring-2
                 focus-visible:ring-zinc-400
                 focus-visible:ring-offset-2
-                disabled:cursor-default
                 dark:bg-zinc-100 dark:text-zinc-900
                 dark:hover:bg-white
                 dark:focus-visible:ring-offset-zinc-900
@@ -720,7 +853,7 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>,
     document.body,
   );
