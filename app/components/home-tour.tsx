@@ -710,8 +710,8 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
         aria-describedby={descriptionId}
         initial={false}
         animate={{
-          x: position.left,
-          y: position.top,
+          left: Math.round(position.left),
+          top: Math.round(position.top),
         }}
         transition={
           reducedMotion || !position.animate
