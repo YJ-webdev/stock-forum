@@ -727,12 +727,12 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
           visibility: position.ready ? "visible" : "hidden",
         }}
         className="
-          fixed top-0 left-0 z-10
+          fixed  z-10
           w-85 max-w-[calc(100vw-32px)]
           max-h-[calc(100dvh-32px)] overflow-y-auto
           rounded-2xl border border-zinc-200
           bg-white p-5 text-zinc-900 shadow-2xl
-          will-change-transform
+          
           dark:border-zinc-700 dark:bg-zinc-900
           dark:text-zinc-100
         "

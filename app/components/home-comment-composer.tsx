@@ -223,7 +223,7 @@ export function HomeCommentComposer({
           <AvatarFallback
             data-tour="composer"
             className="
-              bg-olive-500 text-sm text-zinc-100
+              bg-olive-500 border border-olive-500 text-sm text-zinc-100
               dark:bg-olive-500 dark:text-zinc-100
             "
           >
