@@ -496,6 +496,7 @@ export function MarketVoteButton({
         votingWindow.canVote && (
           <div className="flex w-full items-center justify-between gap-2">
             <button
+              data-tour="predict"
               type="button"
               disabled={voteButtonDisabled}
               aria-expanded={isOpen}
@@ -512,6 +513,7 @@ export function MarketVoteButton({
             </button>
 
             <button
+              data-tour="predict"
               type="button"
               disabled={voteButtonDisabled}
               aria-expanded={isOpen}

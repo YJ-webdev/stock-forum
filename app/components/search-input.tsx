@@ -335,7 +335,7 @@ export default function SearchInput({
           document.body,
         )}
 
-      <div className="relative z-40 w-full">
+      <div data-tour="search" className="relative z-40 w-full">
         <div
           className="
             flex h-12 w-full cursor-text items-center

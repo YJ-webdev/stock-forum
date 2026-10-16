@@ -38,8 +38,13 @@ export function LeaderBoard({ traders, user, onBanRequest }: LeaderBoardProps) {
 
   return (
     <section
+      data-tour="leaderboard"
       aria-labelledby={headingId}
-      className="flex h-full min-h-0 w-full flex-col overflow-hidden pt-3.5"
+      className="
+      flex h-full min-h-0 w-full flex-col
+      overflow-hidden bg-white pt-3.5
+      dark:bg-zinc-900 rounded-2xl
+    "
     >
       <h2 id={headingId} className="sr-only">
         {labels.title}

@@ -28,6 +28,7 @@ import { PointBalanceProvider } from "../context/point-balance-context";
 import type { User } from "@/types/user";
 import type { LayoutSideData } from "../actions/query";
 import { Footer } from "./footer";
+import { HomeTour } from "./home-tour";
 
 const FOOTER_PATHS = new Set([
   "/",
@@ -282,8 +283,10 @@ export default function LayoutShell({
       <PointBalanceProvider>
         <OAuthFragmentCleanup />
         <OnboardingCard />
+        <HomeTour />
 
         <div className="relative box-border flex h-screen min-h-0 flex-col overflow-hidden pt-18 supports-[height:100dvh]:h-dvh">
+          {/* search input */}
           <Navbar
             onOpenSearch={handleOpenSearch}
             onTogglePanel={handleToggleLeftPanel}
@@ -383,7 +386,7 @@ export default function LayoutShell({
   `}
                     >
                       {renderActivePanel()}
-
+                      {/* leadrboard */}
                       {showLeaderboard && (
                         <Suspense fallback={<SideDataLoading />}>
                           <LeaderBoardStream

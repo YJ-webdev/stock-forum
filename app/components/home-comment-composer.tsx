@@ -216,23 +216,25 @@ export function HomeCommentComposer({
 
   return (
     <div className="mt-3 mb-6">
-      <div className="flex items-start gap-3">
-        <Avatar className="size-9 shrink-0">
+      <div data-tour-group="composer" className="flex items-start gap-3">
+        <Avatar className="size-9 shrink-0 ">
           <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? ""} />
 
           <AvatarFallback
+            data-tour="composer"
             className="
-              bg-zinc-200 text-sm text-zinc-600
-              dark:bg-zinc-800 dark:text-zinc-300
+              bg-olive-500 text-sm text-zinc-100
+              dark:bg-olive-500 dark:text-zinc-100
             "
           >
-            {Array.from(user?.name?.trim() ?? "")[0]?.toUpperCase() || "?"}
+            {Array.from(user?.name?.trim() ?? "")[0]?.toUpperCase() || "G"}
           </AvatarFallback>
         </Avatar>
 
         <div className="relative min-h-10 min-w-0 flex-1">
           {/* Collapsed trigger */}
           <button
+            data-tour="composer"
             ref={triggerRef}
             type="button"
             disabled={isChatRestricted || submitting}
@@ -242,6 +244,7 @@ export function HomeCommentComposer({
             inert={editorOpen}
             onClick={openEditor}
             className={`
+              bg-white dark:bg-zinc-800
               absolute inset-x-0 top-0
               flex h-10 w-full cursor-pointer items-center
               justify-between gap-3 rounded-full

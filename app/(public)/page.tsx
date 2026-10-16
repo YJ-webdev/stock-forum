@@ -73,7 +73,7 @@ export default async function Home() {
         >
           {labels.predict}
         </p>
-
+        {/* bull or bear? */}
         <HomeMarketCarousel markets={markets} />
       </section>
 
@@ -91,7 +91,7 @@ export default async function Home() {
         >
           {labels.latest_comments}
         </p>
-
+        {/* write composer */}
         <HomeCommunity
           initialComments={community.comments}
           initialNextCursor={community.nextCursor}
