@@ -1,3 +1,5 @@
+// app/admin/page.tsx
+
 import { getBotUsers } from "@/app/actions/user-bot";
 import { UserBot } from "@/app/components/admin/user-bot";
 

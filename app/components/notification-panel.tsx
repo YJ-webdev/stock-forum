@@ -11,10 +11,9 @@ import {
   type SetStateAction,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, CheckCheck, RotateCcw, Trash2, X } from "lucide-react";
+import { Bell, CheckCheck, RotateCcw, X } from "lucide-react";
 
 import {
-  deleteAllSocialNotifications,
   deleteSocialNotification,
   getNotifications,
   markAllNotificationsAsRead,
@@ -473,36 +472,6 @@ function NotificationPanelContent({
     });
   }
 
-  function handleDeleteAll() {
-    if (
-      mutationDisabled ||
-      mutationBusy.current ||
-      !notificationsRef.current.some((item) => canDeleteNotification(item.type))
-    ) {
-      return;
-    }
-
-    mutationBusy.current = true;
-
-    const previous = notificationsRef.current;
-
-    saveNotifications(
-      previous.filter((item) => !canDeleteNotification(item.type)),
-    );
-    setSwipedNotificationId(null);
-
-    startTransition(async () => {
-      try {
-        await deleteAllSocialNotifications();
-      } catch (error) {
-        console.error("Failed to delete notifications:", error);
-        saveNotifications(previous);
-      } finally {
-        mutationBusy.current = false;
-      }
-    });
-  }
-
   useLayoutEffect(() => {
     const keys = sectionSignature
       ? (sectionSignature.split(",") as DateSectionKey[])
@@ -649,28 +618,6 @@ function NotificationPanelContent({
             "
           >
             <CheckCheck className="size-4" aria-hidden="true" />
-          </button>
-        )}
-
-        {!loading && hasDeletableNotifications && (
-          <button
-            type="button"
-            disabled={mutationDisabled}
-            onClick={handleDeleteAll}
-            aria-label={labels.clear}
-            title={labels.clear}
-            className="
-              flex size-8 cursor-pointer items-center justify-center
-              rounded-md bg-zinc-100 text-zinc-500
-              transition-colors hover:bg-zinc-200 hover:text-rose-600
-              disabled:cursor-default disabled:opacity-50
-              focus-visible:outline-none
-              focus-visible:ring-2 focus-visible:ring-zinc-400
-              dark:bg-zinc-800 dark:text-zinc-400
-              dark:hover:bg-zinc-700 dark:hover:text-rose-400
-            "
-          >
-            <Trash2 className="size-4" aria-hidden="true" />
           </button>
         )}
 

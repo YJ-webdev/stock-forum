@@ -220,29 +220,29 @@ export async function deleteSocialNotification(notificationId: string) {
 }
 
 // Delete all non-prediction notifications belonging to this user.
-export async function deleteAllSocialNotifications() {
-  const session = await auth();
+// export async function deleteAllSocialNotifications() {
+//   const session = await auth();
 
-  const labels =
-    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
+//   const labels =
+//     COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
-  if (!session?.user?.id) {
-    throw new Error(labels.login_required);
-  }
+//   if (!session?.user?.id) {
+//     throw new Error(labels.login_required);
+//   }
 
-  await prisma.notification.deleteMany({
-    where: {
-      userId: session.user.id,
-      type: {
-        notIn: [...PREDICTION_NOTIFICATION_TYPES],
-      },
-    },
-  });
+//   await prisma.notification.deleteMany({
+//     where: {
+//       userId: session.user.id,
+//       type: {
+//         notIn: [...PREDICTION_NOTIFICATION_TYPES],
+//       },
+//     },
+//   });
 
-  return {
-    success: true,
-  };
-}
+//   return {
+//     success: true,
+//   };
+// }
 
 export async function getUnreadNotificationCount(): Promise<number> {
   const session = await auth();
