@@ -14,11 +14,11 @@ export function VoteBar({
 
   return (
     <span className="inline-flex font-mono! mr-4 h-5 items-center justify-center text-[16px] leading-none tracking-[-2px]">
-      <span className="text-zinc-600 font-mono! text-[13px] tracking-tightest dark:text-zinc-300">
+      <span className="text-zinc-600 font-mono! text-[13px] tracking-tightest dark:text-zinc-100">
         {"█".repeat(bullSlots)}
       </span>
 
-      <span className="text-zinc-900 font-mono! text-[13px] tracking-tightest translate-x-0.5 dark:translate-x-1 dark:text-zinc-300">
+      <span className="text-zinc-900 font-mono! text-[13px] tracking-tightest translate-x-0.5 dark:translate-x-1 dark:text-zinc-100">
         {"░".repeat(bearSlots)}
       </span>
     </span>

@@ -464,7 +464,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
       ${
         canScrollLeft
           ? "text-black group-hover/scroll:bg-zinc-100 dark:text-white dark:group-hover/scroll:bg-zinc-800"
-          : "text-zinc-300 dark:text-zinc-600"
+          : "text-zinc-100 dark:text-zinc-600"
       }
     `}
               >
@@ -498,7 +498,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
       ${
         canScrollRight
           ? "text-black group-hover/scroll:bg-zinc-100 dark:text-white dark:group-hover/scroll:bg-zinc-800"
-          : "text-zinc-300 dark:text-zinc-600"
+          : "text-zinc-100 dark:text-zinc-600"
       }
     `}
               >
@@ -519,7 +519,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
           className="
             outfit flex h-[85dvh] max-h-170 flex-col gap-0
             overflow-hidden rounded-xl p-0 text-zinc-900
-            dark:border dark:text-zinc-300 sm:max-w-lg
+            dark:border dark:text-zinc-100 sm:max-w-lg
           "
         >
           <DialogHeader className="shrink-0 px-6 pt-7 pb-5 text-left">

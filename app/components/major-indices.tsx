@@ -35,7 +35,7 @@ export function PopularBoards({ boards }: PopularBoardsProps) {
               hover:outline-zinc-100
               hover:text-zinc-900
 
-              dark:text-zinc-300
+              dark:text-zinc-100
 
               dark:hover:bg-zinc-800/70
               dark:hover:outline-zinc-800/70
@@ -72,7 +72,7 @@ export function PopularBoards({ boards }: PopularBoardsProps) {
                 />
               </div>
             )}
-            <span className="min-w-0 flex-1 truncate text-[16px] font-normal text-zinc-800 dark:text-zinc-300 dark:font-light">
+            <span className="min-w-0 flex-1 truncate text-[16px] font-normal text-zinc-800 dark:text-zinc-100 dark:font-light">
               {item.name}
             </span>
 
@@ -96,7 +96,7 @@ export function PopularBoards({ boards }: PopularBoardsProps) {
                 className={`
                   h-4.5 w-4.5
                   text-zinc-800
-                  dark:text-zinc-300
+                  dark:text-zinc-100
 group-hover:block
                   ${isSelected ? "hidden" : "hidden group-hover:block"}
                 

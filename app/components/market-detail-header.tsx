@@ -102,7 +102,7 @@ export function MarketDetailHeader({
     <div className="flex min-w-0 items-center gap-3 px-4">
       <div className="flex min-w-0 flex-col">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 tracking-tight sm:flex-nowrap md:tracking-normal">
-          <Numeric className="text-3xl font-extrabold text-zinc-900 dark:text-zinc-300">
+          <Numeric className="text-3xl font-extrabold text-zinc-900 dark:text-zinc-100">
             {displayPrice}
           </Numeric>
 

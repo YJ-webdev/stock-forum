@@ -619,7 +619,7 @@ export default function MarketPageClient({
                               isUnavailable
                                 ? "cursor-default bg-zinc-100 font-thin text-zinc-400 dark:bg-zinc-700/50 dark:text-zinc-600"
                                 : isActive
-                                  ? "cursor-pointer bg-zinc-300/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
+                                  ? "cursor-pointer bg-zinc-100/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
                                   : "cursor-pointer bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-600/50"
                             }`}
                           >
@@ -714,7 +714,7 @@ export default function MarketPageClient({
                     />
 
                     <div
-                      className="h-full bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)] bg-size-[2.5px_2.5px] text-zinc-300 dark:text-zinc-600"
+                      className="h-full bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)] bg-size-[2.5px_2.5px] text-zinc-100 dark:text-zinc-600"
                       style={{
                         width: `${voteStats.bearPercent}%`,
                       }}

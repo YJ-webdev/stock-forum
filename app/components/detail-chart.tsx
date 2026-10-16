@@ -625,7 +625,7 @@ export function DetailChart({
     <div className="relative w-full select-none bg-zinc-50 p-4 md:rounded-2xl md:border md:border-zinc-200 dark:bg-zinc-800/50 dark:md:border-zinc-800">
       {/* TOP CONTROL BAR */}
 
-      <div className="relative z-5 flex items-center justify-between gap-6 dark:text-zinc-300">
+      <div className="relative z-5 flex items-center justify-between gap-6 dark:text-zinc-100">
         <div className="flex items-center">
           {chartTypeOptions.map((option) => {
             const Icon = option.icon;
@@ -657,7 +657,7 @@ export function DetailChart({
           type="button"
           onClick={onClick}
           aria-label="Close chart"
-          className="mr-2 flex size-7 cursor-pointer items-center justify-center rounded-sm text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-300 dark:hover:text-white"
+          className="mr-2 flex size-7 cursor-pointer items-center justify-center rounded-sm text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-100 dark:hover:text-white"
         >
           <Minimize2 className="size-5" strokeWidth={1.5} />
         </button>
@@ -715,7 +715,7 @@ export function DetailChart({
             x={paddingLeft - 12}
             y={tick.y + 4}
             textAnchor="end"
-            className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-300 dark:font-light"
+            className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-100 dark:font-light"
           >
             {tick.price.toLocaleString("en-US", {
               minimumFractionDigits: yLabelDecimals,
@@ -757,7 +757,7 @@ export function DetailChart({
               x={tick.x}
               y={chartBottom + 20}
               textAnchor="middle"
-              className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-300 dark:font-light"
+              className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-100 dark:font-light"
             >
               {tick.label}
             </text>
@@ -947,7 +947,7 @@ export function DetailChart({
                 width="120"
                 height="24"
                 rx="6"
-                className="fill-white stroke-zinc-300 dark:fill-zinc-800 dark:stroke-zinc-700"
+                className="fill-white stroke-zinc-100 dark:fill-zinc-800 dark:stroke-zinc-700"
               />
 
               <text
@@ -972,7 +972,7 @@ export function DetailChart({
               y={previousCloseY - 15}
               textAnchor="end"
               pointerEvents="none"
-              className="jakarta fill-zinc-800 text-[12px] dark:fill-zinc-300 dark:font-light"
+              className="jakarta fill-zinc-800 text-[12px] dark:fill-zinc-100 dark:font-light"
             >
               {marketLabels.prev_close}:{" "}
               <tspan className="font-bold">

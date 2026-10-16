@@ -207,7 +207,7 @@ export function BanUserDialog({ target, onClose }: BanUserDialogProps) {
           className="
             mt-2 block min-h-11 w-full
             cursor-pointer rounded-lg
-            border border-zinc-300 bg-white
+            border border-zinc-100 bg-white
             px-3 py-2 text-[15px] text-zinc-900
             outline-none
             focus-visible:ring-2 focus-visible:ring-zinc-400
@@ -240,7 +240,7 @@ export function BanUserDialog({ target, onClose }: BanUserDialogProps) {
             onClick={handleClose}
             className="
               cursor-pointer rounded-lg border
-              border-zinc-300 px-4 py-2 text-sm
+              border-zinc-100 px-4 py-2 text-sm
               hover:bg-zinc-100
               disabled:cursor-default disabled:opacity-50
               dark:border-zinc-700 dark:hover:bg-zinc-800

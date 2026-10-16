@@ -60,7 +60,7 @@ interface PredictionCommentInputProps {
 const POINT_BUTTON_CLASS = `
   flex h-9 w-7 shrink-0 cursor-pointer touch-none select-none
   items-center justify-center rounded-md
-  text-lg text-zinc-500 dark:text-zinc-300
+  text-lg text-zinc-500 dark:text-zinc-100
   transition-colors
   hover:bg-zinc-200 active:bg-zinc-200
   focus-visible:outline-none
@@ -446,7 +446,7 @@ export function PredictionCommentInput({
                   flex h-9 w-[3ch] select-none
                   items-center justify-center
                   text-center text-sm tabular-nums
-                  text-zinc-500 dark:text-zinc-300
+                  text-zinc-500 dark:text-zinc-100
                   ${pointsDisabled ? "opacity-50" : ""}
                 `}
               >
@@ -614,7 +614,7 @@ export function PredictionCommentInput({
                   shrink-0 cursor-pointer border-none
                   bg-transparent text-zinc-800 shadow-none
                   transition-colors hover:bg-transparent
-                  dark:bg-transparent dark:text-zinc-300
+                  dark:bg-transparent dark:text-zinc-100
                   dark:hover:bg-transparent
                   disabled:cursor-not-allowed
                   disabled:bg-transparent disabled:opacity-100

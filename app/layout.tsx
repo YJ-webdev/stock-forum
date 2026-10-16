@@ -128,7 +128,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 ),
                 description: cn(
                   "text-sm! whitespace-normal! break-words!",
-                  "text-zinc-300! dark:text-zinc-600!",
+                  "text-zinc-100! dark:text-zinc-600!",
                 ),
               },
             }}

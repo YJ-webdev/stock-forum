@@ -214,7 +214,7 @@ export const MarketActionsMenu = ({
           className="
             h-5 w-5 text-zinc-500
             hover:text-zinc-800
-            dark:text-zinc-400 dark:hover:text-zinc-300
+            dark:text-zinc-400 dark:hover:text-zinc-100
           "
           strokeWidth={1.5}
         />

@@ -595,7 +595,7 @@ function NotificationPanelContent({
       aria-label={labels.heading}
       className="
         relative flex h-full min-h-0 w-full flex-col
-        text-zinc-800 dark:text-zinc-300
+        text-zinc-800 dark:text-zinc-100
       "
     >
       <div className="absolute right-1 top-0.5 z-50 flex items-center">
@@ -679,7 +679,7 @@ function NotificationPanelContent({
                         focus-visible:outline-none
                         focus-visible:ring-2 focus-visible:ring-inset
                         focus-visible:ring-zinc-400
-                        dark:bg-zinc-800 dark:text-zinc-300
+                        dark:bg-zinc-800 dark:text-zinc-100
                       "
                     >
                       {sectionLabels[section.key]}
@@ -1327,7 +1327,7 @@ function EmptyNotifications({ message }: { message: string }) {
   return (
     <div className="flex min-h-60 flex-col items-center justify-center px-6 text-center">
       <Bell
-        className="mb-3 size-6 text-zinc-300 dark:text-zinc-700"
+        className="mb-3 size-6 text-zinc-100 dark:text-zinc-700"
         aria-hidden="true"
       />
       <p className="text-sm text-zinc-500 dark:text-zinc-400">{message}</p>

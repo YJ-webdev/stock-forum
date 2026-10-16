@@ -45,7 +45,7 @@ export function FooterPage({ type }: FooterPageProps) {
 
   return (
     <main className="mx-auto min-h-[calc(100dvh-146px)] w-full max-w-2xl px-5 pt-5 pb-10 md:px-6">
-      <h1 className="text-2xl font-medium tracking-tight text-zinc-800 dark:text-zinc-300">
+      <h1 className="text-2xl font-medium tracking-tight text-zinc-800 dark:text-zinc-100">
         {labels[type]}
       </h1>
 
@@ -244,7 +244,7 @@ function FeedbackContent({
               border border-zinc-100 bg-zinc-100
               px-4 py-3 text-base leading-7 text-zinc-900
               outline-none placeholder:text-zinc-400
-              focus:border-zinc-300
+              focus:border-zinc-100
               dark:border-zinc-800 dark:bg-zinc-800
               dark:text-zinc-100 dark:focus:border-zinc-600
               md:text-[15px]

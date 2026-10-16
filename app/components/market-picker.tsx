@@ -90,12 +90,12 @@ export function MarketPicker({
                               ? `
                                 border-zinc-400 bg-zinc-100 text-zinc-900
                                 dark:border-zinc-600 dark:bg-zinc-800
-                                dark:text-zinc-300
+                                dark:text-zinc-100
                               `
                               : `
                                 border-zinc-200 bg-transparent text-zinc-600
                                 hover:bg-zinc-50
-                                dark:border-zinc-700 dark:text-zinc-300
+                                dark:border-zinc-700 dark:text-zinc-100
                                 dark:hover:bg-zinc-800/50
                               `
                           }

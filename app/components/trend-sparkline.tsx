@@ -261,7 +261,7 @@ export function TrendSparkline({
           stroke="currentColor"
           strokeDasharray="2 2"
           strokeWidth="1.25"
-          className="text-zinc-300 dark:text-zinc-700"
+          className="text-zinc-100 dark:text-zinc-700"
         />
       )}
 

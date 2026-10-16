@@ -359,10 +359,10 @@ export function HomeCommentComposer({
                   rows={4}
                   className="
                     block min-h-28 w-full resize-none overflow-y-auto
-                    rounded-xl border border-zinc-300 bg-transparent
+                    rounded-xl border border-zinc-100 bg-transparent
                     px-3.5 py-3 text-base leading-6 text-zinc-900
                     placeholder:text-zinc-400
-                    focus:border-zinc-400 focus:outline-none
+                    focus:border-zinc-300 focus:outline-none
                     disabled:cursor-not-allowed disabled:opacity-60
                     dark:border-zinc-700 dark:text-zinc-100
                     dark:placeholder:text-zinc-500
@@ -482,7 +482,7 @@ export function HomeCommentComposer({
                         focus-visible:ring-zinc-400
                         disabled:cursor-default disabled:opacity-40
                         dark:bg-zinc-100 dark:text-zinc-900
-                        dark:hover:bg-zinc-300
+                        dark:hover:bg-zinc-100
                       "
                     >
                       {submitting ? copy.publishing : copy.publish}

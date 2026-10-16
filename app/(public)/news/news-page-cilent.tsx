@@ -118,7 +118,7 @@ function NewsRow({ item }: { item: GlobalMarketNewsItem }) {
                 hover:bg-zinc-200
                 hover:text-zinc-900
                 dark:bg-zinc-800
-                dark:text-zinc-300
+                dark:text-zinc-100
                 dark:hover:bg-zinc-700
                 dark:hover:text-zinc-100
               "
@@ -126,7 +126,7 @@ function NewsRow({ item }: { item: GlobalMarketNewsItem }) {
               {item.market.displaySymbol ?? item.market.symbol}
             </Link>
 
-            <span className="text-xs text-zinc-300 dark:text-zinc-700">•</span>
+            <span className="text-xs text-zinc-100 dark:text-zinc-700">•</span>
 
             <div className="flex min-w-0 items-center gap-1.5">
               {item.sourceIcon && (
@@ -142,7 +142,7 @@ function NewsRow({ item }: { item: GlobalMarketNewsItem }) {
               </span>
             </div>
 
-            <span className="text-xs text-zinc-300 dark:text-zinc-700">•</span>
+            <span className="text-xs text-zinc-100 dark:text-zinc-700">•</span>
 
             <time
               dateTime={item.publishedAt.toISOString()}
@@ -164,7 +164,7 @@ function NewsRow({ item }: { item: GlobalMarketNewsItem }) {
               transition-colors
               group-hover:text-zinc-600
               dark:text-zinc-100
-              dark:group-hover:text-zinc-300
+              dark:group-hover:text-zinc-100
             "
           >
             {item.title}

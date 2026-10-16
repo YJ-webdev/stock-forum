@@ -75,7 +75,7 @@ export function BullBearGauge({
       <div className="mt-2 flex items-center gap-2 text-[12px]">
         <span className="text-emerald-600">Bull {bullishPercent}%</span>
 
-        <span className="text-zinc-300 dark:text-zinc-700">•</span>
+        <span className="text-zinc-100 dark:text-zinc-700">•</span>
 
         <span className="text-rose-700">Bear {bearishPercent}%</span>
       </div>

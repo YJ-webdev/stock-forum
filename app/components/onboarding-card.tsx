@@ -244,7 +244,7 @@ export function OnboardingCard() {
         className="
           flex h-dvh w-screen max-w-none flex-col
           rounded-none border-0 p-0
-          text-zinc-800 dark:text-zinc-300
+          text-zinc-800 dark:text-zinc-100
           sm:h-auto sm:w-full sm:max-w-md
           sm:rounded-xl sm:border
         "
@@ -268,8 +268,8 @@ export function OnboardingCard() {
                         dark:border-zinc-200 dark:bg-zinc-200 dark:text-zinc-900
                       `
                       : `
-                        border-zinc-300 bg-zinc-100 text-zinc-600
-                        dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300
+                        border-zinc-100 bg-zinc-100 text-zinc-600
+                        dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100
                       `
                   }
                 `}
@@ -322,7 +322,7 @@ export function OnboardingCard() {
                         dark:border-zinc-200 dark:bg-zinc-200 dark:text-zinc-900
                       `
                       : `
-                        border-zinc-300 text-zinc-400
+                        border-zinc-100 text-zinc-400
                         dark:border-zinc-700 dark:text-zinc-500
                       `
                   }

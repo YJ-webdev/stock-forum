@@ -511,7 +511,7 @@ function AccountPanelForm({
               {labels.email}
             </p>
 
-            <p className="mt-0.5 truncate text-[13px] text-zinc-600 dark:text-zinc-300">
+            <p className="mt-0.5 truncate text-[13px] text-zinc-600 dark:text-zinc-100">
               {user.email}
             </p>
           </div>

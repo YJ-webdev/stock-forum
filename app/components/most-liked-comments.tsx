@@ -104,7 +104,7 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
                     text-zinc-600
 
                     dark:border-zinc-600
-                    dark:text-zinc-300
+                    dark:text-zinc-100
                   "
                 >
                   {asset.displaySymbol ?? asset.symbol}
@@ -125,7 +125,7 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
                 text-zinc-900
 
                 dark:font-light
-                dark:text-zinc-300
+                dark:text-zinc-100
               "
             >
               {text}
@@ -157,7 +157,7 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
                     fill-zinc-500
                     text-muted
 
-                    dark:fill-zinc-300
+                    dark:fill-zinc-100
                     dark:text-muted
                   "
                 />
@@ -175,7 +175,7 @@ export function MostLikedComments({ comments }: MostLikedCommentsProps) {
                     fill-zinc-500
                     text-muted
 
-                    dark:fill-zinc-300
+                    dark:fill-zinc-100
                     dark:text-muted
                   "
                 />

@@ -351,7 +351,7 @@ export function PostEditor({ userId, setOnWrite }: PostEditorProps) {
                   border border-zinc-400 bg-transparent px-2.5 py-1
                   text-[12px] font-medium text-zinc-600
                   disabled:cursor-default disabled:opacity-50
-                  dark:border-zinc-600 dark:text-zinc-300
+                  dark:border-zinc-600 dark:text-zinc-100
                 "
               >
                 {asset.displaySymbol}
@@ -408,7 +408,7 @@ export function PostEditor({ userId, setOnWrite }: PostEditorProps) {
               className="
                 w-full bg-transparent text-[15px] text-zinc-800 outline-none
                 placeholder:text-gray-500/50
-                dark:text-zinc-300 dark:placeholder:text-zinc-700
+                dark:text-zinc-100 dark:placeholder:text-zinc-700
               "
             />
           </div>

@@ -114,13 +114,13 @@ const TIER_NAMES: Record<UserProfileCardData["tier"], string> = {
 
 const TIER_CLASSES: Record<UserProfileCardData["tier"], string> = {
   UNRANKED:
-    "border-zinc-300/60 bg-zinc-100 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
+    "border-zinc-100/60 bg-zinc-100 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
 
   BRONZE:
     "border-orange-700/20 bg-orange-700/10 text-orange-700 dark:border-orange-400/20 dark:bg-orange-400/10 dark:text-orange-400",
 
   SILVER:
-    "border-zinc-400/30 bg-zinc-400/10 text-zinc-600 dark:border-zinc-300/20 dark:bg-zinc-300/10 dark:text-zinc-300",
+    "border-zinc-400/30 bg-zinc-400/10 text-zinc-600 dark:border-zinc-100/20 dark:bg-zinc-100/10 dark:text-zinc-100",
 
   GOLD: "border-amber-600/20 bg-amber-500/10 text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-400",
 
@@ -397,11 +397,11 @@ function ProfileCardContent({
                     rounded-full border border-zinc-200
                     px-2.5 py-1 text-[11px] font-medium
                     text-zinc-600 transition-colors
-                    hover:border-zinc-300 hover:bg-zinc-100
+                    hover:border-zinc-100 hover:bg-zinc-100
                     hover:text-zinc-900
                     focus-visible:outline-none
                     focus-visible:ring-2 focus-visible:ring-zinc-400
-                    dark:border-zinc-700 dark:text-zinc-300
+                    dark:border-zinc-700 dark:text-zinc-100
                     dark:hover:border-zinc-600 dark:hover:bg-zinc-800
                     dark:hover:text-zinc-100
                   "

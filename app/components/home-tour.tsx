@@ -813,7 +813,7 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
                   hover:bg-zinc-100 hover:text-zinc-900
                   focus-visible:outline-none focus-visible:ring-2
                   focus-visible:ring-zinc-400
-                  dark:text-zinc-300 dark:hover:bg-zinc-800
+                  dark:text-zinc-100 dark:hover:bg-zinc-800
                   dark:hover:text-white
                 "
               >

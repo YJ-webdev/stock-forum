@@ -318,7 +318,7 @@ export default function UserMenu({
               initials
             ) : (
               <UserIcon
-                className="size-4 text-zinc-600 dark:text-zinc-300"
+                className="size-4 text-zinc-600 dark:text-zinc-100"
                 aria-hidden="true"
               />
             )}

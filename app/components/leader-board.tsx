@@ -190,7 +190,7 @@ export function LeaderBoard({ traders, user, onBanRequest }: LeaderBoardProps) {
 
               {/* Points */}
               <div className="mr-3 shrink-0 text-right">
-                <p className="jakarta text-[14px] font-normal text-zinc-800 dark:text-zinc-300">
+                <p className="jakarta text-[14px] font-normal text-zinc-800 dark:text-zinc-100">
                   {trader.points.toLocaleString(language)}
                 </p>
 

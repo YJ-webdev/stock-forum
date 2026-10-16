@@ -314,7 +314,7 @@ export function HomeCommunity({
                 dark:bg-[#515151] dark:text-zinc-100
               `
               : `
-                border-zinc-300 text-zinc-500
+                border-zinc-100 text-zinc-500
                 hover:border-zinc-400
                 dark:border-zinc-700 dark:text-zinc-500
                 dark:hover:border-zinc-700
@@ -412,7 +412,7 @@ export function HomeCommunity({
                 focus-visible:outline-none
                 focus-visible:ring-2
                 focus-visible:ring-zinc-400
-                dark:text-zinc-300
+                dark:text-zinc-100
               "
             >
               {labels.retry}
@@ -420,7 +420,7 @@ export function HomeCommunity({
           </div>
         ) : comments.length === 0 ? (
           <div className="py-10 text-center">
-            <p className="text-[15px] text-zinc-600 dark:text-zinc-300">
+            <p className="text-[15px] text-zinc-600 dark:text-zinc-100">
               {labels.empty}
             </p>
 

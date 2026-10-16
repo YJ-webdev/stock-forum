@@ -23,7 +23,7 @@ export const Footer = () => {
         flex shrink-0  flex-wrap-reverse  items-center px-4 sm:mx-0 justify-center
         gap-3 sm:gap-x-5 gap-y-1 bg-white
         pb-[max(0.625rem,env(safe-area-inset-bottom))]
-        text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300
+        text-zinc-700 dark:bg-zinc-900 dark:text-zinc-100
       "
     >
       {links.map(({ href, label }) => (

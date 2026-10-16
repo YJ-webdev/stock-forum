@@ -95,7 +95,7 @@ export const BreadCrumbs = () => {
         className="
           flex min-w-0 items-center gap-2
           text-sm font-medium text-zinc-500
-          dark:text-zinc-300
+          dark:text-zinc-100
         "
       >
         <button

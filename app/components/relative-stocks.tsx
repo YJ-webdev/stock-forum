@@ -756,7 +756,7 @@ function RelativeStockRow({
                       className={`relative size-2 rounded-full ${
                         canVote
                           ? "bg-emerald-500"
-                          : "bg-zinc-300 dark:bg-zinc-600"
+                          : "bg-zinc-100 dark:bg-zinc-600"
                       }`}
                     />
                   </>

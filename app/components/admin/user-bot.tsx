@@ -455,7 +455,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
       <CreateBotUser disabled={isBusy} onCreated={handleBotCreated} />
 
       {bots.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-zinc-300 p-6 dark:border-zinc-700">
+        <div className="rounded-xl border border-dashed border-zinc-100 p-6 dark:border-zinc-700">
           <p className="text-[15px] text-zinc-500">
             No bot profiles yet. Create a bot to get started.
           </p>

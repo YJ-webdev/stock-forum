@@ -109,7 +109,7 @@ export default async function MarketNewsPage({ params }: PageProps) {
 
                     <span
                       aria-hidden="true"
-                      className="text-xs text-zinc-300 dark:text-zinc-700"
+                      className="text-xs text-zinc-100 dark:text-zinc-700"
                     >
                       •
                     </span>

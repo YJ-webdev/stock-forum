@@ -151,7 +151,7 @@ export function BullBearVoteCard({
     <article
       data-tour="predict"
       aria-busy={loading && !data}
-      className="relative w-44 shrink-0 text-zinc-900 dark:text-zinc-300"
+      className="relative w-44 shrink-0 text-zinc-900 dark:text-zinc-100"
     >
       <header>
         <h3
@@ -165,7 +165,7 @@ export function BullBearVoteCard({
       <div className="pb-2 mt-2">
         <div className="flex h-7 items-center pl-3">
           {data ? (
-            <Numeric className="outfit text-[18px] font-extrabold tracking-normal text-zinc-800 tabular-nums dark:text-zinc-300">
+            <Numeric className="outfit text-[18px] font-extrabold tracking-normal text-zinc-800 tabular-nums dark:text-zinc-100">
               {data.value}
             </Numeric>
           ) : loading ? (
