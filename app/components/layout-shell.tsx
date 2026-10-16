@@ -234,7 +234,7 @@ export default function LayoutShell({
   const hasActivePanel = onWrite || onAccount || onNotification || onHistory;
 
   const mobilePanelOpen = Boolean(user) && hasActivePanel;
-  const showLeaderboard = !hasActivePanel;
+  const showLeaderboard = !hasActivePanel || user === null;
 
   function renderActivePanel() {
     if (!user) return null;
