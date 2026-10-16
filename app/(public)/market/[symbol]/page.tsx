@@ -9,6 +9,7 @@ import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 
 import MarketPageClient from "./market-page-client";
+import { ScrollToTopButton } from "@/app/components/scroll-to-top-button";
 
 interface PageProps {
   params: Promise<{
@@ -95,11 +96,15 @@ export default async function Page({ params }: PageProps) {
   );
 
   return (
-    <MarketPageClient
-      symbol={symbol}
-      initialVoteStats={initialVoteStats}
-      initialVote={initialVote}
-      initialIsWatchlist={initialIsWatchlist}
-    />
+    <>
+      {" "}
+      <MarketPageClient
+        symbol={symbol}
+        initialVoteStats={initialVoteStats}
+        initialVote={initialVote}
+        initialIsWatchlist={initialIsWatchlist}
+      />{" "}
+      <ScrollToTopButton threshold={600} />
+    </>
   );
 }

@@ -11,6 +11,7 @@ import { getHomeMarkets } from "../actions/watchlist";
 
 import { HomeCommunity } from "../components/home-community";
 import { HomeMarketCarousel } from "../components/home-market-carousel";
+import { ScrollToTopButton } from "../components/scroll-to-top-button";
 
 const HOME_TITLE = "BullBearVote | Market Predictions & Community";
 
@@ -99,6 +100,8 @@ export default async function Home() {
           markets={communityMarkets}
         />
       </section>
+
+      <ScrollToTopButton threshold={600} />
     </main>
   );
 }
