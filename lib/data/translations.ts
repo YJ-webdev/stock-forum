@@ -2536,64 +2536,64 @@ export const SEARCH_LABELS: Record<
   }
 > = {
   en: {
-    placeholder: "Search...",
+    placeholder: "Market overview...",
     search_markets: "Search markets",
     results: "Market search results",
   },
   ko: {
-    placeholder: "검색...",
+    placeholder: "시장 둘러보기...",
     search_markets: "시장 검색",
     results: "시장 검색 결과",
   },
   ja: {
-    placeholder: "検索…",
-    search_markets: "市場を検索",
-    results: "市場の検索結果",
+    placeholder: "マーケット一覧...",
+    search_markets: "マーケットを検索",
+    results: "マーケットの検索結果",
   },
   zh: {
-    placeholder: "搜索…",
+    placeholder: "市场概览...",
     search_markets: "搜索市场",
     results: "市场搜索结果",
   },
   de: {
-    placeholder: "Suchen...",
+    placeholder: "Marktübersicht...",
     search_markets: "Märkte suchen",
-    results: "Marktsuchergebnisse",
+    results: "Suchergebnisse für Märkte",
   },
   fr: {
-    placeholder: "Rechercher...",
-    search_markets: "Rechercher des marchés",
-    results: "Résultats de recherche des marchés",
+    placeholder: "Explorer les marchés...",
+    search_markets: "Rechercher un marché",
+    results: "Résultats de recherche",
   },
   es: {
-    placeholder: "Buscar...",
+    placeholder: "Explorar mercados...",
     search_markets: "Buscar mercados",
-    results: "Resultados de búsqueda de mercados",
+    results: "Resultados de búsqueda",
   },
   pt: {
-    placeholder: "Pesquisar...",
+    placeholder: "Explorar mercados...",
     search_markets: "Pesquisar mercados",
-    results: "Resultados da pesquisa de mercados",
+    results: "Resultados da pesquisa",
   },
   it: {
-    placeholder: "Cerca...",
+    placeholder: "Panoramica dei mercati...",
     search_markets: "Cerca mercati",
-    results: "Risultati della ricerca dei mercati",
+    results: "Risultati della ricerca",
   },
   ru: {
-    placeholder: "Поиск...",
+    placeholder: "Обзор рынков...",
     search_markets: "Поиск рынков",
-    results: "Результаты поиска рынков",
+    results: "Результаты поиска",
   },
   ar: {
-    placeholder: "بحث...",
+    placeholder: "تصفّح الأسواق...",
     search_markets: "البحث عن الأسواق",
-    results: "نتائج البحث عن الأسواق",
+    results: "نتائج البحث",
   },
   hi: {
-    placeholder: "खोजें...",
+    placeholder: "बाज़ार पर एक नज़र...",
     search_markets: "बाज़ार खोजें",
-    results: "बाज़ार खोज परिणाम",
+    results: "खोज परिणाम",
   },
 };
 
