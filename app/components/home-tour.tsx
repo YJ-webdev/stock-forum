@@ -194,23 +194,19 @@ function roundedRect(
   radius: number,
 ) {
   const { left, top, width, height } = rect;
-  const r = Math.min(radius, width / 2, height / 2);
+  const right = left + width;
+  const bottom = top + height;
+
+  const r = Math.max(0, Math.min(radius, width / 2, height / 2));
 
   context.beginPath();
   context.moveTo(left + r, top);
-  context.lineTo(left + width - r, top);
-  context.quadraticCurveTo(left + width, top, left + width, top + r);
-  context.lineTo(left + width, top + height - r);
-  context.quadraticCurveTo(
-    left + width,
-    top + height,
-    left + width - r,
-    top + height,
-  );
-  context.lineTo(left + r, top + height);
-  context.quadraticCurveTo(left, top + height, left, top + height - r);
-  context.lineTo(left, top + r);
-  context.quadraticCurveTo(left, top, left + r, top);
+
+  context.arcTo(right, top, right, bottom, r);
+  context.arcTo(right, bottom, left, bottom, r);
+  context.arcTo(left, bottom, left, top, r);
+  context.arcTo(left, top, right, top, r);
+
   context.closePath();
 }
 
