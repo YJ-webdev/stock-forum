@@ -6,11 +6,11 @@ import {
   useRef,
   useState,
   type ChangeEvent,
-  type CSSProperties,
   type KeyboardEvent,
 } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+
+import { Popover, PopoverContent } from "@/components/ui/popover";
 
 import { useCurrentUser } from "@/app/context/user-context";
 import { resolveLanguage } from "@/lib/data/languages";
@@ -35,30 +35,23 @@ export default function SearchInput({
   const language = resolveLanguage(user?.language);
   const labels = SEARCH_LABELS[language];
 
+  const anchorRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchPanelRef = useRef<HTMLDivElement>(null);
-  const resultsScrollRef = useRef<HTMLDivElement>(null);
-  const touchYRef = useRef<number | null>(null);
 
   const onOpenChangeRef = useRef(onOpenChange);
   const tourPreviewRef = useRef(false);
 
-  const [mounted, setMounted] = useState(false);
   const [input, setInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [searchResultSymbols, setSearchResultSymbols] = useState<string[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [panelMaxHeight, setPanelMaxHeight] = useState<number | null>(null);
   const [tourPreview, setTourPreview] = useState(false);
 
   useEffect(() => {
     onOpenChangeRef.current = onOpenChange;
   }, [onOpenChange]);
 
-  const resetSearchNavigation = useCallback(() => {
+  const resetSearch = useCallback(() => {
     setInput("");
-    setSearchQuery("");
-    setSelectedIndex(-1);
     setSearchResultSymbols([]);
   }, []);
 
@@ -66,20 +59,20 @@ export default function SearchInput({
     if (tourPreviewRef.current) return;
 
     if (!isOpen) {
-      resetSearchNavigation();
+      resetSearch();
       onOpenChangeRef.current(true);
     }
 
     inputRef.current?.focus({ preventScroll: true });
-  }, [isOpen, resetSearchNavigation]);
+  }, [isOpen, resetSearch]);
 
   const handleClose = useCallback(() => {
     if (tourPreviewRef.current) return;
 
     inputRef.current?.blur();
     onOpenChangeRef.current(false);
-    resetSearchNavigation();
-  }, [resetSearchNavigation]);
+    resetSearch();
+  }, [resetSearch]);
 
   const handleAssetSelected = useCallback(() => {
     handleClose();
@@ -88,7 +81,7 @@ export default function SearchInput({
   function handleNavigate(symbol: string) {
     if (tourPreviewRef.current) return;
 
-    handleAssetSelected();
+    handleClose();
 
     router.push(`/market/${encodeURIComponent(symbol)}`, {
       scroll: true,
@@ -98,31 +91,42 @@ export default function SearchInput({
   function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
     if (tourPreviewRef.current) return;
 
-    const value = event.target.value;
-
-    setInput(value);
-    setSearchQuery(value);
-    setSelectedIndex(-1);
+    setInput(event.target.value);
+    setSearchResultSymbols([]);
   }
 
   function handleInputKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (tourPreviewRef.current) return;
 
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+
+      handleClose();
+      return;
+    }
+
     if (event.key === "ArrowDown") {
       event.preventDefault();
 
-      searchPanelRef.current
-        ?.querySelector<HTMLButtonElement>('[data-market-category="true"]')
-        ?.focus();
+      const panel = searchPanelRef.current;
 
+      const category =
+        panel?.querySelector<HTMLButtonElement>(
+          '[data-active-category="true"]',
+        ) ??
+        panel?.querySelector<HTMLButtonElement>(
+          '[data-market-category="true"]',
+        );
+
+      category?.focus({ preventScroll: true });
       return;
     }
 
     if (event.key === "Enter") {
       event.preventDefault();
 
-      const targetIndex = selectedIndex >= 0 ? selectedIndex : 0;
-      const symbol = searchResultSymbols[targetIndex];
+      const symbol = searchResultSymbols[0];
 
       if (symbol) {
         handleNavigate(symbol);
@@ -130,11 +134,7 @@ export default function SearchInput({
     }
   }
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Open the search panel for HomeTour without focusing the input.
+  // HomeTour opens the panel without focusing the input.
   useEffect(() => {
     function handleTourSearch(event: Event) {
       const detail = (event as CustomEvent<{ open: boolean } | undefined>)
@@ -145,7 +145,7 @@ export default function SearchInput({
       tourPreviewRef.current = detail.open;
 
       inputRef.current?.blur();
-      resetSearchNavigation();
+      resetSearch();
 
       setTourPreview(detail.open);
       onOpenChangeRef.current(detail.open);
@@ -156,30 +156,21 @@ export default function SearchInput({
     return () => {
       window.removeEventListener("bullbearvote:tour-search", handleTourSearch);
     };
-  }, [resetSearchNavigation]);
+  }, [resetSearch]);
 
   useEffect(() => {
     function handleGlobalKeyDown(event: globalThis.KeyboardEvent) {
-      // HomeTour handles keyboard focus and Escape during preview.
       if (tourPreviewRef.current) return;
 
       const isSearchShortcut =
         event.key.toLowerCase() === "k" && (event.ctrlKey || event.metaKey);
 
-      if (isSearchShortcut) {
-        event.preventDefault();
-        event.stopPropagation();
+      if (!isSearchShortcut) return;
 
-        handleOpen();
-        return;
-      }
+      event.preventDefault();
+      event.stopPropagation();
 
-      if (event.key === "Escape" && isOpen) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        handleClose();
-      }
+      handleOpen();
     }
 
     window.addEventListener("keydown", handleGlobalKeyDown, true);
@@ -187,318 +178,154 @@ export default function SearchInput({
     return () => {
       window.removeEventListener("keydown", handleGlobalKeyDown, true);
     };
-  }, [isOpen, handleOpen, handleClose]);
-
-  // Measure the panel for normal search and tutorial preview.
-  useEffect(() => {
-    if (!isOpen) {
-      setPanelMaxHeight(null);
-      return;
-    }
-
-    const viewport = window.visualViewport;
-    let resizeFrame = 0;
-
-    function updatePanelHeight() {
-      const panel = searchPanelRef.current;
-
-      if (!panel) return;
-
-      const visibleBottom = viewport
-        ? viewport.offsetTop + viewport.height
-        : window.innerHeight;
-
-      const panelTop = panel.getBoundingClientRect().top;
-      const nextHeight = Math.max(0, Math.floor(visibleBottom - panelTop));
-
-      setPanelMaxHeight((previous) =>
-        previous === nextHeight ? previous : nextHeight,
-      );
-    }
-
-    function schedulePanelUpdate() {
-      window.cancelAnimationFrame(resizeFrame);
-      resizeFrame = window.requestAnimationFrame(updatePanelHeight);
-    }
-
-    schedulePanelUpdate();
-
-    const observer = new ResizeObserver(schedulePanelUpdate);
-
-    if (searchPanelRef.current) {
-      observer.observe(searchPanelRef.current);
-    }
-
-    viewport?.addEventListener("resize", schedulePanelUpdate);
-    viewport?.addEventListener("scroll", schedulePanelUpdate);
-    window.addEventListener("resize", schedulePanelUpdate);
-
-    return () => {
-      window.cancelAnimationFrame(resizeFrame);
-      observer.disconnect();
-
-      viewport?.removeEventListener("resize", schedulePanelUpdate);
-      viewport?.removeEventListener("scroll", schedulePanelUpdate);
-      window.removeEventListener("resize", schedulePanelUpdate);
-    };
-  }, [isOpen]);
-
-  // HomeTour manages scroll locking during tutorial preview.
-  useEffect(() => {
-    if (!isOpen || tourPreview) return;
-
-    const body = document.body;
-    const root = document.documentElement;
-
-    const scrollX = window.scrollX;
-    const scrollY = window.scrollY;
-
-    const previousBodyStyles = {
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      width: body.style.width,
-      overflow: body.style.overflow,
-    };
-
-    const previousRootOverflow = root.style.overflow;
-
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.left = `-${scrollX}px`;
-    body.style.width = "100%";
-    body.style.overflow = "hidden";
-    root.style.overflow = "hidden";
-
-    function handleTouchStart(event: TouchEvent) {
-      touchYRef.current = event.touches[0]?.clientY ?? null;
-    }
-
-    function preventScroll(event: TouchEvent) {
-      if (event.cancelable) {
-        event.preventDefault();
-      }
-    }
-
-    function handleTouchMove(event: TouchEvent) {
-      const target = event.target;
-      const currentY = event.touches[0]?.clientY;
-
-      if (
-        !(target instanceof Element) ||
-        currentY === undefined ||
-        event.touches.length !== 1
-      ) {
-        return;
-      }
-
-      const previousY = touchYRef.current;
-      touchYRef.current = currentY;
-
-      const panel = searchPanelRef.current;
-
-      if (!panel?.contains(target)) {
-        preventScroll(event);
-        return;
-      }
-
-      if (previousY === null) return;
-
-      const deltaY = currentY - previousY;
-
-      let element: HTMLElement | null =
-        target instanceof HTMLElement ? target : target.parentElement;
-
-      while (element && panel.contains(element)) {
-        const overflowY = window.getComputedStyle(element).overflowY;
-
-        const canScroll =
-          /^(auto|scroll|overlay)$/.test(overflowY) &&
-          element.scrollHeight > element.clientHeight + 1;
-
-        if (canScroll) {
-          const maxScroll = element.scrollHeight - element.clientHeight;
-
-          const canMoveUp = deltaY > 0 && element.scrollTop > 0;
-
-          const canMoveDown = deltaY < 0 && element.scrollTop < maxScroll - 1;
-
-          if (deltaY === 0 || canMoveUp || canMoveDown) {
-            return;
-          }
-        }
-
-        if (element === panel) break;
-
-        element = element.parentElement;
-      }
-
-      preventScroll(event);
-    }
-
-    function handleTouchEnd() {
-      touchYRef.current = null;
-    }
-
-    function handleWheel(event: WheelEvent) {
-      const target = event.target;
-
-      if (target instanceof Node && searchPanelRef.current?.contains(target)) {
-        return;
-      }
-
-      if (event.cancelable) {
-        event.preventDefault();
-      }
-    }
-
-    document.addEventListener("touchstart", handleTouchStart, {
-      passive: true,
-    });
-
-    document.addEventListener("touchmove", handleTouchMove, {
-      passive: false,
-    });
-
-    document.addEventListener("touchend", handleTouchEnd);
-    document.addEventListener("touchcancel", handleTouchEnd);
-
-    document.addEventListener("wheel", handleWheel, {
-      passive: false,
-    });
-
-    return () => {
-      document.removeEventListener("touchstart", handleTouchStart);
-      document.removeEventListener("touchmove", handleTouchMove);
-      document.removeEventListener("touchend", handleTouchEnd);
-      document.removeEventListener("touchcancel", handleTouchEnd);
-      document.removeEventListener("wheel", handleWheel);
-
-      touchYRef.current = null;
-
-      Object.assign(body.style, previousBodyStyles);
-      root.style.overflow = previousRootOverflow;
-
-      window.scrollTo(scrollX, scrollY);
-    };
-  }, [isOpen, tourPreview]);
+  }, [handleOpen]);
 
   return (
-    <>
-      {mounted &&
-        isOpen &&
-        !tourPreview &&
-        createPortal(
-          <div
-            aria-hidden="true"
-            className="
-              fixed inset-0 z-20 touch-none
-              bg-transparent backdrop-blur-[1px]
-            "
-            onClick={handleClose}
-          />,
-          document.body,
-        )}
+    <Popover
+      open={isOpen}
+      modal={false}
+      onOpenChange={(open, details) => {
+        if (tourPreviewRef.current) {
+          details.cancel();
+          return;
+        }
 
-      <div className="relative z-40 w-full">
-        <div
-          data-tour="search"
+        if (!open) {
+          const target = details.event?.target;
+
+          // Keep the popup open when interacting with its search input.
+          if (
+            target instanceof Node &&
+            anchorRef.current?.contains(target) &&
+            details.reason !== "escape-key"
+          ) {
+            details.cancel();
+            return;
+          }
+
+          handleClose();
+          return;
+        }
+
+        handleOpen();
+      }}
+    >
+      <div
+        ref={anchorRef}
+        data-tour="search"
+        className="
+          relative z-40 flex h-12 w-full min-w-0
+          cursor-text items-center rounded-full
+          bg-zinc-100 px-5 dark:bg-zinc-800
+        "
+        onClick={handleOpen}
+      >
+        <span aria-hidden="true" className="mr-2.5 shrink-0">
+          <SearchSparkIcon className="size-6 text-zinc-700 dark:text-zinc-200" />
+        </span>
+
+        <input
+          ref={inputRef}
+          id="market-search-input"
+          type="text"
+          value={input}
+          readOnly={tourPreview}
+          placeholder={labels.placeholder}
+          aria-label={labels.search_markets}
+          aria-expanded={isOpen}
+          aria-controls={isOpen ? "market-search-results" : undefined}
+          aria-haspopup="dialog"
+          autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          maxLength={30}
           className="
-            flex h-12 w-full cursor-text items-center
-            rounded-full bg-zinc-100 px-5 dark:bg-zinc-800
+            w-full min-w-0 flex-1 bg-transparent
+            text-base font-normal text-zinc-900
+            outline-none ring-0 placeholder:text-black
+            focus:outline-none focus:ring-0
+            focus-visible:outline-none focus-visible:ring-0
+            dark:text-zinc-100 dark:placeholder:text-white
           "
-          onClick={handleOpen}
-        >
-          <span aria-hidden="true" className="mr-2.5 shrink-0">
-            <SearchSparkIcon className="h-6 w-6 text-zinc-700 dark:text-zinc-200" />
-          </span>
-
-          <input
-            ref={inputRef}
-            id="market-search-input"
-            type="text"
-            value={input}
-            readOnly={tourPreview}
-            placeholder={labels.placeholder}
-            aria-label={labels.search_markets}
-            aria-controls={isOpen ? "market-search-results" : undefined}
-            autoComplete="off"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            maxLength={30}
-            className="
-              min-w-0 w-full bg-transparent text-base font-normal
-              outline-none ring-0 placeholder:text-black
-              focus:outline-none focus:ring-0
-              focus-visible:outline-none focus-visible:ring-0
-              dark:placeholder:text-white lg:w-2xl
-            "
-            onChange={handleInputChange}
-            onFocus={() => {
-              if (tourPreviewRef.current) {
-                inputRef.current?.blur();
-                return;
-              }
-
-              if (!isOpen) {
-                resetSearchNavigation();
-                onOpenChangeRef.current(true);
-              }
-            }}
-            onKeyDown={handleInputKeyDown}
-          />
-
-          <div className="ml-2 hidden shrink-0 items-center lg:flex">
-            <KbdMarkup />
-          </div>
-        </div>
-
-        {isOpen && (
-          <div
-            data-tour="search"
-            ref={searchPanelRef}
-            id="market-search-results"
-            role="region"
-            aria-label={labels.results}
-            style={
-              {
-                maxHeight: panelMaxHeight ?? undefined,
-                "--search-panel-height":
-                  panelMaxHeight !== null ? `${panelMaxHeight}px` : undefined,
-              } as CSSProperties
+          onChange={handleInputChange}
+          onFocus={() => {
+            if (tourPreviewRef.current) {
+              inputRef.current?.blur();
+              return;
             }
-            className="
-              fixed inset-x-0 top-18 bottom-0
-              z-40! flex min-h-0 flex-col
-              h-(--search-panel-height)
-              overflow-hidden overscroll-contain
-              bg-zinc-100 pt-3 dark:bg-zinc-800
 
-              lg:left-1/2 lg:right-auto lg:bottom-auto
-              lg:h-auto lg:w-[min(72rem,calc(100vw-2rem))]
-              lg:-translate-x-1/2 lg:rounded-xl
-              lg:bg-white lg:py-4 lg:shadow-2xl
-            "
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div
-              ref={resultsScrollRef}
-              className="
-                min-h-0 flex-1 overflow-y-auto
-                overscroll-contain
-              "
-            >
-              <MarketOverview
-                query={searchQuery}
-                selectedIndex={selectedIndex}
-                onSearchResultsChange={setSearchResultSymbols}
-                onNavigate={handleAssetSelected}
-              />
-            </div>
-          </div>
-        )}
+            if (!isOpen) {
+              resetSearch();
+              onOpenChangeRef.current(true);
+            }
+          }}
+          onKeyDown={handleInputKeyDown}
+        />
+
+        <div className="ml-2 hidden shrink-0 items-center lg:flex">
+          <KbdMarkup />
+        </div>
       </div>
-    </>
+
+      <PopoverContent
+        ref={searchPanelRef}
+        anchor={anchorRef}
+        id="market-search-results"
+        data-tour="search"
+        aria-label={labels.results}
+        side="bottom"
+        align="center"
+        sideOffset={8}
+        collisionPadding={8}
+        initialFocus={false}
+        finalFocus={false}
+        className="
+    flex h-auto min-h-0
+    max-h-[var(--available-height)]
+    w-[calc(100vw-16px)]
+    max-w-[var(--available-width)]
+    flex-col gap-0 overflow-hidden
+    rounded-xl border border-zinc-200
+    bg-white p-0 text-zinc-900
+    shadow-xl ring-0 outline-none
+    data-open:animate-none data-closed:animate-none
+    md:w-[min(72rem,calc(100vw-32px))]
+    dark:border-zinc-700 dark:bg-zinc-800
+    dark:text-zinc-100
+  "
+      >
+        <div
+          className="
+    flex w-full min-h-0 min-w-0 flex-col
+    overflow-auto overscroll-contain py-2 md:py-3
+
+    [&_[role=group]]:flex
+    [&_[role=group]]:flex-nowrap
+    [&_[role=group]]:justify-start
+    [&_[role=group]]:gap-1
+    [&_[role=group]]:overflow-x-auto
+    [&_[role=group]]:overscroll-x-contain
+    [&_[role=group]]:px-3
+    [&_[role=group]]:py-1
+    [&_[role=group]]:[scrollbar-width:none]
+    [&_[role=group]::-webkit-scrollbar]:hidden
+
+    [&_[data-market-category=true]]:w-auto
+    [&_[data-market-category=true]]:shrink-0
+    [&_[data-market-category=true]]:whitespace-nowrap
+    [&_[data-market-category=true]]:px-3
+    max-md:[&_[data-market-category=true]]:text-xs
+  "
+        >
+          <MarketOverview
+            query={input}
+            selectedIndex={-1}
+            onSearchResultsChange={setSearchResultSymbols}
+            onNavigate={handleAssetSelected}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

@@ -255,14 +255,14 @@ export default function MarketOverview({
       ref={overviewRef}
       className="
         mx-auto w-full min-w-0 max-w-6xl
-        bg-zinc-100 md:bg-white dark:bg-zinc-800
+        bg-white dark:bg-zinc-800
       "
     >
-      <div className="flex min-w-0 flex-col gap-3 md:mx-4">
+      <div className="flex min-w-0 flex-col gap-3 mx-4">
         <div
           className="
-            sticky top-0 z-50 bg-zinc-100
-            md:static md:bg-white dark:bg-zinc-800
+            top-0 z-50 
+            static bg-white dark:bg-zinc-800
           "
         >
           <div
@@ -270,10 +270,10 @@ export default function MarketOverview({
             role="group"
             aria-label="Market categories"
             className="
-              flex min-w-0 touch-pan-x flex-nowrap items-center gap-1
-              overflow-x-auto overscroll-x-contain px-3
+              flex min-w-0  touch-pan-x items-center 
+              overflow-x-auto overscroll-x-contain
               scrollbar-none [&::-webkit-scrollbar]:hidden
-              md:flex-wrap md:gap-2 md:overflow-visible md:px-0
+              flex-wrap gap-2 overflow-visible px-0
             "
           >
             {categories.map((category) => {
@@ -294,23 +294,23 @@ export default function MarketOverview({
                   onClick={() => handleCategorySelect(category)}
                   onKeyDown={handleCategoryKeyDown}
                   className={`
-                    flex min-h-11 shrink-0 cursor-pointer
+                    flex shrink-0 cursor-pointer
                     items-center justify-center
                     whitespace-nowrap rounded-full
-                    px-3 text-sm font-medium uppercase
+                    text-sm font-medium uppercase
                     transition-colors
                     focus-visible:outline-none
                     focus-visible:ring-2
                     focus-visible:ring-inset
                     focus-visible:ring-zinc-400
-                    md:min-h-10 md:px-4
+                    min-h-10 px-4
                     ${
                       isActive
                         ? `
-                          bg-zinc-200/80 text-zinc-950
-                          md:bg-transparent
-                          dark:bg-zinc-700/70 dark:text-zinc-100
-                          dark:md:bg-transparent
+                           text-zinc-950
+                         bg-transparent
+                           dark:text-zinc-100
+                          dark:bg-transparent
                         `
                         : `
                           text-zinc-500 hover:text-zinc-900
@@ -343,7 +343,7 @@ export default function MarketOverview({
             </p>
           </div>
         ) : (
-          <div className="min-w-0 pb-[env(safe-area-inset-bottom)] md:pb-0">
+          <div className="min-w-0 pb-0">
             <RelativeStocks
               items={displayedItems}
               setActiveRange={setActiveRange}

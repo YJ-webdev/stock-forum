@@ -699,7 +699,7 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
   if (!open || !content) return null;
 
   return createPortal(
-    <div ref={portalRef} className="fixed inset-0 z-[1000] isolate">
+    <div ref={portalRef} className="fixed inset-0 z-1000 isolate">
       <canvas
         ref={canvasRef}
         aria-hidden="true"
@@ -732,7 +732,7 @@ export function HomeTour({ enabled = true }: HomeTourProps) {
         }}
         className="
           fixed top-0 left-0 z-10
-          w-[340px] max-w-[calc(100vw-32px)]
+          w-85 max-w-[calc(100vw-32px)]
           max-h-[calc(100dvh-32px)] overflow-y-auto
           rounded-2xl border border-zinc-200
           bg-white p-5 text-zinc-900 shadow-2xl

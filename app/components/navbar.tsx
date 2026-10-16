@@ -136,7 +136,7 @@ export function Navbar({
         <button
           type="button"
           aria-label={labels.close_search}
-          className="absolute inset-0 z-10 cursor-default backdrop-blur-[1px]"
+          className="absolute inset-0 z-10 cursor-default "
           onClick={() => handleSearchOpenChange(false)}
         />
       )}
