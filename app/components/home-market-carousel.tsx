@@ -464,7 +464,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
       ${
         canScrollLeft
           ? "text-black group-hover/scroll:bg-zinc-100 dark:text-white dark:group-hover/scroll:bg-zinc-800"
-          : "text-zinc-100 dark:text-zinc-600"
+          : "text-zinc-300 dark:text-zinc-600"
       }
     `}
               >
@@ -498,7 +498,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
       ${
         canScrollRight
           ? "text-black group-hover/scroll:bg-zinc-100 dark:text-white dark:group-hover/scroll:bg-zinc-800"
-          : "text-zinc-100 dark:text-zinc-600"
+          : "text-zinc-300 dark:text-zinc-600"
       }
     `}
               >
