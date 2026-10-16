@@ -31,9 +31,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       {
         url: `${SITE_URL}${marketPath}`,
       },
-      {
-        url: `${SITE_URL}${marketPath}/news`,
-      },
     ];
   });
 
