@@ -220,7 +220,7 @@ export function MarketSentiment({
         {hasVotes && (
           <div
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 flex h-6.5 rounded-full"
+            className="absolute inset-x-0 bottom-0 flex h-7 rounded-full"
           >
             <div
               className={`h-full bg-[#4bbd82]/50 ${WIDTH_TRANSITION}`}
