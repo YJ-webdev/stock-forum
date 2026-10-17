@@ -314,7 +314,7 @@ export function HomeCommunity({
                 dark:bg-[#515151] dark:text-zinc-100
               `
               : `
-                border-zinc-100 text-zinc-500
+                border-zinc-300 text-zinc-500
                 hover:border-zinc-400
                 dark:border-zinc-700 dark:text-zinc-500
                 dark:hover:border-zinc-700
