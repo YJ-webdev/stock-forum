@@ -19,5 +19,5 @@ export interface User {
   role: "ADMIN" | "USER";
   statusMessage?: string | null;
   ranking: UserRanking | null;
-  status: "ACTIVE" | "BANNED";
+  status: "ACTIVE" | "BANNED" | "MUTED";
 }

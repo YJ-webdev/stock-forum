@@ -206,15 +206,17 @@ model ModerationAction {
 model Prediction {
   id String @id @default(cuid())
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  guestId String?
 
   symbol String
   asset  MarketAsset @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   direction PredictionDirection
 
-  pointsBet       Int
+  pointsBet       Int      @default(0)
   referenceClose  Decimal  @db.Decimal(18, 4)
   settlementClose Decimal? @db.Decimal(18, 4)
   sessionDate     DateTime
@@ -232,6 +234,7 @@ model Prediction {
   settledAt DateTime?
 
   @@unique([userId, symbol, sessionDate])
+  @@unique([guestId, symbol, sessionDate])
   @@index([symbol, sessionDate])
   @@index([userId, createdAt])
   @@index([nationality, symbol, sessionDate])
@@ -289,8 +292,10 @@ model Reply {
 model CommentLike {
   id String @id @default(cuid())
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  guestId String?
 
   commentId String
   comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
@@ -298,21 +303,25 @@ model CommentLike {
   createdAt DateTime @default(now())
 
   @@unique([userId, commentId])
+  @@unique([guestId, commentId])
   @@index([commentId])
 }
 
 model ReplyLike {
   id String @id @default(cuid())
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  guestId String?
 
   replyId String
-  reply   Reply  @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  reply   Reply @relation(fields: [replyId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
   @@unique([userId, replyId])
+  @@unique([guestId, replyId])
   @@index([replyId])
 }
 

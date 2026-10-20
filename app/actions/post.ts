@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import type { JSONContent } from "@tiptap/react";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -15,24 +16,12 @@ import { resolveLanguage } from "@/lib/data/languages";
 import { COMMENT_ACTION_LABELS } from "@/lib/data/translations";
 
 import { hasEditorContent } from "@/lib/utils/tiptap-utils";
-import { getReferenceClose } from "@/lib/market/yahoo";
+
 import { moderateContent } from "@/lib/moderation/moderate-content";
 import { getContentText } from "@/lib/moderation/get-content-text";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { recordUserActivity } from "@/lib/activity/record-user-activity";
-
-type PredictionInput = {
-  direction: "BULL" | "BEAR";
-  pointsBet: number;
-  sessionDate: Date;
-};
-
-type CreateCommentInput = {
-  botUserId?: string;
-  content?: JSONContent | null;
-  assetSymbols: string[];
-  prediction?: PredictionInput | null;
-};
+import { getReferenceClose } from "@/lib/utils/get-reference-close";
 
 const MARKET_COMMENTS_PAGE_SIZE = 20;
 const HOME_COMMENTS_PAGE_SIZE = 10;
@@ -126,10 +115,21 @@ function getCommentSelect(userId: string | null, isAdmin: boolean) {
   } satisfies Prisma.CommentSelect;
 }
 
-async function getCommentById(commentId: string, userId: string) {
-  const comment = await prisma.comment.findUnique({
-    where: { id: commentId },
+async function getCommentById(commentId: string, userId: string | null = null) {
+  const guestId = userId
+    ? null
+    : ((await cookies()).get("bbv_guest_voter")?.value ?? null);
 
+  const likeWhere: Prisma.CommentLikeWhereInput = userId
+    ? { userId }
+    : guestId
+      ? { guestId, userId: null }
+      : { id: { in: [] } };
+
+  const comment = await prisma.comment.findUnique({
+    where: {
+      id: commentId,
+    },
     select: {
       id: true,
       content: true,
@@ -148,8 +148,10 @@ async function getCommentById(commentId: string, userId: string) {
       },
 
       likes: {
-        where: { userId },
-        select: { id: true },
+        where: likeWhere,
+        select: {
+          id: true,
+        },
       },
 
       _count: {
@@ -161,9 +163,7 @@ async function getCommentById(commentId: string, userId: string) {
     },
   });
 
-  if (!comment) {
-    return null;
-  }
+  if (!comment) return null;
 
   const { _count, likes, ...rest } = comment;
 
@@ -176,6 +176,19 @@ async function getCommentById(commentId: string, userId: string) {
   };
 }
 
+type PredictionInput = {
+  direction: "BULL" | "BEAR";
+  pointsBet: number;
+  sessionDate: Date;
+};
+
+type CreateCommentInput = {
+  botUserId?: string;
+  content?: JSONContent | null;
+  assetSymbols: string[];
+  prediction?: PredictionInput | null;
+};
+
 export async function createComment({
   content = null,
   assetSymbols,
@@ -186,6 +199,8 @@ export async function createComment({
   const labels =
     COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
+  // Guests submit predictions through submitMarketVote().
+  // Creating comments always requires an authenticated author.
   if (!session?.user?.id) {
     throw new Error(labels.login_required);
   }
@@ -193,37 +208,6 @@ export async function createComment({
   const sessionUserId = session.user.id;
   let userId = sessionUserId;
 
-  // Admins can publish as a bot.
-  if (botUserId !== undefined) {
-    const admin = await prisma.user.findUnique({
-      where: { id: sessionUserId },
-      select: {
-        role: true,
-        deletedAt: true,
-      },
-    });
-
-    if (!admin || admin.deletedAt || admin.role !== "ADMIN") {
-      throw new Error(labels.permission_denied);
-    }
-
-    const bot = await prisma.user.findUnique({
-      where: { id: botUserId },
-      select: {
-        id: true,
-        isBot: true,
-        deletedAt: true,
-      },
-    });
-
-    if (!bot?.isBot || bot.deletedAt) {
-      throw new Error("Invalid bot user.");
-    }
-
-    userId = bot.id;
-  }
-
-  // Each comment belongs to exactly one board.
   if (
     !Array.isArray(assetSymbols) ||
     assetSymbols.length !== 1 ||
@@ -239,6 +223,31 @@ export async function createComment({
   if (!market) {
     throw new Error(labels.invalid_board);
   }
+
+  const hasContent = content !== null && hasEditorContent(content);
+
+  if (!hasContent && !prediction) {
+    throw new Error(labels.write_comment);
+  }
+
+  const validatePredictionSession = () => {
+    if (!prediction) return;
+
+    const votingWindow = getVotingWindow(market.symbol, Date.now());
+
+    if (!votingWindow.canVote || !votingWindow.predictionFor) {
+      throw new Error("Voting is closed.");
+    }
+
+    const expectedSession = new Date(votingWindow.predictionFor);
+
+    if (
+      !Number.isFinite(expectedSession.getTime()) ||
+      prediction.sessionDate.getTime() !== expectedSession.getTime()
+    ) {
+      throw new Error(labels.invalid_prediction_session);
+    }
+  };
 
   if (prediction) {
     if (market.assetType !== "index") {
@@ -265,31 +274,47 @@ export async function createComment({
       throw new Error(labels.invalid_prediction_session);
     }
 
-    const votingWindow = getVotingWindow(market.symbol, Date.now());
-
-    if (!votingWindow.canVote || !votingWindow.predictionFor) {
-      throw new Error("Voting is closed.");
-    }
-
-    const expectedSession = new Date(votingWindow.predictionFor);
-
-    if (
-      !Number.isFinite(expectedSession.getTime()) ||
-      prediction.sessionDate.getTime() !== expectedSession.getTime()
-    ) {
-      throw new Error(labels.invalid_prediction_session);
-    }
+    validatePredictionSession();
   }
 
-  // hasEditorContent must recognize GIF/image nodes as content.
-  const hasContent = content !== null && hasEditorContent(content);
+  // Admins can publish as a bot.
+  if (botUserId !== undefined) {
+    const admin = await prisma.user.findUnique({
+      where: {
+        id: sessionUserId,
+      },
+      select: {
+        role: true,
+        deletedAt: true,
+      },
+    });
 
-  if (!hasContent && !prediction) {
-    throw new Error(labels.write_comment);
+    if (!admin || admin.deletedAt || admin.role !== "ADMIN") {
+      throw new Error(labels.permission_denied);
+    }
+
+    const bot = await prisma.user.findUnique({
+      where: {
+        id: botUserId,
+      },
+      select: {
+        id: true,
+        isBot: true,
+        deletedAt: true,
+      },
+    });
+
+    if (!bot?.isBot || bot.deletedAt) {
+      throw new Error("Invalid bot user.");
+    }
+
+    userId = bot.id;
   }
 
   const author = await prisma.user.findUnique({
-    where: { id: userId },
+    where: {
+      id: userId,
+    },
     select: {
       status: true,
       deletedAt: true,
@@ -300,9 +325,28 @@ export async function createComment({
     throw new Error("Account unavailable.");
   }
 
-  // Chat restrictions do not block predictions without content.
   if (hasContent && (author.status === "BANNED" || author.status === "MUTED")) {
     throw new Error("You cannot post comments while chat is restricted.");
+  }
+
+  // Avoid fetching market data for an already submitted prediction.
+  if (prediction) {
+    const existingPrediction = await prisma.prediction.findUnique({
+      where: {
+        userId_symbol_sessionDate: {
+          userId,
+          symbol: market.symbol,
+          sessionDate: prediction.sessionDate,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (existingPrediction) {
+      throw new Error("You have already voted for this market session.");
+    }
   }
 
   const commentContent: Prisma.InputJsonValue = hasContent
@@ -323,7 +367,7 @@ export async function createComment({
 
   let referenceClose: number | null = null;
 
-  // Fetch external data before opening the transaction.
+  // Use the same server-side price calculation as guest predictions.
   if (prediction) {
     referenceClose = await getReferenceClose(
       market.symbol,
@@ -336,7 +380,9 @@ export async function createComment({
   }
 
   await prisma.marketAsset.upsert({
-    where: { symbol: market.symbol },
+    where: {
+      symbol: market.symbol,
+    },
     update: {
       name: market.name,
       displaySymbol: market.displaySymbol,
@@ -355,8 +401,6 @@ export async function createComment({
   });
 
   const result = await prisma.$transaction(async (tx) => {
-    // Lock both the caller and author in a consistent order.
-    // Ban/unban and account deletion must use the same row locks.
     const lockedUserIds = [...new Set([sessionUserId, userId])].sort();
 
     for (const lockedUserId of lockedUserIds) {
@@ -368,27 +412,28 @@ export async function createComment({
       `;
     }
 
-    // Recheck the caller's account and bot permissions.
-    if (botUserId !== undefined) {
-      const currentAdmin = await tx.user.findUnique({
-        where: { id: sessionUserId },
-        select: {
-          role: true,
-          deletedAt: true,
-        },
-      });
+    const currentCaller = await tx.user.findUnique({
+      where: {
+        id: sessionUserId,
+      },
+      select: {
+        role: true,
+        deletedAt: true,
+      },
+    });
 
-      if (
-        !currentAdmin ||
-        currentAdmin.deletedAt ||
-        currentAdmin.role !== "ADMIN"
-      ) {
-        throw new Error(labels.permission_denied);
-      }
+    if (!currentCaller || currentCaller.deletedAt) {
+      throw new Error("Account unavailable.");
+    }
+
+    if (botUserId !== undefined && currentCaller.role !== "ADMIN") {
+      throw new Error(labels.permission_denied);
     }
 
     const currentAuthor = await tx.user.findUnique({
-      where: { id: userId },
+      where: {
+        id: userId,
+      },
       select: {
         status: true,
         deletedAt: true,
@@ -415,21 +460,7 @@ export async function createComment({
     let createdPrediction: { id: string } | null = null;
 
     if (prediction) {
-      // Recheck the voting window after the external request.
-      const votingWindow = getVotingWindow(market.symbol, Date.now());
-
-      if (!votingWindow.canVote || !votingWindow.predictionFor) {
-        throw new Error("Voting is closed.");
-      }
-
-      const expectedSession = new Date(votingWindow.predictionFor);
-
-      if (
-        !Number.isFinite(expectedSession.getTime()) ||
-        expectedSession.getTime() !== prediction.sessionDate.getTime()
-      ) {
-        throw new Error(labels.invalid_prediction_session);
-      }
+      validatePredictionSession();
 
       if (
         referenceClose === null ||
@@ -446,22 +477,40 @@ export async function createComment({
           ? "OTHER"
           : nationalityValue;
 
-      createdPrediction = await tx.prediction.create({
-        data: {
-          userId,
-          symbol: market.symbol,
-          direction: prediction.direction,
-          pointsBet: prediction.pointsBet,
-          referenceClose,
-          sessionDate: prediction.sessionDate,
-          nationality: predictionNationality,
-        },
-        select: { id: true },
-      });
+      try {
+        createdPrediction = await tx.prediction.create({
+          data: {
+            userId,
+            guestId: null,
+            symbol: market.symbol,
+            direction: prediction.direction,
+            pointsBet: prediction.pointsBet,
+            referenceClose,
+            sessionDate: prediction.sessionDate,
+            nationality: predictionNationality,
+          },
+          select: {
+            id: true,
+          },
+        });
+      } catch (error) {
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          error.code === "P2002"
+        ) {
+          throw new Error("You have already voted for this market session.");
+        }
+
+        throw error;
+      }
 
       if (prediction.pointsBet > 0) {
         await tx.pointBalance.upsert({
-          where: { userId },
+          where: {
+            userId,
+          },
           update: {},
           create: {
             userId,
@@ -472,7 +521,9 @@ export async function createComment({
         const deducted = await tx.pointBalance.updateMany({
           where: {
             userId,
-            points: { gte: prediction.pointsBet },
+            points: {
+              gte: prediction.pointsBet,
+            },
           },
           data: {
             points: {
@@ -506,12 +557,16 @@ export async function createComment({
         assets: {
           create: {
             asset: {
-              connect: { symbol: market.symbol },
+              connect: {
+                symbol: market.symbol,
+              },
             },
           },
         },
       },
-      select: { id: true },
+      select: {
+        id: true,
+      },
     });
 
     if (hasContent) {
@@ -540,8 +595,12 @@ export async function createComment({
 
     const pointBalance = prediction
       ? await tx.pointBalance.findUnique({
-          where: { userId },
-          select: { points: true },
+          where: {
+            userId,
+          },
+          select: {
+            points: true,
+          },
         })
       : null;
 
@@ -560,6 +619,7 @@ export async function createComment({
     comment: createdComment,
   };
 }
+
 export async function getMarketComments(
   assetSymbol: string,
   cursor?: {
@@ -583,7 +643,26 @@ export async function getMarketComments(
     ...getVisibilityWhere(userId, isAdmin),
   };
 
-  const select = getCommentSelect(userId, isAdmin);
+  const guestId = userId
+    ? null
+    : ((await cookies()).get("bbv_guest_voter")?.value ?? null);
+
+  const likeWhere: Prisma.CommentLikeWhereInput = userId
+    ? { userId }
+    : guestId
+      ? { guestId, userId: null }
+      : { id: { in: [] } };
+
+  const select = {
+    ...getCommentSelect(userId, isAdmin),
+
+    likes: {
+      where: likeWhere,
+      select: {
+        id: true,
+      },
+    },
+  } satisfies Prisma.CommentSelect;
 
   type SelectedComment = Prisma.CommentGetPayload<{
     select: typeof select;
@@ -1577,22 +1656,33 @@ export async function getCommentReplies(commentId: string) {
   const isAdmin = session?.user?.role === "ADMIN";
   const visibilityWhere = getVisibilityWhere(userId, isAdmin);
 
+  const guestId = userId
+    ? null
+    : ((await cookies()).get("bbv_guest_voter")?.value ?? null);
+
+  const likeWhere: Prisma.ReplyLikeWhereInput = userId
+    ? { userId }
+    : guestId
+      ? { guestId, userId: null }
+      : { id: { in: [] } };
+
   const replies = await prisma.reply.findMany({
     where: {
       commentId,
       ...visibilityWhere,
     },
-    orderBy: { createdAt: "asc" },
-
+    orderBy: {
+      createdAt: "asc",
+    },
     select: {
       ...REPLY_SELECT,
 
-      likes: userId
-        ? {
-            where: { userId },
-            select: { id: true },
-          }
-        : false,
+      likes: {
+        where: likeWhere,
+        select: {
+          id: true,
+        },
+      },
 
       _count: {
         select: {
@@ -1612,7 +1702,7 @@ export async function getCommentReplies(commentId: string) {
       ...rest,
       likeCount: _count.likes,
       replyCount: _count.replies,
-      likedByMe: Array.isArray(likes) && likes.length > 0,
+      likedByMe: likes.length > 0,
     };
   });
 }

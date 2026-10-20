@@ -1,36 +1,109 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { cookies } from "next/headers";
+
 import { auth } from "@/auth";
 import { recordUserActivity } from "@/lib/activity/record-user-activity";
 import { prisma } from "@/lib/prisma";
 
-export async function toggleCommentLike(commentId: string) {
+const GUEST_COOKIE_NAME = "bbv_guest_voter";
+
+type LikeIdentity =
+  | {
+      userId: string;
+      guestId: null;
+      name: string;
+    }
+  | {
+      userId: null;
+      guestId: string;
+      name: null;
+    };
+
+async function getLikeIdentity(): Promise<LikeIdentity> {
   const session = await auth();
 
-  if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+  if (session?.user?.id) {
+    return {
+      userId: session.user.id,
+      guestId: null,
+      name: session.user.name ?? "Someone",
+    };
   }
 
-  const userId = session.user.id;
-  const eventKey = `comment-like:${userId}:${commentId}`;
+  const cookieStore = await cookies();
+  const storedGuestId = cookieStore.get(GUEST_COOKIE_NAME)?.value;
+
+  const validGuestId =
+    storedGuestId &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      storedGuestId,
+    );
+
+  if (validGuestId) {
+    return {
+      userId: null,
+      guestId: storedGuestId,
+      name: null,
+    };
+  }
+
+  const guestId = randomUUID();
+
+  cookieStore.set(GUEST_COOKIE_NAME, guestId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+
+  return {
+    userId: null,
+    guestId,
+    name: null,
+  };
+}
+
+export async function toggleCommentLike(commentId: string) {
+  if (typeof commentId !== "string" || !commentId.trim()) {
+    throw new Error("Invalid comment.");
+  }
+
+  const identity = await getLikeIdentity();
+  const { userId, guestId } = identity;
+
+  const identityKey = userId !== null ? `user:${userId}` : `guest:${guestId}`;
+
+  // Preserve existing member notification keys.
+  const eventKey =
+    userId !== null
+      ? `comment-like:${userId}:${commentId}`
+      : `comment-like:guest:${guestId}:${commentId}`;
+
+  const lockKey = `comment-like:${identityKey}:${commentId}`;
 
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`
       SELECT 1 AS locked
-      FROM pg_advisory_xact_lock(
-        hashtext(${eventKey})::bigint
-      )
+      FROM pg_advisory_xact_lock(hashtext(${lockKey})::bigint)
     `;
 
     const comment = await tx.comment.findUnique({
-      where: { id: commentId },
+      where: {
+        id: commentId,
+      },
       select: {
         authorId: true,
+        visibility: true,
         withdrawnAt: true,
         moderatedAt: true,
         assets: {
           take: 1,
-          select: { assetSymbol: true },
+          select: {
+            assetSymbol: true,
+          },
         },
       },
     });
@@ -43,36 +116,64 @@ export async function toggleCommentLike(commentId: string) {
       throw new Error("This comment can no longer be liked.");
     }
 
+    // Guests must not interact with private content by supplying an ID.
+    if (userId === null && comment.visibility !== "PUBLIC") {
+      throw new Error("This comment is unavailable.");
+    }
+
     const existingLike = await tx.commentLike.findUnique({
-      where: {
-        userId_commentId: { userId, commentId },
+      where:
+        userId !== null
+          ? {
+              userId_commentId: {
+                userId,
+                commentId,
+              },
+            }
+          : {
+              guestId_commentId: {
+                guestId,
+                commentId,
+              },
+            },
+      select: {
+        id: true,
       },
-      select: { id: true },
     });
 
     const liked = !existingLike;
 
     if (existingLike) {
       await tx.commentLike.delete({
-        where: { id: existingLike.id },
+        where: {
+          id: existingLike.id,
+        },
       });
 
-      await tx.notification.deleteMany({
-        where: { eventKey },
-      });
+      if (userId !== null) {
+        await tx.notification.deleteMany({
+          where: {
+            eventKey,
+          },
+        });
+      }
     } else {
       await tx.commentLike.create({
-        data: { userId, commentId },
+        data: {
+          userId,
+          guestId,
+          commentId,
+        },
       });
 
-      if (comment.authorId !== userId) {
+      if (userId !== null && comment.authorId !== userId) {
         await tx.notification.create({
           data: {
             userId: comment.authorId,
             actorId: userId,
             type: "COMMENT_LIKED",
             title: "👍 New like",
-            message: `${session.user.name ?? "Someone"} liked your comment.`,
+            message: `${identity.name} liked your comment.`,
             commentId,
             eventKey,
           },
@@ -80,61 +181,80 @@ export async function toggleCommentLike(commentId: string) {
       }
     }
 
-    await tx.userActivity.deleteMany({
-      where: {
-        userId,
-        commentId,
-        type: {
-          in: ["COMMENT_LIKED", "COMMENT_UNLIKED"],
+    if (userId !== null) {
+      await tx.userActivity.deleteMany({
+        where: {
+          userId,
+          commentId,
+          type: {
+            in: ["COMMENT_LIKED", "COMMENT_UNLIKED"],
+          },
         },
+      });
+
+      await recordUserActivity(tx, {
+        userId,
+        type: liked ? "COMMENT_LIKED" : "COMMENT_UNLIKED",
+        targetUserId: comment.authorId,
+        commentId,
+        marketSymbol: comment.assets[0]?.assetSymbol ?? null,
+      });
+    }
+
+    const likeCount = await tx.commentLike.count({
+      where: {
+        commentId,
       },
     });
 
-    await recordUserActivity(tx, {
-      userId,
-      type: liked ? "COMMENT_LIKED" : "COMMENT_UNLIKED",
-      targetUserId: comment.authorId,
-      commentId,
-      marketSymbol: comment.assets[0]?.assetSymbol ?? null,
-    });
-
-    const likeCount = await tx.commentLike.count({
-      where: { commentId },
-    });
-
-    return { liked, likeCount };
+    return {
+      liked,
+      likeCount,
+    };
   });
 }
 
 export async function toggleReplyLike(replyId: string) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    throw new Error("You must be logged in.");
+  if (typeof replyId !== "string" || !replyId.trim()) {
+    throw new Error("Invalid reply.");
   }
 
-  const userId = session.user.id;
-  const eventKey = `reply-like:${userId}:${replyId}`;
+  const identity = await getLikeIdentity();
+  const { userId, guestId } = identity;
+
+  const identityKey = userId !== null ? `user:${userId}` : `guest:${guestId}`;
+
+  const eventKey =
+    userId !== null
+      ? `reply-like:${userId}:${replyId}`
+      : `reply-like:guest:${guestId}:${replyId}`;
+
+  const lockKey = `reply-like:${identityKey}:${replyId}`;
 
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`
       SELECT 1 AS locked
-      FROM pg_advisory_xact_lock(
-        hashtext(${eventKey})::bigint
-      )
+      FROM pg_advisory_xact_lock(hashtext(${lockKey})::bigint)
     `;
 
     const reply = await tx.reply.findUnique({
-      where: { id: replyId },
+      where: {
+        id: replyId,
+      },
       select: {
         authorId: true,
         commentId: true,
         moderatedAt: true,
         comment: {
           select: {
+            visibility: true,
+            withdrawnAt: true,
+            moderatedAt: true,
             assets: {
               take: 1,
-              select: { assetSymbol: true },
+              select: {
+                assetSymbol: true,
+              },
             },
           },
         },
@@ -145,40 +265,71 @@ export async function toggleReplyLike(replyId: string) {
       throw new Error("Reply not found.");
     }
 
-    if (reply.moderatedAt) {
+    if (
+      reply.moderatedAt ||
+      reply.comment.withdrawnAt ||
+      reply.comment.moderatedAt
+    ) {
       throw new Error("This reply can no longer be liked.");
     }
 
+    if (userId === null && reply.comment.visibility !== "PUBLIC") {
+      throw new Error("This reply is unavailable.");
+    }
+
     const existingLike = await tx.replyLike.findUnique({
-      where: {
-        userId_replyId: { userId, replyId },
+      where:
+        userId !== null
+          ? {
+              userId_replyId: {
+                userId,
+                replyId,
+              },
+            }
+          : {
+              guestId_replyId: {
+                guestId,
+                replyId,
+              },
+            },
+      select: {
+        id: true,
       },
-      select: { id: true },
     });
 
     const liked = !existingLike;
 
     if (existingLike) {
       await tx.replyLike.delete({
-        where: { id: existingLike.id },
+        where: {
+          id: existingLike.id,
+        },
       });
 
-      await tx.notification.deleteMany({
-        where: { eventKey },
-      });
+      if (userId !== null) {
+        await tx.notification.deleteMany({
+          where: {
+            eventKey,
+          },
+        });
+      }
     } else {
       await tx.replyLike.create({
-        data: { userId, replyId },
+        data: {
+          userId,
+          guestId,
+          replyId,
+        },
       });
 
-      if (reply.authorId !== userId) {
+      if (userId !== null && reply.authorId !== userId) {
         await tx.notification.create({
           data: {
             userId: reply.authorId,
             actorId: userId,
             type: "REPLY_LIKED",
             title: "👍 New like",
-            message: `${session.user.name ?? "Someone"} liked your reply.`,
+            message: `${identity.name} liked your reply.`,
             replyId,
             eventKey,
           },
@@ -186,29 +337,36 @@ export async function toggleReplyLike(replyId: string) {
       }
     }
 
-    await tx.userActivity.deleteMany({
-      where: {
-        userId,
-        replyId,
-        type: {
-          in: ["REPLY_LIKED", "REPLY_UNLIKED"],
+    if (userId !== null) {
+      await tx.userActivity.deleteMany({
+        where: {
+          userId,
+          replyId,
+          type: {
+            in: ["REPLY_LIKED", "REPLY_UNLIKED"],
+          },
         },
+      });
+
+      await recordUserActivity(tx, {
+        userId,
+        type: liked ? "REPLY_LIKED" : "REPLY_UNLIKED",
+        targetUserId: reply.authorId,
+        commentId: reply.commentId,
+        replyId,
+        marketSymbol: reply.comment.assets[0]?.assetSymbol ?? null,
+      });
+    }
+
+    const likeCount = await tx.replyLike.count({
+      where: {
+        replyId,
       },
     });
 
-    await recordUserActivity(tx, {
-      userId,
-      type: liked ? "REPLY_LIKED" : "REPLY_UNLIKED",
-      targetUserId: reply.authorId,
-      commentId: reply.commentId,
-      replyId,
-      marketSymbol: reply.comment.assets[0]?.assetSymbol ?? null,
-    });
-
-    const likeCount = await tx.replyLike.count({
-      where: { replyId },
-    });
-
-    return { liked, likeCount };
+    return {
+      liked,
+      likeCount,
+    };
   });
 }

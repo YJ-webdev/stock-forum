@@ -11,6 +11,8 @@ import {
 
 const yahoo = new YahooFinance();
 
+const SETTLEMENT_DATA_GRACE_MS = 30 * 60 * 1000;
+
 // -----------------------------------------------------------------------------
 // TYPES
 // -----------------------------------------------------------------------------
@@ -167,91 +169,6 @@ export async function getDailyCandles({
 }
 
 // -----------------------------------------------------------------------------
-// REFERENCE CLOSE
-// -----------------------------------------------------------------------------
-
-export async function getReferenceClose(
-  symbol: string,
-  sessionDate: Date,
-): Promise<number> {
-  if (!(sessionDate instanceof Date) || Number.isNaN(sessionDate.getTime())) {
-    throw new Error("Invalid prediction session.");
-  }
-
-  const market = getMarket(symbol);
-
-  if (!market) {
-    throw new Error(`Unknown market: ${symbol}`);
-  }
-
-  const timezone = market.timezone ?? market.exchangeTimezone;
-
-  if (!timezone) {
-    throw new Error(`Could not determine exchange timezone for ${symbol}.`);
-  }
-
-  // ---------------------------------------------------------------------------
-  // TARGET SESSION DATE
-  // ---------------------------------------------------------------------------
-
-  const targetSessionDate = getExchangeDate(sessionDate, timezone);
-
-  /*
-   * Fetch enough history to safely cross:
-   *
-   * - weekends
-   * - normal holidays
-   * - consecutive exchange holidays
-   *
-   * We do NOT calculate the previous trading day ourselves.
-   *
-   * The existence of an actual Yahoo daily candle determines whether
-   * a trading session occurred.
-   */
-
-  const period1 = new Date(sessionDate.getTime() - 14 * 24 * 60 * 60 * 1000);
-
-  /*
-   * Fetch slightly beyond the target.
-   *
-   * We still explicitly require candle.date < targetSessionDate below,
-   * therefore the target day's candle can never become referenceClose.
-   */
-
-  const period2 = new Date(sessionDate.getTime() + 2 * 24 * 60 * 60 * 1000);
-
-  const candles = await getDailyCandles({
-    symbol,
-    period1,
-    period2,
-  });
-
-  // ---------------------------------------------------------------------------
-  // PREVIOUS REAL TRADING SESSION
-  // ---------------------------------------------------------------------------
-
-  const previousCandles = candles.filter(
-    (candle) => candle.date < targetSessionDate,
-  );
-
-  const previousSession = previousCandles[previousCandles.length - 1];
-
-  if (!previousSession) {
-    throw new Error(
-      `Could not find a previous completed trading session for ${symbol}.`,
-    );
-  }
-
-  const referenceClose = previousSession.close;
-
-  if (!Number.isFinite(referenceClose) || referenceClose <= 0) {
-    throw new Error(`Invalid previous closing price for ${symbol}.`);
-  }
-
-  return referenceClose;
-}
-
-// -----------------------------------------------------------------------------
 // COMPLETED DAILY CANDLE
 // -----------------------------------------------------------------------------
 
@@ -303,7 +220,7 @@ function isCompletedDailyCandle({
    * Only accept it once the exchange's regular close has passed.
    */
 
-  return now.getTime() >= closeMs;
+  return now.getTime() >= closeMs + SETTLEMENT_DATA_GRACE_MS;
 }
 
 // -----------------------------------------------------------------------------
@@ -473,94 +390,4 @@ export async function getSettlementCandle(
   }
 
   return settlementCandle;
-}
-
-// -----------------------------------------------------------------------------
-// DAILY AI BRIEF SNAPSHOT
-// -----------------------------------------------------------------------------
-
-export async function getDailyAiBriefSnapshot(
-  symbol: string,
-  now = new Date(),
-) {
-  const market = getMarket(symbol);
-
-  if (!market?.marketSchedule) {
-    throw new Error(`Market schedule unavailable for ${symbol}.`);
-  }
-
-  const schedule = TRADING_HOURS[market.marketSchedule];
-
-  if (!schedule) {
-    throw new Error(`Trading hours unavailable for ${symbol}.`);
-  }
-
-  const nowMs = now.getTime();
-
-  if (!Number.isFinite(nowMs)) {
-    throw new Error("Invalid snapshot time.");
-  }
-
-  const graceMs = 30 * 60 * 1000;
-
-  const candles = await getDailyCandles({
-    symbol,
-    period1: new Date(nowMs - 30 * 24 * 60 * 60 * 1000),
-    period2: new Date(nowMs + 24 * 60 * 60 * 1000),
-  });
-
-  // Select only sessions whose scheduled close plus grace period has passed.
-  const completed = candles.filter((candle) => {
-    const closeMs = getTimestampForMarketTime(
-      candle.date,
-      schedule.close,
-      schedule.timezone,
-    );
-
-    return (
-      Number.isFinite(candle.timestampMs) &&
-      Number.isFinite(closeMs) &&
-      nowMs >= closeMs + graceMs &&
-      candle.open > 0 &&
-      candle.high > 0 &&
-      candle.low > 0 &&
-      candle.close > 0 &&
-      candle.high >= candle.low
-    );
-  });
-
-  const latest = completed[completed.length - 1];
-
-  // Require a distinct earlier trading date.
-  const previous = latest
-    ? completed.filter((candle) => candle.date < latest.date).at(-1)
-    : undefined;
-
-  if (!latest || !previous) {
-    throw new Error(`Not enough completed trading sessions for ${symbol}.`);
-  }
-
-  const closeMs = getTimestampForMarketTime(
-    latest.date,
-    schedule.close,
-    schedule.timezone,
-  );
-
-  const change = latest.close - previous.close;
-  const changePercent = (change / previous.close) * 100;
-
-  return {
-    sessionDate: latest.date,
-    marketDataAsOf: new Date(closeMs).toISOString(),
-    exchangeTimezone: schedule.timezone,
-    isSessionClosed: true as const,
-
-    marketData: {
-      lastPrice: latest.close,
-      change,
-      changePercent,
-      high: latest.high,
-      low: latest.low,
-    },
-  };
 }

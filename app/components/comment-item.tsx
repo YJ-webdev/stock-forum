@@ -31,7 +31,7 @@ import {
 
 import { CommentEditInput } from "./comment-edit-input";
 import { ContentActionsMenu } from "./content-actions-menu";
-import { ProfileCard, ProfileUser, UserProfileTrigger } from "./profile-card";
+import { ProfileUser, UserProfileTrigger } from "./profile-card";
 import { ReplyInput } from "./reply-input";
 import { ReplyItem, ReplyTextContent } from "./reply-item";
 
@@ -201,7 +201,7 @@ export function CommentItem({
   useEffect(() => {
     setLikedByMe(comment.likedByMe);
     setLikeCount(comment.likeCount);
-  }, [comment.likedByMe, comment.likeCount]);
+  }, [comment.id, comment.likedByMe, comment.likeCount]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -307,20 +307,12 @@ export function CommentItem({
   };
 
   const handleCommentLike = () => {
-    if (!currentUser) {
-      toast.error(actionLabels.login_required);
-      return;
-    }
-
-    if (isLikePending) {
-      return;
-    }
+    if (isLikePending) return;
 
     const previousLiked = likedByMe;
     const previousCount = likeCount;
 
     setLikedByMe(!previousLiked);
-
     setLikeCount((count) =>
       previousLiked ? Math.max(0, count - 1) : count + 1,
     );
@@ -331,6 +323,12 @@ export function CommentItem({
 
         setLikedByMe(result.liked);
         setLikeCount(result.likeCount);
+
+        onUpdate(comment.id, (current) => ({
+          ...current,
+          likedByMe: result.liked,
+          likeCount: result.likeCount,
+        }));
 
         toast.success(result.liked ? labels.like : labels.unlike);
       } catch (error) {

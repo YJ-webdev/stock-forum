@@ -96,7 +96,10 @@ export function PredictionCommentInput({
 }: PredictionCommentInputProps) {
   const user = useCurrentUser();
 
-  const isChatRestricted = user?.status === "BANNED";
+  const isChatRestricted =
+    user?.status === "BANNED" || user?.status === "MUTED";
+
+  const canWriteComment = Boolean(currentUser) && !isChatRestricted;
   const chatDisabled = isPending || isChatRestricted;
 
   const gifButtonRef = useRef<HTMLButtonElement>(null);
@@ -253,10 +256,15 @@ export function PredictionCommentInput({
   }, [pointsDisabled, stopPointsHold]);
 
   useEffect(() => {
-    if (chatDisabled || !currentUser) {
+    if (!currentUser) {
+      setComment("");
+      setSelectedGif(null);
+    }
+
+    if (!currentUser || isChatRestricted || isPending) {
       setGifPickerOpen(false);
     }
-  }, [chatDisabled, currentUser]);
+  }, [currentUser, isChatRestricted, isPending]);
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -306,28 +314,17 @@ export function PredictionCommentInput({
   const handleDirectionClick = (nextDirection: VoteDirection) => {
     if (controlsDisabled) return;
 
-    if (!currentUser) {
-      showLoginMessage();
-      return;
-    }
-
     setDirection(nextDirection);
   };
 
   const handleSubmit = () => {
     stopPointsHold();
 
-    if (controlsDisabled) return;
+    if (controlsDisabled || !direction) return;
 
-    if (!currentUser) {
-      showLoginMessage();
-      return;
-    }
-
-    // Chat-banned users can submit predictions without content.
     submitVote(
-      isChatRestricted ? "" : comment,
-      isChatRestricted ? null : selectedGif,
+      canWriteComment ? comment : "",
+      canWriteComment ? selectedGif : null,
     );
   };
 
@@ -417,76 +414,80 @@ export function PredictionCommentInput({
             </div>
 
             {/* Selected prediction points */}
-            <div
-              className="
+            {currentUser && (
+              <div
+                className="
     relative flex min-w-0 flex-1 items-center justify-center
     sm:flex-none sm:shrink-0 gap-0.5 sm:gap-0
   "
-            >
-              <button
-                type="button"
-                aria-label="Decrease points"
-                disabled={pointsDisabled || betAmount <= 0}
-                onPointerDown={(event) => startPointsHold(event, -50)}
-                onPointerUp={handlePointerEnd}
-                onPointerCancel={handlePointerEnd}
-                onLostPointerCapture={handlePointerEnd}
-                onClick={(event) => {
-                  if (event.detail === 0) stepPoints(-50);
-                }}
-                onContextMenu={(event) => event.preventDefault()}
-                className={POINT_BUTTON_CLASS}
               >
-                −
-              </button>
+                <button
+                  type="button"
+                  aria-label="Decrease points"
+                  disabled={pointsDisabled || betAmount <= 0}
+                  onPointerDown={(event) => startPointsHold(event, -50)}
+                  onPointerUp={handlePointerEnd}
+                  onPointerCancel={handlePointerEnd}
+                  onLostPointerCapture={handlePointerEnd}
+                  onClick={(event) => {
+                    if (event.detail === 0) stepPoints(-50);
+                  }}
+                  onContextMenu={(event) => event.preventDefault()}
+                  className={POINT_BUTTON_CLASS}
+                >
+                  −
+                </button>
 
-              <span
-                aria-label="Prediction points"
-                className={`
+                <span
+                  aria-label="Prediction points"
+                  className={`
                   flex h-9 w-[3ch] select-none
                   items-center justify-center
                   text-center text-sm tabular-nums
                   text-zinc-500 dark:text-zinc-100
                   ${pointsDisabled ? "opacity-50" : ""}
                 `}
-              >
-                {betAmount}
-              </span>
-
-              {showMax && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium text-zinc-500">
-                  max
+                >
+                  {betAmount}
                 </span>
-              )}
 
-              <button
-                type="button"
-                aria-label="Increase points"
-                disabled={pointsDisabled || betAmount >= pointsLimit}
-                onPointerDown={(event) => startPointsHold(event, 50)}
-                onPointerUp={handlePointerEnd}
-                onPointerCancel={handlePointerEnd}
-                onLostPointerCapture={handlePointerEnd}
-                onClick={(event) => {
-                  if (event.detail === 0) stepPoints(50);
-                }}
-                onContextMenu={(event) => event.preventDefault()}
-                className={POINT_BUTTON_CLASS}
-              >
-                +
-              </button>
-            </div>
+                {showMax && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium text-zinc-500">
+                    max
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  aria-label="Increase points"
+                  disabled={pointsDisabled || betAmount >= pointsLimit}
+                  onPointerDown={(event) => startPointsHold(event, 50)}
+                  onPointerUp={handlePointerEnd}
+                  onPointerCancel={handlePointerEnd}
+                  onLostPointerCapture={handlePointerEnd}
+                  onClick={(event) => {
+                    if (event.detail === 0) stepPoints(50);
+                  }}
+                  onContextMenu={(event) => event.preventDefault()}
+                  className={POINT_BUTTON_CLASS}
+                >
+                  +
+                </button>
+              </div>
+            )}
 
             {/* Actual balance: do not subtract the selected bet here */}
-            <span className="hidden sm:block jakarta shrink-0 whitespace-nowrap text-sm font-normal tabular-nums text-zinc-400 dark:text-zinc-500">
-              {availablePoints.toLocaleString(language)}pts.
-            </span>
+            {currentUser && (
+              <span className="hidden sm:block jakarta shrink-0 whitespace-nowrap text-sm font-normal tabular-nums text-zinc-400 dark:text-zinc-500">
+                {availablePoints.toLocaleString(language)}pts.
+              </span>
+            )}
           </div>
 
           {/* Comment */}
           <textarea
             ref={textareaRef}
-            value={isChatRestricted ? "" : comment}
+            value={canWriteComment ? comment : ""}
             disabled={chatDisabled}
             onChange={(event) => {
               if (!currentUser || chatDisabled) return;
@@ -518,7 +519,7 @@ export function PredictionCommentInput({
           />
 
           {/* Selected GIF */}
-          {!isChatRestricted && selectedGif && (
+          {canWriteComment && selectedGif && (
             <div className="relative mb-3 w-fit max-w-full">
               <img
                 src={selectedGif.preview || selectedGif.src}
@@ -608,7 +609,7 @@ export function PredictionCommentInput({
               <Button
                 type="button"
                 size="sm"
-                disabled={controlsDisabled}
+                disabled={controlsDisabled || !direction}
                 onClick={handleSubmit}
                 className="
                   shrink-0 cursor-pointer border-none

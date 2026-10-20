@@ -12,7 +12,7 @@ import {
   getSettlementCandle,
 } from "@/lib/market/yahoo";
 
-// Give Yahoo time to finalize the daily candle after market close.
+// Give Yahoo time to finalize daily candles after market close.
 const SETTLEMENT_DATA_GRACE_MS = 30 * 60 * 1000;
 
 type SettlementSummary = {
@@ -26,7 +26,7 @@ type SettlementSummary = {
 
 type SettlementInput = {
   predictionId: string;
-  userId: string;
+  userId: string | null;
   symbol: string;
   direction: PredictionDirection;
   pointsBet: number;
@@ -64,31 +64,27 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
     errors: 0,
   };
 
-  // Include deleted users so retained predictions still receive a result.
+  // Include guests and soft-deleted members.
   const predictions = await prisma.prediction.findMany({
     where: {
       status: PredictionStatus.PENDING,
     },
-
     select: {
       id: true,
       userId: true,
+      guestId: true,
       symbol: true,
       direction: true,
       pointsBet: true,
       referenceClose: true,
       sessionDate: true,
-
       asset: {
         select: {
           displaySymbol: true,
         },
       },
     },
-
-    orderBy: {
-      sessionDate: "asc",
-    },
+    orderBy: [{ sessionDate: "asc" }, { id: "asc" }],
   });
 
   for (const prediction of predictions) {
@@ -96,15 +92,45 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
 
     try {
       const referenceClose = Number(prediction.referenceClose);
+      const isGuest = prediction.userId === null;
+
+      // Exactly one voter identity must exist.
+      if ((prediction.userId === null) === (prediction.guestId === null)) {
+        throw new Error("Prediction must have exactly one voter identity.");
+      }
+
+      if (
+        !Number.isInteger(prediction.pointsBet) ||
+        prediction.pointsBet < 0 ||
+        prediction.pointsBet > 500 ||
+        prediction.pointsBet % 50 !== 0
+      ) {
+        throw new Error("Invalid prediction bet amount.");
+      }
+
+      if (isGuest && prediction.pointsBet !== 0) {
+        throw new Error("Guest predictions must have a zero point bet.");
+      }
 
       if (!Number.isFinite(referenceClose) || referenceClose <= 0) {
-        console.error(`Invalid referenceClose for prediction ${prediction.id}`);
-
-        summary.errors += 1;
-        continue;
+        throw new Error("Invalid prediction reference close.");
       }
 
       const displaySymbol = prediction.asset.displaySymbol ?? prediction.symbol;
+
+      // Avoid fetching candles for sessions that have not finished yet.
+      const expectedCloseMs = getExpectedSessionCloseMs(
+        prediction.symbol,
+        prediction.sessionDate,
+      );
+
+      if (
+        expectedCloseMs !== null &&
+        Date.now() < expectedCloseMs + SETTLEMENT_DATA_GRACE_MS
+      ) {
+        summary.pending += 1;
+        continue;
+      }
 
       const settlementCandle = await getSettlementCandle(
         prediction.symbol,
@@ -114,19 +140,10 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
       if (!settlementCandle) {
         summary.pending += 1;
 
-        const expectedCloseMs = getExpectedSessionCloseMs(
-          prediction.symbol,
-          prediction.sessionDate,
-        );
+        // Guests have no personal notifications.
+        const userId = prediction.userId;
 
-        if (expectedCloseMs === null) {
-          continue;
-        }
-
-        const notificationThreshold =
-          expectedCloseMs + SETTLEMENT_DATA_GRACE_MS;
-
-        if (Date.now() < notificationThreshold) {
+        if (userId === null || expectedCloseMs === null) {
           continue;
         }
 
@@ -135,38 +152,39 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
           prediction.sessionDate.toISOString();
 
         await prisma.$transaction(async (tx) => {
-          // Coordinate with account deletion.
+          // Coordinate with account deletion and member settlement.
           await tx.$queryRaw`
             SELECT "id"
             FROM "User"
-            WHERE "id" = ${prediction.userId}
+            WHERE "id" = ${userId}
             FOR UPDATE
           `;
 
           const user = await tx.user.findUnique({
             where: {
-              id: prediction.userId,
+              id: userId,
             },
             select: {
               deletedAt: true,
             },
           });
 
-          if (!user || user.deletedAt) {
-            return;
-          }
+          if (!user || user.deletedAt) return;
 
-          // Another settlement worker may have completed this prediction.
           const currentPrediction = await tx.prediction.findUnique({
             where: {
               id: prediction.id,
             },
             select: {
+              userId: true,
               status: true,
             },
           });
 
-          if (currentPrediction?.status !== PredictionStatus.PENDING) {
+          if (
+            currentPrediction?.userId !== userId ||
+            currentPrediction.status !== PredictionStatus.PENDING
+          ) {
             return;
           }
 
@@ -174,21 +192,17 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
             where: {
               eventKey: pendingEventKey,
             },
-
             update: {},
-
             create: {
-              userId: prediction.userId,
+              userId,
               type: "PREDICTION_PENDING",
               title: "Prediction still pending",
-
               message:
                 `No completed trading session is available yet for ` +
                 `${displaySymbol}. ` +
                 `The market may have been closed, it may be a non-trading day, ` +
                 `or market data may still be unavailable. ` +
                 `Your prediction will be settled after the next completed trading session.`,
-
               predictionId: prediction.id,
               eventKey: pendingEventKey,
             },
@@ -201,12 +215,7 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
       const settlementClose = settlementCandle.close;
 
       if (!Number.isFinite(settlementClose) || settlementClose <= 0) {
-        console.error(
-          `Invalid settlement close for prediction ${prediction.id}`,
-        );
-
-        summary.errors += 1;
-        continue;
+        throw new Error("Invalid prediction settlement close.");
       }
 
       const marketDirection = getMarketDirection({
@@ -234,9 +243,7 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
         outcome,
       );
 
-      if (!settled) {
-        continue;
-      }
+      if (!settled) continue;
 
       if (outcome === "WON") {
         summary.won += 1;
@@ -268,27 +275,29 @@ async function settlePrediction(
   outcome: SettlementOutcome,
 ): Promise<boolean> {
   return prisma.$transaction(async (tx) => {
-    // Use the same lock as deleteAccount.
-    // If settlement runs first, deletion removes its personal records.
-    // If deletion runs first, settlement only updates the prediction.
-    await tx.$queryRaw`
-      SELECT "id"
-      FROM "User"
-      WHERE "id" = ${userId}
-      FOR UPDATE
-    `;
+    let canReceiveMemberRecords = false;
 
-    const user = await tx.user.findUnique({
-      where: {
-        id: userId,
-      },
-      select: {
-        deletedAt: true,
-      },
-    });
+    if (userId !== null) {
+      // Use the same lock as account deletion.
+      await tx.$queryRaw`
+        SELECT "id"
+        FROM "User"
+        WHERE "id" = ${userId}
+        FOR UPDATE
+      `;
 
-    if (!user) {
-      return false;
+      const user = await tx.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          deletedAt: true,
+        },
+      });
+
+      if (!user) return false;
+
+      canReceiveMemberRecords = user.deletedAt === null;
     }
 
     const status =
@@ -299,22 +308,22 @@ async function settlePrediction(
           : PredictionStatus.DRAW;
 
     const pointsChange =
-      outcome === "WON"
-        ? pointsBet
-        : outcome === "LOST"
-          ? pointsBet > 0
+      userId === null || pointsBet === 0
+        ? 0
+        : outcome === "WON"
+          ? pointsBet
+          : outcome === "LOST"
             ? -pointsBet
-            : 0
-          : 0;
+            : 0;
 
-    // Only one settlement worker can claim a pending prediction.
+    // The status condition atomically prevents duplicate settlement.
+    // userId: null explicitly matches guest predictions.
     const claimed = await tx.prediction.updateMany({
       where: {
         id: predictionId,
         userId,
         status: PredictionStatus.PENDING,
       },
-
       data: {
         status,
         settlementClose,
@@ -323,16 +332,15 @@ async function settlePrediction(
       },
     });
 
-    if (claimed.count !== 1) {
-      return false;
-    }
+    if (claimed.count !== 1) return false;
 
-    // Preserve historical results without recreating deleted account data.
-    if (user.deletedAt) {
+    // Guests and deleted members retain their result without
+    // creating balances, transactions, or notifications.
+    if (userId === null || !canReceiveMemberRecords) {
       return true;
     }
 
-    // The original bet was deducted at submission.
+    // The original bet was deducted when the prediction was submitted.
     if (pointsBet > 0 && outcome !== "LOST") {
       const payout = outcome === "WON" ? pointsBet * 2 : pointsBet;
 
@@ -340,13 +348,11 @@ async function settlePrediction(
         where: {
           userId,
         },
-
         update: {
           points: {
             increment: payout,
           },
         },
-
         create: {
           userId,
           points: 10000 + payout,
@@ -408,9 +414,7 @@ async function settlePrediction(
       where: {
         eventKey,
       },
-
       update: {},
-
       create: {
         userId,
         type,

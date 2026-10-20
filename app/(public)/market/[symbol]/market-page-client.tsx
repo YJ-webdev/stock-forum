@@ -23,7 +23,9 @@ import {
 } from "@/lib/data/market-symbols";
 
 import {
+  getMarketVote,
   getMarketVoteStats,
+  submitMarketVote,
   type MarketVoteStats,
   type VoteDirection,
 } from "@/app/actions/market-vote";
@@ -171,11 +173,9 @@ function getChartSession(
 export default function MarketPageClient({
   symbol,
   initialVoteStats,
-  initialVote,
   initialIsWatchlist,
 }: MarketPageClientProps) {
   const user = useCurrentUser();
-  const isLoggedIn = !!user;
   const userLanguage = resolveLanguage(user?.language);
 
   const chartLabels = CHART_LABELS[userLanguage];
@@ -189,9 +189,20 @@ export default function MarketPageClient({
   const [betAmount, setBetAmount] = useState(50);
   const [showDetailChart, setShowDetailChart] = useState(false);
 
-  const [selectedVote, setSelectedVote] = useState<VoteDirection | null>(
-    initialVote,
-  );
+  const [voteSelection, setVoteSelection] = useState<{
+    key: string | null;
+    direction: VoteDirection | null;
+  }>({
+    key: null,
+    direction: null,
+  });
+
+  const [checkedVoteKey, setCheckedVoteKey] = useState<string | null>(null);
+  const [voteLookupFailed, setVoteLookupFailed] = useState(false);
+  const [voteRefreshVersion, setVoteRefreshVersion] = useState(0);
+
+  const submittingVoteRef = useRef(false);
+  const voteRevisionRef = useRef(0);
 
   const [voteStats, setVoteStats] = useState<MarketVoteStats | null>(
     initialVoteStats,
@@ -254,6 +265,114 @@ export default function MarketPageClient({
 
   const isMarketOpen = canPredict ? votingWindow.isMarketOpen : false;
 
+  const voteSessionKey = votingWindow.predictionFor
+    ? new Date(votingWindow.predictionFor).toISOString()
+    : null;
+
+  const voteLookupKey = JSON.stringify([
+    user?.id ?? null,
+    selectedSymbol,
+    voteSessionKey,
+  ]);
+
+  const activeVoteKeyRef = useRef(voteLookupKey);
+  activeVoteKeyRef.current = voteLookupKey;
+
+  const selectedVote =
+    voteSelection.key === voteLookupKey ? voteSelection.direction : null;
+
+  const isVoteChecking =
+    canPredict && Boolean(voteSessionKey) && checkedVoteKey !== voteLookupKey;
+
+  useEffect(() => {
+    let cancelled = false;
+    const revision = voteRevisionRef.current;
+
+    setVoteLookupFailed(false);
+
+    if (!canPredict || !voteSessionKey) {
+      setCheckedVoteKey(voteLookupKey);
+      return;
+    }
+
+    const isCurrentRequest = () =>
+      !cancelled &&
+      revision === voteRevisionRef.current &&
+      activeVoteKeyRef.current === voteLookupKey;
+
+    const sessionDate = new Date(voteSessionKey);
+    async function loadVote() {
+      try {
+        // loadVote 내부
+        const vote = await getMarketVote({
+          symbol: selectedSymbol,
+          sessionDate,
+        });
+
+        if (!isCurrentRequest()) return;
+
+        setVoteSelection({
+          key: voteLookupKey,
+          direction: vote,
+        });
+        setVoteLookupFailed(false);
+      } catch (error) {
+        if (!isCurrentRequest()) return;
+
+        setVoteLookupFailed(true);
+        console.error("Failed to load prediction:", error);
+      } finally {
+        if (isCurrentRequest()) {
+          setCheckedVoteKey(voteLookupKey);
+        }
+      }
+    }
+
+    void loadVote();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    canPredict,
+    selectedSymbol,
+    voteSessionKey,
+    voteLookupKey,
+    voteRefreshVersion,
+  ]);
+
+  useEffect(() => {
+    if (!canPredict || !voteSessionKey) {
+      setVoteStats(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    setVoteStats(null);
+
+    async function loadStats() {
+      try {
+        const stats = await getMarketVoteStats({
+          symbol: selectedSymbol,
+          sessionDate: new Date(voteSessionKey!),
+        });
+
+        if (!cancelled) {
+          setVoteStats(stats);
+        }
+      } catch (error) {
+        console.error("Failed to load vote statistics:", error);
+      }
+    }
+
+    void loadStats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canPredict, selectedSymbol, voteSessionKey]);
+
   const handleVote = (
     direction: VoteDirection,
     amount: number,
@@ -266,8 +385,10 @@ export default function MarketPageClient({
       return;
     }
 
-    if (!isLoggedIn) {
-      toast.error("Log in to make your prediction.");
+    if (isPending || submittingVoteRef.current) return;
+
+    if (isVoteChecking || voteLookupFailed) {
+      toast.error("Unable to verify your vote yet. Please try again.");
       return;
     }
 
@@ -276,19 +397,11 @@ export default function MarketPageClient({
       return;
     }
 
-    if (isPending) return;
-
-    if (
-      !Number.isInteger(amount) ||
-      amount < 0 ||
-      amount > 500 ||
-      amount % 50 !== 0
-    ) {
-      toast.error("Use 0–500 points in steps of 50.");
+    if (direction !== "BULL" && direction !== "BEAR") {
+      toast.error("Choose Bull or Bear.");
       return;
     }
 
-    // Recheck the voting window at submission time.
     const currentWindow = getVotingWindow(selectedSymbol, Date.now());
     const sessionDate = currentWindow.predictionFor;
 
@@ -301,88 +414,141 @@ export default function MarketPageClient({
       return;
     }
 
-    // createComment determines the reference close on the server.
-    const trimmedComment = comment.trim();
+    const submittedKey = JSON.stringify([
+      user?.id ?? null,
+      selectedSymbol,
+      sessionDate.toISOString(),
+    ]);
 
-    let content: JSONContent | null = null;
-
-    if (trimmedComment || gif) {
-      content = {
-        type: "doc",
-        content: [
-          ...(trimmedComment
-            ? [
-                {
-                  type: "paragraph",
-                  content: [
-                    {
-                      type: "text",
-                      text: trimmedComment,
-                    },
-                  ],
-                },
-              ]
-            : []),
-          ...(gif
-            ? [
-                {
-                  type: "image",
-                  attrs: {
-                    src: gif.src,
-                    alt: gif.title,
-                  },
-                },
-              ]
-            : []),
-        ],
-      };
+    if (submittedKey !== activeVoteKeyRef.current) {
+      toast.error("The voting session changed. Please try again.");
+      return;
     }
 
-    setSelectedVote(direction);
+    const submittedAmount = user?.id ? amount : 0;
+
+    if (
+      !Number.isInteger(submittedAmount) ||
+      submittedAmount < 0 ||
+      submittedAmount > 500 ||
+      submittedAmount % 50 !== 0
+    ) {
+      toast.error("Use 0–500 points in steps of 50.");
+      return;
+    }
+
+    const canWriteComment =
+      Boolean(user?.id) &&
+      user?.status !== "BANNED" &&
+      user?.status !== "MUTED";
+
+    const trimmedComment = canWriteComment ? comment.trim() : "";
+    const submittedGif = canWriteComment ? gif : null;
+
+    const content: JSONContent | null =
+      trimmedComment || submittedGif
+        ? {
+            type: "doc",
+            content: [
+              ...(trimmedComment
+                ? trimmedComment.split(/\r?\n/).map((line) => ({
+                    type: "paragraph",
+                    content: line ? [{ type: "text", text: line }] : [],
+                  }))
+                : []),
+              ...(submittedGif
+                ? [
+                    {
+                      type: "image",
+                      attrs: {
+                        src: submittedGif.src,
+                        alt: submittedGif.title,
+                      },
+                    },
+                  ]
+                : []),
+            ],
+          }
+        : null;
+
+    submittingVoteRef.current = true;
+
+    // Invalidate any lookup that started before this submission.
+    voteRevisionRef.current += 1;
 
     startTransition(async () => {
       let voteSubmitted = false;
 
+      const isCurrentView = () => activeVoteKeyRef.current === submittedKey;
+
       try {
-        const result = await createComment({
-          content,
-          assetSymbols: [selectedSymbol],
-          prediction: {
+        let createdComment: MarketPageComments[number] | null = null;
+        let updatedPoints: number | null = null;
+
+        if (user?.id) {
+          const result = await createComment({
+            content,
+            assetSymbols: [selectedSymbol],
+            prediction: {
+              direction,
+              pointsBet: submittedAmount,
+              sessionDate,
+            },
+          });
+
+          voteSubmitted = true;
+          createdComment = result.comment ?? null;
+          updatedPoints = result.points;
+        } else {
+          await submitMarketVote({
+            symbol: selectedSymbol,
             direction,
-            pointsBet: amount,
+            pointsBet: 0,
             sessionDate,
-          },
+          });
+
+          voteSubmitted = true;
+        }
+
+        if (!isCurrentView()) return;
+
+        setVoteSelection({
+          key: submittedKey,
+          direction,
         });
+        setCheckedVoteKey(submittedKey);
+        setVoteLookupFailed(false);
 
-        voteSubmitted = true;
-
-        if (result.points != null) {
-          setUserPoints(result.points);
+        if (updatedPoints != null) {
+          setUserPoints(updatedPoints);
         }
 
         const predictionLabel =
           direction === "BULL" ? voteLabels.bull : voteLabels.bear;
 
         toast.success(
-          (amount > 0
+          (submittedAmount > 0
             ? voteToastLabels.success_with_points
             : voteToastLabels.success
           )
             .replace("{voteDirection}", predictionLabel)
-            .replace("{points}", String(amount)),
+            .replace("{points}", submittedAmount.toLocaleString(userLanguage)),
         );
 
-        // Refresh independently: failure here does not undo the vote.
+        const savedComment = createdComment;
+
         const refreshResults = await Promise.allSettled([
-          Promise.resolve().then(() =>
-            result.comment ? onSuccess?.(result.comment) : undefined,
-          ),
+          Promise.resolve().then(() => {
+            if (isCurrentView() && savedComment) {
+              return onSuccess?.(savedComment);
+            }
+          }),
 
           getMarketVoteStats({
             symbol: selectedSymbol,
             sessionDate,
           }).then((stats) => {
-            setVoteStats(stats);
+            if (isCurrentView()) setVoteStats(stats);
           }),
         ]);
 
@@ -392,17 +558,20 @@ export default function MarketPageClient({
           }
         }
       } catch (error) {
-        if (!voteSubmitted) {
-          setSelectedVote(null);
-
+        if (!voteSubmitted && isCurrentView()) {
           toast.error(
             error instanceof Error
               ? error.message
               : "Failed to submit prediction.",
           );
+
+          // Restore the server's vote state after an uncertain failure.
+          setVoteRefreshVersion((value) => value + 1);
         } else {
           console.error("Failed to update prediction UI:", error);
         }
+      } finally {
+        submittingVoteRef.current = false;
       }
     });
   };
@@ -739,6 +908,16 @@ export default function MarketPageClient({
       {/* Discussion */}
 
       <div ref={discussionRef} className="mx-4 mt-8">
+        {canPredict && voteLookupFailed && (
+          <button
+            type="button"
+            onClick={() => setVoteRefreshVersion((value) => value + 1)}
+            className="mb-3 cursor-pointer text-sm underline underline-offset-4"
+          >
+            Retry checking vote
+          </button>
+        )}
+
         <MarketComments
           key={selectedSymbol}
           assetSymbol={selectedSymbol}
@@ -747,11 +926,11 @@ export default function MarketPageClient({
               ? {
                   selectedVote,
                   isMarketOpen,
-                  userPoints,
-                  betAmount,
+                  userPoints: user?.id ? userPoints : 0,
+                  betAmount: user?.id ? betAmount : 0,
                   setBetAmount,
                   handleVote,
-                  isPending,
+                  isPending: isPending || isVoteChecking,
                   targetMs: votingWindow.targetMs,
                   countdownType: votingWindow.countdownType,
                   showCountdown: votingWindow.showCountdown,

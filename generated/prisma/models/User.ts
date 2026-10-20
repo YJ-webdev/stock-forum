@@ -817,10 +817,12 @@ export type UserCreateNestedOneWithoutPredictionsInput = {
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutPredictionsNestedInput = {
+export type UserUpdateOneWithoutPredictionsNestedInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutPredictionsInput, Prisma.UserUncheckedCreateWithoutPredictionsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutPredictionsInput
   upsert?: Prisma.UserUpsertWithoutPredictionsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPredictionsInput, Prisma.UserUpdateWithoutPredictionsInput>, Prisma.UserUncheckedUpdateWithoutPredictionsInput>
 }
@@ -845,10 +847,12 @@ export type UserCreateNestedOneWithoutCommentLikesInput = {
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutCommentLikesNestedInput = {
+export type UserUpdateOneWithoutCommentLikesNestedInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutCommentLikesInput, Prisma.UserUncheckedCreateWithoutCommentLikesInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutCommentLikesInput
   upsert?: Prisma.UserUpsertWithoutCommentLikesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCommentLikesInput, Prisma.UserUpdateWithoutCommentLikesInput>, Prisma.UserUncheckedUpdateWithoutCommentLikesInput>
 }
@@ -859,10 +863,12 @@ export type UserCreateNestedOneWithoutReplyLikesInput = {
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutReplyLikesNestedInput = {
+export type UserUpdateOneWithoutReplyLikesNestedInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutReplyLikesInput, Prisma.UserUncheckedCreateWithoutReplyLikesInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutReplyLikesInput
   upsert?: Prisma.UserUpsertWithoutReplyLikesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutReplyLikesInput, Prisma.UserUpdateWithoutReplyLikesInput>, Prisma.UserUncheckedUpdateWithoutReplyLikesInput>
 }

@@ -304,14 +304,7 @@ export function MarketComments({
   }, [nextCursor, commentsLoading, isLoadingMore, loadMoreComments]);
 
   const submitVote = (comment: string, gif: GifResult | null) => {
-    if (!prediction || prediction.isPending) {
-      return;
-    }
-
-    if (!user) {
-      toast.error(actionLabels.login_required);
-      return;
-    }
+    if (!prediction || prediction.isPending) return;
 
     if (prediction.isMarketOpen) {
       toast.error(labels.voting_closed);
@@ -328,28 +321,43 @@ export function MarketComments({
       return;
     }
 
-    const { betAmount, userPoints, handleVote } = prediction;
+    const { userPoints, handleVote } = prediction;
+    const isMember = Boolean(user?.id);
+    const submittedAmount = isMember ? prediction.betAmount : 0;
 
     if (
-      !Number.isInteger(betAmount) ||
-      betAmount < 0 ||
-      betAmount > 500 ||
-      betAmount % 50 !== 0
+      !Number.isInteger(submittedAmount) ||
+      submittedAmount < 0 ||
+      submittedAmount > 500 ||
+      submittedAmount % 50 !== 0
     ) {
       toast.error(labels.invalid_bet);
       return;
     }
 
-    if (betAmount > 0 && betAmount > userPoints) {
+    if (submittedAmount > userPoints && submittedAmount > 0) {
       toast.error(actionLabels.insufficient_points);
       return;
     }
 
-    handleVote(direction, betAmount, comment, gif, addComment);
+    const canWriteComment =
+      isMember && user?.status !== "BANNED" && user?.status !== "MUTED";
+
+    handleVote(
+      direction,
+      submittedAmount,
+      canWriteComment ? comment : "",
+      canWriteComment ? gif : null,
+      isMember ? addComment : undefined,
+    );
   };
 
   const hasAlreadyVoted = prediction?.selectedVote != null;
-  const maxBet = prediction ? Math.min(500, prediction.userPoints) : 0;
+
+  const maxBet =
+    user?.id && prediction
+      ? Math.floor(Math.max(0, Math.min(500, prediction.userPoints)) / 50) * 50
+      : 0;
 
   const showPredictionInput =
     prediction !== null && !hasAlreadyVoted && !prediction.isMarketOpen;
@@ -370,9 +378,9 @@ export function MarketComments({
         <PredictionCommentInput
           direction={direction}
           setDirection={setDirection}
-          betAmount={prediction.betAmount}
+          betAmount={user?.id ? prediction.betAmount : 0}
+          userPoints={user?.id ? prediction.userPoints : 0}
           setBetAmount={prediction.setBetAmount}
-          userPoints={prediction.userPoints}
           maxBet={maxBet}
           currentUser={user}
           isMarketOpen={prediction.isMarketOpen}

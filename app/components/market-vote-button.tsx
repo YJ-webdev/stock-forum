@@ -7,7 +7,11 @@ import { PiArrowFatLinesUpFill } from "react-icons/pi";
 import { toast } from "sonner";
 import type { JSONContent } from "@tiptap/react";
 
-import { getMarketVote, type VoteDirection } from "@/app/actions/market-vote";
+import {
+  getMarketVote,
+  submitMarketVote,
+  type VoteDirection,
+} from "@/app/actions/market-vote";
 import { createComment } from "@/app/actions/post";
 import { useCurrentUser } from "@/app/context/user-context";
 import { usePointBalance } from "@/app/context/point-balance-context";
@@ -157,14 +161,14 @@ export function MarketVoteButton({
   activeLookupKeyRef.current = lookupKey;
 
   const direction =
-    userId && voteState.lookupKey === lookupKey ? voteState.direction : null;
+    voteState.lookupKey === lookupKey ? voteState.direction : null;
 
-  const isVoteLoading =
-    Boolean(userId && sessionKey) && checkedLookupKey !== lookupKey;
+  const isVoteLoading = Boolean(sessionKey) && checkedLookupKey !== lookupKey;
 
   const voteButtonDisabled = isVoteLoading || isSubmitting;
   const isOpen = view === "editor";
-  const maxBet = Math.floor(Math.min(500, userPoints) / 50) * 50;
+
+  const maxBet = userId ? Math.floor(Math.min(500, userPoints) / 50) * 50 : 0;
 
   const votedLabel = direction
     ? statisticsLabels.you_voted.replace(
@@ -182,13 +186,6 @@ export function MarketVoteButton({
     setCheckedLookupKey(null);
     setVoteLookupFailed(false);
     setRefreshVersion((current) => current + 1);
-  }
-
-  function requireLogin() {
-    if (user) return true;
-
-    toast.error(toastLabels.login);
-    return false;
   }
 
   function canStartPrediction(showMessage = true) {
@@ -225,18 +222,18 @@ export function MarketVoteButton({
     trigger: HTMLButtonElement,
   ) {
     if (voteButtonDisabled || submittingRef.current) return;
-    if (!requireLogin() || !canStartPrediction()) return;
+    if (!canStartPrediction()) return;
 
     triggerRef.current = trigger;
     setDraftDirection(nextDirection);
-    setBetAmount(userPoints >= 50 ? 50 : 0);
+    setBetAmount(userId && userPoints >= 50 ? 50 : 0);
     setNow(Date.now());
     setView("editor");
   }
 
   async function submitVote(comment: string, gif: GifResult | null) {
     if (submittingRef.current) return;
-    if (!requireLogin() || !canStartPrediction()) return;
+    if (!canStartPrediction()) return;
 
     if (!draftDirection) {
       toast.error(interfaceLabels.choose_direction);
@@ -256,7 +253,7 @@ export function MarketVoteButton({
     }
 
     const submittedDirection = draftDirection;
-    const submittedAmount = betAmount;
+    const submittedAmount = userId ? betAmount : 0;
 
     if (
       !Number.isInteger(submittedAmount) ||
@@ -278,15 +275,29 @@ export function MarketVoteButton({
     setIsSubmitting(true);
 
     try {
-      const result = await createComment({
-        content: buildCommentContent(comment, gif),
-        assetSymbols: [symbol],
-        prediction: {
-          direction: submittedDirection,
-          pointsBet: submittedAmount,
-          sessionDate,
-        },
-      });
+      const result = userId
+        ? await createComment({
+            content: buildCommentContent(comment, gif),
+            assetSymbols: [symbol],
+            prediction: {
+              direction: submittedDirection,
+              pointsBet: submittedAmount,
+              sessionDate,
+            },
+          })
+        : await submitMarketVote({
+            symbol,
+            direction: submittedDirection,
+            pointsBet: 0,
+            sessionDate,
+          });
+
+      if (
+        result.points != null &&
+        activeLookupKeyRef.current === submittedLookupKey
+      ) {
+        setPoints(result.points);
+      }
 
       if (result.points != null) {
         setPoints(result.points);
@@ -374,7 +385,7 @@ export function MarketVoteButton({
 
     setVoteLookupFailed(false);
 
-    if (!userId || !sessionKey) {
+    if (!sessionKey) {
       setCheckedLookupKey(lookupKey);
       return;
     }

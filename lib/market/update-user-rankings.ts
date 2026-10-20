@@ -8,7 +8,7 @@ import {
 
 import { prisma } from "@/lib/prisma";
 
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------userId---------------------
 // CONFIG
 // -----------------------------------------------------------------------------
 
@@ -176,14 +176,18 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
       const statsByUser = new Map<string, UserStats>();
 
       for (const result of results) {
+        const userId = result.userId;
+
+        if (userId === null) continue;
+
         // Missing settlement profit must not be treated as zero.
         if (result._count.pointsChange !== result._count._all) {
           throw new Error(
-            `Missing pointsChange for settled predictions: ${result.userId}`,
+            `Missing pointsChange for settled predictions: ${userId}`,
           );
         }
 
-        const stats = statsByUser.get(result.userId) ?? {
+        const stats = statsByUser.get(userId) ?? {
           netProfit: 0,
           wonCount: 0,
           lostCount: 0,
@@ -199,7 +203,7 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
           stats.lostCount += result._count._all;
         }
 
-        statsByUser.set(result.userId, stats);
+        statsByUser.set(userId, stats);
       }
 
       // -----------------------------------------------------------------------

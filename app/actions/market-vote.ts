@@ -1,8 +1,20 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { cookies } from "next/headers";
+
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { PredictionDirection } from "@/generated/prisma/client";
+import { PredictionDirection, type Prisma } from "@/generated/prisma/client";
+
+import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
+import { getVotingWindow } from "@/lib/utils/get-voting-window";
+import { getReferenceClose } from "@/lib/utils/get-reference-close";
+
+const GUEST_COOKIE_NAME = "bbv_guest_voter";
+const GUEST_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+export type VoteDirection = PredictionDirection;
 
 export interface MarketVoteListStats {
   totalVotes: number;
@@ -19,6 +31,144 @@ export interface MarketVoteListStats {
 
 export type MarketVoteListStatsMap = Record<string, MarketVoteListStats>;
 
+export type MarketVoteStats = {
+  totalVotes: number;
+  bullVotes: number;
+  bearVotes: number;
+  bullPercent: number;
+  bearPercent: number;
+
+  nationalities: {
+    nationality: string;
+    votes: number;
+    percent: number;
+  }[];
+};
+
+interface GetMarketVoteInput {
+  symbol: string;
+  sessionDate: Date;
+}
+
+interface GetMarketVoteStatsInput {
+  symbol: string;
+  sessionDate: Date;
+}
+
+interface SubmitMarketVoteInput {
+  symbol: string;
+  direction: VoteDirection;
+  pointsBet: number;
+  sessionDate: Date;
+}
+
+type VoterIdentity =
+  | { userId: string; guestId: null }
+  | { userId: null; guestId: string };
+
+function validateSessionDate(sessionDate: Date) {
+  if (
+    !(sessionDate instanceof Date) ||
+    !Number.isFinite(sessionDate.getTime())
+  ) {
+    throw new Error("Invalid prediction session.");
+  }
+}
+
+function normalizeNationality(value?: string | null) {
+  const nationality = value?.trim().toUpperCase();
+
+  return !nationality || nationality === "OTHERS" ? "OTHER" : nationality;
+}
+
+function validateVotingSession(symbol: string, sessionDate: Date) {
+  const votingWindow = getVotingWindow(symbol, Date.now());
+
+  if (!votingWindow.canVote || !votingWindow.predictionFor) {
+    throw new Error("Voting is closed.");
+  }
+
+  const expectedSession = new Date(votingWindow.predictionFor);
+
+  if (
+    !Number.isFinite(expectedSession.getTime()) ||
+    expectedSession.getTime() !== sessionDate.getTime()
+  ) {
+    throw new Error("Invalid prediction session.");
+  }
+}
+
+function getPredictionUniqueWhere(
+  identity: VoterIdentity,
+  symbol: string,
+  sessionDate: Date,
+): Prisma.PredictionWhereUniqueInput {
+  if (identity.userId !== null) {
+    return {
+      userId_symbol_sessionDate: {
+        userId: identity.userId,
+        symbol,
+        sessionDate,
+      },
+    };
+  }
+
+  return {
+    guestId_symbol_sessionDate: {
+      guestId: identity.guestId,
+      symbol,
+      sessionDate,
+    },
+  };
+}
+
+async function getVoterIdentity(
+  createGuestCookie = false,
+): Promise<VoterIdentity | null> {
+  const session = await auth();
+
+  if (session?.user?.id) {
+    return {
+      userId: session.user.id,
+      guestId: null,
+    };
+  }
+
+  const cookieStore = await cookies();
+  const storedGuestId = cookieStore.get(GUEST_COOKIE_NAME)?.value;
+
+  const isValidGuestId =
+    typeof storedGuestId === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      storedGuestId,
+    );
+
+  if (isValidGuestId) {
+    return {
+      userId: null,
+      guestId: storedGuestId,
+    };
+  }
+
+  if (!createGuestCookie) return null;
+
+  const guestId = randomUUID();
+
+  cookieStore.set(GUEST_COOKIE_NAME, guestId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: GUEST_COOKIE_MAX_AGE,
+  });
+
+  return {
+    userId: null,
+    guestId,
+  };
+}
+
+// Market list statistics.
 export async function getMarketVoteListStats({
   markets,
 }: {
@@ -27,37 +177,54 @@ export async function getMarketVoteListStats({
     sessionDate: Date;
   }[];
 }): Promise<MarketVoteListStatsMap> {
-  if (markets.length === 0) {
-    return {};
+  if (markets.length === 0) return {};
+
+  // Results are keyed by symbol: only one session per symbol is supported.
+  const sessionsBySymbol = new Map<string, number>();
+
+  for (const market of markets) {
+    validateSessionDate(market.sessionDate);
+
+    const timestamp = market.sessionDate.getTime();
+    const existing = sessionsBySymbol.get(market.symbol);
+
+    if (existing !== undefined && existing !== timestamp) {
+      throw new Error("Request only one session per market.");
+    }
+
+    sessionsBySymbol.set(market.symbol, timestamp);
   }
 
-  const session = await auth();
+  const identity = await getVoterIdentity();
 
-  const marketConditions = markets.map((market) => ({
-    symbol: market.symbol,
-    sessionDate: market.sessionDate,
+  const marketConditions = markets.map(({ symbol, sessionDate }) => ({
+    symbol,
+    sessionDate,
   }));
+
+  const myVoterCondition: Prisma.PredictionWhereInput | null = identity
+    ? identity.userId !== null
+      ? { userId: identity.userId }
+      : { guestId: identity.guestId, userId: null }
+    : null;
 
   const [predictions, myPredictions] = await Promise.all([
     prisma.prediction.groupBy({
       by: ["symbol", "direction"],
-
       where: {
         OR: marketConditions,
       },
-
       _count: {
         _all: true,
       },
     }),
 
-    session?.user?.id
+    myVoterCondition
       ? prisma.prediction.findMany({
           where: {
-            userId: session.user.id,
+            ...myVoterCondition,
             OR: marketConditions,
           },
-
           select: {
             symbol: true,
             direction: true,
@@ -83,18 +250,14 @@ export async function getMarketVoteListStats({
   for (const prediction of predictions) {
     const stats = result[prediction.symbol];
 
-    if (!stats) {
-      continue;
-    }
+    if (!stats) continue;
 
     const count = prediction._count._all;
 
     if (prediction.direction === "BULL") {
-      stats.bullVotes = count;
-    }
-
-    if (prediction.direction === "BEAR") {
-      stats.bearVotes = count;
+      stats.bullVotes += count;
+    } else if (prediction.direction === "BEAR") {
+      stats.bearVotes += count;
     }
 
     stats.totalVotes += count;
@@ -103,9 +266,7 @@ export async function getMarketVoteListStats({
   for (const prediction of myPredictions) {
     const stats = result[prediction.symbol];
 
-    if (!stats) {
-      continue;
-    }
+    if (!stats) continue;
 
     stats.myPrediction = {
       direction: prediction.direction,
@@ -114,9 +275,7 @@ export async function getMarketVoteListStats({
   }
 
   for (const stats of Object.values(result)) {
-    if (stats.totalVotes === 0) {
-      continue;
-    }
+    if (stats.totalVotes === 0) continue;
 
     stats.bullPercent = Math.round((stats.bullVotes / stats.totalVotes) * 100);
 
@@ -126,37 +285,20 @@ export async function getMarketVoteListStats({
   return result;
 }
 
-export type VoteDirection = PredictionDirection;
-
-interface GetMarketVoteInput {
-  symbol: string;
-  sessionDate: Date;
-}
-
-// GET CURRENT USER'S VOTE
-// -----------------------------------------------------------------------------
-
+// Current member's or guest's vote.
 export async function getMarketVote({
   symbol,
   sessionDate,
 }: GetMarketVoteInput): Promise<VoteDirection | null> {
-  const session = await auth();
+  validateSessionDate(sessionDate);
 
-  if (!session?.user?.id) {
-    return null;
-  }
+  const identity = await getVoterIdentity();
+
+  if (!identity) return null;
 
   const prediction = await prisma.prediction.findUnique({
-    where: {
-      userId_symbol_sessionDate: {
-        userId: session.user.id,
-        symbol,
-        sessionDate,
-      },
-    },
+    where: getPredictionUniqueWhere(identity, symbol, sessionDate),
     select: {
-      symbol: true,
-      sessionDate: true,
       direction: true,
     },
   });
@@ -164,41 +306,47 @@ export async function getMarketVote({
   return prediction?.direction ?? null;
 }
 
-export type MarketVoteStats = {
-  totalVotes: number;
-  bullVotes: number;
-  bearVotes: number;
-  bullPercent: number;
-  bearPercent: number;
-
-  nationalities: {
-    nationality: string;
-    votes: number;
-    percent: number;
-  }[];
-};
-
-interface GetMarketVoteStatsInput {
-  symbol: string;
-  sessionDate: Date;
-}
-
+// Combined member and guest statistics.
 export async function getMarketVoteStats({
   symbol,
   sessionDate,
 }: GetMarketVoteStatsInput): Promise<MarketVoteStats> {
-  const predictions = await prisma.prediction.findMany({
+  validateSessionDate(sessionDate);
+
+  const groupedPredictions = await prisma.prediction.groupBy({
+    by: ["direction", "nationality"],
     where: {
       symbol,
       sessionDate,
     },
-    select: {
-      direction: true,
-      nationality: true,
+    _count: {
+      _all: true,
     },
   });
 
-  const totalVotes = predictions.length;
+  let bullVotes = 0;
+  let bearVotes = 0;
+
+  const nationalityCounts = new Map<string, number>();
+
+  for (const prediction of groupedPredictions) {
+    const count = prediction._count._all;
+
+    if (prediction.direction === "BULL") {
+      bullVotes += count;
+    } else if (prediction.direction === "BEAR") {
+      bearVotes += count;
+    }
+
+    const nationality = normalizeNationality(prediction.nationality);
+
+    nationalityCounts.set(
+      nationality,
+      (nationalityCounts.get(nationality) ?? 0) + count,
+    );
+  }
+
+  const totalVotes = bullVotes + bearVotes;
 
   if (totalVotes === 0) {
     return {
@@ -211,56 +359,17 @@ export async function getMarketVoteStats({
     };
   }
 
-  // ---------------------------------------------------------------------------
-  // BULL / BEAR
-  // ---------------------------------------------------------------------------
-
-  let bullVotes = 0;
-  let bearVotes = 0;
-
-  for (const prediction of predictions) {
-    if (prediction.direction === "BULL") {
-      bullVotes++;
-    } else if (prediction.direction === "BEAR") {
-      bearVotes++;
-    }
-  }
-
   const bullPercent = Math.round((bullVotes / totalVotes) * 100);
-  const bearPercent = 100 - bullPercent;
-
-  // ---------------------------------------------------------------------------
-  // NATIONALITIES
-  // ---------------------------------------------------------------------------
-
-  const nationalityCounts = new Map<string, number>();
-
-  for (const prediction of predictions) {
-    const value = prediction.nationality?.trim().toUpperCase();
-
-    const nationality = !value || value === "OTHERS" ? "OTHER" : value;
-
-    nationalityCounts.set(
-      nationality,
-      (nationalityCounts.get(nationality) ?? 0) + 1,
-    );
-  }
 
   const sortedNationalities = [...nationalityCounts.entries()]
     .filter(([nationality]) => nationality !== "OTHER")
-    .sort((a, b) => b[1] - a[1]);
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
-  // Show top 3 actual countries.
   const topNationalities = sortedNationalities.slice(0, 3);
 
-  // Everything else + null nationalities becomes Other.
-  const remainingNationalityVotes = sortedNationalities
-    .slice(3)
-    .reduce((total, [, votes]) => total + votes, 0);
-
-  const nullNationalityVotes = nationalityCounts.get("OTHER") ?? 0;
-
-  const otherVotes = remainingNationalityVotes + nullNationalityVotes;
+  const otherVotes =
+    (nationalityCounts.get("OTHER") ?? 0) +
+    sortedNationalities.slice(3).reduce((total, [, votes]) => total + votes, 0);
 
   const nationalities = topNationalities.map(([nationality, votes]) => ({
     nationality,
@@ -281,36 +390,19 @@ export async function getMarketVoteStats({
     bullVotes,
     bearVotes,
     bullPercent,
-    bearPercent,
+    bearPercent: 100 - bullPercent,
     nationalities,
   };
 }
 
-interface SubmitMarketVoteInput {
-  symbol: string;
-  nationality?: string | null;
-  direction: VoteDirection;
-  pointsBet: number;
-  referenceClose: number;
-  sessionDate: Date;
-}
-
+// Submit a prediction without creating a comment.
+// Members submitting text/GIFs should continue using createComment().
 export async function submitMarketVote({
   symbol,
-  nationality,
   direction,
   pointsBet,
-  referenceClose,
   sessionDate,
 }: SubmitMarketVoteInput) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    throw new Error("You must be logged in to vote.");
-  }
-
-  const userId = session.user.id;
-
   if (
     direction !== PredictionDirection.BULL &&
     direction !== PredictionDirection.BEAR
@@ -318,120 +410,208 @@ export async function submitMarketVote({
     throw new Error("Invalid prediction direction.");
   }
 
-  if (!Number.isInteger(pointsBet)) {
-    throw new Error("Points must be a whole number.");
-  }
+  validateSessionDate(sessionDate);
 
-  // Zero means voting without a point bet.
-  if (pointsBet !== 0 && (pointsBet < 50 || pointsBet > 500)) {
-    throw new Error("Bet amount must be 0 or between 50 and 500 points.");
-  }
+  const market = ALL_MARKET_SYMBOLS.find((item) => item.symbol === symbol);
 
-  if (
-    !(sessionDate instanceof Date) ||
-    !Number.isFinite(sessionDate.getTime())
-  ) {
-    throw new Error("Invalid prediction session.");
-  }
-
-  if (!Number.isFinite(referenceClose) || referenceClose <= 0) {
-    throw new Error("Invalid prediction price.");
-  }
-
-  const asset = await prisma.marketAsset.findUnique({
-    where: { symbol },
-    select: {
-      symbol: true,
-      assetType: true,
-    },
-  });
-
-  if (!asset) {
-    throw new Error("Market asset not found.");
-  }
-
-  if (asset.assetType !== "index") {
+  if (!market || market.assetType !== "index") {
     throw new Error("Voting is only available for indices.");
   }
 
+  validateVotingSession(symbol, sessionDate);
+
+  const identity = await getVoterIdentity(true);
+
+  if (!identity) {
+    throw new Error("Unable to identify voter.");
+  }
+
+  // Guests never spend points, regardless of the submitted value.
+  const effectivePointsBet = identity.userId !== null ? pointsBet : 0;
+
+  if (
+    !Number.isInteger(effectivePointsBet) ||
+    effectivePointsBet < 0 ||
+    effectivePointsBet > 500 ||
+    effectivePointsBet % 50 !== 0
+  ) {
+    throw new Error("Bet amount must be 0–500 in increments of 50.");
+  }
+
+  const uniqueWhere = getPredictionUniqueWhere(identity, symbol, sessionDate);
+
   const existingPrediction = await prisma.prediction.findUnique({
-    where: {
-      userId_symbol_sessionDate: {
-        userId,
-        symbol,
-        sessionDate,
-      },
+    where: uniqueWhere,
+    select: {
+      id: true,
     },
-    select: { id: true },
   });
 
   if (existingPrediction) {
     throw new Error("You have already voted for this market session.");
   }
 
-  const prediction = await prisma.$transaction(async (tx) => {
-    const createdPrediction = await tx.prediction.create({
-      data: {
-        userId,
-        symbol,
-        direction,
-        pointsBet,
-        referenceClose,
-        sessionDate,
-        nationality: nationality?.trim().toUpperCase() || "OTHER",
-      },
-      select: {
-        id: true,
-        symbol: true,
-        direction: true,
-        pointsBet: true,
-        referenceClose: true,
-        sessionDate: true,
-        status: true,
-        nationality: true,
-        createdAt: true,
-      },
-    });
+  // Resolve the reference price on the server, outside the transaction.
+  const referenceClose = await getReferenceClose(symbol, sessionDate);
 
-    if (pointsBet > 0) {
-      await tx.pointBalance.upsert({
-        where: { userId },
-        update: {},
-        create: {
-          userId,
-          points: 10000,
-        },
-      });
+  if (
+    typeof referenceClose !== "number" ||
+    !Number.isFinite(referenceClose) ||
+    referenceClose <= 0
+  ) {
+    throw new Error("Previous close is unavailable.");
+  }
 
-      const deducted = await tx.pointBalance.updateMany({
-        where: {
-          userId,
-          points: { gte: pointsBet },
-        },
-        data: {
-          points: { decrement: pointsBet },
-        },
-      });
-
-      if (deducted.count !== 1) {
-        throw new Error("You do not have enough points.");
-      }
-
-      await tx.pointTransaction.create({
-        data: {
-          userId,
-          predictionId: createdPrediction.id,
-          type: "BET",
-          amount: -pointsBet,
-        },
-      });
-    }
-
-    return createdPrediction;
+  await prisma.marketAsset.upsert({
+    where: {
+      symbol: market.symbol,
+    },
+    update: {
+      name: market.name,
+      displaySymbol: market.displaySymbol,
+      category: market.region,
+      assetType: market.assetType,
+      timezone: market.timezone ?? "UTC",
+    },
+    create: {
+      symbol: market.symbol,
+      name: market.name,
+      displaySymbol: market.displaySymbol,
+      category: market.region,
+      assetType: market.assetType,
+      timezone: market.timezone ?? "UTC",
+    },
   });
 
-  return {
-    ...prediction,
-    referenceClose: Number(prediction.referenceClose),
-  };
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const memberId = identity.userId;
+      let nationality = "OTHER";
+
+      if (memberId !== null) {
+        // Keep account checks consistent with createComment().
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "User"
+          WHERE "id" = ${memberId}
+          FOR UPDATE
+        `;
+
+        const member = await tx.user.findUnique({
+          where: {
+            id: memberId,
+          },
+          select: {
+            deletedAt: true,
+            nationality: true,
+          },
+        });
+
+        if (!member || member.deletedAt) {
+          throw new Error("Account unavailable.");
+        }
+
+        nationality = normalizeNationality(member.nationality);
+      }
+
+      // External fetching or row locking may have crossed market open.
+      validateVotingSession(symbol, sessionDate);
+
+      const prediction = await tx.prediction.create({
+        data: {
+          userId: identity.userId,
+          guestId: identity.guestId,
+          symbol: market.symbol,
+          direction,
+          pointsBet: effectivePointsBet,
+          referenceClose,
+          sessionDate,
+          nationality,
+        },
+        select: {
+          id: true,
+          symbol: true,
+          direction: true,
+          pointsBet: true,
+          referenceClose: true,
+          sessionDate: true,
+          status: true,
+          nationality: true,
+          createdAt: true,
+        },
+      });
+
+      if (memberId !== null && effectivePointsBet > 0) {
+        await tx.pointBalance.upsert({
+          where: {
+            userId: memberId,
+          },
+          update: {},
+          create: {
+            userId: memberId,
+            points: 10000,
+          },
+        });
+
+        const deducted = await tx.pointBalance.updateMany({
+          where: {
+            userId: memberId,
+            points: {
+              gte: effectivePointsBet,
+            },
+          },
+          data: {
+            points: {
+              decrement: effectivePointsBet,
+            },
+          },
+        });
+
+        if (deducted.count !== 1) {
+          throw new Error("You do not have enough points.");
+        }
+
+        await tx.pointTransaction.create({
+          data: {
+            userId: memberId,
+            predictionId: prediction.id,
+            type: "BET",
+            amount: -effectivePointsBet,
+          },
+        });
+      }
+
+      const balance =
+        memberId !== null
+          ? await tx.pointBalance.findUnique({
+              where: {
+                userId: memberId,
+              },
+              select: {
+                points: true,
+              },
+            })
+          : null;
+
+      return {
+        ...prediction,
+        referenceClose: Number(prediction.referenceClose),
+        points: balance?.points ?? null,
+      };
+    });
+
+    return result;
+  } catch (error) {
+    // The unique constraint also protects against concurrent submissions.
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "P2002"
+    ) {
+      throw new Error("You have already voted for this market session.");
+    }
+
+    throw error;
+  }
 }

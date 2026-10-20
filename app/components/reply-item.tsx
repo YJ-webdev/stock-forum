@@ -40,10 +40,6 @@ import { ReplyInput } from "./reply-input";
 
 import type { MarketReply } from "./comment";
 
-// -----------------------------------------------------------------------------
-// TYPES
-// -----------------------------------------------------------------------------
-
 interface ReplyItemProps {
   reply: MarketReply;
   replies: MarketReply[];
@@ -64,10 +60,6 @@ interface ReplyItemProps {
   isLast?: boolean;
   targetReplyId?: string | null;
 }
-
-// -----------------------------------------------------------------------------
-// REPLY ITEM
-// -----------------------------------------------------------------------------
 
 export function ReplyItem({
   reply,
@@ -154,10 +146,6 @@ export function ReplyItem({
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // DELETE / MODERATION
-  // ---------------------------------------------------------------------------
-
   async function handleDelete() {
     if (isDeleting) return;
 
@@ -199,16 +187,7 @@ export function ReplyItem({
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // LIKE
-  // ---------------------------------------------------------------------------
-
   function handleReplyLike() {
-    if (!currentUser) {
-      toast.error(actionLabels.login_required);
-      return;
-    }
-
     if (isLikePending) return;
 
     const previousLiked = likedByMe;
@@ -236,10 +215,6 @@ export function ReplyItem({
     });
   }
 
-  // ---------------------------------------------------------------------------
-  // REPORT
-  // ---------------------------------------------------------------------------
-
   async function handleReportReply() {
     if (!currentUser) {
       toast.error(actionLabels.login_required);
@@ -265,10 +240,6 @@ export function ReplyItem({
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // DEEP LINK
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
     if (containsTargetReply) {
       setChildrenCollapsed(false);
@@ -288,6 +259,10 @@ export function ReplyItem({
     return () => window.clearTimeout(timeout);
   }, [targetReplyId, reply.id]);
 
+  useEffect(() => {
+    setLikedByMe(reply.likedByMe);
+    setLikeCount(reply.likeCount);
+  }, [reply.id, reply.likedByMe, reply.likeCount]);
   return (
     <div id={`reply-${reply.id}`} className="relative scroll-mt-0">
       <div className="group/reply relative flex gap-3">

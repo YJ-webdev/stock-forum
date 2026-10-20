@@ -2282,6 +2282,7 @@ export type ModerationActionScalarFieldEnum = (typeof ModerationActionScalarFiel
 export const PredictionScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  guestId: 'guestId',
   symbol: 'symbol',
   direction: 'direction',
   pointsBet: 'pointsBet',
@@ -2326,6 +2327,7 @@ export type ReplyScalarFieldEnum = (typeof ReplyScalarFieldEnum)[keyof typeof Re
 export const CommentLikeScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  guestId: 'guestId',
   commentId: 'commentId',
   createdAt: 'createdAt'
 } as const
@@ -2336,6 +2338,7 @@ export type CommentLikeScalarFieldEnum = (typeof CommentLikeScalarFieldEnum)[key
 export const ReplyLikeScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  guestId: 'guestId',
   replyId: 'replyId',
   createdAt: 'createdAt'
 } as const
