@@ -64,15 +64,15 @@ export function ContentActionsMenu({
         aria-label={labels.actions}
         className={`
           ml-auto rounded-full p-1.5
-          lg:opacity-0
+          xl:opacity-0
           hover:bg-zinc-100
           lg:dark:hover:bg-zinc-800
           cursor-pointer
 
           ${
             hoverGroup === "comment"
-              ? "lg:group-hover/comment:opacity-100"
-              : "lg:group-hover/reply:opacity-100"
+              ? "xl:group-hover/comment:opacity-100"
+              : "xl:group-hover/reply:opacity-100"
           }
         `}
       >
