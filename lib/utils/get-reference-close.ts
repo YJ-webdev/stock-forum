@@ -56,39 +56,54 @@ export async function getReferenceClose(
   }
 
   const providerSymbol = market.providerSymbol ?? market.symbol;
-
-  // sessionDate is the actual market opening timestamp.
-  // Determine its trading date in the exchange's timezone.
   const targetDateKey = getLocalDateKey(sessionDate, timezone);
-
   const targetSessionMs = sessionDate.getTime();
+  const nowMs = Date.now();
 
   const period1 = new Date(targetSessionMs - LOOKBACK_DAYS * DAY_MS);
-
-  const period2 = new Date(Math.min(targetSessionMs + DAY_MS, Date.now()));
+  const period2 = new Date(Math.min(targetSessionMs + DAY_MS, nowMs));
 
   if (period2.getTime() <= period1.getTime()) {
     throw new Error("Invalid prediction date range.");
   }
 
-  const result = await yahooFinance.chart(providerSymbol, {
+  const query = {
     period1,
     period2,
-    interval: "1d",
+    interval: "1d" as const,
     includePrePost: false,
-    return: "array",
-  });
+    return: "array" as const,
+  };
+
+  const fetchValidatedChart = () => yahooFinance.chart(providerSymbol, query);
+
+  type ChartResult = Awaited<ReturnType<typeof fetchValidatedChart>>;
+
+  const result: ChartResult =
+    providerSymbol === "^STOXX50E"
+      ? ((await yahooFinance.chart(providerSymbol, query, {
+          validateResult: false,
+        })) as ChartResult)
+      : await fetchValidatedChart();
+
+  if (!result || !Array.isArray(result.quotes)) {
+    throw new Error("Market price data is unavailable.");
+  }
 
   let latestTimestamp = -Infinity;
   let referenceClose: number | null = null;
 
   for (const quote of result.quotes) {
+    if (!quote || !(quote.date instanceof Date)) {
+      continue;
+    }
+
     const timestamp = quote.date.getTime();
     const close = quote.close;
 
     if (
       !Number.isFinite(timestamp) ||
-      timestamp > Date.now() ||
+      timestamp > nowMs ||
       typeof close !== "number" ||
       !Number.isFinite(close) ||
       close <= 0
@@ -99,7 +114,9 @@ export async function getReferenceClose(
     const tradingDateKey = getLocalDateKey(quote.date, timezone);
 
     // Never use the target session's own candle.
-    if (tradingDateKey >= targetDateKey) continue;
+    if (tradingDateKey >= targetDateKey) {
+      continue;
+    }
 
     if (timestamp > latestTimestamp) {
       latestTimestamp = timestamp;
