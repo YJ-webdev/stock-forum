@@ -608,7 +608,7 @@ interface TextLayout {
 }
 
 const MAX_COLLAPSED_LINES = 4;
-const MAX_EXPANDED_HEIGHT = 240;
+const MAX_EXPANDED_HEIGHT = 480;
 
 export function ReplyTextContent({
   content,

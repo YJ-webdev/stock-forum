@@ -76,7 +76,6 @@ export function CommentItem({
   highlightTargetComment,
   marketname,
   marketSymbol,
-  onBanRequest,
 }: CommentItemProps) {
   const currentUserId = currentUser?.id;
   const language = resolveLanguage(currentUser?.language);
