@@ -32,7 +32,7 @@ export async function getUserProfileCard(targetUserId: string) {
 
         watchlist: {
           orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-          take: 6,
+          take: 20,
           select: {
             symbol: true,
             asset: {
