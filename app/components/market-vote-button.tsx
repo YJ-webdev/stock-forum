@@ -76,7 +76,7 @@ function buildCommentContent(
     type: "doc",
     content: [
       ...(text
-        ? text.split(/\r?\n/).map((line) => ({
+        ? text.split(/\r\n|\r|\n/).map((line) => ({
             type: "paragraph",
             content: line ? [{ type: "text", text: line }] : [],
           }))
@@ -296,10 +296,6 @@ export function MarketVoteButton({
         result.points != null &&
         activeLookupKeyRef.current === submittedLookupKey
       ) {
-        setPoints(result.points);
-      }
-
-      if (result.points != null) {
         setPoints(result.points);
       }
 
@@ -603,7 +599,12 @@ export function MarketVoteButton({
               </div>
 
               <PredictionCommentInput
+                key={lookupKey}
                 variant="popup"
+                assetSymbol={symbol}
+                onCommentCreated={() => {
+                  closePopup();
+                }}
                 direction={draftDirection}
                 setDirection={setDraftDirection}
                 betAmount={betAmount}

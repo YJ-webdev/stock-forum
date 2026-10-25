@@ -60,6 +60,11 @@ interface PredictionCommentInputProps {
 
   submitVote: (comment: string, gif: GifResult | null) => void;
 
+  submitComment?: (input: {
+    content: JSONContent;
+    assetSymbols: string[];
+  }) => ReturnType<typeof createComment>;
+
   targetMs: number | null;
   countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
   showCountdown: boolean;
@@ -114,6 +119,7 @@ export function PredictionCommentInput({
   buttonDisabled,
   isPending,
   submitVote,
+  submitComment = createComment,
   targetMs,
   countdownType,
   showCountdown,
@@ -408,10 +414,9 @@ export function PredictionCommentInput({
         let createdComment: MarketPageComments[number] | undefined;
 
         try {
-          const result = await createComment({
+          const result = await submitComment({
             content,
             assetSymbols: [assetSymbol],
-            prediction: null,
           });
 
           createdComment = result.comment ?? undefined;

@@ -17,13 +17,12 @@ import {
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { NATIONALITIES } from "@/lib/data/nationalities";
 
-// Adjust this path if your comment actions use another filename.
-
 import {
   generateBotComment,
   getBotMarketState,
   getBotUsers,
 } from "@/app/actions/user-bot";
+import { createComment } from "@/app/actions/post";
 
 import { CommentItem } from "@/app/components/comment-item";
 import { CommentOnlyInput } from "@/app/components/comment-only-input";
@@ -31,7 +30,6 @@ import { PredictionCommentInput } from "@/app/components/prediction-comment-inpu
 import type { GifResult } from "@/app/components/gif-picker";
 
 import { CreateBotUser } from "./create-bot-user";
-import { createComment } from "@/app/actions/post";
 import { EditBotUser } from "./edit-bot-user";
 
 type BotProfile = Awaited<ReturnType<typeof getBotUsers>>[number];
@@ -54,6 +52,11 @@ interface SubmittedComment {
   marketName: string;
 }
 
+interface CommentSubmitInput {
+  content: JSONContent;
+  assetSymbols: string[];
+}
+
 function getErrorMessage(error: unknown) {
   return error instanceof Error
     ? error.message
@@ -70,36 +73,36 @@ function getNationalityLabel(value: string | null) {
 
 function buildCommentContent(text: string, gif: GifResult | null): JSONContent {
   const trimmed = text.trim();
+  const nodes: JSONContent[] = [];
+
+  if (trimmed) {
+    for (const line of trimmed.split(/\r\n|\r|\n/)) {
+      nodes.push({
+        type: "paragraph",
+        content: line ? [{ type: "text", text: line }] : [],
+      });
+    }
+  }
+
+  if (gif) {
+    nodes.push({
+      type: "image",
+      attrs: {
+        src: gif.src,
+        alt: gif.title,
+      },
+    });
+  }
 
   return {
     type: "doc",
-    content: [
-      ...(trimmed
-        ? trimmed.split(/\r?\n/).map((line) => ({
-            type: "paragraph",
-            content: line ? [{ type: "text", text: line }] : [],
-          }))
-        : []),
-
-      ...(gif
-        ? [
-            {
-              type: "image",
-              attrs: {
-                src: gif.src,
-                alt: gif.title,
-              },
-            },
-          ]
-        : []),
-    ],
+    content: nodes,
   };
 }
 
 export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
   const [bots, setBots] = useState<BotProfile[]>(initialBots);
   const [botId, setBotId] = useState(initialBots[0]?.id ?? "");
-
   const [symbol, setSymbol] = useState(ALL_MARKET_SYMBOLS[0]?.symbol ?? "");
 
   const [mode, setMode] = useState<Mode>("comment");
@@ -107,7 +110,6 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
   const [betAmount, setBetAmount] = useState(50);
 
   const [marketState, setMarketState] = useState<BotMarketState | null>(null);
-
   const [loadedStateKey, setLoadedStateKey] = useState("");
   const [loadingState, setLoadingState] = useState(false);
   const [stateError, setStateError] = useState<string | null>(null);
@@ -118,22 +120,21 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditingBot, setIsEditingBot] = useState(false);
 
   const [submittedComments, setSubmittedComments] = useState<
     SubmittedComment[]
   >([]);
 
-  const [isEditingBot, setIsEditingBot] = useState(false);
-
   const requestInFlight = useRef(false);
 
   const selectedBot = bots.find((bot) => bot.id === botId);
-
   const selectedMarket = ALL_MARKET_SYMBOLS.find(
     (market) => market.symbol === symbol,
   );
 
-  const selectionKey = `${botId}:${symbol}`;
+  const selectionKey = JSON.stringify([botId, symbol]);
+  const composerKey = JSON.stringify([botId, symbol, mode, draftRevision]);
 
   const isBusy = isGenerating || isSubmitting || isEditingBot;
 
@@ -151,6 +152,10 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
     marketState.sessionDate &&
     !marketState.hasVoted,
   );
+
+  const maxBet = stateReady
+    ? Math.floor(Math.max(0, Math.min(500, marketState?.points ?? 0)) / 50) * 50
+    : 0;
 
   // Merge refreshed server profiles while preserving newly created bots.
   useEffect(() => {
@@ -181,7 +186,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
         if (cancelled) return;
 
         setMarketState(result);
-        setLoadedStateKey(`${botId}:${symbol}`);
+        setLoadedStateKey(selectionKey);
       } catch (error) {
         if (!cancelled) {
           setStateError(getErrorMessage(error));
@@ -198,7 +203,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
     return () => {
       cancelled = true;
     };
-  }, [botId, symbol, refreshRevision]);
+  }, [botId, symbol, selectionKey, refreshRevision]);
 
   function resetDraft() {
     setGeneratedComment("");
@@ -206,7 +211,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
   }
 
   function changeMarket(value: string | null) {
-    if (!value || requestInFlight.current) return;
+    if (!value || requestInFlight.current || isBusy) return;
 
     setSymbol(value);
     setDirection(null);
@@ -220,7 +225,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
   }
 
   function changeBot(value: string | null) {
-    if (!value || requestInFlight.current) return;
+    if (!value || requestInFlight.current || isBusy) return;
 
     setBotId(value);
     setDirection(null);
@@ -229,9 +234,12 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
   }
 
   function changeMode(nextMode: Mode) {
-    if (requestInFlight.current || nextMode === mode) return;
+    if (requestInFlight.current || isBusy || nextMode === mode) {
+      return;
+    }
 
     setMode(nextMode);
+    setDirection(null);
     resetDraft();
   }
 
@@ -262,13 +270,25 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
     ]);
   }
 
+  // Shared by both inputs after a comment-only submission.
+  function handleCommentCreated(comment: MarketComment) {
+    if (!selectedMarket) return;
+
+    addSubmittedComment(comment, selectedMarket.symbol, selectedMarket.name);
+
+    resetDraft();
+  }
+
   async function handleGenerate() {
-    if (!selectedBot || !selectedMarket || requestInFlight.current) {
+    if (!selectedBot || !selectedMarket || requestInFlight.current || isBusy) {
       return;
     }
 
-    if (mode === "prediction" && (!canPredict || !direction)) {
-      toast.error("Choose an available prediction direction first.");
+    // No direction means generate a general market comment.
+    const generationDirection = mode === "prediction" ? direction : null;
+
+    if (generationDirection && !canPredict) {
+      toast.error("Voting is unavailable for this bot and market.");
       return;
     }
 
@@ -279,7 +299,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
       const result = await generateBotComment({
         botUserId: selectedBot.id,
         symbol: selectedMarket.symbol,
-        direction: mode === "prediction" ? direction : null,
+        direction: generationDirection,
       });
 
       setGeneratedComment(result.text);
@@ -294,16 +314,21 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
     }
   }
 
-  async function handleCommentSubmit(input: {
-    content: JSONContent;
-    assetSymbols: string[];
-  }) {
+  // Injected into both inputs so comments use the selected bot.
+  async function handleCommentSubmit(input: CommentSubmitInput) {
     if (!selectedBot || !selectedMarket) {
       throw new Error("Choose a bot and market.");
     }
 
-    if (requestInFlight.current) {
+    if (requestInFlight.current || isEditingBot) {
       throw new Error("Please wait for the current request.");
+    }
+
+    if (
+      input.assetSymbols.length !== 1 ||
+      input.assetSymbols[0] !== selectedMarket.symbol
+    ) {
+      throw new Error("The selected market changed. Please try again.");
     }
 
     requestInFlight.current = true;
@@ -314,6 +339,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
         botUserId: selectedBot.id,
         assetSymbols: [selectedMarket.symbol],
         content: input.content,
+        prediction: null,
       });
     } finally {
       requestInFlight.current = false;
@@ -321,11 +347,17 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
     }
   }
 
+  // Prediction submission allows an optional comment and GIF.
   async function handlePredictionSubmit(
     comment: string,
     gif: GifResult | null,
   ) {
-    if (!selectedBot || !selectedMarket || requestInFlight.current) {
+    if (
+      !selectedBot ||
+      !selectedMarket ||
+      requestInFlight.current ||
+      isEditingBot
+    ) {
       return;
     }
 
@@ -334,23 +366,29 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
       return;
     }
 
+    const submittedDirection = direction;
+    const submittedAmount = betAmount;
+    const submittedBot = selectedBot;
+    const submittedMarket = selectedMarket;
+    const submittedSelectionKey = selectionKey;
+
     requestInFlight.current = true;
     setIsSubmitting(true);
 
     try {
       const freshState = await getBotMarketState(
-        selectedBot.id,
-        selectedMarket.symbol,
+        submittedBot.id,
+        submittedMarket.symbol,
       );
 
       setMarketState(freshState);
-      setLoadedStateKey(selectionKey);
+      setLoadedStateKey(submittedSelectionKey);
 
-      if (!selectedBot.nationality) {
+      if (!submittedBot.nationality) {
         throw new Error("Set this bot's nationality before voting.");
       }
 
-      if (selectedMarket.assetType !== "index") {
+      if (submittedMarket.assetType !== "index") {
         throw new Error("Predictions are available for indices only.");
       }
 
@@ -363,26 +401,27 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
       }
 
       if (
-        !Number.isInteger(betAmount) ||
-        betAmount < 0 ||
-        betAmount > 500 ||
-        betAmount % 50 !== 0
+        !Number.isInteger(submittedAmount) ||
+        submittedAmount < 0 ||
+        submittedAmount > 500 ||
+        submittedAmount % 50 !== 0
       ) {
         throw new Error("Use 0–500 points in steps of 50.");
       }
 
-      if (betAmount > freshState.points) {
+      if (submittedAmount > freshState.points) {
         throw new Error("This bot has insufficient points.");
       }
 
+      const hasContent = Boolean(comment.trim() || gif);
+
       const result = await createComment({
-        botUserId: selectedBot.id,
-        assetSymbols: [selectedMarket.symbol],
-        content:
-          comment.trim() || gif ? buildCommentContent(comment, gif) : null,
+        botUserId: submittedBot.id,
+        assetSymbols: [submittedMarket.symbol],
+        content: hasContent ? buildCommentContent(comment, gif) : null,
         prediction: {
-          direction,
-          pointsBet: betAmount,
+          direction: submittedDirection,
+          pointsBet: submittedAmount,
           sessionDate: new Date(freshState.sessionDate),
         },
       });
@@ -390,8 +429,8 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
       if (result.comment) {
         addSubmittedComment(
           result.comment,
-          selectedMarket.symbol,
-          selectedMarket.name,
+          submittedMarket.symbol,
+          submittedMarket.name,
         );
       }
 
@@ -401,10 +440,11 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
         points: result.points ?? freshState.points,
       });
 
+      setDirection(null);
       resetDraft();
 
       toast.success(
-        comment.trim() || gif
+        hasContent
           ? "Bot prediction and comment submitted."
           : "Bot prediction submitted.",
       );
@@ -417,7 +457,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
   }
 
   function getPredictionStatus() {
-    if (loadingState || loadedStateKey !== selectionKey) {
+    if (loadingState) {
       return "Loading voting status...";
     }
 
@@ -426,21 +466,19 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
     }
 
     if (!selectedBot?.nationality) {
-      return "Set this bot's nationality before voting.";
+      return "Set this bot's nationality before voting. Comments are still available.";
     }
 
     if (marketState?.hasVoted) {
-      return "Vote completed for this session.";
+      return "Vote completed for this session. You can still post a comment.";
     }
 
     if (!marketState?.canVote || !marketState.sessionDate) {
-      return "Voting is closed.";
+      return "Voting is closed. You can still post a comment.";
     }
 
-    return "Choose Bull or Bear, then generate or write a comment.";
+    return "Choose Bull or Bear to vote, or select Comment only. Text and GIFs are optional when voting.";
   }
-
-  const composerKey = `${selectionKey}:${mode}:${draftRevision}`;
 
   return (
     <section className="space-y-6 py-6">
@@ -550,13 +588,13 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
                 <p className="text-sm text-zinc-500">
                   {getNationalityLabel(selectedBot.nationality)}
                   {" · "}
-                  {loadingState || loadedStateKey !== selectionKey
-                    ? stateError
-                      ? "Points unavailable"
-                      : "Loading..."
-                    : marketState
-                      ? `${marketState.points.toLocaleString("en-US")} pts`
-                      : "Points unavailable"}
+                  {stateError
+                    ? "Points unavailable"
+                    : loadingState || loadedStateKey !== selectionKey
+                      ? "Loading..."
+                      : marketState
+                        ? `${marketState.points.toLocaleString("en-US")} pts`
+                        : "Points unavailable"}
                 </p>
               </div>
             </div>
@@ -584,7 +622,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
               onClick={() => changeMode("prediction")}
               className="cursor-pointer rounded-full"
             >
-              Prediction + comment
+              Prediction
             </Button>
 
             <Button
@@ -622,7 +660,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
                   onClick={() => void handleGenerate()}
                   disabled={
                     isBusy ||
-                    (mode === "prediction" && (!canPredict || !direction))
+                    (mode === "prediction" && direction !== null && !canPredict)
                   }
                   className="cursor-pointer"
                 >
@@ -638,6 +676,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
                     currentUser={selectedBot}
                     initialComment={generatedComment}
                     submitComment={handleCommentSubmit}
+                    onCommentCreated={handleCommentCreated}
                     targetMs={
                       stateReady ? (marketState?.targetMs ?? null) : null
                     }
@@ -650,27 +689,21 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
                     isMarketOpen={
                       stateReady ? (marketState?.isMarketOpen ?? false) : false
                     }
-                    onCommentCreated={(comment) => {
-                      addSubmittedComment(
-                        comment,
-                        selectedMarket.symbol,
-                        selectedMarket.name,
-                      );
-
-                      resetDraft();
-                    }}
                   />
                 ) : (
                   <PredictionCommentInput
                     key={composerKey}
+                    assetSymbol={selectedMarket.symbol}
                     currentUser={selectedBot}
                     initialComment={generatedComment}
+                    submitComment={handleCommentSubmit}
+                    onCommentCreated={handleCommentCreated}
                     direction={direction}
                     setDirection={setDirection}
                     betAmount={betAmount}
                     setBetAmount={setBetAmount}
                     userPoints={stateReady ? (marketState?.points ?? 0) : 0}
-                    maxBet={500}
+                    maxBet={maxBet}
                     buttonDisabled={!canPredict}
                     isPending={isBusy}
                     isMarketOpen={
@@ -746,7 +779,6 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
               ),
             );
 
-            // Update bot details in comments already rendered here.
             setSubmittedComments((previous) =>
               previous.map((entry) =>
                 entry.comment.author.id === updatedBot.id
