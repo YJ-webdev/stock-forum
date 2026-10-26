@@ -378,7 +378,7 @@ export function HomeCommunity({
         }}
       />
 
-      <div aria-busy={loading} className="mt-7 mb-10">
+      <div aria-busy={loading} className="mt-7">
         {loading ? (
           <div role="status" className="space-y-6 py-3">
             <span className="sr-only">{labels.loading_discussions}</span>
