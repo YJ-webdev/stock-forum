@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, LockKeyhole, X } from "lucide-react";
+import { Check, LockKeyhole, Pencil, X } from "lucide-react";
 import { PiArrowFatLinesUpFill } from "react-icons/pi";
 import { toast } from "sonner";
 import type { JSONContent } from "@tiptap/react";
@@ -10,6 +10,7 @@ import type { JSONContent } from "@tiptap/react";
 import {
   getMarketVote,
   submitMarketVote,
+  updateMarketVote,
   type VoteDirection,
 } from "@/app/actions/market-vote";
 import { createComment } from "@/app/actions/post";
@@ -30,7 +31,11 @@ import {
 import { PredictionCommentInput } from "./prediction-comment-input";
 import type { GifResult } from "./gif-picker";
 
-type PopupView = "closed" | "editor";
+type VoteStatus = NonNullable<
+  Awaited<ReturnType<typeof getMarketVote>>
+>["status"];
+
+type EditorMode = "create" | "edit";
 
 interface MarketVoteButtonProps {
   marketName: string;
@@ -42,12 +47,35 @@ interface MarketVoteButtonProps {
 interface VoteState {
   lookupKey: string | null;
   direction: VoteDirection | null;
+  pointsBet: number;
+  status: VoteStatus | null;
 }
+
+interface EditorState {
+  lookupKey: string;
+  mode: EditorMode;
+}
+
+const EDIT_LABELS = {
+  en: { edit: "Edit vote", saved: "Prediction saved." },
+  ko: { edit: "투표 수정", saved: "투표를 저장했어요." },
+  ja: { edit: "投票を変更", saved: "投票を保存しました。" },
+  zh: { edit: "修改投票", saved: "投票已保存。" },
+  de: { edit: "Abstimmung ändern", saved: "Abstimmung gespeichert." },
+  fr: { edit: "Modifier le vote", saved: "Vote enregistré." },
+  es: { edit: "Modificar voto", saved: "Voto guardado." },
+  pt: { edit: "Editar voto", saved: "Voto salvo." },
+  it: { edit: "Modifica voto", saved: "Voto salvato." },
+  ru: { edit: "Изменить голос", saved: "Голос сохранён." },
+  ar: { edit: "تعديل التصويت", saved: "تم حفظ التصويت." },
+  hi: { edit: "वोट बदलें", saved: "वोट सहेजा गया।" },
+} as const;
 
 const VOTE_BUTTON_CLASS = `
   inline-flex h-8.5 min-w-0 flex-1 cursor-pointer
   items-center justify-center gap-1.5
-  rounded-full px-3 text-[14px] font-normal text-white dark:text-white transition-colors
+  rounded-full px-3 text-[14px] font-normal
+  text-white dark:text-white transition-colors
   focus-visible:outline-none
   focus-visible:ring-2 focus-visible:ring-zinc-400
   focus-visible:ring-offset-2 focus-visible:ring-offset-white
@@ -56,7 +84,7 @@ const VOTE_BUTTON_CLASS = `
 `;
 
 const VOTE_STATUS_CLASS = `
-  inline-flex h-7.5 items-center gap-1.5
+  inline-flex min-h-7.5 items-center gap-1.5
   text-xs font-normal text-zinc-500 dark:text-zinc-400
 `;
 
@@ -112,6 +140,7 @@ export function MarketVoteButton({
   const statisticsLabels = STATISTICS_LABELS[language];
   const countdownLabels = VOTING_COUNTDOWN_LABELS[language];
   const predictionLabel = PREDICTION_LABELS[language];
+  const editLabels = EDIT_LABELS[language];
 
   const { points: userPoints, setPoints } = usePointBalance();
 
@@ -121,10 +150,11 @@ export function MarketVoteButton({
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const submittingRef = useRef(false);
+  const mountedRef = useRef(false);
   const voteRevisionRef = useRef(0);
   const lastFocusRefreshRef = useRef(0);
 
-  const [view, setView] = useState<PopupView>("closed");
+  const [editor, setEditor] = useState<EditorState | null>(null);
   const [draftDirection, setDraftDirection] = useState<VoteDirection | null>(
     null,
   );
@@ -138,37 +168,47 @@ export function MarketVoteButton({
   const sessionKey = getSessionKey(votingWindow.predictionFor);
   const lookupKey = JSON.stringify([userId, symbol, sessionKey]);
 
-  // Bind initial data to the user and session present at mount.
-  const initialVoteSnapshotRef = useRef<VoteState>({
+  const activeLookupKeyRef = useRef(lookupKey);
+  activeLookupKeyRef.current = lookupKey;
+
+  const [voteState, setVoteState] = useState<VoteState>(() => ({
     lookupKey:
       userId && initialVoteSessionKey
         ? JSON.stringify([userId, symbol, initialVoteSessionKey])
         : null,
     direction: initialVote,
-  });
+    pointsBet: 0,
+    status: null,
+  }));
 
-  const [voteState, setVoteState] = useState<VoteState>(
-    () => initialVoteSnapshotRef.current,
-  );
-
-  const [checkedLookupKey, setCheckedLookupKey] = useState<string | null>(
-    () => initialVoteSnapshotRef.current.lookupKey,
-  );
-
+  // Initial direction alone does not contain the stake or status.
+  // Fetch the complete vote before enabling submission/editing.
+  const [checkedLookupKey, setCheckedLookupKey] = useState<string | null>(null);
   const [voteLookupFailed, setVoteLookupFailed] = useState(false);
 
-  const activeLookupKeyRef = useRef(lookupKey);
-  activeLookupKeyRef.current = lookupKey;
+  const currentVote = voteState.lookupKey === lookupKey ? voteState : null;
 
-  const direction =
-    voteState.lookupKey === lookupKey ? voteState.direction : null;
+  const direction = currentVote?.direction ?? null;
+  const existingPointsBet = currentVote?.pointsBet ?? 0;
 
   const isVoteLoading = Boolean(sessionKey) && checkedLookupKey !== lookupKey;
 
   const voteButtonDisabled = isVoteLoading || isSubmitting;
-  const isOpen = view === "editor";
 
-  const maxBet = userId ? Math.floor(Math.min(500, userPoints) / 50) * 50 : 0;
+  const isOpen = editor?.lookupKey === lookupKey;
+  const isEditing = isOpen && editor?.mode === "edit";
+
+  const canEdit =
+    direction !== null &&
+    currentVote?.status === "PENDING" &&
+    votingWindow.canVote &&
+    !votingWindow.isMarketOpen;
+
+  const availablePoints = userId
+    ? Math.max(0, userPoints + (isEditing ? existingPointsBet : 0))
+    : 0;
+
+  const maxBet = Math.floor(Math.min(500, availablePoints) / 50) * 50;
 
   const votedLabel = direction
     ? statisticsLabels.you_voted.replace(
@@ -178,7 +218,9 @@ export function MarketVoteButton({
     : "";
 
   function closePopup() {
-    setView("closed");
+    if (submittingRef.current) return;
+
+    setEditor(null);
     triggerRef.current?.focus();
   }
 
@@ -188,7 +230,7 @@ export function MarketVoteButton({
     setRefreshVersion((current) => current + 1);
   }
 
-  function canStartPrediction(showMessage = true) {
+  function canUsePrediction(mode: EditorMode) {
     const currentWindow = getVotingWindow(symbol, Date.now());
     const currentSessionKey = getSessionKey(currentWindow.predictionFor);
 
@@ -202,38 +244,58 @@ export function MarketVoteButton({
       message = interfaceLabels.checking;
     } else if (voteLookupFailed) {
       message = interfaceLabels.lookup_failed;
-
-      if (showMessage) {
-        retryVoteLookup();
-      }
-    } else if (direction) {
+      retryVoteLookup();
+    } else if (mode === "create" && direction !== null) {
       message = toastLabels.already_voted;
+    } else if (
+      mode === "edit" &&
+      (direction === null || currentVote?.status !== "PENDING")
+    ) {
+      message = toastLabels.unavailable;
     }
 
-    if (message && showMessage) {
+    if (message) {
       toast.error(message);
+      return false;
     }
 
-    return message === null;
+    return true;
   }
 
-  function handleTriggerClick(
-    nextDirection: VoteDirection,
+  function openEditor(
+    mode: EditorMode,
     trigger: HTMLButtonElement,
+    nextDirection?: VoteDirection,
   ) {
     if (voteButtonDisabled || submittingRef.current) return;
-    if (!canStartPrediction()) return;
+    if (!canUsePrediction(mode)) return;
 
     triggerRef.current = trigger;
-    setDraftDirection(nextDirection);
-    setBetAmount(userId && userPoints >= 50 ? 50 : 0);
+
+    setDraftDirection(mode === "edit" ? direction : (nextDirection ?? null));
+
+    setBetAmount(
+      mode === "edit"
+        ? userId
+          ? existingPointsBet
+          : 0
+        : userId && userPoints >= 50
+          ? 50
+          : 0,
+    );
+
     setNow(Date.now());
-    setView("editor");
+    setEditor({ lookupKey, mode });
   }
 
   async function submitVote(comment: string, gif: GifResult | null) {
-    if (submittingRef.current) return;
-    if (!canStartPrediction()) return;
+    if (submittingRef.current || !editor || editor.lookupKey !== lookupKey) {
+      return;
+    }
+
+    const mode = editor.mode;
+
+    if (!canUsePrediction(mode)) return;
 
     if (!draftDirection) {
       toast.error(interfaceLabels.choose_direction);
@@ -252,92 +314,164 @@ export function MarketVoteButton({
       return;
     }
 
-    const submittedDirection = draftDirection;
-    const submittedAmount = userId ? betAmount : 0;
-
-    if (
-      !Number.isInteger(submittedAmount) ||
-      submittedAmount < 0 ||
-      submittedAmount > 500 ||
-      submittedAmount % 50 !== 0
-    ) {
-      toast.error(toastLabels.invalid_amount);
-      return;
-    }
-
     const submittedLookupKey = JSON.stringify([
       userId,
       symbol,
       getSessionKey(sessionDate),
     ]);
 
+    if (submittedLookupKey !== editor.lookupKey) {
+      toast.error(interfaceLabels.checking);
+      return;
+    }
+
+    const submittedDirection = draftDirection;
+    const submittedAmount = userId ? betAmount : 0;
+
+    if (
+      !Number.isInteger(submittedAmount) ||
+      submittedAmount < 0 ||
+      submittedAmount > maxBet ||
+      submittedAmount % 50 !== 0
+    ) {
+      toast.error(toastLabels.invalid_amount);
+      return;
+    }
+
+    const canWriteComment =
+      Boolean(userId) && user?.status !== "BANNED" && user?.status !== "MUTED";
+
     submittingRef.current = true;
     setIsSubmitting(true);
 
+    // Invalidate any lookup started before the submission.
+    voteRevisionRef.current += 1;
+
+    const isCurrentView = () =>
+      mountedRef.current && activeLookupKeyRef.current === submittedLookupKey;
+
     try {
-      const result = userId
-        ? await createComment({
-            content: buildCommentContent(comment, gif),
-            assetSymbols: [symbol],
-            prediction: {
-              direction: submittedDirection,
-              pointsBet: submittedAmount,
-              sessionDate,
-            },
-          })
-        : await submitMarketVote({
-            symbol,
-            direction: submittedDirection,
-            pointsBet: 0,
-            sessionDate,
-          });
+      let updatedPoints: number | null = null;
+      let savedDirection = submittedDirection;
+      let savedPointsBet = submittedAmount;
+      let savedStatus: VoteStatus = "PENDING";
 
-      if (
-        result.points != null &&
-        activeLookupKeyRef.current === submittedLookupKey
-      ) {
-        setPoints(result.points);
-      }
-
-      // Prevent an older lookup from overwriting the submitted vote.
-      voteRevisionRef.current += 1;
-
-      if (activeLookupKeyRef.current === submittedLookupKey) {
-        setVoteState({
-          lookupKey: submittedLookupKey,
+      if (mode === "edit") {
+        const result = await updateMarketVote({
+          symbol,
           direction: submittedDirection,
+          pointsBet: submittedAmount,
+          sessionDate,
         });
 
-        setCheckedLookupKey(submittedLookupKey);
-        setVoteLookupFailed(false);
+        updatedPoints = result.points;
+        savedDirection = result.direction;
+        savedPointsBet = result.pointsBet;
+        savedStatus = result.status;
+      } else if (userId) {
+        const result = await createComment({
+          content: buildCommentContent(
+            canWriteComment ? comment : "",
+            canWriteComment ? gif : null,
+          ),
+          assetSymbols: [symbol],
+          prediction: {
+            direction: submittedDirection,
+            pointsBet: submittedAmount,
+            sessionDate,
+          },
+        });
+
+        updatedPoints = result.points;
       } else {
-        retryVoteLookup();
+        const result = await submitMarketVote({
+          symbol,
+          direction: submittedDirection,
+          pointsBet: 0,
+          sessionDate,
+        });
+
+        savedDirection = result.direction;
+        savedPointsBet = result.pointsBet;
+        savedStatus = result.status;
       }
 
-      closePopup();
+      // Also invalidate lookups started while saving.
+      voteRevisionRef.current += 1;
 
-      const directionLabel =
-        submittedDirection === "BULL" ? voteLabels.bull : voteLabels.bear;
+      if (!isCurrentView()) return;
 
-      const successMessage =
-        submittedAmount > 0
-          ? toastLabels.success_with_points
-          : toastLabels.success;
+      if (updatedPoints !== null) {
+        setPoints(updatedPoints);
+      }
 
-      toast.success(
-        successMessage
-          .replace("{voteDirection}", directionLabel)
-          .replace("{points}", submittedAmount.toLocaleString(language)),
-      );
+      setVoteState({
+        lookupKey: submittedLookupKey,
+        direction: savedDirection,
+        pointsBet: savedPointsBet,
+        status: savedStatus,
+      });
+
+      setCheckedLookupKey(submittedLookupKey);
+      setVoteLookupFailed(false);
+      setEditor(null);
+
+      if (mode === "edit") {
+        toast.success(editLabels.saved);
+      } else {
+        const directionLabel =
+          savedDirection === "BULL" ? voteLabels.bull : voteLabels.bear;
+
+        const successMessage =
+          savedPointsBet > 0
+            ? toastLabels.success_with_points
+            : toastLabels.success;
+
+        toast.success(
+          successMessage
+            .replace("{voteDirection}", directionLabel)
+            .replace("{points}", savedPointsBet.toLocaleString(language)),
+        );
+      }
+
+      // Wait until the updated trigger is rendered.
+      window.requestAnimationFrame(() => {
+        if (isCurrentView()) {
+          triggerRef.current?.focus();
+        }
+      });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : toastLabels.failed);
+      voteRevisionRef.current += 1;
 
-      retryVoteLookup();
+      if (isCurrentView()) {
+        toast.error(
+          error instanceof Error ? error.message : toastLabels.failed,
+        );
+
+        retryVoteLookup();
+      }
     } finally {
       submittingRef.current = false;
-      setIsSubmitting(false);
+
+      if (mountedRef.current) {
+        setIsSubmitting(false);
+      }
     }
   }
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // Discard a popup belonging to a previous voter or session.
+  useEffect(() => {
+    setEditor(null);
+    setDraftDirection(null);
+  }, [lookupKey]);
 
   // Update market time and refresh when returning to the page.
   useEffect(() => {
@@ -351,7 +485,7 @@ export function MarketVoteButton({
       const currentTime = Date.now();
       setNow(currentTime);
 
-      // Focus and visibilitychange can fire for the same return.
+      if (submittingRef.current) return;
       if (currentTime - lastFocusRefreshRef.current < 1000) return;
 
       lastFocusRefreshRef.current = currentTime;
@@ -374,7 +508,6 @@ export function MarketVoteButton({
     };
   }, []);
 
-  // Skip the initial request when server data matches this session.
   useEffect(() => {
     let cancelled = false;
     const revision = voteRevisionRef.current;
@@ -384,20 +517,6 @@ export function MarketVoteButton({
     if (!sessionKey) {
       setCheckedLookupKey(lookupKey);
       return;
-    }
-
-    const initialSnapshot = initialVoteSnapshotRef.current;
-
-    if (refreshVersion === 0 && initialSnapshot.lookupKey === lookupKey) {
-      return;
-    }
-
-    // Do not reuse initial data after changing user or session.
-    if (initialSnapshot.lookupKey !== lookupKey) {
-      initialVoteSnapshotRef.current = {
-        lookupKey: null,
-        direction: null,
-      };
     }
 
     const sessionDate = new Date(sessionKey);
@@ -421,8 +540,11 @@ export function MarketVoteButton({
 
         setVoteState({
           lookupKey,
-          direction: vote,
+          direction: vote?.direction ?? null,
+          pointsBet: vote?.pointsBet ?? 0,
+          status: vote?.status ?? null,
         });
+
         setVoteLookupFailed(false);
       } catch {
         if (!isCurrentRequest()) return;
@@ -440,21 +562,27 @@ export function MarketVoteButton({
     return () => {
       cancelled = true;
     };
-  }, [userId, symbol, sessionKey, lookupKey, refreshVersion]);
+  }, [symbol, sessionKey, lookupKey, refreshVersion]);
 
   useEffect(() => {
-    if (view === "editor") {
+    if (isOpen) {
       editorRef.current?.focus();
     }
-  }, [view]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     function handleEscape(event: KeyboardEvent) {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (
+        event.key !== "Escape" ||
+        event.defaultPrevented ||
+        submittingRef.current
+      ) {
+        return;
+      }
 
-      setView("closed");
+      setEditor(null);
       triggerRef.current?.focus();
     }
 
@@ -468,20 +596,24 @@ export function MarketVoteButton({
   const inputDisabled =
     voteButtonDisabled ||
     voteLookupFailed ||
-    direction !== null ||
-    !votingWindow.canVote;
+    !votingWindow.canVote ||
+    (isEditing ? !canEdit : direction !== null);
 
-  const editorMessage = direction
-    ? toastLabels.already_voted
-    : votingWindow.isMarketOpen
-      ? toastLabels.market_open
-      : !votingWindow.canVote
-        ? toastLabels.unavailable
-        : voteLookupFailed
-          ? interfaceLabels.lookup_failed
-          : isVoteLoading
-            ? interfaceLabels.checking
-            : null;
+  const editorMessage = votingWindow.isMarketOpen
+    ? toastLabels.market_open
+    : !votingWindow.canVote
+      ? toastLabels.unavailable
+      : voteLookupFailed
+        ? interfaceLabels.lookup_failed
+        : isVoteLoading
+          ? interfaceLabels.checking
+          : isEditing
+            ? !canEdit
+              ? toastLabels.unavailable
+              : null
+            : direction
+              ? toastLabels.already_voted
+              : null;
 
   return (
     <div className="flex min-h-7.5 w-full justify-end">
@@ -495,10 +627,42 @@ export function MarketVoteButton({
           {countdownLabels.closed}
         </span>
       ) : direction ? (
-        <span className={VOTE_STATUS_CLASS}>
-          <Check className="size-3.5" strokeWidth={1.5} aria-hidden="true" />
-          {votedLabel}
-        </span>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={VOTE_STATUS_CLASS}>
+            <Check
+              className="size-3.5 shrink-0"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            {votedLabel}
+          </span>
+
+          {canEdit && (
+            <button
+              ref={triggerRef}
+              type="button"
+              disabled={voteButtonDisabled}
+              aria-label={`${marketName}: ${editLabels.edit}`}
+              title={editLabels.edit}
+              aria-expanded={isOpen}
+              aria-controls={isOpen ? popupId : undefined}
+              onClick={(event) => openEditor("edit", event.currentTarget)}
+              className="
+                flex size-7 shrink-0 cursor-pointer
+                items-center justify-center rounded-full
+                text-zinc-500 transition-colors
+                hover:bg-zinc-100 hover:text-zinc-900
+                focus-visible:outline-none
+                focus-visible:ring-2 focus-visible:ring-zinc-400
+                disabled:cursor-default disabled:opacity-50
+                dark:text-zinc-400 dark:hover:bg-zinc-800
+                dark:hover:text-zinc-100
+              "
+            >
+              <Pencil className="size-3.5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
       ) : (
         votingWindow.canVote && (
           <div className="flex w-full items-center justify-between gap-2">
@@ -510,7 +674,7 @@ export function MarketVoteButton({
               aria-label={`${marketName}: ${voteLabels.bull}`}
               aria-busy={voteButtonDisabled}
               onClick={(event) =>
-                handleTriggerClick("BULL", event.currentTarget)
+                openEditor("create", event.currentTarget, "BULL")
               }
               className={`${VOTE_BUTTON_CLASS} bg-[#09b374] enabled:hover:bg-emerald-700`}
             >
@@ -526,7 +690,7 @@ export function MarketVoteButton({
               aria-label={`${marketName}: ${voteLabels.bear}`}
               aria-busy={voteButtonDisabled}
               onClick={(event) =>
-                handleTriggerClick("BEAR", event.currentTarget)
+                openEditor("create", event.currentTarget, "BEAR")
               }
               className={`${VOTE_BUTTON_CLASS} bg-[#e83149] enabled:hover:bg-[#b50000] dark:bg-[#ed1838] dark:enabled:hover:bg-[#cb112d]`}
             >
@@ -553,8 +717,8 @@ export function MarketVoteButton({
               }
             }}
             className="
-              fixed inset-0 z-100 flex items-end justify-center bg-black/30
-              lg:items-center lg:p-4
+              fixed inset-0 z-100 flex items-end justify-center
+              bg-black/30 lg:items-center lg:p-4
             "
           >
             <div
@@ -578,19 +742,24 @@ export function MarketVoteButton({
                   id={titleId}
                   className="text-sm font-medium text-zinc-700 dark:text-zinc-200"
                 >
-                  {predictionLabel.replace("{market}", marketName)}
+                  {isEditing
+                    ? `${editLabels.edit} · ${marketName}`
+                    : predictionLabel.replace("{market}", marketName)}
                 </h2>
 
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   aria-label={interfaceLabels.close}
                   onClick={closePopup}
                   className="
-                    flex size-7 cursor-pointer items-center justify-center
-                    rounded-full text-zinc-400 transition-colors
+                    flex size-7 shrink-0 cursor-pointer
+                    items-center justify-center rounded-full
+                    text-zinc-400 transition-colors
                     hover:bg-zinc-100 hover:text-zinc-800
-                    focus-visible:outline-none focus-visible:ring-2
-                    focus-visible:ring-zinc-400
+                    focus-visible:outline-none
+                    focus-visible:ring-2 focus-visible:ring-zinc-400
+                    disabled:cursor-default disabled:opacity-50
                     dark:hover:bg-zinc-800 dark:hover:text-zinc-200
                   "
                 >
@@ -599,8 +768,10 @@ export function MarketVoteButton({
               </div>
 
               <PredictionCommentInput
-                key={lookupKey}
+                key={`${lookupKey}:${editor?.mode}`}
                 variant="popup"
+                mode={isEditing ? "edit" : "create"}
+                onCancel={closePopup}
                 assetSymbol={symbol}
                 onCommentCreated={() => {
                   closePopup();
@@ -609,7 +780,7 @@ export function MarketVoteButton({
                 setDirection={setDraftDirection}
                 betAmount={betAmount}
                 setBetAmount={setBetAmount}
-                userPoints={userPoints}
+                userPoints={availablePoints}
                 maxBet={maxBet}
                 currentUser={user ?? null}
                 isMarketOpen={votingWindow.isMarketOpen}

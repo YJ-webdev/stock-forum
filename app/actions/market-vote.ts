@@ -168,7 +168,6 @@ async function getVoterIdentity(
   };
 }
 
-// Market list statistics.
 export async function getMarketVoteListStats({
   markets,
 }: {
@@ -179,7 +178,6 @@ export async function getMarketVoteListStats({
 }): Promise<MarketVoteListStatsMap> {
   if (markets.length === 0) return {};
 
-  // Results are keyed by symbol: only one session per symbol is supported.
   const sessionsBySymbol = new Map<string, number>();
 
   for (const market of markets) {
@@ -285,28 +283,27 @@ export async function getMarketVoteListStats({
   return result;
 }
 
-// Current member's or guest's vote.
 export async function getMarketVote({
   symbol,
   sessionDate,
-}: GetMarketVoteInput): Promise<VoteDirection | null> {
+}: GetMarketVoteInput) {
   validateSessionDate(sessionDate);
 
   const identity = await getVoterIdentity();
 
   if (!identity) return null;
 
-  const prediction = await prisma.prediction.findUnique({
+  return prisma.prediction.findUnique({
     where: getPredictionUniqueWhere(identity, symbol, sessionDate),
     select: {
+      id: true,
       direction: true,
+      pointsBet: true,
+      status: true,
     },
   });
-
-  return prediction?.direction ?? null;
 }
 
-// Combined member and guest statistics.
 export async function getMarketVoteStats({
   symbol,
   sessionDate,
@@ -395,8 +392,6 @@ export async function getMarketVoteStats({
   };
 }
 
-// Submit a prediction without creating a comment.
-// Members submitting text/GIFs should continue using createComment().
 export async function submitMarketVote({
   symbol,
   direction,
@@ -426,7 +421,6 @@ export async function submitMarketVote({
     throw new Error("Unable to identify voter.");
   }
 
-  // Guests never spend points, regardless of the submitted value.
   const effectivePointsBet = identity.userId !== null ? pointsBet : 0;
 
   if (
@@ -451,7 +445,6 @@ export async function submitMarketVote({
     throw new Error("You have already voted for this market session.");
   }
 
-  // Resolve the reference price on the server, outside the transaction.
   const referenceClose = await getReferenceClose(symbol, sessionDate);
 
   if (
@@ -489,7 +482,6 @@ export async function submitMarketVote({
       let nationality = "OTHER";
 
       if (memberId !== null) {
-        // Keep account checks consistent with createComment().
         await tx.$queryRaw`
           SELECT "id"
           FROM "User"
@@ -514,7 +506,6 @@ export async function submitMarketVote({
         nationality = normalizeNationality(member.nationality);
       }
 
-      // External fetching or row locking may have crossed market open.
       validateVotingSession(symbol, sessionDate);
 
       const prediction = await tx.prediction.create({
@@ -581,6 +572,22 @@ export async function submitMarketVote({
         });
       }
 
+      if (memberId !== null) {
+        await tx.userActivity.create({
+          data: {
+            userId: memberId,
+            type: "PREDICTION_SUBMITTED",
+            marketSymbol: prediction.symbol,
+            predictionId: prediction.id,
+            metadata: {
+              direction: prediction.direction,
+              pointsBet: prediction.pointsBet,
+              sessionDate: prediction.sessionDate.toISOString(),
+            },
+          },
+        });
+      }
+
       const balance =
         memberId !== null
           ? await tx.pointBalance.findUnique({
@@ -602,7 +609,6 @@ export async function submitMarketVote({
 
     return result;
   } catch (error) {
-    // The unique constraint also protects against concurrent submissions.
     if (
       typeof error === "object" &&
       error !== null &&
@@ -614,4 +620,276 @@ export async function submitMarketVote({
 
     throw error;
   }
+}
+
+export async function updateMarketVote({
+  symbol,
+  direction,
+  pointsBet,
+  sessionDate,
+}: SubmitMarketVoteInput) {
+  if (
+    direction !== PredictionDirection.BULL &&
+    direction !== PredictionDirection.BEAR
+  ) {
+    throw new Error("Invalid prediction direction.");
+  }
+
+  validateSessionDate(sessionDate);
+
+  const market = ALL_MARKET_SYMBOLS.find((item) => item.symbol === symbol);
+
+  if (!market || market.assetType !== "index") {
+    throw new Error("Voting is only available for indices.");
+  }
+
+  validateVotingSession(symbol, sessionDate);
+
+  const identity = await getVoterIdentity();
+
+  if (!identity) {
+    throw new Error("No existing vote was found.");
+  }
+
+  const effectivePointsBet = identity.userId !== null ? pointsBet : 0;
+
+  if (
+    !Number.isInteger(effectivePointsBet) ||
+    effectivePointsBet < 0 ||
+    effectivePointsBet > 500 ||
+    effectivePointsBet % 50 !== 0
+  ) {
+    throw new Error("Bet amount must be 0–500 in increments of 50.");
+  }
+
+  const uniqueWhere = getPredictionUniqueWhere(identity, symbol, sessionDate);
+
+  return prisma.$transaction(async (tx) => {
+    const memberId = identity.userId;
+
+    if (memberId !== null) {
+      await tx.$queryRaw`
+        SELECT "id"
+        FROM "User"
+        WHERE "id" = ${memberId}
+        FOR UPDATE
+      `;
+
+      const member = await tx.user.findUnique({
+        where: {
+          id: memberId,
+        },
+        select: {
+          deletedAt: true,
+        },
+      });
+
+      if (!member || member.deletedAt) {
+        throw new Error("Account unavailable.");
+      }
+    }
+
+    const existing = await tx.prediction.findUnique({
+      where: uniqueWhere,
+      select: {
+        id: true,
+      },
+    });
+
+    if (!existing) {
+      throw new Error("No existing vote was found.");
+    }
+
+    await tx.$queryRaw`
+      SELECT "id"
+      FROM "Prediction"
+      WHERE "id" = ${existing.id}
+      FOR UPDATE
+    `;
+
+    const current = await tx.prediction.findUnique({
+      where: uniqueWhere,
+      select: {
+        id: true,
+        direction: true,
+        pointsBet: true,
+        status: true,
+      },
+    });
+
+    if (!current || current.id !== existing.id) {
+      throw new Error("No existing vote was found.");
+    }
+
+    if (current.status !== "PENDING") {
+      throw new Error("Only pending predictions can be edited.");
+    }
+
+    validateVotingSession(symbol, sessionDate);
+
+    const changed =
+      current.direction !== direction ||
+      current.pointsBet !== effectivePointsBet;
+
+    const additionalBet = effectivePointsBet - current.pointsBet;
+
+    if (memberId !== null && additionalBet !== 0) {
+      await tx.pointBalance.upsert({
+        where: {
+          userId: memberId,
+        },
+        update: {},
+        create: {
+          userId: memberId,
+          points: 10000,
+        },
+      });
+
+      if (additionalBet > 0) {
+        const deducted = await tx.pointBalance.updateMany({
+          where: {
+            userId: memberId,
+            points: {
+              gte: additionalBet,
+            },
+          },
+          data: {
+            points: {
+              decrement: additionalBet,
+            },
+          },
+        });
+
+        if (deducted.count !== 1) {
+          throw new Error("You do not have enough points.");
+        }
+      } else {
+        await tx.pointBalance.update({
+          where: {
+            userId: memberId,
+          },
+          data: {
+            points: {
+              increment: -additionalBet,
+            },
+          },
+        });
+      }
+
+      await tx.pointTransaction.upsert({
+        where: {
+          predictionId_type: {
+            predictionId: current.id,
+            type: "BET",
+          },
+        },
+        update: {
+          amount: -effectivePointsBet,
+        },
+        create: {
+          userId: memberId,
+          predictionId: current.id,
+          type: "BET",
+          amount: -effectivePointsBet,
+        },
+      });
+    }
+
+    validateVotingSession(symbol, sessionDate);
+
+    const prediction = await tx.prediction.update({
+      where: {
+        id: current.id,
+      },
+      data: changed
+        ? {
+            direction,
+            pointsBet: effectivePointsBet,
+          }
+        : {},
+      select: {
+        id: true,
+        symbol: true,
+        direction: true,
+        pointsBet: true,
+        referenceClose: true,
+        sessionDate: true,
+        status: true,
+        nationality: true,
+        createdAt: true,
+      },
+    });
+
+    if (memberId !== null && changed) {
+      const metadata = {
+        direction: prediction.direction,
+        pointsBet: prediction.pointsBet,
+        sessionDate: prediction.sessionDate.toISOString(),
+        lastEditedAt: new Date().toISOString(),
+      };
+
+      const activity = await tx.userActivity.findFirst({
+        where: {
+          userId: memberId,
+          predictionId: prediction.id,
+          type: "PREDICTION_SUBMITTED",
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        select: {
+          id: true,
+        },
+      });
+
+      if (activity) {
+        await tx.userActivity.update({
+          where: {
+            id: activity.id,
+          },
+          data: {
+            metadata,
+          },
+        });
+      } else {
+        const linkedComment = await tx.comment.findUnique({
+          where: {
+            predictionId: prediction.id,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        await tx.userActivity.create({
+          data: {
+            userId: memberId,
+            type: "PREDICTION_SUBMITTED",
+            marketSymbol: prediction.symbol,
+            predictionId: prediction.id,
+            commentId: linkedComment?.id ?? null,
+            metadata,
+            createdAt: prediction.createdAt,
+          },
+        });
+      }
+    }
+
+    const balance =
+      memberId !== null
+        ? await tx.pointBalance.findUnique({
+            where: {
+              userId: memberId,
+            },
+            select: {
+              points: true,
+            },
+          })
+        : null;
+
+    return {
+      ...prediction,
+      referenceClose: Number(prediction.referenceClose),
+      points: balance?.points ?? null,
+      changed,
+    };
+  });
 }

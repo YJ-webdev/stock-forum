@@ -97,13 +97,12 @@ export default async function Page({ params }: PageProps) {
 
   return (
     <>
-      {" "}
       <MarketPageClient
         symbol={symbol}
         initialVoteStats={initialVoteStats}
         initialVote={initialVote}
         initialIsWatchlist={initialIsWatchlist}
-      />{" "}
+      />
       <ScrollToTopButton threshold={600} />
     </>
   );

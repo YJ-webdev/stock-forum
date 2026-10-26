@@ -26,6 +26,7 @@ import {
   getMarketVote,
   getMarketVoteStats,
   submitMarketVote,
+  updateMarketVote,
   type MarketVoteStats,
   type VoteDirection,
 } from "@/app/actions/market-vote";
@@ -58,7 +59,7 @@ const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 interface MarketPageClientProps {
   symbol: string;
   initialVoteStats: MarketVoteStats | null;
-  initialVote: VoteDirection | null;
+  initialVote: Awaited<ReturnType<typeof getMarketVote>>;
   initialIsWatchlist: boolean;
 }
 
@@ -192,9 +193,15 @@ export default function MarketPageClient({
   const [voteSelection, setVoteSelection] = useState<{
     key: string | null;
     direction: VoteDirection | null;
+    pointsBet: number;
+    status:
+      | NonNullable<Awaited<ReturnType<typeof getMarketVote>>>["status"]
+      | null;
   }>({
     key: null,
     direction: null,
+    pointsBet: 0,
+    status: null,
   });
 
   const [checkedVoteKey, setCheckedVoteKey] = useState<string | null>(null);
@@ -281,6 +288,12 @@ export default function MarketPageClient({
   const selectedVote =
     voteSelection.key === voteLookupKey ? voteSelection.direction : null;
 
+  const selectedPointsBet =
+    voteSelection.key === voteLookupKey ? voteSelection.pointsBet : 0;
+
+  const selectedVoteStatus =
+    voteSelection.key === voteLookupKey ? voteSelection.status : null;
+
   const isVoteChecking =
     canPredict && Boolean(voteSessionKey) && checkedVoteKey !== voteLookupKey;
 
@@ -313,7 +326,9 @@ export default function MarketPageClient({
 
         setVoteSelection({
           key: voteLookupKey,
-          direction: vote,
+          direction: vote?.direction ?? null,
+          pointsBet: vote?.pointsBet ?? 0,
+          status: vote?.status ?? null,
         });
         setVoteLookupFailed(false);
       } catch (error) {
@@ -515,6 +530,8 @@ export default function MarketPageClient({
         setVoteSelection({
           key: submittedKey,
           direction,
+          pointsBet: submittedAmount,
+          status: "PENDING",
         });
         setCheckedVoteKey(submittedKey);
         setVoteLookupFailed(false);
@@ -576,6 +593,151 @@ export default function MarketPageClient({
     });
   };
 
+  const handleUpdateVote = async (
+    direction: VoteDirection,
+    amount: number,
+  ): Promise<Awaited<ReturnType<typeof updateMarketVote>> | null> => {
+    if (!canPredict || isPending || submittingVoteRef.current) {
+      return null;
+    }
+
+    if (isVoteChecking || voteLookupFailed) {
+      toast.error("Unable to verify your vote yet. Please try again.");
+      return null;
+    }
+
+    if (selectedVote === null || selectedVoteStatus !== "PENDING") {
+      toast.error("Only pending predictions can be edited.");
+      return null;
+    }
+
+    if (direction !== "BULL" && direction !== "BEAR") {
+      toast.error("Choose Bull or Bear.");
+      return null;
+    }
+
+    const currentWindow = getVotingWindow(selectedSymbol, Date.now());
+    const sessionDate = currentWindow.predictionFor;
+
+    if (!currentWindow.canVote || !sessionDate) {
+      toast.error(
+        currentWindow.isMarketOpen
+          ? "Voting is closed while the market is open."
+          : "Voting is currently unavailable.",
+      );
+      return null;
+    }
+
+    const submittedKey = JSON.stringify([
+      user?.id ?? null,
+      selectedSymbol,
+      sessionDate.toISOString(),
+    ]);
+
+    if (submittedKey !== activeVoteKeyRef.current) {
+      toast.error("The voting session changed. Please try again.");
+      return null;
+    }
+
+    const submittedAmount = user?.id ? amount : 0;
+
+    if (
+      !Number.isInteger(submittedAmount) ||
+      submittedAmount < 0 ||
+      submittedAmount > 500 ||
+      submittedAmount % 50 !== 0
+    ) {
+      toast.error("Use 0–500 points in steps of 50.");
+      return null;
+    }
+
+    if (user?.id && submittedAmount > userPoints + selectedPointsBet) {
+      toast.error("You do not have enough points.");
+      return null;
+    }
+
+    submittingVoteRef.current = true;
+
+    // Prevent an older lookup from overwriting this save.
+    voteRevisionRef.current += 1;
+
+    const isCurrentView = () => activeVoteKeyRef.current === submittedKey;
+
+    // The child awaits this promise to determine save success.
+    const operation = (async () => {
+      let result: Awaited<ReturnType<typeof updateMarketVote>>;
+
+      try {
+        result = await updateMarketVote({
+          symbol: selectedSymbol,
+          direction,
+          pointsBet: submittedAmount,
+          sessionDate,
+        });
+      } catch (error) {
+        if (isCurrentView()) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to update prediction.",
+          );
+
+          setCheckedVoteKey(null);
+          setVoteRefreshVersion((value) => value + 1);
+        }
+
+        return null;
+      }
+
+      if (!isCurrentView()) return null;
+
+      setVoteSelection({
+        key: submittedKey,
+        direction: result.direction,
+        pointsBet: result.pointsBet,
+        status: result.status,
+      });
+
+      setCheckedVoteKey(submittedKey);
+      setVoteLookupFailed(false);
+
+      if (result.points !== null) {
+        setUserPoints(result.points);
+      }
+
+      toast.success(
+        userLanguage === "ko" ? "투표를 저장했어요." : "Prediction saved.",
+      );
+
+      // A statistics refresh failure must not turn a successful
+      // save into a reported submission failure.
+      try {
+        const stats = await getMarketVoteStats({
+          symbol: selectedSymbol,
+          sessionDate,
+        });
+
+        if (isCurrentView()) {
+          setVoteStats(stats);
+        }
+      } catch (error) {
+        console.error("Failed to refresh prediction statistics:", error);
+      }
+
+      return isCurrentView() ? result : null;
+    })();
+
+    startTransition(async () => {
+      await operation;
+    });
+
+    try {
+      return await operation;
+    } finally {
+      submittingVoteRef.current = false;
+    }
+  };
+
   const handleRangeChange = async (range: SelectedRange) => {
     if (range === activeRange) {
       return;
@@ -620,10 +782,10 @@ export default function MarketPageClient({
   }, [selectedSymbol]);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto w-full min-w-0 max-w-4xl">
       {/* News */}
 
-      <div className="mx-4 flex w-full self-end gap-2">
+      <div className="w-full min-w-0 px-4">
         <MarketNews symbol={selectedSymbol} />
       </div>
 
@@ -925,12 +1087,17 @@ export default function MarketPageClient({
             canPredict
               ? {
                   selectedVote,
+                  selectedPointsBet,
+                  selectedVoteStatus,
+                  canVote: votingWindow.canVote,
+                  voteLookupKey,
                   isMarketOpen,
                   userPoints: user?.id ? userPoints : 0,
                   betAmount: user?.id ? betAmount : 0,
                   setBetAmount,
                   handleVote,
-                  isPending: isPending || isVoteChecking,
+                  handleUpdateVote,
+                  isPending: isPending || isVoteChecking || voteLookupFailed,
                   targetMs: votingWindow.targetMs,
                   countdownType: votingWindow.countdownType,
                   showCountdown: votingWindow.showCountdown,

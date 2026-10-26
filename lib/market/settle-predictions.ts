@@ -28,9 +28,6 @@ type SettlementInput = {
   predictionId: string;
   userId: string | null;
   symbol: string;
-  direction: PredictionDirection;
-  pointsBet: number;
-  referenceClose: number;
   settlementClose: number;
 };
 
@@ -65,6 +62,7 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
   };
 
   // Include guests and soft-deleted members.
+  // Direction, bet, and reference close are read inside settlement.
   const predictions = await prisma.prediction.findMany({
     where: {
       status: PredictionStatus.PENDING,
@@ -72,11 +70,7 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
     select: {
       id: true,
       userId: true,
-      guestId: true,
       symbol: true,
-      direction: true,
-      pointsBet: true,
-      referenceClose: true,
       sessionDate: true,
       asset: {
         select: {
@@ -91,31 +85,6 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
     summary.checked += 1;
 
     try {
-      const referenceClose = Number(prediction.referenceClose);
-      const isGuest = prediction.userId === null;
-
-      // Exactly one voter identity must exist.
-      if ((prediction.userId === null) === (prediction.guestId === null)) {
-        throw new Error("Prediction must have exactly one voter identity.");
-      }
-
-      if (
-        !Number.isInteger(prediction.pointsBet) ||
-        prediction.pointsBet < 0 ||
-        prediction.pointsBet > 500 ||
-        prediction.pointsBet % 50 !== 0
-      ) {
-        throw new Error("Invalid prediction bet amount.");
-      }
-
-      if (isGuest && prediction.pointsBet !== 0) {
-        throw new Error("Guest predictions must have a zero point bet.");
-      }
-
-      if (!Number.isFinite(referenceClose) || referenceClose <= 0) {
-        throw new Error("Invalid prediction reference close.");
-      }
-
       const displaySymbol = prediction.asset.displaySymbol ?? prediction.symbol;
 
       // Avoid fetching candles for sessions that have not finished yet.
@@ -152,7 +121,7 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
           prediction.sessionDate.toISOString();
 
         await prisma.$transaction(async (tx) => {
-          // Coordinate with account deletion and member settlement.
+          // Keep lock order consistent with vote edits and settlement.
           await tx.$queryRaw`
             SELECT "id"
             FROM "User"
@@ -171,6 +140,13 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
 
           if (!user || user.deletedAt) return;
 
+          await tx.$queryRaw`
+            SELECT "id"
+            FROM "Prediction"
+            WHERE "id" = ${prediction.id}
+            FOR UPDATE
+          `;
+
           const currentPrediction = await tx.prediction.findUnique({
             where: {
               id: prediction.id,
@@ -182,7 +158,8 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
           });
 
           if (
-            currentPrediction?.userId !== userId ||
+            !currentPrediction ||
+            currentPrediction.userId !== userId ||
             currentPrediction.status !== PredictionStatus.PENDING
           ) {
             return;
@@ -218,32 +195,16 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
         throw new Error("Invalid prediction settlement close.");
       }
 
-      const marketDirection = getMarketDirection({
-        referenceClose,
+      // Calculate the outcome using the latest locked prediction.
+      const outcome = await settlePrediction({
+        predictionId: prediction.id,
+        userId: prediction.userId,
+        symbol: displaySymbol,
         settlementClose,
       });
 
-      const outcome: SettlementOutcome =
-        marketDirection === "DRAW"
-          ? "DRAW"
-          : marketDirection === prediction.direction
-            ? "WON"
-            : "LOST";
-
-      const settled = await settlePrediction(
-        {
-          predictionId: prediction.id,
-          userId: prediction.userId,
-          symbol: displaySymbol,
-          direction: prediction.direction,
-          pointsBet: prediction.pointsBet,
-          referenceClose,
-          settlementClose,
-        },
-        outcome,
-      );
-
-      if (!settled) continue;
+      // Another request may already have settled the prediction.
+      if (outcome === null) continue;
 
       if (outcome === "WON") {
         summary.won += 1;
@@ -262,23 +223,17 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
   return summary;
 }
 
-async function settlePrediction(
-  {
-    predictionId,
-    userId,
-    symbol,
-    direction,
-    pointsBet,
-    referenceClose,
-    settlementClose,
-  }: SettlementInput,
-  outcome: SettlementOutcome,
-): Promise<boolean> {
+async function settlePrediction({
+  predictionId,
+  userId,
+  symbol,
+  settlementClose,
+}: SettlementInput): Promise<SettlementOutcome | null> {
   return prisma.$transaction(async (tx) => {
     let canReceiveMemberRecords = false;
 
     if (userId !== null) {
-      // Use the same lock as account deletion.
+      // Match updateMarketVote(): User first, then Prediction.
       await tx.$queryRaw`
         SELECT "id"
         FROM "User"
@@ -295,10 +250,83 @@ async function settlePrediction(
         },
       });
 
-      if (!user) return false;
+      if (!user) return null;
 
       canReceiveMemberRecords = user.deletedAt === null;
     }
+
+    // Serialize settlement with vote edits and other settlement requests.
+    await tx.$queryRaw`
+      SELECT "id"
+      FROM "Prediction"
+      WHERE "id" = ${predictionId}
+      FOR UPDATE
+    `;
+
+    // Always read the latest values after acquiring the lock.
+    const current = await tx.prediction.findUnique({
+      where: {
+        id: predictionId,
+      },
+      select: {
+        userId: true,
+        guestId: true,
+        direction: true,
+        pointsBet: true,
+        referenceClose: true,
+        status: true,
+      },
+    });
+
+    if (
+      !current ||
+      current.userId !== userId ||
+      current.status !== PredictionStatus.PENDING
+    ) {
+      return null;
+    }
+
+    // Exactly one voter identity must exist.
+    if ((current.userId === null) === (current.guestId === null)) {
+      throw new Error("Prediction must have exactly one voter identity.");
+    }
+
+    const direction = current.direction;
+    const pointsBet = current.pointsBet;
+    const referenceClose = Number(current.referenceClose);
+
+    if (
+      !Number.isInteger(pointsBet) ||
+      pointsBet < 0 ||
+      pointsBet > 500 ||
+      pointsBet % 50 !== 0
+    ) {
+      throw new Error("Invalid prediction bet amount.");
+    }
+
+    if (userId === null && pointsBet !== 0) {
+      throw new Error("Guest predictions must have a zero point bet.");
+    }
+
+    if (!Number.isFinite(referenceClose) || referenceClose <= 0) {
+      throw new Error("Invalid prediction reference close.");
+    }
+
+    if (!Number.isFinite(settlementClose) || settlementClose <= 0) {
+      throw new Error("Invalid prediction settlement close.");
+    }
+
+    const marketDirection = getMarketDirection({
+      referenceClose,
+      settlementClose,
+    });
+
+    const outcome: SettlementOutcome =
+      marketDirection === "DRAW"
+        ? "DRAW"
+        : marketDirection === direction
+          ? "WON"
+          : "LOST";
 
     const status =
       outcome === "WON"
@@ -316,7 +344,7 @@ async function settlePrediction(
             ? -pointsBet
             : 0;
 
-    // The status condition atomically prevents duplicate settlement.
+    // The status condition also protects against duplicate settlement.
     // userId: null explicitly matches guest predictions.
     const claimed = await tx.prediction.updateMany({
       where: {
@@ -332,15 +360,15 @@ async function settlePrediction(
       },
     });
 
-    if (claimed.count !== 1) return false;
+    if (claimed.count !== 1) return null;
 
     // Guests and deleted members retain their result without
     // creating balances, transactions, or notifications.
     if (userId === null || !canReceiveMemberRecords) {
-      return true;
+      return outcome;
     }
 
-    // The original bet was deducted when the prediction was submitted.
+    // The final bet amount was deducted during submission or editing.
     if (pointsBet > 0 && outcome !== "LOST") {
       const payout = outcome === "WON" ? pointsBet * 2 : pointsBet;
 
@@ -425,6 +453,6 @@ async function settlePrediction(
       },
     });
 
-    return true;
+    return outcome;
   });
 }

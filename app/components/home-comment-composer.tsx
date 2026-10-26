@@ -312,6 +312,25 @@ export function HomeCommentComposer({
                       if (editorDisabled || submittingRef.current) return;
 
                       setSymbol(value ?? "");
+
+                      if (!value) return;
+
+                      // Select가 닫힌 뒤 textarea로 포커스 이동.
+                      requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                          if (submittingRef.current) return;
+
+                          const input = inputRef.current;
+
+                          if (!input || input.disabled) return;
+
+                          input.focus({ preventScroll: true });
+
+                          // 기존 내용이 있으면 끝에서 이어서 입력.
+                          const end = input.value.length;
+                          input.setSelectionRange(end, end);
+                        });
+                      });
                     }}
                     disabled={editorDisabled}
                   >
@@ -327,7 +346,7 @@ export function HomeCommentComposer({
                     <SelectContent
                       align="start"
                       className="
-                        max-h-72 w-full rounded-xl
+                         w-full rounded-xl
                         border-zinc-200 bg-white
                         dark:border-zinc-700 dark:bg-zinc-900
                       "
