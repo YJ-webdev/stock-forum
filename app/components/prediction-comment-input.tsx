@@ -718,7 +718,7 @@ export function PredictionCommentInput({
               </span>
             )}
 
-            {!isEditing && (
+            {!isEditing && user && (
               <label
                 className={`
                   col-span-2 flex min-h-9 min-w-0 items-center gap-1.5
