@@ -160,7 +160,7 @@ export function BullBearVoteCard({
   const language = resolveLanguage(userLanguage);
   const chartLabels = CHART_LABELS[language];
 
-  const { data, loading } = useMarketQuote(
+  const { data, loading, error } = useMarketQuote(
     market.providerSymbol ?? market.symbol,
     market.name,
     "1D",
@@ -170,6 +170,8 @@ export function BullBearVoteCard({
     "5m",
     quoteEnabled,
   );
+
+  const showQuoteLoading = !data && !error;
 
   const { sessionStartMs, sessionEndMs } = getSparklineSession(
     market,
@@ -208,7 +210,7 @@ export function BullBearVoteCard({
             <Numeric className="outfit text-[18px] font-extrabold tracking-normal text-zinc-800 tabular-nums dark:text-zinc-100">
               {data.value}
             </Numeric>
-          ) : !quoteEnabled || loading ? (
+          ) : showQuoteLoading ? (
             <span
               aria-hidden="true"
               className="h-4.5 w-24 animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
@@ -227,7 +229,7 @@ export function BullBearVoteCard({
             >
               {formatChange(data.change)} ({data.percent})
             </p>
-          ) : !quoteEnabled || loading ? (
+          ) : showQuoteLoading ? (
             <span
               aria-hidden="true"
               className="h-3 w-28 animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
@@ -252,7 +254,7 @@ export function BullBearVoteCard({
                 lunchEndMs={data.lunchEndMs}
               />
             </div>
-          ) : (!quoteEnabled || loading) && !data ? (
+          ) : showQuoteLoading ? (
             <div className="flex h-full w-full items-center px-3">
               <span
                 aria-hidden="true"

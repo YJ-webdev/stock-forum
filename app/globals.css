@@ -137,6 +137,19 @@
   }
 }
 
+@media (width < 1024px) {
+  #layout-content-panels > #layout-main-panel {
+    flex: 1 1 0% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  #layout-content-panels > #layout-side-panel {
+    display: none !important;
+  }
+}
+
 @theme {
   --roboto-mono: var(--font-roboto-mono);
 }
@@ -197,21 +210,19 @@
    TipTap Editor
 --------------------------------- */
 
-.tiptap {
+/* .tiptap {
   width: 100%;
   height: 100%;
   min-height: 100%;
   outline: none;
 }
 
-/* Paragraph */
 .tiptap p {
   margin: 0.1rem 0;
   font-size: 19px;
   line-height: 1.6;
 }
 
-/* Placeholder */
 .tiptap p.is-editor-empty:first-child::before {
   color: var(--color-zinc-400);
   content: attr(data-placeholder);
@@ -223,7 +234,6 @@
 .dark .tiptap p.is-editor-empty:first-child::before {
   color: var(--color-zinc-600);
 }
-/* Headings */
 
 .tiptap h2 {
   margin-top: 1.5rem;
@@ -240,8 +250,6 @@
   font-weight: 600;
   line-height: 1.4;
 }
-
-/* Lists */
 
 .tiptap ul {
   margin: 0.5rem 0;
@@ -263,8 +271,6 @@
   margin: 0;
 }
 
-/* Nested lists */
-
 .tiptap ul ul {
   list-style-type: circle;
 }
@@ -272,8 +278,6 @@
 .tiptap ul ul ul {
   list-style-type: square;
 }
-
-/* Quote */
 
 .tiptap blockquote {
   margin: 1rem 0;
@@ -287,8 +291,6 @@
   color: var(--color-zinc-400);
 }
 
-/* Inline code */
-
 .tiptap code {
   border-radius: 0.3rem;
   background: var(--color-zinc-100);
@@ -299,8 +301,6 @@
 .dark .tiptap code {
   background: var(--color-zinc-700);
 }
-
-/* Code block */
 
 .tiptap pre {
   margin: 1rem 0;
@@ -322,8 +322,6 @@
   font-size: inherit;
 }
 
-/* Divider */
-
 .tiptap hr {
   margin: 1.5rem 0;
   border: 0;
@@ -333,8 +331,6 @@
 .dark .tiptap hr {
   border-color: var(--color-zinc-700);
 }
-
-/* Links */
 
 .tiptap a {
   color: var(--color-blue-600);
@@ -347,7 +343,6 @@
   color: var(--color-blue-400);
 }
 
-/* Images */
 .tiptap img {
   display: block;
   max-width: 100% !important;
@@ -356,30 +351,25 @@
   border-radius: 0.5rem;
 }
 
-/* Small screens → center */
 .tiptap [data-resize-container] {
   justify-content: center;
 }
 
-/* Larger screens → left */
 @media (min-width: 768px) {
   .tiptap [data-resize-container] {
     justify-content: flex-start;
   }
 }
 
-/* Remove default TipTap selection outline */
 .tiptap .ProseMirror-selectednode {
   outline: none !important;
 }
 
-/* Keep resize wrapper within editor */
 .tiptap [data-resize-wrapper] {
   position: relative;
   max-width: 100%;
 }
 
-/* Left / right handles */
 .tiptap [data-resize-handle="left"],
 .tiptap [data-resize-handle="right"] {
   top: 50% !important;
@@ -398,7 +388,6 @@
   opacity: 0;
 }
 
-/* Top / bottom handles */
 .tiptap [data-resize-handle="top"],
 .tiptap [data-resize-handle="bottom"] {
   left: 50% !important;
@@ -417,74 +406,30 @@
   opacity: 0;
 }
 
-/* Left → inside image */
 .tiptap [data-resize-handle="left"] {
   left: 10px !important;
   right: auto !important;
 }
 
-/* Right → inside image */
 .tiptap [data-resize-handle="right"] {
   right: 10px !important;
   left: auto !important;
 }
 
-/* Top → inside image */
 .tiptap [data-resize-handle="top"] {
   top: 10px !important;
   bottom: auto !important;
 }
 
-/* Bottom → inside image */
 .tiptap [data-resize-handle="bottom"] {
   bottom: 10px !important;
   top: auto !important;
 }
 
-/* Show handles only when selected */
 .tiptap [data-resize-container].ProseMirror-selectednode [data-resize-handle] {
   opacity: 1;
 }
 
 .dark .tiptap .ProseMirror-selectednode {
   outline-color: var(--color-zinc-600);
-}
-
-@keyframes bell-ring {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  3% {
-    transform: rotate(15deg);
-  }
-
-  6% {
-    transform: rotate(-13deg);
-  }
-
-  9% {
-    transform: rotate(10deg);
-  }
-
-  12% {
-    transform: rotate(-7deg);
-  }
-
-  15% {
-    transform: rotate(4deg);
-  }
-
-  18% {
-    transform: rotate(-2deg);
-  }
-
-  20% {
-    transform: rotate(0deg);
-  }
-
-  /* 여기부터 완전히 정지 */
-  100% {
-    transform: rotate(0deg);
-  }
-}
+} */

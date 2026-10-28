@@ -337,10 +337,12 @@ export default function LayoutShell({
 
             <div className="h-full min-h-0 min-w-0 overflow-hidden">
               <ResizablePanelGroup
+                id="layout-content-panels"
                 orientation="horizontal"
                 className="h-full min-h-0"
               >
                 <ResizablePanel
+                  id="layout-main-panel"
                   defaultSize="70%"
                   minSize="30%"
                   className="min-h-0 min-w-0 overflow-hidden"
@@ -368,6 +370,7 @@ export default function LayoutShell({
                 <ResizableHandle className="hidden w-0 border-gray-50 lg:flex" />
 
                 <ResizablePanel
+                  id="layout-side-panel"
                   panelRef={panelBRef}
                   defaultSize="30%"
                   minSize="0%"
