@@ -1,8 +1,6 @@
 // app/components/layout-shell.tsx
 "use client";
 
-import { OAuthFragmentCleanup } from "./oauth-fragment-cleanup";
-
 import dynamic from "next/dynamic";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
@@ -14,21 +12,29 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 
+import { UserProvider } from "../context/user-context";
+import { PointBalanceProvider } from "../context/point-balance-context";
+
+import { getLayoutSideData, type LayoutSideData } from "../actions/query";
+
 import { Navbar } from "./navbar";
 import { BreadCrumbs } from "./breadcrumbs";
+import { Footer } from "./footer";
+import { OAuthFragmentCleanup } from "./oauth-fragment-cleanup";
+import { OnboardingCard } from "./onboarding-card";
 import { SideDataLoading } from "./side-data-loading";
 import PanelLeftStream from "./panel-left-stream";
 import PanelLeftMobileStream from "./panel-left-mobile-stream";
 import { LeaderBoardStream } from "./leader-board-stream";
-import { OnboardingCard } from "./onboarding-card";
-
-import { UserProvider } from "../context/user-context";
-import { PointBalanceProvider } from "../context/point-balance-context";
 
 import type { User } from "@/types/user";
-import type { LayoutSideData } from "../actions/query";
-import { Footer } from "./footer";
-// import { HomeTour } from "./home-tour";
+
+// -----------------------------------------------------------------------------
+// Constants
+// -----------------------------------------------------------------------------
+
+const MEDIUM_SCREEN_QUERY = "(min-width: 640px)";
+const LARGE_SCREEN_QUERY = "(min-width: 1024px)";
 
 const FOOTER_PATHS = new Set([
   "/",
@@ -38,14 +44,43 @@ const FOOTER_PATHS = new Set([
   "/disclaimer",
 ]);
 
-const PanelLoading = () => (
-  <div className="flex h-full w-full items-center justify-center">
-    <div className="size-5 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-700 dark:border-zinc-700 dark:border-t-zinc-200" />
-  </div>
-);
+// -----------------------------------------------------------------------------
+// Loading states
+// -----------------------------------------------------------------------------
+
+function PanelLoading() {
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <div
+        className="
+          size-5 animate-spin rounded-full
+          border-2 border-zinc-200 border-t-zinc-700
+          dark:border-zinc-700 dark:border-t-zinc-200
+        "
+      />
+    </div>
+  );
+}
+
+function MobileLeftLoading() {
+  return (
+    <div
+      className="
+        fixed inset-x-0 top-18 bottom-0 z-40
+        bg-white sm:hidden dark:bg-zinc-950
+      "
+    >
+      <SideDataLoading />
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Lazy panels
+// -----------------------------------------------------------------------------
 
 const PostEditor = dynamic(
-  () => import("@/components/post-editor").then((mod) => mod.PostEditor),
+  () => import("@/components/post-editor").then((module) => module.PostEditor),
   {
     ssr: false,
     loading: PanelLoading,
@@ -53,7 +88,7 @@ const PostEditor = dynamic(
 );
 
 const AccountPanel = dynamic(
-  () => import("./account-panel").then((mod) => mod.AccountPanel),
+  () => import("./account-panel").then((module) => module.AccountPanel),
   {
     ssr: false,
     loading: PanelLoading,
@@ -61,7 +96,8 @@ const AccountPanel = dynamic(
 );
 
 const NotificationPanel = dynamic(
-  () => import("./notification-panel").then((mod) => mod.NotificationPanel),
+  () =>
+    import("./notification-panel").then((module) => module.NotificationPanel),
   {
     ssr: false,
     loading: PanelLoading,
@@ -69,29 +105,42 @@ const NotificationPanel = dynamic(
 );
 
 const HistoryPanel = dynamic(
-  () => import("./history-panel").then((mod) => mod.HistoryPanel),
+  () => import("./history-panel").then((module) => module.HistoryPanel),
   {
     ssr: false,
     loading: PanelLoading,
   },
 );
 
+// -----------------------------------------------------------------------------
+// Types
+// -----------------------------------------------------------------------------
+
 interface LayoutShellProps {
   user: User | null;
   children: ReactNode;
-  sideDataPromise: Promise<LayoutSideData>;
 }
 
-export default function LayoutShell({
-  user,
-  children,
-  sideDataPromise,
-}: LayoutShellProps) {
+type ActivePanel = "write" | "account" | "notifications" | "history" | null;
+
+// -----------------------------------------------------------------------------
+// Layout
+// -----------------------------------------------------------------------------
+
+export default function LayoutShell({ user, children }: LayoutShellProps) {
   const pathname = usePathname();
   const showFooter = FOOTER_PATHS.has(pathname);
 
   const panelBRef = useRef<PanelImperativeHandle>(null);
   const mainScrollRef = useRef<HTMLDivElement>(null);
+
+  const sideDataRequestRef = useRef<Promise<LayoutSideData> | null>(null);
+
+  const [sideDataPromise, setSideDataPromise] =
+    useState<Promise<LayoutSideData> | null>(null);
+
+  const [isMediumScreen, setIsMediumScreen] = useState(false);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
 
   const [isDesktopPanelOpen, setIsDesktopPanelOpen] = useState(true);
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
@@ -107,6 +156,24 @@ export default function LayoutShell({
   const needsOnboarding =
     !!user && (user.nationality == null || user.nationality === "");
 
+  const hasActivePanel = onWrite || onAccount || onNotification || onHistory;
+  const showLeaderboard = !hasActivePanel || user === null;
+
+  const showDesktopLeftPanel = isMediumScreen && isDesktopPanelOpen;
+  const showMobileLeftPanel = !isMediumScreen && isMobilePanelOpen;
+
+  const showMobileActivePanel =
+    !isLargeScreen && Boolean(user) && hasActivePanel;
+
+  const needsSideData =
+    showDesktopLeftPanel ||
+    showMobileLeftPanel ||
+    (isLargeScreen && showLeaderboard);
+
+  // ---------------------------------------------------------------------------
+  // Effects
+  // ---------------------------------------------------------------------------
+
   useEffect(() => {
     mainScrollRef.current?.scrollTo({
       top: 0,
@@ -116,28 +183,42 @@ export default function LayoutShell({
   }, [pathname]);
 
   useEffect(() => {
-    const media = window.matchMedia("(min-width: 1024px)");
+    const mediumMedia = window.matchMedia(MEDIUM_SCREEN_QUERY);
+    const largeMedia = window.matchMedia(LARGE_SCREEN_QUERY);
 
-    function updateSectionB() {
-      panelBRef.current?.resize(media.matches ? "30%" : "0%");
+    function updateMediumScreen() {
+      setIsMediumScreen(mediumMedia.matches);
     }
 
-    updateSectionB();
-
-    if (typeof media.addEventListener === "function") {
-      media.addEventListener("change", updateSectionB);
-
-      return () => {
-        media.removeEventListener("change", updateSectionB);
-      };
+    function updateLargeScreen() {
+      setIsLargeScreen(largeMedia.matches);
+      panelBRef.current?.resize(largeMedia.matches ? "30%" : "0%");
     }
 
-    media.addListener(updateSectionB);
+    updateMediumScreen();
+    updateLargeScreen();
+
+    mediumMedia.addEventListener("change", updateMediumScreen);
+    largeMedia.addEventListener("change", updateLargeScreen);
 
     return () => {
-      media.removeListener(updateSectionB);
+      mediumMedia.removeEventListener("change", updateMediumScreen);
+      largeMedia.removeEventListener("change", updateLargeScreen);
     };
   }, []);
+
+  useEffect(() => {
+    if (!needsSideData) return;
+
+    let request = sideDataRequestRef.current;
+
+    if (!request) {
+      request = getLayoutSideData();
+      sideDataRequestRef.current = request;
+    }
+
+    setSideDataPromise(request);
+  }, [needsSideData]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -156,7 +237,7 @@ export default function LayoutShell({
 
       event.preventDefault();
 
-      if (window.matchMedia("(min-width: 640px)").matches) {
+      if (window.matchMedia(MEDIUM_SCREEN_QUERY).matches) {
         setIsDesktopPanelOpen((current) => !current);
         return;
       }
@@ -172,9 +253,11 @@ export default function LayoutShell({
     };
   }, []);
 
-  function setActivePanel(
-    panel: "write" | "account" | "notifications" | "history" | null,
-  ) {
+  // ---------------------------------------------------------------------------
+  // Panel actions
+  // ---------------------------------------------------------------------------
+
+  function setActivePanel(panel: ActivePanel) {
     setOnWrite(panel === "write");
     setOnAccount(panel === "account");
     setOnNotification(panel === "notifications");
@@ -187,7 +270,7 @@ export default function LayoutShell({
   }
 
   function handleToggleLeftPanel() {
-    if (window.matchMedia("(min-width: 640px)").matches) {
+    if (window.matchMedia(MEDIUM_SCREEN_QUERY).matches) {
       setIsDesktopPanelOpen((current) => !current);
       return;
     }
@@ -196,13 +279,13 @@ export default function LayoutShell({
     setIsMobilePanelOpen((current) => !current);
   }
 
-  function openPanel(panel: "write" | "account" | "notifications" | "history") {
+  function openPanel(panel: Exclude<ActivePanel, null>) {
     if (!user) return;
 
     setIsMobilePanelOpen(false);
     setActivePanel(panel);
 
-    if (window.matchMedia("(min-width: 1024px)").matches) {
+    if (window.matchMedia(LARGE_SCREEN_QUERY).matches) {
       panelBRef.current?.resize("30%");
     }
   }
@@ -230,15 +313,14 @@ export default function LayoutShell({
   }
 
   function closeMobileActivePanel() {
-    if (window.matchMedia("(min-width: 1024px)").matches) return;
+    if (window.matchMedia(LARGE_SCREEN_QUERY).matches) return;
 
     setActivePanel(null);
   }
 
-  const hasActivePanel = onWrite || onAccount || onNotification || onHistory;
-
-  const mobilePanelOpen = Boolean(user) && hasActivePanel;
-  const showLeaderboard = !hasActivePanel || user === null;
+  // ---------------------------------------------------------------------------
+  // Panel content
+  // ---------------------------------------------------------------------------
 
   function renderActivePanel() {
     if (!user) return null;
@@ -281,15 +363,24 @@ export default function LayoutShell({
     return null;
   }
 
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
   return (
     <UserProvider user={user}>
       <PointBalanceProvider>
         <OAuthFragmentCleanup />
-        {needsOnboarding && <OnboardingCard />}
-        {/* <HomeTour /> */}
 
-        <div className="relative box-border flex h-screen min-h-0 flex-col overflow-hidden pt-18 supports-[height:100dvh]:h-dvh">
-          {/* search input */}
+        {needsOnboarding && <OnboardingCard />}
+
+        <div
+          className="
+            relative box-border flex h-screen min-h-0
+            flex-col overflow-hidden pt-18
+            supports-[height:100dvh]:h-dvh
+          "
+        >
           <Navbar
             onOpenSearch={handleOpenSearch}
             onTogglePanel={handleToggleLeftPanel}
@@ -300,22 +391,21 @@ export default function LayoutShell({
             user={user}
           />
 
-          <Suspense
-            fallback={
-              isMobilePanelOpen ? (
-                <div className="fixed inset-x-0 top-18 bottom-0 z-40 bg-white sm:hidden dark:bg-zinc-950">
-                  <SideDataLoading />
-                </div>
-              ) : null
-            }
-          >
-            <PanelLeftMobileStream
-              sideDataPromise={sideDataPromise}
-              isOpen={isMobilePanelOpen}
-              setIsOpen={setIsMobilePanelOpen}
-              user={user}
-            />
-          </Suspense>
+          {/* Mobile left panel */}
+          {showMobileLeftPanel && (
+            <Suspense fallback={<MobileLeftLoading />}>
+              {sideDataPromise ? (
+                <PanelLeftMobileStream
+                  sideDataPromise={sideDataPromise}
+                  isOpen={isMobilePanelOpen}
+                  setIsOpen={setIsMobilePanelOpen}
+                  user={user}
+                />
+              ) : (
+                <MobileLeftLoading />
+              )}
+            </Suspense>
+          )}
 
           <div
             className={`
@@ -329,12 +419,25 @@ export default function LayoutShell({
               }
             `}
           >
-            <div className="hidden h-full min-h-0 min-w-0 overflow-hidden sm:block">
-              <Suspense fallback={<SideDataLoading />}>
-                <PanelLeftStream sideDataPromise={sideDataPromise} />
-              </Suspense>
+            {/* Desktop left panel */}
+            <div
+              className="
+                hidden h-full min-h-0 min-w-0
+                overflow-hidden sm:block
+              "
+            >
+              {showDesktopLeftPanel && (
+                <Suspense fallback={<SideDataLoading />}>
+                  {sideDataPromise ? (
+                    <PanelLeftStream sideDataPromise={sideDataPromise} />
+                  ) : (
+                    <SideDataLoading />
+                  )}
+                </Suspense>
+              )}
             </div>
 
+            {/* Main content and desktop right panel */}
             <div className="h-full min-h-0 min-w-0 overflow-hidden">
               <ResizablePanelGroup
                 id="layout-content-panels"
@@ -350,10 +453,10 @@ export default function LayoutShell({
                   <div
                     ref={mainScrollRef}
                     className="
-    h-full min-h-0 w-full min-w-0
-    overflow-x-hidden overflow-y-auto
-    bg-white dark:bg-zinc-900
-  "
+                      h-full min-h-0 w-full min-w-0
+                      overflow-x-hidden overflow-y-auto
+                      bg-white dark:bg-zinc-900
+                    "
                   >
                     <div
                       className={`min-h-full ${
@@ -375,31 +478,44 @@ export default function LayoutShell({
                   defaultSize="30%"
                   minSize="0%"
                   className="
-                    z-2 min-h-0 min-w-0 overflow-hidden
+                    relative z-2 min-h-0 min-w-0 overflow-hidden
                     border-l border-gray-100 bg-white
-                    dark:border-zinc-800 dark:bg-zinc-900 relative
+                    dark:border-zinc-800 dark:bg-zinc-900
                   "
                 >
-                  <div className="hidden h-full min-h-0 min-w-0 flex-col overflow-hidden lg:flex">
+                  <div
+                    className="
+                      hidden h-full min-h-0 min-w-0
+                      flex-col overflow-hidden lg:flex
+                    "
+                  >
                     <div
                       className={`
-    min-h-0 min-w-0
-    ${
-      showLeaderboard
-        ? "flex h-[45%] shrink-0 flex-col overflow-hidden"
-        : "flex-1 overflow-x-hidden overflow-y-auto"
-    }
-  `}
+                        min-h-0 min-w-0
+                        ${
+                          showLeaderboard
+                            ? "flex h-[45%] shrink-0 flex-col overflow-hidden"
+                            : "flex-1 overflow-x-hidden overflow-y-auto"
+                        }
+                      `}
                     >
-                      {renderActivePanel()}
-                      {/* leadrboard */}
-                      {showLeaderboard && (
-                        <Suspense fallback={<SideDataLoading />}>
-                          <LeaderBoardStream
-                            sideDataPromise={sideDataPromise}
-                            user={user}
-                          />
-                        </Suspense>
+                      {isLargeScreen && (
+                        <>
+                          {renderActivePanel()}
+
+                          {showLeaderboard && (
+                            <Suspense fallback={<SideDataLoading />}>
+                              {sideDataPromise ? (
+                                <LeaderBoardStream
+                                  sideDataPromise={sideDataPromise}
+                                  user={user}
+                                />
+                              ) : (
+                                <SideDataLoading />
+                              )}
+                            </Suspense>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -408,15 +524,16 @@ export default function LayoutShell({
             </div>
           </div>
 
-          {mobilePanelOpen && (
+          {/* Mobile/tablet active panel */}
+          {showMobileActivePanel && (
             <div
               className="
-      fixed inset-x-0 top-18 bottom-0 z-40
-      flex min-h-0 flex-col overflow-hidden
-      bg-white dark:bg-zinc-900
-      sm:left-auto sm:w-3/5 sm:shadow-2xl
-      lg:hidden
-    "
+                fixed inset-x-0 top-18 bottom-0 z-40
+                flex min-h-0 flex-col overflow-hidden
+                bg-white dark:bg-zinc-900
+                sm:left-auto sm:w-3/5 sm:shadow-2xl
+                lg:hidden
+              "
               onClick={(event) => {
                 if (
                   event.defaultPrevented ||

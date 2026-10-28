@@ -1,19 +1,17 @@
-import { auth } from "@/auth";
+import type { ReactNode } from "react";
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { User } from "@/types/user";
 
 import LayoutShell from "../components/layout-shell";
-import { getLayoutSideData } from "../actions/query";
 
 export default async function MainLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const session = await auth();
-
-  const sideDataPromise = getLayoutSideData();
 
   let user: User | null = null;
 
@@ -22,7 +20,6 @@ export default async function MainLayout({
       where: {
         userId: session.user.id,
       },
-
       select: {
         tier: true,
         rank: true,
@@ -39,9 +36,5 @@ export default async function MainLayout({
     };
   }
 
-  return (
-    <LayoutShell user={user} sideDataPromise={sideDataPromise}>
-      {children}
-    </LayoutShell>
-  );
+  return <LayoutShell user={user}>{children}</LayoutShell>;
 }
