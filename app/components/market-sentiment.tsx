@@ -14,6 +14,7 @@ import { getVotingWindow } from "@/lib/utils/get-voting-window";
 interface MarketSentimentProps {
   symbol: string;
   userLanguage?: string | null;
+  enabled?: boolean;
 }
 
 interface MarketSession {
@@ -55,6 +56,7 @@ function getSentimentSession(symbol: string): MarketSession {
 export function MarketSentiment({
   symbol,
   userLanguage,
+  enabled = true,
 }: MarketSentimentProps) {
   const language = resolveLanguage(userLanguage);
   const labels = STATISTICS_LABELS[language];
@@ -62,8 +64,9 @@ export function MarketSentiment({
   const [session, setSession] = useState<MarketSession | null>(null);
   const [result, setResult] = useState<SentimentResult | null>(null);
 
-  // Track the current session and market opening/closing.
   useEffect(() => {
+    if (!enabled) return;
+
     function updateSession() {
       const next = getSentimentSession(symbol);
 
@@ -92,7 +95,7 @@ export function MarketSentiment({
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [symbol]);
+  }, [symbol, enabled]);
 
   const currentSession = session?.symbol === symbol ? session : null;
   const isMarketOpen = currentSession?.isMarketOpen ?? null;
@@ -100,7 +103,9 @@ export function MarketSentiment({
 
   // Fetch once during market hours; poll while the market is closed.
   useEffect(() => {
-    if (isMarketOpen === null || predictionMs === null) return;
+    if (!enabled || isMarketOpen === null || predictionMs === null) {
+      return;
+    }
 
     const sessionMs = predictionMs;
     let cancelled = false;
@@ -167,7 +172,7 @@ export function MarketSentiment({
 
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [symbol, isMarketOpen, predictionMs]);
+  }, [symbol, isMarketOpen, predictionMs, enabled]);
 
   const stats =
     predictionMs !== null &&

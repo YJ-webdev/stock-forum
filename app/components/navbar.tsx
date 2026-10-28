@@ -249,10 +249,11 @@ export default function UserMenu({
   }, [userId]);
 
   function handleSignOutClick() {
+    if (isPending || !onSignOut) return;
+
     startTransition(async () => {
-      await onSignOut?.();
+      await onSignOut();
       onOpenChange(false);
-      router.refresh();
     });
   }
 

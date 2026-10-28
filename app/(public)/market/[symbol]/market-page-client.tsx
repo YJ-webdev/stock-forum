@@ -189,6 +189,7 @@ export default function MarketPageClient({
 
   const [betAmount, setBetAmount] = useState(50);
   const [showDetailChart, setShowDetailChart] = useState(false);
+  const [statsRefreshVersion, setStatsRefreshVersion] = useState(0);
 
   const [voteSelection, setVoteSelection] = useState<{
     key: string | null;
@@ -386,7 +387,7 @@ export default function MarketPageClient({
     return () => {
       cancelled = true;
     };
-  }, [canPredict, selectedSymbol, voteSessionKey]);
+  }, [canPredict, selectedSymbol, voteSessionKey, statsRefreshVersion]);
 
   const handleVote = (
     direction: VoteDirection,
@@ -773,6 +774,42 @@ export default function MarketPageClient({
     setActiveRange(range);
   };
 
+  const handlePredictionEdited = (
+    prediction: NonNullable<MarketPageComments[number]["prediction"]>,
+  ) => {
+    // Reject a callback belonging to a previous viewer or session.
+    if (activeVoteKeyRef.current !== voteLookupKey) return;
+
+    if (!user?.id || !canPredict) return;
+    if (prediction.symbol !== selectedSymbol) return;
+
+    const sessionMs = new Date(prediction.sessionDate).getTime();
+
+    if (
+      !voteSessionKey ||
+      !Number.isFinite(sessionMs) ||
+      sessionMs !== new Date(voteSessionKey).getTime()
+    ) {
+      return;
+    }
+
+    // Prevent an older vote lookup from overwriting the saved result.
+    voteRevisionRef.current += 1;
+
+    setVoteSelection({
+      key: voteLookupKey,
+      direction: prediction.direction,
+      pointsBet: prediction.pointsBet,
+      status: prediction.status,
+    });
+
+    setCheckedVoteKey(voteLookupKey);
+    setVoteLookupFailed(false);
+
+    // Fetch updated Bull/Bear percentages using the existing effect.
+    setStatsRefreshVersion((value) => value + 1);
+  };
+
   useEffect(() => {
     window.scrollTo({
       top: 0,
@@ -1083,6 +1120,7 @@ export default function MarketPageClient({
         <MarketComments
           key={selectedSymbol}
           assetSymbol={selectedSymbol}
+          onPredictionEdited={handlePredictionEdited}
           prediction={
             canPredict
               ? {

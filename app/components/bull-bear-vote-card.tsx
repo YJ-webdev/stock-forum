@@ -15,6 +15,7 @@ import { Numeric } from "./numeric";
 import { TrendSparkline } from "./trend-sparkline";
 import { MarketVoteButton } from "./market-vote-button";
 import { MarketSentiment } from "./market-sentiment";
+import { useEffect, useRef, useState } from "react";
 
 interface BullBearVoteCardProps {
   market: HomeMarketItem;
@@ -119,6 +120,43 @@ export function BullBearVoteCard({
   initialVoteSessionKey = null,
   userLanguage,
 }: BullBearVoteCardProps) {
+  const cardRef = useRef<HTMLElement>(null);
+  const [quoteEnabled, setQuoteEnabled] = useState(false);
+
+  useEffect(() => {
+    const card = cardRef.current;
+
+    if (!card) return;
+
+    if (typeof IntersectionObserver === "undefined") {
+      setQuoteEnabled(true);
+      return;
+    }
+
+    // Existing carousel structure:
+    // scroll container → flex row → card wrapper → article
+    const wrapper = card.closest("[data-carousel-card]");
+    const scrollContainer = wrapper?.parentElement?.parentElement ?? null;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+
+        setQuoteEnabled(true);
+        observer.disconnect();
+      },
+      {
+        root: scrollContainer,
+        rootMargin: "0px 200px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(card);
+
+    return () => observer.disconnect();
+  }, []);
+
   const language = resolveLanguage(userLanguage);
   const chartLabels = CHART_LABELS[language];
 
@@ -130,6 +168,7 @@ export function BullBearVoteCard({
     market.assetType,
     0,
     "5m",
+    quoteEnabled,
   );
 
   const { sessionStartMs, sessionEndMs } = getSparklineSession(
@@ -149,6 +188,7 @@ export function BullBearVoteCard({
 
   return (
     <article
+      ref={cardRef}
       data-tour="predict"
       aria-busy={loading && !data}
       className="relative w-44 shrink-0 text-zinc-900 dark:text-zinc-100"
@@ -168,7 +208,7 @@ export function BullBearVoteCard({
             <Numeric className="outfit text-[18px] font-extrabold tracking-normal text-zinc-800 tabular-nums dark:text-zinc-100">
               {data.value}
             </Numeric>
-          ) : loading ? (
+          ) : !quoteEnabled || loading ? (
             <span
               aria-hidden="true"
               className="h-4.5 w-24 animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
@@ -187,7 +227,7 @@ export function BullBearVoteCard({
             >
               {formatChange(data.change)} ({data.percent})
             </p>
-          ) : loading ? (
+          ) : !quoteEnabled || loading ? (
             <span
               aria-hidden="true"
               className="h-3 w-28 animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
@@ -212,7 +252,7 @@ export function BullBearVoteCard({
                 lunchEndMs={data.lunchEndMs}
               />
             </div>
-          ) : loading && !data ? (
+          ) : (!quoteEnabled || loading) && !data ? (
             <div className="flex h-full w-full items-center px-3">
               <span
                 aria-hidden="true"
@@ -229,13 +269,18 @@ export function BullBearVoteCard({
         <div className="relative h-18 pt-1.5">
           {market.assetType === "index" && (
             <div className="relative z-20 flex flex-col gap-2.5">
-              <MarketSentiment symbol={market.symbol} userLanguage={language} />
+              <MarketSentiment
+                symbol={market.symbol}
+                userLanguage={language}
+                enabled={quoteEnabled}
+              />
 
               <MarketVoteButton
                 marketName={market.name}
                 symbol={market.symbol}
                 initialVote={initialVote}
                 initialVoteSessionKey={initialVoteSessionKey}
+                enabled={quoteEnabled}
               />
             </div>
           )}

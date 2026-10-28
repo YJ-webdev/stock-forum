@@ -23,6 +23,7 @@ import {
   COMMENT_LABELS,
   COMMENT_ONLY_LABELS,
   EDIT_VOTE_LABELS,
+  PREDICTION_EDIT_UNCHANGED_LABELS,
   SUBMIT_VALIDATION_LABELS,
   VOTE_LABELS,
 } from "@/lib/data/translations";
@@ -37,12 +38,17 @@ type VoteDirection = "BULL" | "BEAR";
 
 interface PredictionCommentInputProps {
   variant?: "default" | "popup";
-  initialComment?: string;
+  mode?: "create" | "edit" | "edit-comment";
 
-  mode?: "create" | "edit";
+  showAvatar?: boolean;
+  voteLocked?: boolean;
+
+  initialComment?: string;
+  initialGif?: GifResult | null;
   onCancel?: () => void;
 
   assetSymbol: string;
+
   onCommentCreated: (
     comment: MarketPageComments[number],
   ) => void | Promise<void>;
@@ -53,7 +59,7 @@ interface PredictionCommentInputProps {
   betAmount: number;
   setBetAmount: Dispatch<SetStateAction<number>>;
 
-  // In edit mode, include the existing stake in this amount.
+  // Include the existing stake when editing a prediction.
   userPoints: number;
   maxBet: number;
 
@@ -133,8 +139,11 @@ function buildCommentContent(
 
 export function PredictionCommentInput({
   variant = "default",
-  initialComment = "",
   mode = "create",
+  showAvatar = mode !== "edit-comment",
+  voteLocked = false,
+  initialComment = "",
+  initialGif = null,
   onCancel,
   assetSymbol,
   onCommentCreated,
@@ -156,11 +165,9 @@ export function PredictionCommentInput({
 }: PredictionCommentInputProps) {
   const user = useCurrentUser();
 
-  // Logged-in users default to Comment only unless a direction is selected.
-  // Guests always use Vote mode through the isCommentOnly condition below.
   const [commentOnly, setCommentOnly] = useState(direction === null);
   const [comment, setComment] = useState(initialComment);
-  const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
+  const [selectedGif, setSelectedGif] = useState<GifResult | null>(initialGif);
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [commentPending, startCommentTransition] = useTransition();
 
@@ -169,31 +176,64 @@ export function PredictionCommentInput({
   const submittingRef = useRef(false);
 
   const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const activePointerRef = useRef<number | null>(null);
 
+  // A new editing session should mount with a new key.
+  // Preserve the original values while the user edits.
+  const initialValuesRef = useRef({
+    comment: initialComment.trim(),
+    gifSrc: initialGif?.src ?? null,
+    direction,
+    betAmount,
+  });
+
   const language = resolveLanguage(user?.language ?? currentUser?.language);
+
   const voteLabels = VOTE_LABELS[language];
   const commentLabels = COMMENT_LABELS[language];
   const commentOnlyLabel = COMMENT_ONLY_LABELS[language];
   const editLabels = EDIT_VOTE_LABELS[language];
+  const unchangedLabel = PREDICTION_EDIT_UNCHANGED_LABELS[language];
 
-  const isEditing = mode === "edit";
+  const isEditing = mode !== "create";
+  const isCombinedEdit = mode === "edit-comment";
+  const showCommentEditor = !isEditing || isCombinedEdit;
+
   const isLoggedIn = Boolean(currentUser);
   const isCommentOnly = !isEditing && isLoggedIn && commentOnly;
 
   const isChatRestricted =
     user?.status === "BANNED" || user?.status === "MUTED";
 
-  const canWriteComment = !isEditing && isLoggedIn && !isChatRestricted;
+  const canWriteComment = showCommentEditor && isLoggedIn && !isChatRestricted;
 
   const busy = isPending || commentPending;
-  const chatDisabled = busy || isChatRestricted || isEditing;
 
-  const controlsDisabled = buttonDisabled || busy || isMarketOpen;
+  const chatDisabled = busy || isChatRestricted || !showCommentEditor;
+
+  const controlsDisabled = buttonDisabled || busy || isMarketOpen || voteLocked;
+
   const pointsDisabled = controlsDisabled || !isLoggedIn || isCommentOnly;
 
   const hasContent = comment.trim().length > 0 || Boolean(selectedGif);
+
+  const initialValues = initialValuesRef.current;
+
+  const commentChanged =
+    isCombinedEdit &&
+    (comment.trim() !== initialValues.comment ||
+      (selectedGif?.src ?? null) !== initialValues.gifSrc);
+
+  const voteChanged =
+    !voteLocked &&
+    (direction !== initialValues.direction ||
+      betAmount !== initialValues.betAmount);
+
+  const hasChanges = commentChanged || voteChanged;
+  const saveUnchanged = isEditing && !hasChanges;
 
   const validationLabels =
     SUBMIT_VALIDATION_LABELS[language === "ko" ? "ko" : "en"];
@@ -215,6 +255,8 @@ export function PredictionCommentInput({
       betAmount % 50 === 0);
 
   const showMax = pointsLimit > 0 && betAmount >= pointsLimit;
+
+  const lockedVoteLabel = editLabels.locked;
 
   const holdStateRef = useRef({
     pointsDisabled,
@@ -339,18 +381,17 @@ export function PredictionCommentInput({
     if (!isLoggedIn) {
       setComment("");
       setSelectedGif(null);
-
-      // Guests still see Vote because isCommentOnly requires a logged-in user.
       setCommentOnly(true);
     }
 
-    if (!isLoggedIn || isChatRestricted || busy || isEditing) {
+    if (!isLoggedIn || isChatRestricted || busy || !showCommentEditor) {
       setGifPickerOpen(false);
     }
-  }, [isLoggedIn, isChatRestricted, busy, isEditing]);
+  }, [isLoggedIn, isChatRestricted, busy, showCommentEditor]);
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
+
     if (!textarea) return;
 
     const resize = () => {
@@ -361,6 +402,7 @@ export function PredictionCommentInput({
       const contentHeight = textarea.scrollHeight;
 
       textarea.style.height = `${Math.min(contentHeight, maxHeight)}px`;
+
       textarea.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
     };
 
@@ -386,7 +428,7 @@ export function PredictionCommentInput({
     observer.observe(textarea);
 
     return () => observer.disconnect();
-  }, [comment, isEditing]);
+  }, [comment, showCommentEditor]);
 
   const showLoginMessage = () => {
     toast.error(commentLabels.login.replace(/\.{3}$/, ""), {
@@ -394,8 +436,29 @@ export function PredictionCommentInput({
     });
   };
 
+  const handleLockedVoteClick = () => {
+    stopPointsHold();
+
+    toast.info(lockedVoteLabel, {
+      id: "prediction-edit-closed",
+    });
+  };
+
+  const handleUnchangedSave = () => {
+    toast.info(unchangedLabel, {
+      id: "prediction-edit-unchanged",
+    });
+  };
+
   const handleDirectionClick = (nextDirection: VoteDirection) => {
-    if (controlsDisabled || submittingRef.current) return;
+    if (voteLocked) {
+      handleLockedVoteClick();
+      return;
+    }
+
+    if (controlsDisabled || submittingRef.current) {
+      return;
+    }
 
     stopPointsHold();
     setCommentOnly(false);
@@ -479,13 +542,16 @@ export function PredictionCommentInput({
 
     if (busy || submittingRef.current) return;
 
-    // Guests can click the button, but must log in to submit.
+    if (saveUnchanged) {
+      handleUnchangedSave();
+      return;
+    }
+
     if (!isLoggedIn) {
       showLoginMessage();
       return;
     }
 
-    // Comment only
     if (isCommentOnly) {
       if (!canWriteComment) {
         toast.error(validationLabels.unavailable);
@@ -494,7 +560,11 @@ export function PredictionCommentInput({
 
       if (!hasContent) {
         toast.error(validationLabels.content);
-        textareaRef.current?.focus({ preventScroll: true });
+
+        textareaRef.current?.focus({
+          preventScroll: true,
+        });
+
         return;
       }
 
@@ -502,9 +572,25 @@ export function PredictionCommentInput({
       return;
     }
 
-    // Vote / edit vote
+    // Closed predictions allow comment/GIF edits only.
+    if (isCombinedEdit && voteLocked) {
+      if (buttonDisabled) {
+        toast.error(validationLabels.unavailable);
+        return;
+      }
+
+      setGifPickerOpen(false);
+      submitVote(comment, selectedGif);
+      return;
+    }
+
     if (controlsDisabled) {
-      toast.error(validationLabels.unavailable);
+      if (voteLocked) {
+        handleLockedVoteClick();
+      } else {
+        toast.error(validationLabels.unavailable);
+      }
+
       return;
     }
 
@@ -518,12 +604,16 @@ export function PredictionCommentInput({
       return;
     }
 
+    setGifPickerOpen(false);
+
     if (isEditing) {
-      submitVote("", null);
+      submitVote(
+        isCombinedEdit ? comment : "",
+        isCombinedEdit ? selectedGif : null,
+      );
       return;
     }
 
-    // Comment and GIF remain optional when voting.
     submitVote(
       canWriteComment ? comment : "",
       canWriteComment ? selectedGif : null,
@@ -542,220 +632,262 @@ export function PredictionCommentInput({
         ? voteLabels.voting
         : voteLabels.vote;
 
-  return (
-    <div className={`flex gap-3 ${variant === "popup" ? "" : "mb-8"}`}>
-      <Avatar className="size-9 shrink-0">
-        <AvatarImage
-          src={currentUser?.image ?? undefined}
-          alt={currentUser?.name ?? "User"}
-          className="object-cover"
-        />
+  const removeBottomMargin = variant === "popup" || isCombinedEdit;
 
-        <AvatarFallback className="bg-olive-500 text-lg font-normal text-white">
-          {Array.from(currentUser?.name?.trim() ?? "")[0]?.toUpperCase() || "G"}
-        </AvatarFallback>
-      </Avatar>
+  return (
+    <div
+      className={`
+        flex min-w-0
+        ${showAvatar ? "gap-3" : ""}
+        ${removeBottomMargin ? "" : "mb-8"}
+      `}
+    >
+      {showAvatar && (
+        <Avatar className="size-9 shrink-0">
+          <AvatarImage
+            src={currentUser?.image ?? undefined}
+            alt={currentUser?.name ?? "User"}
+            className="object-cover"
+          />
+
+          <AvatarFallback className="bg-olive-500 text-lg font-normal text-white">
+            {Array.from(currentUser?.name?.trim() ?? "")[0]?.toUpperCase() ||
+              "G"}
+          </AvatarFallback>
+        </Avatar>
+      )}
 
       <div className="min-w-0 flex-1">
         <div className="rounded-lg bg-zinc-100 px-2.5 dark:bg-zinc-800">
           {/* Prediction controls */}
-          <div
-            className="
-              grid grid-cols-[auto_minmax(0,1fr)]
-              items-center gap-x-3 gap-y-1 pt-2.5
-              sm:flex sm:min-h-10 sm:flex-wrap sm:gap-y-2
-            "
-          >
-            {/* Bull / Bear */}
+          <div className="relative">
             <div
-              className={`
-                relative flex h-8 w-30 shrink-0 items-center
-                rounded-full p-0.5 text-[14px] font-normal
-                transition-colors duration-200
-                ${
-                  direction === "BULL"
-                    ? "bg-emerald-600/15"
-                    : direction === "BEAR"
-                      ? "bg-rose-700/15"
-                      : "bg-zinc-200 dark:bg-zinc-700"
-                }
-                ${controlsDisabled ? "opacity-50" : ""}
-              `}
+              inert={voteLocked}
+              className="
+                grid grid-cols-[auto_minmax(0,1fr)]
+                items-center gap-x-3 gap-y-1 pt-2.5
+                sm:flex sm:min-h-10 sm:flex-wrap sm:gap-y-2
+              "
             >
-              {direction && (
-                <span
-                  aria-hidden="true"
-                  className={`
-                    pointer-events-none absolute left-0.5 top-0.5
-                    h-7 w-14.5 rounded-full
-                    transition-transform duration-200 ease-out
-                    motion-reduce:transition-none
-                    ${
-                      direction === "BULL"
-                        ? "translate-x-0 bg-emerald-600"
-                        : "translate-x-14.5 bg-rose-700"
-                    }
-                  `}
-                />
-              )}
-
-              <button
-                type="button"
-                aria-pressed={direction === "BULL"}
-                disabled={controlsDisabled}
-                onClick={() => handleDirectionClick("BULL")}
-                className={`
-                  relative z-10 flex h-full flex-1
-                  cursor-pointer touch-manipulation
-                  items-center justify-center rounded-full
-                  transition-colors disabled:cursor-default
-                  ${direction === "BULL" ? "text-white" : "text-zinc-500"}
-                `}
-              >
-                {voteLabels.bull}
-              </button>
-
-              <button
-                type="button"
-                aria-pressed={direction === "BEAR"}
-                disabled={controlsDisabled}
-                onClick={() => handleDirectionClick("BEAR")}
-                className={`
-                  relative z-10 flex h-full flex-1
-                  cursor-pointer touch-manipulation
-                  items-center justify-center rounded-full
-                  transition-colors disabled:cursor-default
-                  ${direction === "BEAR" ? "text-white" : "text-zinc-500"}
-                `}
-              >
-                {voteLabels.bear}
-              </button>
-            </div>
-
-            {/* Selected prediction points */}
-            {isLoggedIn && (
+              {/* Bull / Bear */}
               <div
                 className={`
-                  relative flex w-max min-w-0 justify-self-end
-                  items-center justify-center gap-0.5
-                  sm:flex-none sm:shrink-0 sm:gap-0
+                  relative flex h-8 w-30 shrink-0 items-center
+                  rounded-full p-0.5 text-[14px] font-normal
+                  transition-colors duration-200
                   ${
-                    isCommentOnly
-                      ? "invisible pointer-events-none sm:hidden"
-                      : ""
+                    direction === "BULL"
+                      ? "bg-emerald-600/15"
+                      : direction === "BEAR"
+                        ? "bg-rose-700/15"
+                        : "bg-zinc-200 dark:bg-zinc-700"
                   }
+                  ${controlsDisabled ? "opacity-50" : ""}
                 `}
               >
-                <button
-                  type="button"
-                  aria-label="Decrease points"
-                  disabled={pointsDisabled || betAmount <= 0}
-                  onPointerDown={(event) => startPointsHold(event, -50)}
-                  onPointerUp={handlePointerEnd}
-                  onPointerCancel={handlePointerEnd}
-                  onLostPointerCapture={handlePointerEnd}
-                  onClick={(event) => {
-                    if (event.detail === 0) stepPoints(-50);
-                  }}
-                  onContextMenu={(event) => event.preventDefault()}
-                  className={POINT_BUTTON_CLASS}
-                >
-                  −
-                </button>
-
-                <span
-                  aria-label="Prediction points"
-                  className={`
-                    flex h-8 w-[3ch] select-none
-                    items-center justify-center
-                    text-center text-sm tabular-nums
-                    text-zinc-500 dark:text-zinc-100
-                    ${pointsDisabled ? "opacity-50" : ""}
-                  `}
-                >
-                  {betAmount}
-                </span>
-
-                {showMax && (
+                {direction && (
                   <span
-                    className="
-                      absolute -bottom-1 left-1/2 -translate-x-1/2
-                      text-[10px] font-medium text-zinc-500
-                    "
-                  >
-                    max
-                  </span>
+                    aria-hidden="true"
+                    className={`
+                      pointer-events-none absolute left-0.5 top-0.5
+                      h-7 w-14.5 rounded-full
+                      transition-transform duration-200 ease-out
+                      motion-reduce:transition-none
+                      ${
+                        direction === "BULL"
+                          ? "translate-x-0 bg-emerald-600"
+                          : "translate-x-14.5 bg-rose-700"
+                      }
+                    `}
+                  />
                 )}
 
                 <button
                   type="button"
-                  aria-label="Increase points"
-                  disabled={pointsDisabled || betAmount >= pointsLimit}
-                  onPointerDown={(event) => startPointsHold(event, 50)}
-                  onPointerUp={handlePointerEnd}
-                  onPointerCancel={handlePointerEnd}
-                  onLostPointerCapture={handlePointerEnd}
-                  onClick={(event) => {
-                    if (event.detail === 0) stepPoints(50);
-                  }}
-                  onContextMenu={(event) => event.preventDefault()}
-                  className={POINT_BUTTON_CLASS}
+                  aria-pressed={direction === "BULL"}
+                  disabled={controlsDisabled}
+                  onClick={() => handleDirectionClick("BULL")}
+                  className={`
+                    relative z-10 flex h-full flex-1
+                    cursor-pointer touch-manipulation
+                    items-center justify-center rounded-full
+                    transition-colors disabled:cursor-default
+                    ${direction === "BULL" ? "text-white" : "text-zinc-500"}
+                  `}
                 >
-                  +
+                  {voteLabels.bull}
+                </button>
+
+                <button
+                  type="button"
+                  aria-pressed={direction === "BEAR"}
+                  disabled={controlsDisabled}
+                  onClick={() => handleDirectionClick("BEAR")}
+                  className={`
+                    relative z-10 flex h-full flex-1
+                    cursor-pointer touch-manipulation
+                    items-center justify-center rounded-full
+                    transition-colors disabled:cursor-default
+                    ${direction === "BEAR" ? "text-white" : "text-zinc-500"}
+                  `}
+                >
+                  {voteLabels.bear}
                 </button>
               </div>
-            )}
 
-            {/* Available points */}
-            {isLoggedIn && !isCommentOnly && (
-              <span
-                className="
-                  jakarta hidden shrink-0 whitespace-nowrap
-                  text-sm font-normal tabular-nums
-                  text-zinc-400 sm:block dark:text-zinc-500
-                "
-              >
-                {availablePoints.toLocaleString(language)}pts.
-              </span>
-            )}
+              {/* Prediction points */}
+              {isLoggedIn && (
+                <div
+                  className={`
+                    relative flex w-max min-w-0 justify-self-end
+                    items-center justify-center gap-0.5
+                    sm:flex-none sm:shrink-0 sm:gap-0
+                    ${
+                      isCommentOnly
+                        ? "pointer-events-none invisible sm:hidden"
+                        : ""
+                    }
+                  `}
+                >
+                  <button
+                    type="button"
+                    aria-label="Decrease points"
+                    disabled={pointsDisabled || betAmount <= 0}
+                    onPointerDown={(event) => startPointsHold(event, -50)}
+                    onPointerUp={handlePointerEnd}
+                    onPointerCancel={handlePointerEnd}
+                    onLostPointerCapture={handlePointerEnd}
+                    onClick={(event) => {
+                      if (event.detail === 0) {
+                        stepPoints(-50);
+                      }
+                    }}
+                    onContextMenu={(event) => event.preventDefault()}
+                    className={POINT_BUTTON_CLASS}
+                  >
+                    −
+                  </button>
 
-            {/* Comment only: logged-in users only */}
-            {!isEditing && isLoggedIn && (
-              <label
-                className={`
-                  col-span-2 flex min-h-9 min-w-0 items-center gap-1.5
-                  text-xs text-zinc-600 dark:text-zinc-300
-                  sm:min-h-8 sm:shrink-0
-                  ${
-                    busy || isChatRestricted
-                      ? "cursor-default opacity-50"
-                      : "cursor-pointer"
-                  }
-                `}
-              >
-                <input
-                  type="checkbox"
-                  checked={isCommentOnly}
-                  disabled={busy || isChatRestricted}
-                  onChange={(event) =>
-                    handleCommentOnlyChange(event.target.checked)
-                  }
+                  <span
+                    aria-label="Prediction points"
+                    className={`
+                      flex h-8 w-[3ch] select-none
+                      items-center justify-center
+                      text-center text-sm tabular-nums
+                      text-zinc-500 dark:text-zinc-100
+                      ${pointsDisabled ? "opacity-50" : ""}
+                    `}
+                  >
+                    {betAmount}
+                  </span>
+
+                  {showMax && !voteLocked && (
+                    <span
+                      className="
+                        absolute -bottom-1 left-1/2 -translate-x-1/2
+                        text-[10px] font-medium text-zinc-500
+                      "
+                    >
+                      max
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    aria-label="Increase points"
+                    disabled={pointsDisabled || betAmount >= pointsLimit}
+                    onPointerDown={(event) => startPointsHold(event, 50)}
+                    onPointerUp={handlePointerEnd}
+                    onPointerCancel={handlePointerEnd}
+                    onLostPointerCapture={handlePointerEnd}
+                    onClick={(event) => {
+                      if (event.detail === 0) {
+                        stepPoints(50);
+                      }
+                    }}
+                    onContextMenu={(event) => event.preventDefault()}
+                    className={POINT_BUTTON_CLASS}
+                  >
+                    +
+                  </button>
+                </div>
+              )}
+
+              {/* Available points */}
+              {isLoggedIn && !isCommentOnly && (
+                <span
                   className="
-                    size-3.5 shrink-0 cursor-[inherit]
-                    accent-zinc-800 dark:accent-zinc-100
+                    jakarta hidden shrink-0 whitespace-nowrap
+                    text-sm font-normal tabular-nums
+                    text-zinc-400 sm:block dark:text-zinc-500
                   "
-                />
+                >
+                  {availablePoints.toLocaleString(language)}
+                  pts.
+                </span>
+              )}
 
-                {commentOnlyLabel}
-              </label>
+              {/* Comment-only mode is available when creating. */}
+              {!isEditing && isLoggedIn && (
+                <label
+                  className={`
+                    col-span-2 flex min-h-9 min-w-0
+                    items-center gap-1.5
+                    text-xs text-zinc-600 dark:text-zinc-300
+                    sm:min-h-8 sm:shrink-0
+                    ${
+                      busy || isChatRestricted
+                        ? "cursor-default opacity-50"
+                        : "cursor-pointer"
+                    }
+                  `}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isCommentOnly}
+                    disabled={busy || isChatRestricted || voteLocked}
+                    onChange={(event) =>
+                      handleCommentOnlyChange(event.target.checked)
+                    }
+                    className="
+                      size-3.5 shrink-0 cursor-[inherit]
+                      accent-zinc-800 dark:accent-zinc-100
+                    "
+                  />
+
+                  {commentOnlyLabel}
+                </label>
+              )}
+            </div>
+
+            {/* Explain why the displayed vote cannot be changed. */}
+            {voteLocked && (
+              <button
+                type="button"
+                disabled={busy}
+                aria-label={`${lockedVoteLabel} ${
+                  direction === "BULL"
+                    ? voteLabels.bull
+                    : direction === "BEAR"
+                      ? voteLabels.bear
+                      : ""
+                }, ${betAmount} pts.`}
+                onClick={handleLockedVoteClick}
+                className="
+                  absolute inset-0 z-20
+                  cursor-not-allowed rounded-lg
+                  focus-visible:outline-none
+                  focus-visible:ring-2 focus-visible:ring-zinc-400
+                "
+              />
             )}
           </div>
 
           {/* Comment input */}
-          {!isEditing && (
+          {showCommentEditor && (
             <textarea
               ref={textareaRef}
-              value={canWriteComment ? comment : ""}
+              value={isLoggedIn ? comment : ""}
               disabled={chatDisabled}
               onChange={(event) => {
                 if (!isLoggedIn || chatDisabled || submittingRef.current) {
@@ -767,7 +899,9 @@ export function PredictionCommentInput({
               readOnly={!isLoggedIn}
               tabIndex={isLoggedIn && !isChatRestricted ? 0 : -1}
               onFocus={(event) => {
-                if (!isLoggedIn) event.currentTarget.blur();
+                if (!isLoggedIn) {
+                  event.currentTarget.blur();
+                }
               }}
               onClick={() => {
                 if (!isLoggedIn) showLoginMessage();
@@ -782,8 +916,8 @@ export function PredictionCommentInput({
               style={{ overflowX: "hidden" }}
               className={`
                 content-scrollbar block min-h-11 w-full
-                resize-none overflow-hidden bg-transparent px-1.5 py-4
-                text-[15px] leading-6 outline-none
+                resize-none overflow-hidden bg-transparent
+                px-1.5 py-4 text-[15px] leading-6 outline-none
                 placeholder:truncate placeholder:text-zinc-500
                 disabled:cursor-not-allowed disabled:opacity-60
                 ${!isLoggedIn ? "cursor-default caret-transparent" : ""}
@@ -792,13 +926,17 @@ export function PredictionCommentInput({
           )}
 
           {/* Selected GIF */}
-          {canWriteComment && selectedGif && (
+          {showCommentEditor && isLoggedIn && selectedGif && (
             <div className="relative mb-3 w-fit max-w-full">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={selectedGif.preview || selectedGif.src}
                 alt={selectedGif.title}
-                className="block max-h-60 max-w-full rounded-lg object-contain"
+                decoding="async"
+                className="
+                    block max-h-60 max-w-full
+                    rounded-lg object-contain
+                  "
               />
 
               <button
@@ -806,18 +944,20 @@ export function PredictionCommentInput({
                 aria-label="Remove GIF"
                 disabled={chatDisabled}
                 onClick={() => {
-                  if (chatDisabled || submittingRef.current) return;
+                  if (chatDisabled || submittingRef.current) {
+                    return;
+                  }
 
                   setSelectedGif(null);
                 }}
                 className="
-                  absolute right-2 top-2
-                  flex size-7 cursor-pointer
-                  items-center justify-center rounded-full
-                  bg-black/60 text-white
-                  transition-colors hover:bg-black/75
-                  disabled:cursor-not-allowed disabled:opacity-50
-                "
+                    absolute right-2 top-2
+                    flex size-7 cursor-pointer
+                    items-center justify-center rounded-full
+                    bg-black/60 text-white
+                    transition-colors hover:bg-black/75
+                    disabled:cursor-not-allowed disabled:opacity-50
+                  "
               >
                 <X size={15} aria-hidden="true" />
               </button>
@@ -827,12 +967,13 @@ export function PredictionCommentInput({
           {/* Bottom actions */}
           <div
             className={`
-              @container flex items-center justify-between gap-2 pb-2
-              ${isEditing ? "pt-3" : ""}
+              @container flex items-center justify-between
+              gap-2 pb-2
+              ${isEditing && !showCommentEditor ? "pt-3" : ""}
             `}
           >
             <div className="flex shrink-0 items-center gap-1">
-              {!isEditing && (
+              {showCommentEditor && (
                 <>
                   <button
                     ref={gifButtonRef}
@@ -885,24 +1026,28 @@ export function PredictionCommentInput({
             </div>
 
             <div className="flex min-w-0 items-center justify-end gap-2">
-              {showCountdown && countdownType === "VOTING_CLOSES" && (
-                <div className="hidden @[380px]:block">
-                  <VotingCountdown
-                    targetMs={targetMs}
-                    type={countdownType}
-                    showCountdown={showCountdown}
-                    isMarketOpen={isMarketOpen}
-                    userLanguage={language}
-                  />
-                </div>
-              )}
+              {!voteLocked &&
+                showCountdown &&
+                countdownType === "VOTING_CLOSES" && (
+                  <div className="hidden @[380px]:block">
+                    <VotingCountdown
+                      targetMs={targetMs}
+                      type={countdownType}
+                      showCountdown={showCountdown}
+                      isMarketOpen={isMarketOpen}
+                      userLanguage={language}
+                    />
+                  </div>
+                )}
 
               {isEditing && onCancel && (
                 <button
                   type="button"
                   disabled={busy}
                   onClick={() => {
-                    if (busy || submittingRef.current) return;
+                    if (busy || submittingRef.current) {
+                      return;
+                    }
 
                     stopPointsHold();
                     onCancel();
@@ -918,37 +1063,56 @@ export function PredictionCommentInput({
                 </button>
               )}
 
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleSubmit}
-                className="
-                  shrink-0 cursor-pointer border-none
-                  bg-transparent text-zinc-800 shadow-none
-                  transition-colors hover:bg-transparent
-                  dark:bg-transparent dark:text-zinc-100
-                  dark:hover:bg-transparent
-                  disabled:cursor-not-allowed
-                  disabled:bg-transparent disabled:opacity-100
-                  dark:disabled:bg-transparent
-                "
-              >
-                {!isCommentOnly && (
-                  <Flag
-                    size={18}
-                    aria-hidden="true"
-                    className={
-                      direction === "BULL"
-                        ? "fill-emerald-600/50 dark:fill-emerald-600"
-                        : direction === "BEAR"
-                          ? "fill-rose-700/50 dark:fill-rose-700"
-                          : ""
-                    }
+              {/* Disabled Save with a separate explanation button. */}
+              <span className="relative inline-flex shrink-0 rounded-md">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={busy || saveUnchanged}
+                  onClick={handleSubmit}
+                  className="
+                    shrink-0 cursor-pointer border-none
+                    bg-transparent text-zinc-800 shadow-none
+                    transition-colors hover:bg-transparent
+                    dark:bg-transparent dark:text-zinc-100
+                    dark:hover:bg-transparent
+                    disabled:cursor-not-allowed
+                    disabled:bg-transparent disabled:opacity-50
+                    dark:disabled:bg-transparent
+                  "
+                >
+                  {!isCommentOnly && (
+                    <Flag
+                      size={18}
+                      aria-hidden="true"
+                      className={
+                        direction === "BULL"
+                          ? "fill-emerald-600/50 dark:fill-emerald-600"
+                          : direction === "BEAR"
+                            ? "fill-rose-700/50 dark:fill-rose-700"
+                            : ""
+                      }
+                    />
+                  )}
+
+                  {submitLabel}
+                </Button>
+
+                {saveUnchanged && !busy && (
+                  <button
+                    type="button"
+                    aria-label={`${submitLabel}: ${unchangedLabel}`}
+                    onClick={handleUnchangedSave}
+                    className="
+                      absolute inset-0
+                      cursor-not-allowed rounded-md
+                      focus-visible:outline-none
+                      focus-visible:ring-2
+                      focus-visible:ring-zinc-400
+                    "
                   />
                 )}
-
-                {submitLabel}
-              </Button>
+              </span>
             </div>
           </div>
         </div>

@@ -82,10 +82,6 @@ export interface MarketItem {
   lunchEndMs?: number | null;
 }
 
-// -----------------------------------------------------------------------------
-// HOOK
-// -----------------------------------------------------------------------------
-
 export function useMarketQuote(
   symbol: string,
   name: string,
@@ -94,14 +90,16 @@ export function useMarketQuote(
   assetType: AssetType = "index",
   pollingInterval = 60_000,
   chartInterval?: ChartInterval,
+  enabled = true,
 ) {
-  /*
-   * useSyncExternalStore expects the subscribe function itself
-   * to remain stable between renders.
-   */
   const subscribe = useCallback(
-    (listener: () => void) =>
-      subscribeToMarketQuote(
+    (listener: () => void) => {
+      // Keep the hook mounted without starting a subscription or request.
+      if (!enabled) {
+        return () => {};
+      }
+
+      return subscribeToMarketQuote(
         symbol,
         name,
         range,
@@ -110,7 +108,8 @@ export function useMarketQuote(
         pollingInterval,
         chartInterval,
         listener,
-      ),
+      );
+    },
     [
       symbol,
       name,
@@ -119,13 +118,10 @@ export function useMarketQuote(
       assetType,
       pollingInterval,
       chartInterval,
+      enabled,
     ],
   );
 
-  /*
-   * Snapshot must correspond to the exact same
-   * symbol/range/chartInterval cache key.
-   */
   const getSnapshot = useCallback(
     () => getMarketQuoteSnapshot(symbol, range, chartInterval),
     [symbol, range, chartInterval],

@@ -120,12 +120,16 @@ interface MarketCommentsProps {
     countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
     showCountdown: boolean;
   } | null;
+  onPredictionEdited?: (
+    prediction: NonNullable<MarketPageComments[number]["prediction"]>,
+  ) => void;
 }
 
 export function MarketComments({
   assetSymbol,
   prediction,
   currentSessionStartMs,
+  onPredictionEdited,
 }: MarketCommentsProps) {
   const user = useCurrentUser();
 
@@ -390,7 +394,10 @@ export function MarketComments({
 
   const hasAlreadyVoted = prediction?.selectedVote != null;
 
+  // Members edit predictions through their linked comment.
+  // Guests keep the standalone vote editor.
   const canEditVote = Boolean(
+    !user?.id &&
     prediction &&
     hasAlreadyVoted &&
     prediction.selectedVoteStatus === "PENDING" &&
@@ -602,52 +609,6 @@ export function MarketComments({
         </span>
       </div>
 
-      {/* Existing prediction */}
-      {prediction && hasAlreadyVoted && !isEditingVote && (
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            <span
-              className={
-                prediction.selectedVote === "BULL"
-                  ? "font-medium text-emerald-600"
-                  : "font-medium text-rose-600"
-              }
-            >
-              {prediction.selectedVote === "BULL"
-                ? voteLabels.bull
-                : voteLabels.bear}
-            </span>
-
-            {user?.id && (
-              <span className="ml-2 tabular-nums">
-                {prediction.selectedPointsBet.toLocaleString(language)}
-                {" pts."}
-              </span>
-            )}
-          </p>
-
-          {canEditVote && (
-            <button
-              type="button"
-              disabled={prediction.isPending || isSavingVote}
-              onClick={startEditingVote}
-              className="
-                cursor-pointer rounded-full px-3 py-1.5
-                text-sm text-zinc-600 transition-colors
-                hover:bg-zinc-100 hover:text-zinc-900
-                focus-visible:outline-none
-                focus-visible:ring-2 focus-visible:ring-zinc-400
-                disabled:cursor-default disabled:opacity-50
-                dark:text-zinc-400 dark:hover:bg-zinc-800
-                dark:hover:text-zinc-100
-              "
-            >
-              {EDIT_VOTE_LABELS[language]}
-            </button>
-          )}
-        </div>
-      )}
-
       {/* Edit an existing prediction */}
       {prediction && isEditingVote ? (
         <PredictionCommentInput
@@ -754,6 +715,14 @@ export function MarketComments({
                     Boolean(targetReplyId) && targetCommentId === comment.id
                   }
                   highlightTargetComment={highlightTargetComment}
+                  onPredictionEdited={(updatedPrediction) => {
+                    // Ignore a save callback from a previous viewer or market session.
+                    if (activeCommentContextRef.current !== commentContextKey) {
+                      return;
+                    }
+
+                    onPredictionEdited?.(updatedPrediction);
+                  }}
                 />
               </div>
             );

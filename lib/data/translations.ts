@@ -6922,67 +6922,84 @@ export const COMMENT_ONLY_LABELS: Record<Language, string> = {
 
 export const EDIT_VOTE_LABELS: Record<
   Language,
-  { save: string; saving: string; cancel: string }
+  {
+    save: string;
+    saving: string;
+    cancel: string;
+    locked: string;
+  }
 > = {
   en: {
     save: "Save changes",
     saving: "Saving...",
     cancel: "Cancel",
+    locked: "Voting has already closed.",
   },
   ko: {
     save: "수정 저장",
     saving: "저장 중...",
     cancel: "취소",
+    locked: "이미 마감된 투표입니다.",
   },
   ja: {
     save: "変更を保存",
     saving: "保存中...",
     cancel: "キャンセル",
+    locked: "投票はすでに締め切られています。",
   },
   zh: {
     save: "保存修改",
     saving: "保存中...",
     cancel: "取消",
+    locked: "投票已截止。",
   },
   de: {
     save: "Änderungen speichern",
     saving: "Speichern...",
     cancel: "Abbrechen",
+    locked: "Die Abstimmung ist bereits geschlossen.",
   },
   fr: {
     save: "Enregistrer",
     saving: "Enregistrement...",
     cancel: "Annuler",
+    locked: "Le vote est déjà clos.",
   },
   es: {
     save: "Guardar cambios",
     saving: "Guardando...",
     cancel: "Cancelar",
+    locked: "La votación ya ha finalizado.",
   },
   pt: {
     save: "Salvar alterações",
     saving: "Salvando...",
     cancel: "Cancelar",
+    locked: "A votação já foi encerrada.",
   },
   it: {
     save: "Salva modifiche",
     saving: "Salvataggio...",
     cancel: "Annulla",
+    locked: "Le votazioni sono già chiuse.",
   },
   ru: {
     save: "Сохранить изменения",
     saving: "Сохранение...",
     cancel: "Отмена",
+    locked: "Голосование уже завершено.",
   },
   ar: {
     save: "حفظ التغييرات",
     saving: "جارٍ الحفظ...",
     cancel: "إلغاء",
+    locked: "لقد أُغلق التصويت بالفعل.",
   },
   hi: {
     save: "बदलाव सहेजें",
     saving: "सहेजा जा रहा है...",
     cancel: "रद्द करें",
+    locked: "मतदान पहले ही समाप्त हो चुका है।",
   },
 };
 
@@ -7000,3 +7017,170 @@ export const SUBMIT_VALIDATION_LABELS = {
     points: "예측 포인트를 확인해 주세요.",
   },
 } as const;
+
+export const PREDICTION_COMMENT_EDIT_LABELS: Record<
+  Language,
+  {
+    choose_direction: string;
+    invalid_points: string;
+    closed_during_edit: string;
+    saved_combined: string;
+    saved_comment: string;
+    saved_refreshing: string;
+  }
+> = {
+  en: {
+    choose_direction: "Please select Bull or Bear.",
+    invalid_points:
+      "Please select a stake in increments of 50, up to 500 points, within your available balance.",
+    closed_during_edit:
+      "Voting has closed. Changes to your vote cannot be saved. Please select Save again to update only your comment.",
+    saved_combined: "Your comment and prediction have been saved.",
+    saved_comment: "Your comment has been saved.",
+    saved_refreshing:
+      "Your changes have been saved. The page will now refresh.",
+  },
+  ko: {
+    choose_direction: "Bull 또는 Bear를 선택하세요.",
+    invalid_points:
+      "사용 가능한 포인트 범위 내에서 최대 500으로 50 단위씩 선택해 주세요.",
+    closed_during_edit:
+      "이미 마감된 투표입니다. 투표 변경은 적용되지 않습니다. 다시 저장하면 댓글만 수정됩니다.",
+    saved_combined: "댓글과 예측을 저장했습니다.",
+    saved_comment: "댓글을 저장했습니다.",
+    saved_refreshing: "저장되었습니다. 화면을 새로 불러옵니다.",
+  },
+  ja: {
+    choose_direction: "BullまたはBearを選択してください。",
+    invalid_points:
+      "利用可能なポイントの範囲内で、最大500ポイントまで50ポイント単位で指定してください。",
+    closed_during_edit:
+      "投票の受付は終了しました。投票内容の変更は保存できません。もう一度保存すると、コメントのみ更新されます。",
+    saved_combined: "コメントと予測を保存しました。",
+    saved_comment: "コメントを保存しました。",
+    saved_refreshing: "変更を保存しました。ページを再読み込みします。",
+  },
+  zh: {
+    choose_direction: "请选择 Bull 或 Bear。",
+    invalid_points:
+      "请在可用积分范围内，以50积分为单位设置投注积分，上限为500积分。",
+    closed_during_edit:
+      "投票已截止，无法保存投票修改。请再次点击保存，仅更新评论内容。",
+    saved_combined: "您的评论和预测已保存。",
+    saved_comment: "您的评论已保存。",
+    saved_refreshing: "修改已保存，即将刷新页面。",
+  },
+  de: {
+    choose_direction: "Bitte wählen Sie Bull oder Bear.",
+    invalid_points:
+      "Bitte wählen Sie einen Einsatz in Schritten von 50 Punkten, höchstens jedoch 500 Punkte und nicht mehr als Ihr verfügbares Guthaben.",
+    closed_during_edit:
+      "Die Abstimmung ist beendet. Änderungen an Ihrer Stimme können nicht mehr gespeichert werden. Bitte klicken Sie erneut auf Speichern, um nur Ihren Kommentar zu aktualisieren.",
+    saved_combined: "Ihr Kommentar und Ihre Prognose wurden gespeichert.",
+    saved_comment: "Ihr Kommentar wurde gespeichert.",
+    saved_refreshing:
+      "Ihre Änderungen wurden gespeichert. Die Seite wird neu geladen.",
+  },
+  fr: {
+    choose_direction: "Veuillez sélectionner Bull ou Bear.",
+    invalid_points:
+      "Veuillez choisir une mise par tranches de 50 points, dans la limite de 500 points et de votre solde disponible.",
+    closed_during_edit:
+      "Le vote est clos. Les modifications de votre vote ne peuvent plus être enregistrées. Veuillez cliquer à nouveau sur Enregistrer pour mettre à jour uniquement votre commentaire.",
+    saved_combined: "Votre commentaire et votre prévision ont été enregistrés.",
+    saved_comment: "Votre commentaire a été enregistré.",
+    saved_refreshing:
+      "Vos modifications ont été enregistrées. La page va être actualisée.",
+  },
+  es: {
+    choose_direction: "Seleccione Bull o Bear.",
+    invalid_points:
+      "Seleccione una apuesta en incrementos de 50 puntos, hasta un máximo de 500 y sin superar su saldo disponible.",
+    closed_during_edit:
+      "La votación ha finalizado. Ya no es posible guardar cambios en su voto. Pulse Guardar de nuevo para actualizar únicamente su comentario.",
+    saved_combined: "Su comentario y su predicción se han guardado.",
+    saved_comment: "Su comentario se ha guardado.",
+    saved_refreshing: "Sus cambios se han guardado. La página se actualizará.",
+  },
+  pt: {
+    choose_direction: "Selecione Bull ou Bear.",
+    invalid_points:
+      "Selecione uma aposta em incrementos de 50 pontos, até o limite de 500 pontos e sem exceder seu saldo disponível.",
+    closed_during_edit:
+      "A votação foi encerrada. Não é mais possível salvar alterações no seu voto. Clique em Salvar novamente para atualizar apenas o comentário.",
+    saved_combined: "Seu comentário e sua previsão foram salvos.",
+    saved_comment: "Seu comentário foi salvo.",
+    saved_refreshing: "Suas alterações foram salvas. A página será atualizada.",
+  },
+  it: {
+    choose_direction: "Selezioni Bull o Bear.",
+    invalid_points:
+      "Selezioni una puntata in incrementi di 50 punti, fino a un massimo di 500 e senza superare il saldo disponibile.",
+    closed_during_edit:
+      "Le votazioni sono chiuse. Non è più possibile salvare modifiche al voto. Selezioni nuovamente Salva per aggiornare soltanto il commento.",
+    saved_combined: "Il commento e la previsione sono stati salvati.",
+    saved_comment: "Il commento è stato salvato.",
+    saved_refreshing:
+      "Le modifiche sono state salvate. La pagina verrà aggiornata.",
+  },
+  ru: {
+    choose_direction: "Пожалуйста, выберите Bull или Bear.",
+    invalid_points:
+      "Укажите ставку с шагом 50 баллов, не более 500 баллов и в пределах доступного баланса.",
+    closed_during_edit:
+      "Голосование завершено. Изменения голоса больше нельзя сохранить. Нажмите «Сохранить» ещё раз, чтобы обновить только комментарий.",
+    saved_combined: "Ваш комментарий и прогноз сохранены.",
+    saved_comment: "Ваш комментарий сохранён.",
+    saved_refreshing: "Изменения сохранены. Страница будет обновлена.",
+  },
+  ar: {
+    choose_direction: "يرجى اختيار Bull أو Bear.",
+    invalid_points:
+      "يرجى تحديد رهان بمضاعفات 50 نقطة، بحد أقصى 500 نقطة ودون تجاوز رصيدكم المتاح.",
+    closed_during_edit:
+      "انتهت فترة التصويت، ولم يعد بالإمكان حفظ التغييرات على تصويتكم. يرجى الضغط على «حفظ» مرة أخرى لتحديث التعليق فقط.",
+    saved_combined: "تم حفظ تعليقكم وتوقعكم.",
+    saved_comment: "تم حفظ تعليقكم.",
+    saved_refreshing: "تم حفظ التغييرات. سيتم تحديث الصفحة.",
+  },
+  hi: {
+    choose_direction: "कृपया Bull या Bear चुनें।",
+    invalid_points:
+      "कृपया अपने उपलब्ध बैलेंस के भीतर 50 अंकों के गुणकों में दाँव चुनें। अधिकतम सीमा 500 अंक है।",
+    closed_during_edit:
+      "मतदान समाप्त हो चुका है। अब आपके वोट में किए गए बदलाव सहेजे नहीं जा सकते। केवल टिप्पणी अपडेट करने के लिए कृपया फिर से सहेजें।",
+    saved_combined: "आपकी टिप्पणी और पूर्वानुमान सहेज दिए गए हैं।",
+    saved_comment: "आपकी टिप्पणी सहेज दी गई है।",
+    saved_refreshing: "आपके बदलाव सहेज दिए गए हैं। अब पेज रीफ़्रेश होगा।",
+  },
+};
+
+export const MARKET_VOTE_EDIT_LABELS: Record<Language, string> = {
+  en: "Edit prediction",
+  ko: "예측 수정",
+  ja: "予測を編集",
+  zh: "编辑预测",
+  de: "Prognose bearbeiten",
+  fr: "Modifier la prévision",
+  es: "Editar predicción",
+  pt: "Editar previsão",
+  it: "Modifica previsione",
+  ru: "Изменить прогноз",
+  ar: "تعديل التوقع",
+  hi: "पूर्वानुमान संपादित करें",
+};
+
+export const PREDICTION_EDIT_UNCHANGED_LABELS: Record<Language, string> = {
+  en: "No changes have been made.",
+  ko: "변경된 내용이 없습니다.",
+  ja: "変更された内容はありません。",
+  zh: "尚未作出任何修改。",
+  de: "Es wurden keine Änderungen vorgenommen.",
+  fr: "Aucune modification n’a été apportée.",
+  es: "No se ha realizado ningún cambio.",
+  pt: "Nenhuma alteração foi feita.",
+  it: "Non è stata apportata alcuna modifica.",
+  ru: "Изменения не внесены.",
+  ar: "لم يتم إجراء أي تغييرات.",
+  hi: "कोई बदलाव नहीं किया गया है।",
+};

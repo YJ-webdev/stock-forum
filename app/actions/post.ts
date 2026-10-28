@@ -35,8 +35,11 @@ const AUTHOR_SELECT = {
 } satisfies Prisma.UserSelect;
 
 const PREDICTION_SELECT = {
+  id: true,
+  symbol: true,
   direction: true,
   pointsBet: true,
+  sessionDate: true,
   status: true,
 } satisfies Prisma.PredictionSelect;
 
@@ -973,9 +976,14 @@ export async function deleteComment(commentId: string) {
 export async function editComment({
   commentId,
   content,
+  prediction: predictionInput,
 }: {
   commentId: string;
   content: JSONContent;
+  prediction?: {
+    direction: "BULL" | "BEAR";
+    pointsBet: number;
+  };
 }) {
   const session = await auth();
 
@@ -988,8 +996,26 @@ export async function editComment({
 
   const userId = session.user.id;
 
+  if (predictionInput) {
+    if (
+      predictionInput.direction !== "BULL" &&
+      predictionInput.direction !== "BEAR"
+    ) {
+      throw new Error("Invalid prediction direction.");
+    }
+
+    if (
+      !Number.isInteger(predictionInput.pointsBet) ||
+      predictionInput.pointsBet < 0 ||
+      predictionInput.pointsBet > 500 ||
+      predictionInput.pointsBet % 50 !== 0
+    ) {
+      throw new Error("Bet amount must be 0–500 in increments of 50.");
+    }
+  }
+
   return prisma.$transaction(async (tx) => {
-    // Use the same user lock as posting and banning.
+    // Coordinate with posting, vote changes, and account moderation.
     await tx.$queryRaw`
       SELECT "id"
       FROM "User"
@@ -1069,11 +1095,183 @@ export async function editComment({
 
     const moderationResult = moderateContent(moderationText);
 
-    // Editing must not automatically publicize private content.
     const visibility =
       comment.visibility === "PRIVATE" || moderationResult.shouldBePrivate
         ? "PRIVATE"
         : "PUBLIC";
+
+    // Infer the exact prediction from the comment.
+    // Never accept a prediction ID, symbol, or session from the client.
+    if (predictionInput && !comment.predictionId) {
+      throw new Error("This comment has no linked prediction.");
+    }
+
+    if (predictionInput && comment.predictionId) {
+      await tx.$queryRaw`
+        SELECT "id"
+        FROM "Prediction"
+        WHERE "id" = ${comment.predictionId}
+        FOR UPDATE
+      `;
+    }
+
+    const linkedPrediction = comment.predictionId
+      ? await tx.prediction.findUnique({
+          where: { id: comment.predictionId },
+          select: {
+            id: true,
+            userId: true,
+            symbol: true,
+            direction: true,
+            pointsBet: true,
+            sessionDate: true,
+            status: true,
+            createdAt: true,
+          },
+        })
+      : null;
+
+    function validatePredictionEditing() {
+      if (!linkedPrediction || linkedPrediction.userId !== userId) {
+        throw new Error("No editable prediction was found.");
+      }
+
+      if (linkedPrediction.status !== "PENDING") {
+        throw new Error("Only pending predictions can be edited.");
+      }
+
+      const window = getVotingWindow(linkedPrediction.symbol, Date.now());
+
+      if (
+        window.isMarketOpen ||
+        !window.canVote ||
+        !window.predictionFor ||
+        window.predictionFor.getTime() !==
+          linkedPrediction.sessionDate.getTime()
+      ) {
+        throw new Error("Voting is closed for this prediction.");
+      }
+    }
+
+    let predictionChanged = false;
+
+    if (predictionInput) {
+      validatePredictionEditing();
+
+      // The validator above rejects a missing prediction.
+      if (!linkedPrediction) {
+        throw new Error("No editable prediction was found.");
+      }
+
+      const nextPointsBet = predictionInput.pointsBet;
+      const additionalBet = nextPointsBet - linkedPrediction.pointsBet;
+
+      predictionChanged =
+        linkedPrediction.direction !== predictionInput.direction ||
+        additionalBet !== 0;
+
+      if (additionalBet !== 0) {
+        await tx.pointBalance.upsert({
+          where: { userId },
+          update: {},
+          create: {
+            userId,
+            points: 10000,
+          },
+        });
+
+        if (additionalBet > 0) {
+          const deducted = await tx.pointBalance.updateMany({
+            where: {
+              userId,
+              points: { gte: additionalBet },
+            },
+            data: {
+              points: { decrement: additionalBet },
+            },
+          });
+
+          if (deducted.count !== 1) {
+            throw new Error(labels.insufficient_points);
+          }
+        } else {
+          await tx.pointBalance.update({
+            where: { userId },
+            data: {
+              points: { increment: -additionalBet },
+            },
+          });
+        }
+
+        // Keep the existing single BET record per prediction.
+        await tx.pointTransaction.upsert({
+          where: {
+            predictionId_type: {
+              predictionId: linkedPrediction.id,
+              type: "BET",
+            },
+          },
+          update: {
+            amount: -nextPointsBet,
+          },
+          create: {
+            userId,
+            predictionId: linkedPrediction.id,
+            type: "BET",
+            amount: -nextPointsBet,
+          },
+        });
+      }
+
+      // Recheck after point operations in case the cutoff passed.
+      validatePredictionEditing();
+
+      if (predictionChanged) {
+        await tx.prediction.update({
+          where: { id: linkedPrediction.id },
+          data: {
+            direction: predictionInput.direction,
+            pointsBet: nextPointsBet,
+          },
+        });
+
+        const metadata = {
+          direction: predictionInput.direction,
+          pointsBet: nextPointsBet,
+          sessionDate: linkedPrediction.sessionDate.toISOString(),
+          lastEditedAt: new Date().toISOString(),
+        };
+
+        const activity = await tx.userActivity.findFirst({
+          where: {
+            userId,
+            predictionId: linkedPrediction.id,
+            type: "PREDICTION_SUBMITTED",
+          },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          select: { id: true },
+        });
+
+        if (activity) {
+          await tx.userActivity.update({
+            where: { id: activity.id },
+            data: { metadata },
+          });
+        } else {
+          await tx.userActivity.create({
+            data: {
+              userId,
+              type: "PREDICTION_SUBMITTED",
+              marketSymbol: linkedPrediction.symbol,
+              predictionId: linkedPrediction.id,
+              commentId,
+              metadata,
+              createdAt: linkedPrediction.createdAt,
+            },
+          });
+        }
+      }
+    }
 
     const editedAt = new Date();
 
@@ -1092,16 +1290,42 @@ export async function editComment({
     await recordUserActivity(tx, {
       userId,
       type: "COMMENT_EDITED",
-      marketSymbol: comment.assets[0]?.assetSymbol ?? null,
+      marketSymbol:
+        linkedPrediction?.symbol ?? comment.assets[0]?.assetSymbol ?? null,
       commentId,
       predictionId: comment.predictionId,
     });
+
+    // If the cutoff passed while saving the comment/activity,
+    // roll back the entire combined edit.
+    if (predictionInput) {
+      validatePredictionEditing();
+    }
+
+    const [prediction, balance] = await Promise.all([
+      comment.predictionId
+        ? tx.prediction.findUnique({
+            where: { id: comment.predictionId },
+            select: PREDICTION_SELECT,
+          })
+        : Promise.resolve(null),
+
+      predictionInput
+        ? tx.pointBalance.findUnique({
+            where: { userId },
+            select: { points: true },
+          })
+        : Promise.resolve(null),
+    ]);
 
     return {
       success: true,
       content: updatedContent,
       visibility,
       editedAt,
+      prediction,
+      predictionChanged,
+      points: balance?.points ?? null,
     };
   });
 }
@@ -2102,4 +2326,69 @@ export async function getHomeCommunityMarkets() {
         b.commentCount - a.commentCount ||
         a.displaySymbol.localeCompare(b.displaySymbol),
     );
+}
+
+export async function getPredictionCommentForEdit({
+  symbol,
+  sessionDate,
+}: {
+  symbol: string;
+  sessionDate: Date;
+}) {
+  const session = await auth();
+
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
+
+  if (!session?.user?.id) {
+    throw new Error(labels.login_required);
+  }
+
+  if (
+    !(sessionDate instanceof Date) ||
+    !Number.isFinite(sessionDate.getTime())
+  ) {
+    throw new Error(labels.comment_not_editable);
+  }
+
+  const userId = session.user.id;
+
+  const comment = await prisma.comment.findFirst({
+    where: {
+      authorId: userId,
+      withdrawnAt: null,
+      moderatedAt: null,
+      prediction: {
+        is: {
+          userId,
+          symbol,
+          sessionDate,
+        },
+      },
+    },
+    select: {
+      id: true,
+      content: true,
+      prediction: {
+        select: {
+          id: true,
+          symbol: true,
+          direction: true,
+          pointsBet: true,
+          sessionDate: true,
+          status: true,
+        },
+      },
+    },
+  });
+
+  if (!comment?.prediction) {
+    throw new Error(labels.comment_not_editable);
+  }
+
+  return {
+    id: comment.id,
+    content: comment.content as JSONContent,
+    prediction: comment.prediction,
+  };
 }

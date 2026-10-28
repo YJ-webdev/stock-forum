@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import dynamic from "next/dynamic";
 import { Check, LockKeyhole, Pencil, X } from "lucide-react";
 import { PiArrowFatLinesUpFill } from "react-icons/pi";
 import { toast } from "sonner";
@@ -13,14 +14,17 @@ import {
   updateMarketVote,
   type VoteDirection,
 } from "@/app/actions/market-vote";
-import { createComment } from "@/app/actions/post";
+import { createComment, getPredictionCommentForEdit } from "@/app/actions/post";
+
 import { useCurrentUser } from "@/app/context/user-context";
 import { usePointBalance } from "@/app/context/point-balance-context";
 
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { resolveLanguage } from "@/lib/data/languages";
 import {
+  MARKET_VOTE_EDIT_LABELS,
   PREDICTION_LABELS,
+  PREDICTION_COMMENT_EDIT_LABELS,
   STATISTICS_LABELS,
   VOTE_INTERFACE_LABELS,
   VOTE_LABELS,
@@ -28,12 +32,52 @@ import {
   VOTING_COUNTDOWN_LABELS,
 } from "@/lib/data/translations";
 
-import { PredictionCommentInput } from "./prediction-comment-input";
 import type { GifResult } from "./gif-picker";
+
+function EditorLoading() {
+  return (
+    <div role="status" className="flex min-h-40 items-center justify-center">
+      <span
+        aria-hidden="true"
+        className="
+          size-5 animate-spin rounded-full
+          border-2 border-zinc-200 border-t-zinc-600
+          dark:border-zinc-700 dark:border-t-zinc-200
+        "
+      />
+    </div>
+  );
+}
+
+const PredictionCommentInput = dynamic(
+  () =>
+    import("./prediction-comment-input").then(
+      (mod) => mod.PredictionCommentInput,
+    ),
+  {
+    ssr: false,
+    loading: EditorLoading,
+  },
+);
+
+const PredictionCommentEditInput = dynamic(
+  () =>
+    import("./prediction-comment-edit-input").then(
+      (mod) => mod.PredictionCommentEditInput,
+    ),
+  {
+    ssr: false,
+    loading: EditorLoading,
+  },
+);
 
 type VoteStatus = NonNullable<
   Awaited<ReturnType<typeof getMarketVote>>
 >["status"];
+
+type EditablePredictionComment = Awaited<
+  ReturnType<typeof getPredictionCommentForEdit>
+>;
 
 type EditorMode = "create" | "edit";
 
@@ -42,6 +86,7 @@ interface MarketVoteButtonProps {
   symbol: string;
   initialVote?: VoteDirection | null;
   initialVoteSessionKey?: string | null;
+  enabled?: boolean;
 }
 
 interface VoteState {
@@ -55,21 +100,6 @@ interface EditorState {
   lookupKey: string;
   mode: EditorMode;
 }
-
-const EDIT_LABELS = {
-  en: { edit: "Edit vote", saved: "Prediction saved." },
-  ko: { edit: "투표 수정", saved: "투표를 저장했어요." },
-  ja: { edit: "投票を変更", saved: "投票を保存しました。" },
-  zh: { edit: "修改投票", saved: "投票已保存。" },
-  de: { edit: "Abstimmung ändern", saved: "Abstimmung gespeichert." },
-  fr: { edit: "Modifier le vote", saved: "Vote enregistré." },
-  es: { edit: "Modificar voto", saved: "Voto guardado." },
-  pt: { edit: "Editar voto", saved: "Voto salvo." },
-  it: { edit: "Modifica voto", saved: "Voto salvato." },
-  ru: { edit: "Изменить голос", saved: "Голос сохранён." },
-  ar: { edit: "تعديل التصويت", saved: "تم حفظ التصويت." },
-  hi: { edit: "वोट बदलें", saved: "वोट सहेजा गया।" },
-} as const;
 
 const VOTE_BUTTON_CLASS = `
   inline-flex h-8.5 min-w-0 flex-1 cursor-pointer
@@ -99,28 +129,30 @@ function buildCommentContent(
   gif: GifResult | null,
 ): JSONContent {
   const text = comment.trim();
+  const nodes: JSONContent[] = [];
+
+  if (text) {
+    for (const line of text.split(/\r\n|\r|\n/)) {
+      nodes.push({
+        type: "paragraph",
+        content: line ? [{ type: "text", text: line }] : [],
+      });
+    }
+  }
+
+  if (gif) {
+    nodes.push({
+      type: "image",
+      attrs: {
+        src: gif.src,
+        alt: gif.title,
+      },
+    });
+  }
 
   return {
     type: "doc",
-    content: [
-      ...(text
-        ? text.split(/\r\n|\r|\n/).map((line) => ({
-            type: "paragraph",
-            content: line ? [{ type: "text", text: line }] : [],
-          }))
-        : []),
-      ...(gif
-        ? [
-            {
-              type: "image",
-              attrs: {
-                src: gif.src,
-                alt: gif.title,
-              },
-            },
-          ]
-        : []),
-    ],
+    content: nodes,
   };
 }
 
@@ -129,6 +161,7 @@ export function MarketVoteButton({
   symbol,
   initialVote = null,
   initialVoteSessionKey = null,
+  enabled = true,
 }: MarketVoteButtonProps) {
   const user = useCurrentUser();
   const userId = user?.id ?? null;
@@ -140,7 +173,8 @@ export function MarketVoteButton({
   const statisticsLabels = STATISTICS_LABELS[language];
   const countdownLabels = VOTING_COUNTDOWN_LABELS[language];
   const predictionLabel = PREDICTION_LABELS[language];
-  const editLabels = EDIT_LABELS[language];
+  const editLabel = MARKET_VOTE_EDIT_LABELS[language];
+  const commentEditLabels = PREDICTION_COMMENT_EDIT_LABELS[language];
 
   const { points: userPoints, setPoints } = usePointBalance();
 
@@ -149,7 +183,9 @@ export function MarketVoteButton({
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+
   const submittingRef = useRef(false);
+  const combinedSavingRef = useRef(false);
   const mountedRef = useRef(false);
   const voteRevisionRef = useRef(0);
   const lastFocusRefreshRef = useRef(0);
@@ -158,11 +194,20 @@ export function MarketVoteButton({
   const [draftDirection, setDraftDirection] = useState<VoteDirection | null>(
     null,
   );
+
   const [betAmount, setBetAmount] = useState(50);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [now, setNow] = useState(() => Date.now());
   const [refreshVersion, setRefreshVersion] = useState(0);
+
+  const [editableComment, setEditableComment] = useState<{
+    lookupKey: string;
+    data: EditablePredictionComment;
+  } | null>(null);
+
+  const [editLoadError, setEditLoadError] = useState(false);
+  const [editLoadVersion, setEditLoadVersion] = useState(0);
 
   const votingWindow = getVotingWindow(symbol, now);
   const sessionKey = getSessionKey(votingWindow.predictionFor);
@@ -181,9 +226,8 @@ export function MarketVoteButton({
     status: null,
   }));
 
-  // Initial direction alone does not contain the stake or status.
-  // Fetch the complete vote before enabling submission/editing.
   const [checkedLookupKey, setCheckedLookupKey] = useState<string | null>(null);
+
   const [voteLookupFailed, setVoteLookupFailed] = useState(false);
 
   const currentVote = voteState.lookupKey === lookupKey ? voteState : null;
@@ -197,6 +241,9 @@ export function MarketVoteButton({
 
   const isOpen = editor?.lookupKey === lookupKey;
   const isEditing = isOpen && editor?.mode === "edit";
+  const isCombinedEditing = isEditing && userId !== null;
+
+  const active = enabled || isOpen || isSubmitting;
 
   const canEdit =
     direction !== null &&
@@ -218,9 +265,12 @@ export function MarketVoteButton({
     : "";
 
   function closePopup() {
-    if (submittingRef.current) return;
+    if (submittingRef.current || combinedSavingRef.current) {
+      return;
+    }
 
     setEditor(null);
+    setEditableComment(null);
     triggerRef.current?.focus();
   }
 
@@ -267,10 +317,20 @@ export function MarketVoteButton({
     trigger: HTMLButtonElement,
     nextDirection?: VoteDirection,
   ) {
-    if (voteButtonDisabled || submittingRef.current) return;
+    if (
+      voteButtonDisabled ||
+      submittingRef.current ||
+      combinedSavingRef.current
+    ) {
+      return;
+    }
+
     if (!canUsePrediction(mode)) return;
 
     triggerRef.current = trigger;
+
+    setEditableComment(null);
+    setEditLoadError(false);
 
     setDraftDirection(mode === "edit" ? direction : (nextDirection ?? null));
 
@@ -289,11 +349,19 @@ export function MarketVoteButton({
   }
 
   async function submitVote(comment: string, gif: GifResult | null) {
-    if (submittingRef.current || !editor || editor.lookupKey !== lookupKey) {
+    if (
+      submittingRef.current ||
+      combinedSavingRef.current ||
+      !editor ||
+      editor.lookupKey !== lookupKey
+    ) {
       return;
     }
 
     const mode = editor.mode;
+
+    // Member edits are saved by PredictionCommentEditInput.
+    if (mode === "edit" && userId) return;
 
     if (!canUsePrediction(mode)) return;
 
@@ -343,8 +411,6 @@ export function MarketVoteButton({
 
     submittingRef.current = true;
     setIsSubmitting(true);
-
-    // Invalidate any lookup started before the submission.
     voteRevisionRef.current += 1;
 
     const isCurrentView = () =>
@@ -357,10 +423,11 @@ export function MarketVoteButton({
       let savedStatus: VoteStatus = "PENDING";
 
       if (mode === "edit") {
+        // Guest vote-only editing.
         const result = await updateMarketVote({
           symbol,
           direction: submittedDirection,
-          pointsBet: submittedAmount,
+          pointsBet: 0,
           sessionDate,
         });
 
@@ -396,7 +463,6 @@ export function MarketVoteButton({
         savedStatus = result.status;
       }
 
-      // Also invalidate lookups started while saving.
       voteRevisionRef.current += 1;
 
       if (!isCurrentView()) return;
@@ -415,9 +481,10 @@ export function MarketVoteButton({
       setCheckedLookupKey(submittedLookupKey);
       setVoteLookupFailed(false);
       setEditor(null);
+      setEditableComment(null);
 
       if (mode === "edit") {
-        toast.success(editLabels.saved);
+        toast.success(commentEditLabels.saved_combined);
       } else {
         const directionLabel =
           savedDirection === "BULL" ? voteLabels.bull : voteLabels.bear;
@@ -434,7 +501,6 @@ export function MarketVoteButton({
         );
       }
 
-      // Wait until the updated trigger is rendered.
       window.requestAnimationFrame(() => {
         if (isCurrentView()) {
           triggerRef.current?.focus();
@@ -467,16 +533,77 @@ export function MarketVoteButton({
     };
   }, []);
 
-  // Discard a popup belonging to a previous voter or session.
+  // Discard an editor belonging to a previous voter or session.
   useEffect(() => {
     setEditor(null);
     setDraftDirection(null);
+    setEditableComment(null);
+    setEditLoadError(false);
   }, [lookupKey]);
 
-  // Update market time and refresh when returning to the page.
+  // Fetch the linked comment only when a member opens Edit.
   useEffect(() => {
+    if (!isCombinedEditing || !userId || !sessionKey) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const requestedKey = lookupKey;
+    const sessionDate = new Date(sessionKey);
+
+    setEditableComment(null);
+    setEditLoadError(false);
+
+    async function loadComment() {
+      try {
+        const result = await getPredictionCommentForEdit({
+          symbol,
+          sessionDate,
+        });
+
+        if (cancelled || activeLookupKeyRef.current !== requestedKey) {
+          return;
+        }
+
+        setEditableComment({
+          lookupKey: requestedKey,
+          data: result,
+        });
+      } catch (error) {
+        if (cancelled || activeLookupKeyRef.current !== requestedKey) {
+          return;
+        }
+
+        console.error("Failed to load prediction comment:", error);
+
+        setEditLoadError(true);
+      }
+    }
+
+    void loadComment();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isCombinedEditing,
+    userId,
+    symbol,
+    sessionKey,
+    lookupKey,
+    editLoadVersion,
+  ]);
+
+  useEffect(() => {
+    if (!active) return;
+
+    setNow(Date.now());
+
     const interval = window.setInterval(() => {
-      setNow(Date.now());
+      if (document.visibilityState === "visible") {
+        setNow(Date.now());
+      }
     }, 1000);
 
     function handleFocus() {
@@ -485,8 +612,13 @@ export function MarketVoteButton({
       const currentTime = Date.now();
       setNow(currentTime);
 
-      if (submittingRef.current) return;
-      if (currentTime - lastFocusRefreshRef.current < 1000) return;
+      if (submittingRef.current || combinedSavingRef.current) {
+        return;
+      }
+
+      if (currentTime - lastFocusRefreshRef.current < 1000) {
+        return;
+      }
 
       lastFocusRefreshRef.current = currentTime;
       setRefreshVersion((current) => current + 1);
@@ -506,9 +638,11 @@ export function MarketVoteButton({
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [active]);
 
   useEffect(() => {
+    if (!active) return;
+
     let cancelled = false;
     const revision = voteRevisionRef.current;
 
@@ -548,7 +682,6 @@ export function MarketVoteButton({
         setVoteLookupFailed(false);
       } catch {
         if (!isCurrentRequest()) return;
-
         setVoteLookupFailed(true);
       } finally {
         if (isCurrentRequest()) {
@@ -562,7 +695,7 @@ export function MarketVoteButton({
     return () => {
       cancelled = true;
     };
-  }, [symbol, sessionKey, lookupKey, refreshVersion]);
+  }, [symbol, sessionKey, lookupKey, refreshVersion, active]);
 
   useEffect(() => {
     if (isOpen) {
@@ -577,12 +710,14 @@ export function MarketVoteButton({
       if (
         event.key !== "Escape" ||
         event.defaultPrevented ||
-        submittingRef.current
+        submittingRef.current ||
+        combinedSavingRef.current
       ) {
         return;
       }
 
       setEditor(null);
+      setEditableComment(null);
       triggerRef.current?.focus();
     }
 
@@ -642,8 +777,8 @@ export function MarketVoteButton({
               ref={triggerRef}
               type="button"
               disabled={voteButtonDisabled}
-              aria-label={`${marketName}: ${editLabels.edit}`}
-              title={editLabels.edit}
+              aria-label={`${marketName}: ${editLabel}`}
+              title={editLabel}
               aria-expanded={isOpen}
               aria-controls={isOpen ? popupId : undefined}
               onClick={(event) => openEditor("edit", event.currentTarget)}
@@ -717,7 +852,8 @@ export function MarketVoteButton({
               }
             }}
             className="
-              fixed inset-0 z-100 flex items-end justify-center
+              fixed inset-0 z-100
+              flex items-end justify-center
               bg-black/30 lg:items-center lg:p-4
             "
           >
@@ -729,8 +865,9 @@ export function MarketVoteButton({
               aria-labelledby={titleId}
               tabIndex={-1}
               className="
-                max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl
-                border border-zinc-200 bg-white p-4
+                max-h-[85dvh] w-full overflow-y-auto
+                rounded-t-2xl border border-zinc-200
+                bg-white p-4
                 pb-[max(1rem,env(safe-area-inset-bottom))]
                 shadow-xl outline-none
                 dark:border-zinc-700 dark:bg-zinc-900
@@ -740,10 +877,13 @@ export function MarketVoteButton({
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2
                   id={titleId}
-                  className="text-sm font-medium text-zinc-700 dark:text-zinc-200"
+                  className="
+                    text-sm font-medium
+                    text-zinc-700 dark:text-zinc-200
+                  "
                 >
                   {isEditing
-                    ? `${editLabels.edit} · ${marketName}`
+                    ? `${editLabel} · ${marketName}`
                     : predictionLabel.replace("{market}", marketName)}
                 </h2>
 
@@ -758,55 +898,166 @@ export function MarketVoteButton({
                     text-zinc-400 transition-colors
                     hover:bg-zinc-100 hover:text-zinc-800
                     focus-visible:outline-none
-                    focus-visible:ring-2 focus-visible:ring-zinc-400
+                    focus-visible:ring-2
+                    focus-visible:ring-zinc-400
                     disabled:cursor-default disabled:opacity-50
-                    dark:hover:bg-zinc-800 dark:hover:text-zinc-200
+                    dark:hover:bg-zinc-800
+                    dark:hover:text-zinc-200
                   "
                 >
                   <X className="size-4" aria-hidden="true" />
                 </button>
               </div>
 
-              <PredictionCommentInput
-                key={`${lookupKey}:${editor?.mode}`}
-                variant="popup"
-                mode={isEditing ? "edit" : "create"}
-                onCancel={closePopup}
-                assetSymbol={symbol}
-                onCommentCreated={() => {
-                  closePopup();
-                }}
-                direction={draftDirection}
-                setDirection={setDraftDirection}
-                betAmount={betAmount}
-                setBetAmount={setBetAmount}
-                userPoints={availablePoints}
-                maxBet={maxBet}
-                currentUser={user ?? null}
-                isMarketOpen={votingWindow.isMarketOpen}
-                isPending={isSubmitting}
-                buttonDisabled={inputDisabled}
-                submitVote={(comment, gif) => {
-                  void submitVote(comment, gif);
-                }}
-                targetMs={votingWindow.targetMs}
-                countdownType={votingWindow.countdownType}
-                showCountdown={votingWindow.showCountdown}
-              />
+              {isCombinedEditing ? (
+                editableComment?.lookupKey === lookupKey ? (
+                  <PredictionCommentEditInput
+                    key={`combined:${lookupKey}:${editableComment.data.id}`}
+                    commentId={editableComment.data.id}
+                    initialContent={editableComment.data.content}
+                    prediction={editableComment.data.prediction}
+                    onCancel={closePopup}
+                    onSavingChange={(saving) => {
+                      combinedSavingRef.current = saving;
+                      submittingRef.current = saving;
 
-              {editorMessage && (
+                      if (mountedRef.current) {
+                        setIsSubmitting(saving);
+                      }
+
+                      if (saving) {
+                        voteRevisionRef.current += 1;
+                      }
+                    }}
+                    onSaved={(result) => {
+                      if (
+                        !mountedRef.current ||
+                        activeLookupKeyRef.current !== lookupKey
+                      ) {
+                        return;
+                      }
+
+                      const savedPrediction = result.prediction;
+
+                      if (savedPrediction) {
+                        voteRevisionRef.current += 1;
+
+                        setVoteState({
+                          lookupKey,
+                          direction: savedPrediction.direction,
+                          pointsBet: savedPrediction.pointsBet,
+                          status: savedPrediction.status,
+                        });
+
+                        setCheckedLookupKey(lookupKey);
+                        setVoteLookupFailed(false);
+                      }
+
+                      setEditor(null);
+                      setEditableComment(null);
+
+                      window.requestAnimationFrame(() => {
+                        if (
+                          mountedRef.current &&
+                          activeLookupKeyRef.current === lookupKey
+                        ) {
+                          triggerRef.current?.focus();
+                        }
+                      });
+                    }}
+                  />
+                ) : editLoadError ? (
+                  <div
+                    className="
+                      flex min-h-40 flex-col items-center
+                      justify-center gap-3
+                    "
+                  >
+                    <p role="alert" className="text-sm text-zinc-500">
+                      {interfaceLabels.lookup_failed}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditLoadError(false);
+                        setEditLoadVersion((value) => value + 1);
+                      }}
+                      className="
+                        cursor-pointer rounded-sm text-sm
+                        underline underline-offset-4
+                        focus-visible:outline-none
+                        focus-visible:ring-2
+                        focus-visible:ring-zinc-400
+                      "
+                    >
+                      {interfaceLabels.retry}
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    role="status"
+                    className="
+                      flex min-h-40 items-center justify-center
+                    "
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="
+                        size-5 animate-spin rounded-full
+                        border-2 border-zinc-200
+                        border-t-zinc-600
+                        dark:border-zinc-700
+                        dark:border-t-zinc-200
+                      "
+                    />
+
+                    <span className="sr-only">{interfaceLabels.checking}</span>
+                  </div>
+                )
+              ) : (
+                <PredictionCommentInput
+                  key={`${lookupKey}:${editor?.mode}`}
+                  variant="popup"
+                  mode={isEditing ? "edit" : "create"}
+                  onCancel={closePopup}
+                  assetSymbol={symbol}
+                  onCommentCreated={() => {
+                    closePopup();
+                  }}
+                  direction={draftDirection}
+                  setDirection={setDraftDirection}
+                  betAmount={betAmount}
+                  setBetAmount={setBetAmount}
+                  userPoints={availablePoints}
+                  maxBet={maxBet}
+                  currentUser={user ?? null}
+                  isMarketOpen={votingWindow.isMarketOpen}
+                  isPending={isSubmitting}
+                  buttonDisabled={inputDisabled}
+                  submitVote={(comment, gif) => {
+                    void submitVote(comment, gif);
+                  }}
+                  targetMs={votingWindow.targetMs}
+                  countdownType={votingWindow.countdownType}
+                  showCountdown={votingWindow.showCountdown}
+                />
+              )}
+
+              {!isCombinedEditing && editorMessage && (
                 <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
                   {editorMessage}
                 </p>
               )}
 
-              {voteLookupFailed && (
+              {!isCombinedEditing && voteLookupFailed && (
                 <button
                   type="button"
                   disabled={voteButtonDisabled}
                   onClick={retryVoteLookup}
                   className="
-                    mt-2 cursor-pointer text-xs underline underline-offset-4
+                    mt-2 cursor-pointer text-xs
+                    underline underline-offset-4
                     disabled:cursor-default disabled:opacity-50
                   "
                 >
