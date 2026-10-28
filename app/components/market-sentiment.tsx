@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-import {
-  getMarketVoteStats,
-  type MarketVoteStats,
-} from "@/app/actions/market-vote";
+import type { MarketVoteListStats } from "@/app/actions/market-vote";
+import { useCurrentUser } from "@/app/context/user-context";
+import { getBatchedMarketVotes } from "@/app/hooks/batched-market-votes";
 
 import { resolveLanguage } from "@/lib/data/languages";
 import { STATISTICS_LABELS } from "@/lib/data/translations";
@@ -24,9 +23,10 @@ interface MarketSession {
 }
 
 interface SentimentResult {
+  viewerId: string | null;
   symbol: string;
   predictionMs: number;
-  stats: MarketVoteStats;
+  stats: MarketVoteListStats;
 }
 
 const SESSION_REFRESH_MS = 15_000;
@@ -39,7 +39,7 @@ const DOT_PATTERN =
 const WIDTH_TRANSITION =
   "transition-[width] duration-300 motion-reduce:transition-none";
 
-const PERCENT_TEXT = " font-normal text-white";
+const PERCENT_TEXT = "font-normal text-white";
 
 function getSentimentSession(symbol: string): MarketSession {
   const votingWindow = getVotingWindow(symbol, Date.now());
@@ -58,12 +58,17 @@ export function MarketSentiment({
   userLanguage,
   enabled = true,
 }: MarketSentimentProps) {
+  const user = useCurrentUser();
+  const viewerId = user?.id ?? null;
+
   const language = resolveLanguage(userLanguage);
   const labels = STATISTICS_LABELS[language];
 
   const [session, setSession] = useState<MarketSession | null>(null);
+
   const [result, setResult] = useState<SentimentResult | null>(null);
 
+  // Track the current session and market opening/closing.
   useEffect(() => {
     if (!enabled) return;
 
@@ -98,10 +103,12 @@ export function MarketSentiment({
   }, [symbol, enabled]);
 
   const currentSession = session?.symbol === symbol ? session : null;
+
   const isMarketOpen = currentSession?.isMarketOpen ?? null;
+
   const predictionMs = currentSession?.predictionMs ?? null;
 
-  // Fetch once during market hours; poll while the market is closed.
+  // Fetch once during market hours; poll while voting is open.
   useEffect(() => {
     if (!enabled || isMarketOpen === null || predictionMs === null) {
       return;
@@ -121,25 +128,31 @@ export function MarketSentiment({
     }
 
     async function loadSentiment() {
-      if (cancelled || fetching || !matchesCurrentSession()) return;
+      if (cancelled || fetching || !matchesCurrentSession()) {
+        return;
+      }
 
       fetching = true;
 
       try {
-        const stats = await getMarketVoteStats({
+        const stats = await getBatchedMarketVotes({
           symbol,
           sessionDate: new Date(sessionMs),
+          viewerId,
         });
 
-        if (cancelled || !matchesCurrentSession()) return;
+        if (cancelled || !matchesCurrentSession()) {
+          return;
+        }
 
         setResult({
+          viewerId,
           symbol,
           predictionMs: sessionMs,
           stats,
         });
       } catch {
-        // Preserve the previous stats or default display.
+        // Preserve the previous result for this viewer/session.
       } finally {
         fetching = false;
       }
@@ -172,16 +185,18 @@ export function MarketSentiment({
 
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [symbol, isMarketOpen, predictionMs, enabled]);
+  }, [symbol, isMarketOpen, predictionMs, enabled, viewerId]);
 
   const stats =
     predictionMs !== null &&
-    result?.symbol === symbol &&
+    result?.viewerId === viewerId &&
+    result.symbol === symbol &&
     result.predictionMs === predictionMs
       ? result.stats
       : null;
 
   const hasVotes = stats !== null && stats.totalVotes > 0;
+
   const bullPercent = stats?.bullPercent ?? 0;
   const bearPercent = stats?.bearPercent ?? 0;
 
@@ -192,16 +207,23 @@ export function MarketSentiment({
     : undefined;
 
   return (
-    <div className=" w-full">
+    <div className="w-full">
       <div
         role={stats ? "img" : undefined}
         aria-label={ariaLabel}
         aria-hidden={stats ? undefined : true}
-        className={`relative flex h-7 w-full items-center overflow-hidden bg-white dark:bg-zinc-900 ${DOT_PATTERN}`}
+        className={`
+          relative flex h-7 w-full items-center overflow-hidden
+          bg-white dark:bg-zinc-900
+          ${DOT_PATTERN}
+        `}
       >
         <div
           aria-hidden="true"
-          className="z-1 flex w-full items-center justify-around text-[13px] leading-none text-white tabular-nums"
+          className="
+            z-1 flex w-full items-center justify-around
+            text-[13px] leading-none text-white tabular-nums
+          "
         >
           {hasVotes ? (
             <>
@@ -216,7 +238,12 @@ export function MarketSentiment({
               )}
             </>
           ) : (
-            <span className="font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
+            <span
+              className="
+                font-normal text-zinc-800
+                dark:font-light dark:text-zinc-100
+              "
+            >
               {labels.no_vote_yet}
             </span>
           )}
@@ -225,15 +252,24 @@ export function MarketSentiment({
         {hasVotes && (
           <div
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 flex h-7 rounded-full"
+            className="
+              absolute inset-x-0 bottom-0
+              flex h-7 rounded-full
+            "
           >
             <div
-              className={`h-full bg-[#4bbd82]/50 ${WIDTH_TRANSITION}`}
+              className={`
+                h-full bg-[#4bbd82]/50
+                ${WIDTH_TRANSITION}
+              `}
               style={{ width: `${bullPercent}%` }}
             />
 
             <div
-              className={`h-full bg-[#f07197]/50 ${WIDTH_TRANSITION}`}
+              className={`
+                h-full bg-[#f07197]/50
+                ${WIDTH_TRANSITION}
+              `}
               style={{ width: `${bearPercent}%` }}
             />
           </div>

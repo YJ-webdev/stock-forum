@@ -1,30 +1,14 @@
 "use server";
 
-import { del, put } from "@vercel/blob";
+import { put } from "@vercel/blob";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import sharp from "sharp";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
-function isVercelBlobUrl(url: string | null | undefined) {
-  if (!url) {
-    return false;
-  }
-
-  try {
-    const hostname = new URL(url).hostname;
-
-    return (
-      hostname.endsWith(".public.blob.vercel-storage.com") ||
-      hostname.endsWith(".blob.vercel-storage.com")
-    );
-  } catch {
-    return false;
-  }
-}
 
 export async function uploadAvatar(formData: FormData) {
   const session = await auth();
@@ -35,7 +19,7 @@ export async function uploadAvatar(formData: FormData) {
 
   const file = formData.get("file");
 
-  if (!(file instanceof File)) {
+  if (!(file instanceof File) || file.size === 0) {
     throw new Error("No image selected.");
   }
 
@@ -52,7 +36,7 @@ export async function uploadAvatar(formData: FormData) {
       id: session.user.id,
     },
     select: {
-      image: true,
+      id: true,
     },
   });
 
@@ -60,32 +44,54 @@ export async function uploadAvatar(formData: FormData) {
     throw new Error("User not found.");
   }
 
-  const extension =
-    file.type === "image/png"
-      ? "png"
-      : file.type === "image/webp"
-        ? "webp"
-        : "jpg";
+  const input = Buffer.from(await file.arrayBuffer());
+
+  let optimized: Buffer;
+
+  try {
+    const pipeline = sharp(input);
+    const metadata = await pipeline.metadata();
+
+    if (
+      !metadata.format ||
+      !["jpeg", "png", "webp"].includes(metadata.format)
+    ) {
+      throw new Error("Unsupported image format.");
+    }
+
+    optimized = await pipeline
+      .rotate()
+      .resize({
+        width: 192,
+        height: 192,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .webp({
+        quality: 80,
+        effort: 4,
+      })
+      .toBuffer();
+  } catch (error) {
+    console.error("Failed to process avatar:", error);
+
+    throw new Error(
+      "Unable to process this image. Please choose another JPG, PNG, or WebP image.",
+    );
+  }
 
   const blob = await put(
-    `avatars/${session.user.id}/${crypto.randomUUID()}.${extension}`,
-    file,
+    `avatars/${user.id}/${crypto.randomUUID()}.webp`,
+    optimized,
     {
       access: "public",
+      contentType: "image/webp",
       addRandomSuffix: false,
     },
   );
 
-  // Only remove avatars that belong to our Blob storage.
-  // Never try to delete the original Google profile image.
-  if (user.image && isVercelBlobUrl(user.image) && user.image !== blob.url) {
-    try {
-      await del(user.image);
-    } catch (error) {
-      console.error("Failed to delete previous avatar:", error);
-    }
-  }
-
+  // Profile preferences are saved separately.
+  // Keep the previous image until that save succeeds.
   return {
     url: blob.url,
   };

@@ -24,8 +24,10 @@ export interface MarketVoteListStats {
   bearPercent: number;
 
   myPrediction: {
+    id: string;
     direction: "BULL" | "BEAR";
     pointsBet: number;
+    status: "PENDING" | "WON" | "LOST" | "DRAW" | "VOID";
   } | null;
 }
 
@@ -224,9 +226,11 @@ export async function getMarketVoteListStats({
             OR: marketConditions,
           },
           select: {
+            id: true,
             symbol: true,
             direction: true,
             pointsBet: true,
+            status: true,
           },
         })
       : Promise.resolve([]),
@@ -267,8 +271,10 @@ export async function getMarketVoteListStats({
     if (!stats) continue;
 
     stats.myPrediction = {
+      id: prediction.id,
       direction: prediction.direction,
       pointsBet: prediction.pointsBet,
+      status: prediction.status,
     };
   }
 
@@ -297,6 +303,7 @@ export async function getMarketVote({
     where: getPredictionUniqueWhere(identity, symbol, sessionDate),
     select: {
       id: true,
+      symbol: true,
       direction: true,
       pointsBet: true,
       status: true,

@@ -33,6 +33,7 @@ import {
 } from "@/lib/data/translations";
 
 import type { GifResult } from "./gif-picker";
+import { getBatchedMarketVotes } from "../hooks/batched-market-votes";
 
 function EditorLoading() {
   return (
@@ -665,10 +666,13 @@ export function MarketVoteButton({
 
     async function loadVote() {
       try {
-        const vote = await getMarketVote({
+        const result = await getBatchedMarketVotes({
           symbol,
           sessionDate,
+          viewerId: userId,
         });
+
+        const vote = result.myPrediction;
 
         if (!isCurrentRequest()) return;
 
@@ -682,6 +686,7 @@ export function MarketVoteButton({
         setVoteLookupFailed(false);
       } catch {
         if (!isCurrentRequest()) return;
+
         setVoteLookupFailed(true);
       } finally {
         if (isCurrentRequest()) {
@@ -695,7 +700,7 @@ export function MarketVoteButton({
     return () => {
       cancelled = true;
     };
-  }, [symbol, sessionKey, lookupKey, refreshVersion, active]);
+  }, [symbol, sessionKey, lookupKey, refreshVersion, active, userId]);
 
   useEffect(() => {
     if (isOpen) {

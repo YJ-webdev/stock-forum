@@ -547,7 +547,9 @@ export function PredictionCommentInput({
       return;
     }
 
-    if (!isLoggedIn) {
+    // Comment creation and combined comment editing require login.
+    // Vote-only creation/editing remains available to guests.
+    if ((isCommentOnly || isCombinedEdit) && !isLoggedIn) {
       showLoginMessage();
       return;
     }
@@ -572,7 +574,7 @@ export function PredictionCommentInput({
       return;
     }
 
-    // Closed predictions allow comment/GIF edits only.
+    // A closed prediction allows editing only its comment/GIF.
     if (isCombinedEdit && voteLocked) {
       if (buttonDisabled) {
         toast.error(validationLabels.unavailable);
@@ -614,6 +616,8 @@ export function PredictionCommentInput({
       return;
     }
 
+    // Guests submit only a direction.
+    // The parent/server enforce a zero-point guest stake.
     submitVote(
       canWriteComment ? comment : "",
       canWriteComment ? selectedGif : null,

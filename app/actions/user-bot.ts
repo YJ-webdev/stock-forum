@@ -1,19 +1,36 @@
 "use server";
 
+import sharp from "sharp";
+import OpenAI from "openai";
+import YahooFinance from "yahoo-finance2";
+import { put, del } from "@vercel/blob";
+import { revalidatePath } from "next/cache";
+
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-import OpenAI from "openai";
-import YahooFinance from "yahoo-finance2";
-
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
-import { resolveLanguage } from "@/lib/data/languages";
-import { getVotingWindow } from "@/lib/utils/get-voting-window";
-import { put, del } from "@vercel/blob";
-import { revalidatePath } from "next/cache";
 import { NATIONALITIES } from "@/lib/data/nationalities";
+import { resolveLanguage } from "@/lib/data/languages";
+
+import { getVotingWindow } from "@/lib/utils/get-voting-window";
 
 const yahoo = new YahooFinance();
+
+const BOT_AVATAR_MAX_UPLOAD_SIZE = 3 * 1024 * 1024;
+const BOT_AVATAR_MAX_DIMENSION = 192;
+
+const BOT_AVATAR_ALLOWED_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
+type BotDirection = "BULL" | "BEAR";
+
+// -----------------------------------------------------------------------------
+// AUTHORIZATION
+// -----------------------------------------------------------------------------
 
 async function requireAdmin() {
   const session = await auth();
@@ -23,8 +40,12 @@ async function requireAdmin() {
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { role: true },
+    where: {
+      id: session.user.id,
+    },
+    select: {
+      role: true,
+    },
   });
 
   if (user?.role !== "ADMIN") {
@@ -33,57 +54,10 @@ async function requireAdmin() {
 
   return session.user.id;
 }
-export async function getBotUser(botUserId: string) {
-  await requireAdmin();
 
-  const bot = await prisma.user.findUnique({
-    where: { id: botUserId },
-    select: {
-      id: true,
-      isBot: true,
-      name: true,
-      image: true,
-      nationality: true,
-      language: true,
-    },
-  });
-
-  if (!bot?.isBot) {
-    throw new Error("Bot user not found.");
-  }
-
-  const balance = await prisma.pointBalance.findUnique({
-    where: { userId: bot.id },
-    select: { points: true },
-  });
-
-  return {
-    ...bot,
-    points: balance?.points ?? 10000,
-  };
-}
-
-export async function getBotUsers() {
-  await requireAdmin();
-
-  return prisma.user.findMany({
-    where: { isBot: true },
-    orderBy: [{ name: "asc" }, { id: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      image: true,
-      nationality: true,
-      language: true,
-    },
-  });
-}
-
-// Change this path to your existing voting utility.
-
-// Keep your existing auth import and requireAdmin helper.
-
-type BotDirection = "BULL" | "BEAR";
+// -----------------------------------------------------------------------------
+// HELPERS
+// -----------------------------------------------------------------------------
 
 async function requireBot(botUserId: string) {
   if (typeof botUserId !== "string" || !botUserId.trim()) {
@@ -91,7 +65,9 @@ async function requireBot(botUserId: string) {
   }
 
   const bot = await prisma.user.findUnique({
-    where: { id: botUserId },
+    where: {
+      id: botUserId,
+    },
     select: {
       id: true,
       isBot: true,
@@ -123,6 +99,106 @@ function finiteNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+async function uploadBotAvatar(file: File): Promise<string> {
+  if (!BOT_AVATAR_ALLOWED_TYPES.has(file.type)) {
+    throw new Error("Use a JPG, PNG, or WebP image.");
+  }
+
+  if (file.size > BOT_AVATAR_MAX_UPLOAD_SIZE) {
+    throw new Error("Image must be 3 MB or smaller.");
+  }
+
+  const input = Buffer.from(await file.arrayBuffer());
+
+  let optimized: Buffer;
+
+  try {
+    const pipeline = sharp(input);
+    const metadata = await pipeline.metadata();
+
+    if (
+      !metadata.format ||
+      !["jpeg", "png", "webp"].includes(metadata.format)
+    ) {
+      throw new Error("Unsupported image format.");
+    }
+
+    optimized = await pipeline
+      .rotate()
+      .resize({
+        width: BOT_AVATAR_MAX_DIMENSION,
+        height: BOT_AVATAR_MAX_DIMENSION,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .webp({
+        quality: 80,
+        effort: 4,
+      })
+      .toBuffer();
+  } catch (error) {
+    console.error("Failed to process bot avatar:", error);
+
+    throw new Error(
+      "Unable to process this image. Please choose another JPG, PNG, or WebP image.",
+    );
+  }
+
+  const blob = await put(`bot-avatars/${crypto.randomUUID()}.webp`, optimized, {
+    access: "public",
+    contentType: "image/webp",
+    addRandomSuffix: true,
+  });
+
+  return blob.url;
+}
+
+// -----------------------------------------------------------------------------
+// BOT QUERIES
+// -----------------------------------------------------------------------------
+
+export async function getBotUser(botUserId: string) {
+  await requireAdmin();
+
+  const bot = await requireBot(botUserId);
+
+  const balance = await prisma.pointBalance.findUnique({
+    where: {
+      userId: bot.id,
+    },
+    select: {
+      points: true,
+    },
+  });
+
+  return {
+    ...bot,
+    points: balance?.points ?? 10000,
+  };
+}
+
+export async function getBotUsers() {
+  await requireAdmin();
+
+  return prisma.user.findMany({
+    where: {
+      isBot: true,
+    },
+    orderBy: [{ name: "asc" }, { id: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      nationality: true,
+      language: true,
+    },
+  });
+}
+
+// -----------------------------------------------------------------------------
+// MARKET STATE
+// -----------------------------------------------------------------------------
+
 export async function getBotMarketState(botUserId: string, symbol: string) {
   await requireAdmin();
 
@@ -130,11 +206,14 @@ export async function getBotMarketState(botUserId: string, symbol: string) {
   const market = requireMarket(symbol);
 
   const balance = await prisma.pointBalance.findUnique({
-    where: { userId: bot.id },
-    select: { points: true },
+    where: {
+      userId: bot.id,
+    },
+    select: {
+      points: true,
+    },
   });
 
-  // Matches createComment's starting balance.
   const points = balance?.points ?? 10000;
 
   if (market.assetType !== "index") {
@@ -152,7 +231,6 @@ export async function getBotMarketState(botUserId: string, symbol: string) {
 
   const votingWindow = getVotingWindow(symbol, Date.now());
 
-  // Keep this conversion identical to createComment validation.
   const sessionDate = votingWindow.predictionFor
     ? new Date(votingWindow.predictionFor)
     : null;
@@ -168,7 +246,9 @@ export async function getBotMarketState(botUserId: string, symbol: string) {
           symbol: market.symbol,
           sessionDate,
         },
-        select: { id: true },
+        select: {
+          id: true,
+        },
       })
     : null;
 
@@ -183,6 +263,10 @@ export async function getBotMarketState(botUserId: string, symbol: string) {
     isMarketOpen: votingWindow.isMarketOpen,
   };
 }
+
+// -----------------------------------------------------------------------------
+// COMMENT GENERATION
+// -----------------------------------------------------------------------------
 
 export async function generateBotComment({
   botUserId,
@@ -241,6 +325,7 @@ export async function generateBotComment({
     const quote = await yahoo.quote(market.providerSymbol ?? market.symbol);
 
     const price = finiteNumber(quote.regularMarketPrice);
+
     const previousClose = finiteNumber(quote.regularMarketPreviousClose);
 
     const marketTime =
@@ -317,12 +402,16 @@ export async function generateBotComment({
       }),
     });
   } catch (error) {
-    // Avoid returning provider details to the client.
     console.error(
       "[generateBotComment] OpenAI request failed",
       error instanceof OpenAI.APIError
-        ? { status: error.status, code: error.code }
-        : { type: "request_error" },
+        ? {
+            status: error.status,
+            code: error.code,
+          }
+        : {
+            type: "request_error",
+          },
     );
 
     throw new Error("Failed to generate a comment. Please try again.");
@@ -341,6 +430,10 @@ export async function generateBotComment({
   return { text };
 }
 
+// -----------------------------------------------------------------------------
+// CREATE BOT
+// -----------------------------------------------------------------------------
+
 export async function createBotUser(formData: FormData) {
   await requireAdmin();
 
@@ -349,6 +442,7 @@ export async function createBotUser(formData: FormData) {
   const imageFile = formData.get("file");
 
   const name = typeof rawName === "string" ? rawName.trim() : "";
+
   const nationality = typeof rawNationality === "string" ? rawNationality : "";
 
   if (!name) {
@@ -366,39 +460,10 @@ export async function createBotUser(formData: FormData) {
   const file =
     imageFile instanceof File && imageFile.size > 0 ? imageFile : null;
 
-  const imageTypes: Record<string, string> = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-  };
-
-  // Keep server uploads below Vercel's request-size limit.
-  const maxImageSize = 3 * 1024 * 1024;
-
-  if (file) {
-    if (!imageTypes[file.type]) {
-      throw new Error("Use a JPG, PNG, or WebP image.");
-    }
-
-    if (file.size > maxImageSize) {
-      throw new Error("Image must be 3 MB or smaller.");
-    }
-  }
-
   let imageUrl: string | null = null;
 
   if (file) {
-    const blob = await put(
-      `bot-avatars/${crypto.randomUUID()}.${imageTypes[file.type]}`,
-      file,
-      {
-        access: "public",
-        contentType: file.type,
-        addRandomSuffix: true,
-      },
-    );
-
-    imageUrl = blob.url;
+    imageUrl = await uploadBotAvatar(file);
   }
 
   let bot;
@@ -427,7 +492,7 @@ export async function createBotUser(formData: FormData) {
       },
     });
   } catch (error) {
-    // Remove this upload if database creation fails.
+    // Remove the new upload if database creation fails.
     if (imageUrl) {
       try {
         await del(imageUrl);
@@ -443,6 +508,10 @@ export async function createBotUser(formData: FormData) {
 
   return bot;
 }
+
+// -----------------------------------------------------------------------------
+// UPDATE BOT
+// -----------------------------------------------------------------------------
 
 export async function updateBotProfile(formData: FormData) {
   await requireAdmin();
@@ -468,7 +537,9 @@ export async function updateBotProfile(formData: FormData) {
   }
 
   const existingBot = await prisma.user.findUnique({
-    where: { id: botUserId },
+    where: {
+      id: botUserId,
+    },
     select: {
       id: true,
       isBot: true,
@@ -480,39 +551,13 @@ export async function updateBotProfile(formData: FormData) {
     throw new Error("Bot user not found.");
   }
 
-  const imageTypes: Record<string, string> = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-  };
-
   const file =
     imageFile instanceof File && imageFile.size > 0 ? imageFile : null;
-
-  if (file) {
-    if (!imageTypes[file.type]) {
-      throw new Error("Use a JPG, PNG, or WebP image.");
-    }
-
-    if (file.size > 3 * 1024 * 1024) {
-      throw new Error("Image must be 3 MB or smaller.");
-    }
-  }
 
   let uploadedUrl: string | null = null;
 
   if (file) {
-    const blob = await put(
-      `bot-avatars/${crypto.randomUUID()}.${imageTypes[file.type]}`,
-      file,
-      {
-        access: "public",
-        contentType: file.type,
-        addRandomSuffix: true,
-      },
-    );
-
-    uploadedUrl = blob.url;
+    uploadedUrl = await uploadBotAvatar(file);
   }
 
   let updatedBot;
@@ -536,6 +581,7 @@ export async function updateBotProfile(formData: FormData) {
       },
     });
   } catch (error) {
+    // Remove only this new upload if the database update fails.
     if (uploadedUrl) {
       try {
         await del(uploadedUrl);
@@ -547,7 +593,7 @@ export async function updateBotProfile(formData: FormData) {
     throw error;
   }
 
-  // Keep the previous image: it may still be referenced elsewhere.
+  // Keep the previous image because it may be referenced elsewhere.
   revalidatePath("/admin");
 
   return updatedBot;

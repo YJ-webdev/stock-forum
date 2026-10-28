@@ -622,6 +622,7 @@ export function ReplyTextContent({
 
     let active = true;
     let frame: number | null = null;
+
     let previousWidth = container.getBoundingClientRect().width;
 
     function measure() {
@@ -631,9 +632,12 @@ export function ReplyTextContent({
         window.getComputedStyle(paragraph).lineHeight,
       );
 
-      if (!Number.isFinite(lineHeight) || lineHeight <= 0) return;
+      if (!Number.isFinite(lineHeight) || lineHeight <= 0) {
+        return;
+      }
 
       const collapsedHeight = lineHeight * MAX_COLLAPSED_LINES;
+
       const nextHasOverflow = paragraph.scrollHeight > collapsedHeight + 1;
 
       setHasOverflow((previous) =>
@@ -662,7 +666,9 @@ export function ReplyTextContent({
 
         const width = entry.contentRect.width;
 
-        if (Math.abs(width - previousWidth) < 0.5) return;
+        if (Math.abs(width - previousWidth) < 0.5) {
+          return;
+        }
 
         previousWidth = width;
         scheduleMeasure();
@@ -693,66 +699,103 @@ export function ReplyTextContent({
       observer?.disconnect();
 
       window.removeEventListener("resize", scheduleMeasure);
+
       fonts?.removeEventListener("loadingdone", scheduleMeasure);
     };
   }, [displayContent, editedLabel]);
 
-  function handleToggle() {
-    if (expanded && contentViewportRef.current) {
+  function handleExpand() {
+    setExpanded(true);
+  }
+
+  function handleCollapse() {
+    if (contentViewportRef.current) {
       contentViewportRef.current.scrollTop = 0;
     }
 
-    setExpanded((previous) => !previous);
+    setExpanded(false);
   }
 
   return (
     <div ref={containerRef} className="relative min-w-0">
-      <div
-        ref={contentViewportRef}
-        id={contentId}
-        style={{
-          maxHeight: expanded ? MAX_EXPANDED_HEIGHT : undefined,
-          overflowX: "hidden",
-          overflowY: expanded ? "auto" : "hidden",
-        }}
-        className="content-scrollbar"
-      >
-        <p
-          ref={paragraphRef}
+      <div className="relative min-w-0">
+        <div
+          ref={contentViewportRef}
+          id={contentId}
           style={{
-            overflowWrap: "anywhere",
-            wordBreak: "normal",
+            maxHeight: expanded ? MAX_EXPANDED_HEIGHT : undefined,
+            overflowX: "hidden",
+            overflowY: expanded ? "auto" : "hidden",
           }}
-          className={`
-            m-0 min-w-0 whitespace-pre-wrap
-            text-[15px] leading-6
-            text-zinc-900 dark:text-zinc-200
-            ${expanded ? "" : "line-clamp-4"}
-          `}
+          className="content-scrollbar"
         >
-          {displayContent}
+          <p
+            ref={paragraphRef}
+            style={{
+              overflowWrap: "anywhere",
+              wordBreak: "normal",
+            }}
+            className={`
+              m-0 min-w-0 whitespace-pre-wrap
+              text-[15px] leading-6
+              text-zinc-900 dark:text-zinc-200
+              ${expanded ? "" : "line-clamp-4"}
+            `}
+          >
+            {displayContent}
 
-          {editedLabel && (
-            <span className="whitespace-normal text-[12px] text-zinc-400">
-              {" "}
-              <span className="whitespace-nowrap">{editedLabel}</span>
-            </span>
-          )}
-        </p>
+            {editedLabel && (
+              <span className="whitespace-normal text-[12px] text-zinc-400">
+                {" "}
+                <span className="whitespace-nowrap">{editedLabel}</span>
+              </span>
+            )}
+          </p>
+        </div>
+
+        {/* Overlay stays within the existing four-line height. */}
+        {hasOverflow && !expanded && (
+          <button
+            type="button"
+            aria-controls={contentId}
+            aria-expanded={false}
+            onClick={(event) => {
+              event.stopPropagation();
+              handleExpand();
+            }}
+            className="
+              absolute right-0 bottom-0 z-10
+              max-w-full cursor-pointer truncate
+              rounded-md bg-zinc-100 px-2
+              text-[13px] font-medium leading-6
+              text-zinc-600
+              transition-colors
+              hover:bg-zinc-200 hover:text-zinc-900
+              focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-zinc-400
+              dark:bg-zinc-800 dark:text-zinc-300
+              dark:hover:bg-zinc-700 dark:hover:text-zinc-100
+            "
+          >
+            {readMoreLabel}
+          </button>
+        )}
       </div>
 
-      {(hasOverflow || expanded) && (
+      {/* This appears only after the user expands the text. */}
+      {expanded && (
         <div className="mt-1 leading-6">
           <button
             type="button"
             aria-controls={contentId}
-            aria-expanded={expanded}
+            aria-expanded={true}
             onClick={(event) => {
               event.stopPropagation();
-              handleToggle();
+              handleCollapse();
             }}
             className="
-              inline-block cursor-pointer rounded-sm p-0 align-top
+              inline-block cursor-pointer rounded-sm
+              p-0 align-top
               text-[13px] font-medium leading-6
               text-zinc-500 hover:text-zinc-900
               dark:text-zinc-400 dark:hover:text-zinc-200
@@ -760,7 +803,7 @@ export function ReplyTextContent({
               focus-visible:ring-2 focus-visible:ring-zinc-400
             "
           >
-            {expanded ? readLessLabel : readMoreLabel}
+            {readLessLabel}
           </button>
         </div>
       )}
