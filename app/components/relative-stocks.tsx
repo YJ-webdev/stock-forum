@@ -353,14 +353,14 @@ export function RelativeStocks({
     <div className="flex max-h-[calc(100vh-165px)] w-full flex-col overflow-y-auto lg:max-h-[calc(100vh-260px)]">
       <div className="w-full rounded-lg">
         <table className="w-full table-fixed">
-          <thead className="sticky top z-10 bg-white dark:bg-zinc-800 [&_th]:font-normal">
-            <tr className="border-b border-zinc-200 uppercase tracking-wider text-zinc-400 dark:border-zinc-700/50 dark:text-zinc-500 text-xs">
+          <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-800 [&_th]:font-normal">
+            <tr className="border-b border-zinc-200 text-xs uppercase tracking-wider text-zinc-400 dark:border-zinc-700/50 dark:text-zinc-500">
               <th
                 scope="col"
                 className={
                   showVotingColumns
                     ? "w-[25%] py-3 pl-4 text-left md:w-[10%]"
-                    : "w-[calc(100%/6)] py-3 pl-4 text-left md:w-[10%]"
+                    : "w-[36%] py-3 pl-4 text-left md:w-[10%]"
                 }
               >
                 {labels.asset}
@@ -373,7 +373,14 @@ export function RelativeStocks({
                 {labels.trend}
               </th>
 
-              <th scope="col" className="w-[25%] pr-2 text-right md:w-[10%]">
+              <th
+                scope="col"
+                className={
+                  showVotingColumns
+                    ? "w-[25%] pr-2 text-right md:w-[10%]"
+                    : "w-[32%] pr-2 text-right md:w-[10%]"
+                }
+              >
                 {labels.today}
               </th>
 
@@ -382,7 +389,7 @@ export function RelativeStocks({
                 className={
                   showVotingColumns
                     ? "hidden text-right md:table-cell md:w-[10%] md:py-3"
-                    : "w-[23%] text-right md:w-[10%] md:py-3"
+                    : "w-[32%] pr-4 text-right md:w-[10%] md:py-3 md:pr-0"
                 }
               >
                 {labels.prev}
@@ -400,7 +407,7 @@ export function RelativeStocks({
                 className={
                   showVotingColumns
                     ? "hidden text-right md:table-cell md:w-[10%]"
-                    : "w-[23%] pr-4 text-right md:w-[10%]"
+                    : "hidden text-right md:table-cell md:w-[10%] md:pr-4"
                 }
               >
                 {labels.change}
@@ -466,10 +473,9 @@ function RelativeStockRow({
   const decimals = 2;
   const isInitialLoading = !priceQuote && quotesLoading;
 
+  // Display all prices as numbers, including crypto.
   const formattedPrice = priceQuote
     ? priceQuote.price.toLocaleString("en-US", {
-        style: item.assetType === "crypto" ? "currency" : "decimal",
-        currency: item.assetType === "crypto" ? "USD" : undefined,
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
       })
@@ -537,11 +543,17 @@ function RelativeStockRow({
     >
       <td className="overflow-hidden py-3 align-middle leading-snug">
         <div className="ml-4 min-w-0">
-          <div className="truncate text-[16px] font-medium leading-4.5 md:text-[17px]">
+          <div
+            title={item.displaySymbol ?? item.symbol}
+            className="truncate text-[16px] font-medium leading-4.5 md:text-[17px]"
+          >
             {item.displaySymbol ?? item.symbol}
           </div>
 
-          <p className="mt-0.5 block truncate pr-2 text-[12px] font-normal text-zinc-500 dark:text-zinc-400 md:text-[13px]">
+          <p
+            title={item.name}
+            className="mt-0.5 block truncate pr-2 text-[12px] font-normal text-zinc-500 dark:text-zinc-400 md:text-[13px]"
+          >
             {item.name}
           </p>
         </div>
@@ -581,7 +593,7 @@ function RelativeStockRow({
         className={`
           whitespace-nowrap py-3 align-middle text-right
           font-medium text-zinc-500 dark:text-zinc-400
-          ${showVotingColumns ? "hidden md:table-cell" : ""}
+          ${showVotingColumns ? "hidden md:table-cell" : "pr-4 md:pr-0"}
         `}
       >
         <div className="flex h-5 w-full items-center justify-end">
@@ -593,6 +605,22 @@ function RelativeStockRow({
             </Numeric>
           )}
         </div>
+
+        {!showVotingColumns && (
+          <div
+            className={`
+              mt-0.5 flex h-4 w-full items-center justify-end
+              text-[12px] font-medium leading-4
+              md:hidden ${priceColor}
+            `}
+          >
+            {isInitialLoading ? (
+              <MarketSkeleton className="h-2.5 w-14 max-w-full" />
+            ) : (
+              <Numeric decimals={decimals}>{formattedChange ?? "—"}</Numeric>
+            )}
+          </div>
+        )}
       </td>
 
       <td
@@ -613,9 +641,9 @@ function RelativeStockRow({
 
       <td
         className={`
-          whitespace-nowrap py-3.5 align-middle text-right
-          font-medium dark:font-semibold
-          ${showVotingColumns ? "hidden md:table-cell" : "pr-4"}
+          hidden whitespace-nowrap py-3.5 align-middle text-right
+          font-medium dark:font-semibold md:table-cell
+          ${showVotingColumns ? "" : "md:pr-4"}
           ${priceColor}
         `}
       >

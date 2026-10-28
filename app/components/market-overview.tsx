@@ -258,19 +258,19 @@ export default function MarketOverview({
         bg-white dark:bg-zinc-800
       "
     >
-      <div className="flex min-w-0 flex-col gap-3 mx-4">
+      <div className="mx-0 flex min-w-0 flex-col gap-3 md:mx-4">
         <div
           className="
-    sticky top-0 z-50
-    bg-white dark:bg-zinc-800
-  "
+            sticky top-0 z-50
+            bg-white dark:bg-zinc-800
+          "
         >
           <div
             ref={categoriesRef}
             role="group"
             aria-label="Market categories"
             className="
-              flex min-w-0  touch-pan-x items-center 
+              flex min-w-0 touch-pan-x items-center
               overflow-x-auto overscroll-x-contain
               scrollbar-none [&::-webkit-scrollbar]:hidden
               flex-wrap gap-2 overflow-visible px-0
@@ -307,9 +307,9 @@ export default function MarketOverview({
                     ${
                       isActive
                         ? `
-                           text-zinc-950
-                         bg-transparent
-                           dark:text-zinc-100
+                          text-zinc-950
+                          bg-transparent
+                          dark:text-zinc-100
                           dark:bg-transparent
                         `
                         : `
