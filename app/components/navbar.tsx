@@ -254,6 +254,7 @@ export default function UserMenu({
     startTransition(async () => {
       await onSignOut();
       onOpenChange(false);
+      router.refresh();
     });
   }
 
