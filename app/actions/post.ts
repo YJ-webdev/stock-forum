@@ -2117,196 +2117,157 @@ interface GetHomeCommentsOptions {
   cursor?: HomeCommentCursor | null;
 }
 
-// Temporary server-side timing helper.
-// Keep this private in the "use server" file.
-async function measureCommentQuery<T>(
-  requestId: string,
-  name: string,
-  query: () => PromiseLike<T>,
-): Promise<T> {
-  const startedAt = performance.now();
-
-  try {
-    return await query();
-  } finally {
-    console.info(
-      `[${requestId}] ${name}: ${Math.round(performance.now() - startedAt)}ms`,
-    );
-  }
-}
-
 export async function getHomeComments({
   assetSymbol = null,
   sort = "latest",
   cursor = null,
 }: GetHomeCommentsOptions = {}) {
-  const requestId = `HomeComments:${crypto.randomUUID().slice(0, 8)}`;
-  const startedAt = performance.now();
+  const session = await auth();
+  const labels =
+    COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
-  try {
-    const session = await measureCommentQuery(requestId, "auth", () => auth());
+  const userId = session?.user?.id ?? null;
+  const isAdmin = session?.user?.role === "ADMIN";
+  const marketSymbol = assetSymbol?.trim() || null;
 
-    const labels =
-      COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
+  if (sort !== "latest" && sort !== "most-liked") {
+    throw new Error(labels.invalid_sort);
+  }
 
-    const userId = session?.user?.id ?? null;
-    const isAdmin = session?.user?.role === "ADMIN";
-    const marketSymbol = assetSymbol?.trim() || null;
-
-    if (sort !== "latest" && sort !== "most-liked") {
-      throw new Error(labels.invalid_sort);
-    }
-
-    const baseWhere: Prisma.CommentWhereInput = {
-      AND: [
-        getVisibilityWhere(userId, isAdmin),
-        {
-          hasContent: true,
-          withdrawnAt: null,
-          moderatedAt: null,
-        },
-        ...(marketSymbol
-          ? [
-              {
-                assets: {
-                  some: { assetSymbol: marketSymbol },
-                },
-              },
-            ]
-          : []),
-      ],
-    };
-
-    const select = {
-      ...getCommentSelect(userId, isAdmin),
-      assets: {
-        select: { assetSymbol: true },
+  const baseWhere: Prisma.CommentWhereInput = {
+    AND: [
+      getVisibilityWhere(userId, isAdmin),
+      {
+        hasContent: true,
+        withdrawnAt: null,
+        moderatedAt: null,
       },
-    } satisfies Prisma.CommentSelect;
-
-    let cursorDate: Date | null = null;
-
-    if (cursor) {
-      cursorDate = new Date(cursor.createdAt);
-
-      if (
-        !Number.isFinite(cursorDate.getTime()) ||
-        !cursor.id ||
-        !Number.isSafeInteger(cursor.likeCount) ||
-        cursor.likeCount < 0 ||
-        cursor.sort !== sort ||
-        cursor.assetSymbol !== marketSymbol
-      ) {
-        throw new Error(labels.invalid_cursor);
-      }
-    }
-
-    const orderBy: Prisma.CommentOrderByWithRelationInput[] =
-      sort === "most-liked"
-        ? [{ likes: { _count: "desc" } }, { createdAt: "desc" }, { id: "desc" }]
-        : [{ createdAt: "desc" }, { id: "desc" }];
-
-    const olderThanCursorWhere: Prisma.CommentWhereInput =
-      cursor && cursorDate
-        ? {
-            OR: [
-              { createdAt: { lt: cursorDate } },
-              {
-                createdAt: cursorDate,
-                id: { lt: cursor.id },
+      ...(marketSymbol
+        ? [
+            {
+              assets: {
+                some: { assetSymbol: marketSymbol },
               },
-            ],
-          }
-        : {};
-
-    if (cursor && sort === "most-liked") {
-      const cursorExists = await measureCommentQuery(
-        requestId,
-        "cursor lookup",
-        () =>
-          prisma.comment.findFirst({
-            where: {
-              AND: [baseWhere, { id: cursor.id }],
             },
-            select: { id: true },
-          }),
-      );
+          ]
+        : []),
+    ],
+  };
 
-      if (!cursorExists) {
-        throw new Error(labels.list_changed);
-      }
+  const select = {
+    ...getCommentSelect(userId, isAdmin),
+    assets: {
+      select: { assetSymbol: true },
+    },
+  } satisfies Prisma.CommentSelect;
+
+  let cursorDate: Date | null = null;
+
+  if (cursor) {
+    cursorDate = new Date(cursor.createdAt);
+
+    if (
+      !Number.isFinite(cursorDate.getTime()) ||
+      !cursor.id ||
+      !Number.isSafeInteger(cursor.likeCount) ||
+      cursor.likeCount < 0 ||
+      cursor.sort !== sort ||
+      cursor.assetSymbol !== marketSymbol
+    ) {
+      throw new Error(labels.invalid_cursor);
     }
+  }
 
-    const [items, totalCount] = await Promise.all([
-      measureCommentQuery(requestId, "findMany", () =>
-        prisma.comment.findMany({
-          where:
-            sort === "latest" && cursor
-              ? {
-                  AND: [baseWhere, olderThanCursorWhere],
-                }
-              : baseWhere,
+  const orderBy: Prisma.CommentOrderByWithRelationInput[] =
+    sort === "most-liked"
+      ? [{ likes: { _count: "desc" } }, { createdAt: "desc" }, { id: "desc" }]
+      : [{ createdAt: "desc" }, { id: "desc" }];
 
-          orderBy,
+  const olderThanCursorWhere: Prisma.CommentWhereInput =
+    cursor && cursorDate
+      ? {
+          OR: [
+            { createdAt: { lt: cursorDate } },
+            {
+              createdAt: cursorDate,
+              id: { lt: cursor.id },
+            },
+          ],
+        }
+      : {};
 
-          ...(sort === "most-liked" && cursor
-            ? {
-                cursor: { id: cursor.id },
-                skip: 1,
-              }
-            : {}),
-
-          take: HOME_COMMENTS_PAGE_SIZE + 1,
-          select,
-        }),
-      ),
-
-      measureCommentQuery(requestId, "count", () =>
-        prisma.comment.count({
-          where: baseWhere,
-        }),
-      ),
-    ]);
-
-    const hasMore = items.length > HOME_COMMENTS_PAGE_SIZE;
-
-    const page = hasMore ? items.slice(0, HOME_COMMENTS_PAGE_SIZE) : items;
-
-    const lastItem = page.at(-1);
-
-    const nextCursor: HomeCommentCursor | null =
-      hasMore && lastItem
-        ? {
-            id: lastItem.id,
-            createdAt: lastItem.createdAt,
-            likeCount: lastItem._count.likes,
-            sort,
-            assetSymbol: marketSymbol,
-          }
-        : null;
-
-    const comments = page.map((comment) => {
-      const { _count, likes, ...rest } = comment;
-
-      return {
-        ...rest,
-        content: comment.content as JSONContent,
-        likeCount: _count.likes,
-        replyCount: _count.replies,
-        likedByMe: likes.length > 0,
-      };
+  if (cursor && sort === "most-liked") {
+    const cursorExists = await prisma.comment.findFirst({
+      where: {
+        AND: [baseWhere, { id: cursor.id }],
+      },
+      select: { id: true },
     });
 
-    return {
-      comments,
-      nextCursor,
-      totalCount,
-    };
-  } finally {
-    console.info(
-      `[${requestId}] total: ${Math.round(performance.now() - startedAt)}ms`,
-    );
+    if (!cursorExists) {
+      throw new Error(labels.list_changed);
+    }
   }
+
+  const [items, totalCount] = await Promise.all([
+    prisma.comment.findMany({
+      where:
+        sort === "latest" && cursor
+          ? {
+              AND: [baseWhere, olderThanCursorWhere],
+            }
+          : baseWhere,
+
+      orderBy,
+
+      ...(sort === "most-liked" && cursor
+        ? {
+            cursor: { id: cursor.id },
+            skip: 1,
+          }
+        : {}),
+
+      take: HOME_COMMENTS_PAGE_SIZE + 1,
+      select,
+    }),
+
+    prisma.comment.count({
+      where: baseWhere,
+    }),
+  ]);
+
+  const hasMore = items.length > HOME_COMMENTS_PAGE_SIZE;
+  const page = hasMore ? items.slice(0, HOME_COMMENTS_PAGE_SIZE) : items;
+  const lastItem = page.at(-1);
+
+  const nextCursor: HomeCommentCursor | null =
+    hasMore && lastItem
+      ? {
+          id: lastItem.id,
+          createdAt: lastItem.createdAt,
+          likeCount: lastItem._count.likes,
+          sort,
+          assetSymbol: marketSymbol,
+        }
+      : null;
+
+  const comments = page.map((comment) => {
+    const { _count, likes, ...rest } = comment;
+
+    return {
+      ...rest,
+      content: comment.content as JSONContent,
+      likeCount: _count.likes,
+      replyCount: _count.replies,
+      likedByMe: likes.length > 0,
+    };
+  });
+
+  return {
+    comments,
+    nextCursor,
+    totalCount,
+  };
 }
 
 export type HomeComments = Awaited<
@@ -2314,80 +2275,57 @@ export type HomeComments = Awaited<
 >["comments"];
 
 export async function getHomeCommunityMarkets() {
-  const requestId = `HomeCommunityMarkets:${crypto.randomUUID().slice(0, 8)}`;
+  const session = await auth();
 
-  const startedAt = performance.now();
+  const userId = session?.user?.id ?? null;
+  const isAdmin = session?.user?.role === "ADMIN";
 
-  try {
-    const session = await measureCommentQuery(requestId, "auth", () => auth());
-
-    const userId = session?.user?.id ?? null;
-    const isAdmin = session?.user?.role === "ADMIN";
-
-    const comments = await measureCommentQuery(requestId, "findMany", () =>
-      prisma.comment.findMany({
-        where: {
-          AND: [
-            getVisibilityWhere(userId, isAdmin),
-            {
-              hasContent: true,
-              withdrawnAt: null,
-              moderatedAt: null,
-              createdAt: {
-                gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
-              },
-            },
-          ],
-        },
-
-        select: {
-          assets: {
-            select: { assetSymbol: true },
+  const comments = await prisma.comment.findMany({
+    where: {
+      AND: [
+        getVisibilityWhere(userId, isAdmin),
+        {
+          hasContent: true,
+          withdrawnAt: null,
+          moderatedAt: null,
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
           },
         },
-      }),
-    );
+      ],
+    },
 
-    const aggregationStartedAt = performance.now();
-    const counts = new Map<string, number>();
+    select: {
+      assets: {
+        select: { assetSymbol: true },
+      },
+    },
+  });
 
-    for (const comment of comments) {
-      for (const { assetSymbol } of comment.assets) {
-        counts.set(assetSymbol, (counts.get(assetSymbol) ?? 0) + 1);
-      }
+  const counts = new Map<string, number>();
+
+  for (const comment of comments) {
+    for (const { assetSymbol } of comment.assets) {
+      counts.set(assetSymbol, (counts.get(assetSymbol) ?? 0) + 1);
     }
-
-    const markets = [...counts.entries()]
-      .map(([symbol, commentCount]) => {
-        const market = ALL_MARKET_SYMBOLS.find(
-          (item) => item.symbol === symbol,
-        );
-
-        return {
-          symbol,
-          displaySymbol: market?.displaySymbol ?? symbol,
-          name: market?.name ?? symbol,
-          commentCount,
-        };
-      })
-      .sort(
-        (a, b) =>
-          b.commentCount - a.commentCount ||
-          a.displaySymbol.localeCompare(b.displaySymbol),
-      );
-
-    console.info(
-      `[${requestId}] aggregate: ${Math.round(
-        performance.now() - aggregationStartedAt,
-      )}ms (${comments.length} comments)`,
-    );
-
-    return markets;
-  } finally {
-    console.info(
-      `[${requestId}] total: ${Math.round(performance.now() - startedAt)}ms`,
-    );
   }
+
+  return [...counts.entries()]
+    .map(([symbol, commentCount]) => {
+      const market = ALL_MARKET_SYMBOLS.find((item) => item.symbol === symbol);
+
+      return {
+        symbol,
+        displaySymbol: market?.displaySymbol ?? symbol,
+        name: market?.name ?? symbol,
+        commentCount,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.commentCount - a.commentCount ||
+        a.displaySymbol.localeCompare(b.displaySymbol),
+    );
 }
 
 export async function getPredictionCommentForEdit({

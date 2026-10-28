@@ -44,28 +44,14 @@ export const metadata: Metadata = {
   },
 };
 
-async function measureHomeQuery<T>(
-  name: string,
-  query: () => Promise<T>,
-): Promise<T> {
-  const startedAt = performance.now();
-
-  try {
-    return await query();
-  } finally {
-    console.info(
-      `[Home] ${name}: ${Math.round(performance.now() - startedAt)}ms`,
-    );
-  }
-}
-
 export default async function Home() {
   const [session, markets, community, communityMarkets] = await Promise.all([
-    measureHomeQuery("auth", () => auth()),
-    measureHomeQuery("markets", () => getHomeMarkets()),
-    measureHomeQuery("comments", () => getHomeComments({ sort: "latest" })),
-    measureHomeQuery("communityMarkets", () => getHomeCommunityMarkets()),
+    auth(),
+    getHomeMarkets(),
+    getHomeComments({ sort: "latest" }),
+    getHomeCommunityMarkets(),
   ]);
+
   const language = resolveLanguage(session?.user?.language);
   const labels = HOME_LABELS[language];
 

@@ -179,6 +179,8 @@ model Comment {
   @@index([authorId, createdAt])
   @@index([withdrawnAt])
   @@index([moderatedAt])
+
+  @@index([visibility, hasContent, withdrawnAt, moderatedAt, createdAt(sort: Desc), id(sort: Desc)],map: "Comment_home_feed_idx")
 }
 
 model ModerationAction {

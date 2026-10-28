@@ -62,6 +62,16 @@ function PanelLoading() {
   );
 }
 
+function LeftPanelLoading() {
+  return (
+    <div className="relative h-full min-h-0 w-full">
+      <div className="absolute inset-0 flex items-center justify-center">
+        <SideDataLoading />
+      </div>
+    </div>
+  );
+}
+
 function MobileLeftLoading() {
   return (
     <div
@@ -70,7 +80,7 @@ function MobileLeftLoading() {
         bg-white sm:hidden dark:bg-zinc-950
       "
     >
-      <SideDataLoading />
+      <LeftPanelLoading />
     </div>
   );
 }
@@ -422,16 +432,16 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
             {/* Desktop left panel */}
             <div
               className="
-                hidden h-full min-h-0 min-w-0
-                overflow-hidden sm:block
-              "
+    hidden h-full min-h-0 min-w-0
+    overflow-hidden sm:block
+  "
             >
               {showDesktopLeftPanel && (
-                <Suspense fallback={<SideDataLoading />}>
+                <Suspense fallback={<LeftPanelLoading />}>
                   {sideDataPromise ? (
                     <PanelLeftStream sideDataPromise={sideDataPromise} />
                   ) : (
-                    <SideDataLoading />
+                    <LeftPanelLoading />
                   )}
                 </Suspense>
               )}
