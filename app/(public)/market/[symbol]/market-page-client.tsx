@@ -53,6 +53,14 @@ import {
   VOTE_TOAST_LABELS,
 } from "@/lib/data/translations";
 import { resolveLanguage } from "@/lib/data/languages";
+import { IBM_Plex_Mono } from "next/font/google";
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  preload: false,
+});
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
@@ -830,7 +838,7 @@ export default function MarketPageClient({
 
       <div className="relative mt-5 w-full space-y-2 px-4">
         <div className="flex items-start justify-between gap-4">
-          <h1 className="mt-8 text-[44px] font-bold leading-none tracking-tight text-gray-500/50 dark:text-zinc-700">
+          <h1 className="outfit mt-8 text-[44px] font-bold leading-none tracking-tight text-gray-500/50 dark:text-zinc-700">
             {selectedName}
           </h1>
 
@@ -1014,7 +1022,7 @@ export default function MarketPageClient({
       {/* Market sentiment */}
 
       {canPredict && (
-        <div className="ibmPlexMono mx-4 mt-7">
+        <div className={`${ibmPlexMono.className} mx-4 mt-7`}>
           {voteStats ? (
             <div className="flex flex-col gap-5 rounded-xl border bg-zinc-50 px-5 py-4 dark:bg-zinc-800/50 sm:flex-row sm:items-start sm:justify-between">
               {/* Voter nationalities */}

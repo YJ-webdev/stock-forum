@@ -3,13 +3,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import {
-  Figtree,
-  IBM_Plex_Mono,
-  Outfit,
-  Plus_Jakarta_Sans,
-  Red_Hat_Display,
-} from "next/font/google";
+import { Figtree, Outfit } from "next/font/google";
 
 import { Toaster } from "sonner";
 
@@ -28,23 +22,6 @@ const outfit = Outfit({
 const figtree = Figtree({
   subsets: ["latin"],
   variable: "--font-sans",
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-ibm-plex-mono",
-});
-
-const redHatDisplay = Red_Hat_Display({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-red-hat-display",
-});
-
-const jakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-jakarta",
 });
 
 const SITE_NAME = "BullBearVote";
@@ -94,9 +71,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
         "h-full font-sans antialiased",
         outfit.variable,
         figtree.variable,
-        ibmPlexMono.variable,
-        redHatDisplay.variable,
-        jakartaSans.variable,
       )}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
