@@ -93,7 +93,7 @@ export function HomeCommentComposer({
   );
 
   const hasContent = Boolean(text.trim() || selectedGif);
-  const canPublish = Boolean(selectedMarket && hasContent && !editorDisabled);
+  const canPublish = hasContent && !editorDisabled;
 
   useEffect(() => {
     if (editorOpen) {

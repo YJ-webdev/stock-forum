@@ -84,7 +84,6 @@ export default async function Home() {
         </h2>
 
         <p
-          aria-hidden="true"
           className="
             truncate text-xs font-normal
             tracking-wider text-muted-foreground/50

@@ -2426,105 +2426,116 @@ export const HOME_LABELS: Record<
   }
 > = {
   en: {
-    dashboard: "Global market dashboard",
+    dashboard: "Global Stock Index Predictions & Discussion",
     watchlist: "Watchlist",
     community: "Community",
-    predict: "Will the market rise or fall? Vote and test your instincts.",
-    share_view: "Share your view and start the conversation",
+    predict:
+      "Bull or bear next session? Vote on global stock indices while markets are closed and compare community sentiment.",
+    share_view: "Share your outlook and join the discussion",
     latest_comments: "Latest comments",
   },
   ko: {
-    dashboard: "글로벌 시장 대시보드",
+    dashboard: "글로벌 주가지수 예측과 토론",
     watchlist: "관심 목록",
     community: "커뮤니티",
-    predict: "다음 장은 오를까, 내릴까? 투표로 시장 감각을 시험해보세요.",
-    share_view: "의견을 남기고 대화를 시작해보세요",
+    predict:
+      "다음 거래일은 상승일까요, 하락일까요? 장이 닫힌 동안 글로벌 주가지수에 투표하고 다른 참여자들의 전망을 확인해보세요.",
+    share_view: "시장 전망을 나누고 토론에 참여해보세요",
     latest_comments: "최신 댓글",
   },
   ja: {
-    dashboard: "世界の市場ダッシュボード",
+    dashboard: "世界の株価指数の予測とディスカッション",
     watchlist: "ウォッチリスト",
     community: "コミュニティ",
-    predict: "相場は上がる？下がる？投票で相場観を試そう。",
-    share_view: "意見を投稿して会話を始めましょう",
+    predict:
+      "次の取引日は上昇？下落？市場が閉まっている間に世界の株価指数に投票して、みんなの相場観をチェック。",
+    share_view: "相場の見通しを共有して、議論に参加しましょう",
     latest_comments: "最新のコメント",
   },
   zh: {
-    dashboard: "全球市场看板",
+    dashboard: "全球股指预测与讨论",
     watchlist: "自选列表",
     community: "社区",
-    predict: "市场会涨还是跌？投票测测你的市场直觉。",
-    share_view: "分享你的看法，开启讨论",
-    latest_comments: "最新的评论",
+    predict:
+      "下一个交易日看涨还是看跌？在休市期间为全球股指投票，看看社区的市场预期。",
+    share_view: "分享你的市场展望，参与讨论",
+    latest_comments: "最新评论",
   },
   de: {
-    dashboard: "Globale Marktübersicht",
+    dashboard: "Prognosen und Diskussionen zu globalen Aktienindizes",
     watchlist: "Watchlist",
     community: "Community",
-    predict: "Steigt oder fällt der Markt? Stimme ab und teste dein Gespür.",
-    share_view: "Teile deine Meinung und starte eine Diskussion",
+    predict:
+      "Steigen oder fallen die Kurse am nächsten Handelstag? Stimme bei geschlossenen Märkten über globale Aktienindizes ab und vergleiche die Stimmung in der Community.",
+    share_view: "Teile deinen Marktausblick und diskutiere mit",
     latest_comments: "Neueste Kommentare",
   },
   fr: {
-    dashboard: "Tableau de bord des marchés mondiaux",
+    dashboard: "Prévisions et discussions sur les indices boursiers mondiaux",
     watchlist: "Liste de suivi",
     community: "Communauté",
     predict:
-      "Le marché va monter ou baisser ? Votez et testez votre intuition.",
-    share_view: "Partagez votre avis et lancez la discussion",
+      "Hausse ou baisse à la prochaine séance ? Votez sur les indices boursiers mondiaux pendant la fermeture des marchés et comparez le sentiment de la communauté.",
+    share_view:
+      "Partagez vos perspectives de marché et participez à la discussion",
     latest_comments: "Derniers commentaires",
   },
   es: {
-    dashboard: "Panel de mercados globales",
+    dashboard: "Predicciones y debate sobre índices bursátiles globales",
     watchlist: "Lista de seguimiento",
     community: "Comunidad",
-    predict: "¿Subirá o bajará el mercado? Vota y pon a prueba tu intuición.",
-    share_view: "Comparte tu opinión e inicia la conversación",
+    predict:
+      "¿Subirá o bajará la próxima sesión? Vota sobre índices bursátiles globales mientras los mercados están cerrados y compara el sentimiento de la comunidad.",
+    share_view: "Comparte tu perspectiva del mercado y participa en el debate",
     latest_comments: "Últimos comentarios",
   },
   pt: {
-    dashboard: "Painel de mercados globais",
+    dashboard: "Previsões e discussões sobre índices de ações globais",
     watchlist: "Lista de acompanhamento",
     community: "Comunidade",
-    predict: "O mercado vai subir ou cair? Vote e teste sua intuição.",
-    share_view: "Compartilhe sua opinião e inicie a conversa",
+    predict:
+      "Alta ou queda no próximo pregão? Vote sobre índices de ações globais enquanto os mercados estão fechados e compare o sentimento da comunidade.",
+    share_view: "Compartilhe sua visão do mercado e participe da discussão",
     latest_comments: "Últimos comentários",
   },
   it: {
-    dashboard: "Panoramica dei mercati globali",
+    dashboard: "Previsioni e discussioni sugli indici azionari globali",
     watchlist: "Lista di monitoraggio",
     community: "Community",
     predict:
-      "Il mercato salirà o scenderà? Vota e metti alla prova il tuo intuito.",
-    share_view: "Condividi la tua opinione e avvia la conversazione",
+      "Rialzo o ribasso nella prossima seduta? Vota sugli indici azionari globali a mercati chiusi e confronta il sentiment della community.",
+    share_view:
+      "Condividi le tue prospettive di mercato e partecipa alla discussione",
     latest_comments: "Ultimi commenti",
   },
   ru: {
-    dashboard: "Обзор мировых рынков",
+    dashboard: "Прогнозы и обсуждения мировых фондовых индексов",
     watchlist: "Список наблюдения",
     community: "Сообщество",
-    predict: "Рынок вырастет или упадёт? Голосуйте и проверьте свою интуицию.",
-    share_view: "Поделитесь мнением и начните обсуждение",
+    predict:
+      "Рост или падение на следующей торговой сессии? Голосуйте по мировым фондовым индексам, пока рынки закрыты, и сравнивайте настроения участников.",
+    share_view: "Поделитесь своим прогнозом и присоединяйтесь к обсуждению",
     latest_comments: "Последние комментарии",
   },
   ar: {
-    dashboard: "لوحة الأسواق العالمية",
+    dashboard: "توقعات مؤشرات الأسهم العالمية ونقاشاتها",
     watchlist: "قائمة المتابعة",
     community: "المجتمع",
-    predict: "هل سيرتفع السوق أم سينخفض؟ صوّت واختبر حدسك.",
-    share_view: "شارك رأيك وابدأ النقاش",
-    latest_comments: "آخر تعليقات",
+    predict:
+      "صعود أم هبوط في جلسة التداول القادمة؟ صوّت على اتجاه مؤشرات الأسهم العالمية أثناء إغلاق الأسواق وقارن توقعاتك بتوجهات المجتمع.",
+    share_view: "شارك رؤيتك للسوق وانضم إلى النقاش",
+    latest_comments: "أحدث التعليقات",
   },
   hi: {
-    dashboard: "वैश्विक बाज़ार डैशबोर्ड",
+    dashboard: "वैश्विक शेयर सूचकांकों के पूर्वानुमान और चर्चा",
     watchlist: "वॉचलिस्ट",
     community: "समुदाय",
-    predict: "बाज़ार चढ़ेगा या गिरेगा? वोट दें और अपनी परख आज़माएँ।",
-    share_view: "अपनी राय साझा करें और बातचीत शुरू करें",
+    predict:
+      "अगले कारोबारी सत्र में तेज़ी या मंदी? बाज़ार बंद रहने के दौरान वैश्विक शेयर सूचकांकों की दिशा पर वोट दें और समुदाय का रुझान देखें।",
+    share_view: "बाज़ार को लेकर अपनी राय साझा करें और चर्चा में शामिल हों",
     latest_comments: "नवीनतम टिप्पणियाँ",
   },
 };
-
 export const SEARCH_LABELS: Record<
   Language,
   {
@@ -6893,3 +6904,99 @@ export const OAUTH_LABELS: Record<Language, string> = {
   ar: "تسجيل الدخول باستخدام {provider}",
   hi: "{provider} से साइन इन करें",
 };
+
+export const COMMENT_ONLY_LABELS: Record<Language, string> = {
+  en: "Comment only",
+  ko: "댓글만 작성",
+  ja: "コメントのみ",
+  zh: "仅评论",
+  de: "Nur kommentieren",
+  fr: "Commentaire uniquement",
+  es: "Solo comentar",
+  pt: "Apenas comentar",
+  it: "Solo commento",
+  ru: "Только комментарий",
+  ar: "تعليق فقط",
+  hi: "केवल टिप्पणी",
+};
+
+export const EDIT_VOTE_LABELS: Record<
+  Language,
+  { save: string; saving: string; cancel: string }
+> = {
+  en: {
+    save: "Save changes",
+    saving: "Saving...",
+    cancel: "Cancel",
+  },
+  ko: {
+    save: "수정 저장",
+    saving: "저장 중...",
+    cancel: "취소",
+  },
+  ja: {
+    save: "変更を保存",
+    saving: "保存中...",
+    cancel: "キャンセル",
+  },
+  zh: {
+    save: "保存修改",
+    saving: "保存中...",
+    cancel: "取消",
+  },
+  de: {
+    save: "Änderungen speichern",
+    saving: "Speichern...",
+    cancel: "Abbrechen",
+  },
+  fr: {
+    save: "Enregistrer",
+    saving: "Enregistrement...",
+    cancel: "Annuler",
+  },
+  es: {
+    save: "Guardar cambios",
+    saving: "Guardando...",
+    cancel: "Cancelar",
+  },
+  pt: {
+    save: "Salvar alterações",
+    saving: "Salvando...",
+    cancel: "Cancelar",
+  },
+  it: {
+    save: "Salva modifiche",
+    saving: "Salvataggio...",
+    cancel: "Annulla",
+  },
+  ru: {
+    save: "Сохранить изменения",
+    saving: "Сохранение...",
+    cancel: "Отмена",
+  },
+  ar: {
+    save: "حفظ التغييرات",
+    saving: "جارٍ الحفظ...",
+    cancel: "إلغاء",
+  },
+  hi: {
+    save: "बदलाव सहेजें",
+    saving: "सहेजा जा रहा है...",
+    cancel: "रद्द करें",
+  },
+};
+
+export const SUBMIT_VALIDATION_LABELS = {
+  en: {
+    direction: "Select Bull or Bear.",
+    content: "Write a comment or select a GIF.",
+    unavailable: "Voting is currently unavailable.",
+    points: "Check your prediction points.",
+  },
+  ko: {
+    direction: "Bull 또는 Bear를 선택해 주세요.",
+    content: "댓글을 작성하거나 GIF를 선택해 주세요.",
+    unavailable: "현재 투표할 수 없습니다.",
+    points: "예측 포인트를 확인해 주세요.",
+  },
+} as const;
