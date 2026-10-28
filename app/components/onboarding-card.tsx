@@ -230,10 +230,7 @@ export function OnboardingCard() {
     });
   }
 
-  const needsOnboarding =
-    !!user && (user.nationality == null || user.nationality === "");
-
-  if (!needsOnboarding || !storageReady || dismissed) {
+  if (!storageReady || dismissed) {
     return null;
   }
 

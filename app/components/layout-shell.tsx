@@ -28,7 +28,7 @@ import { PointBalanceProvider } from "../context/point-balance-context";
 import type { User } from "@/types/user";
 import type { LayoutSideData } from "../actions/query";
 import { Footer } from "./footer";
-import { HomeTour } from "./home-tour";
+// import { HomeTour } from "./home-tour";
 
 const FOOTER_PATHS = new Set([
   "/",
@@ -103,6 +103,9 @@ export default function LayoutShell({
 
   const [notificationRefreshKey, setNotificationRefreshKey] = useState(0);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+
+  const needsOnboarding =
+    !!user && (user.nationality == null || user.nationality === "");
 
   useEffect(() => {
     mainScrollRef.current?.scrollTo({
@@ -282,8 +285,8 @@ export default function LayoutShell({
     <UserProvider user={user}>
       <PointBalanceProvider>
         <OAuthFragmentCleanup />
-        <OnboardingCard />
-        <HomeTour />
+        {needsOnboarding && <OnboardingCard />}
+        {/* <HomeTour /> */}
 
         <div className="relative box-border flex h-screen min-h-0 flex-col overflow-hidden pt-18 supports-[height:100dvh]:h-dvh">
           {/* search input */}
