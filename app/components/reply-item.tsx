@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { RiHeartFill } from "react-icons/ri";
 import { toast } from "sonner";
@@ -407,10 +400,12 @@ export function ReplyItem({
                 <img
                   src={reply.gifUrl}
                   alt="GIF"
+                  loading="lazy"
+                  decoding="async"
                   className="
-                    mt-3 h-auto w-45 max-w-full
-                    rounded-lg object-contain
-                  "
+      mt-3 h-auto w-45 max-w-full
+      rounded-lg object-contain
+    "
                 />
               )}
             </>
@@ -600,13 +595,6 @@ interface ReplyTextContentProps {
   readLessLabel: string;
 }
 
-interface TextLayout {
-  collapsedText: string;
-  collapsedHeight: number;
-  fullHeight: number;
-  hasOverflow: boolean;
-}
-
 const MAX_COLLAPSED_LINES = 4;
 const MAX_EXPANDED_HEIGHT = 480;
 
@@ -621,364 +609,164 @@ export function ReplyTextContent({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const contentViewportRef = useRef<HTMLDivElement>(null);
-
-  const measurementRef = useRef<HTMLParagraphElement>(null);
-  const measurementTextRef = useRef<HTMLSpanElement>(null);
-  const measurementEditedRef = useRef<HTMLSpanElement>(null);
-  const measurementSuffixRef = useRef<HTMLSpanElement>(null);
+  const paragraphRef = useRef<HTMLParagraphElement>(null);
 
   const [expanded, setExpanded] = useState(false);
-  const [animating, setAnimating] = useState(false);
-  const [layout, setLayout] = useState<TextLayout | null>(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
 
-  const buttonClassName = `
-    inline-block cursor-pointer rounded-sm p-0 align-top
-    text-[13px] font-medium leading-6
-    text-zinc-500 hover:text-zinc-900
-    dark:text-zinc-400 dark:hover:text-zinc-200
-    focus-visible:outline-none
-    focus-visible:ring-2 focus-visible:ring-zinc-400
-  `;
-
-  useLayoutEffect(() => {
+  useEffect(() => {
     const container = containerRef.current;
-    const measurement = measurementRef.current;
-    const textElement = measurementTextRef.current;
-    const editedElement = measurementEditedRef.current;
-    const suffixElement = measurementSuffixRef.current;
+    const paragraph = paragraphRef.current;
 
-    if (
-      !container ||
-      !measurement ||
-      !textElement ||
-      !editedElement ||
-      !suffixElement
-    ) {
-      return;
-    }
+    if (!container || !paragraph) return;
+
+    let active = true;
+    let frame: number | null = null;
+    let previousWidth = container.getBoundingClientRect().width;
 
     function measure() {
-      if (
-        !container ||
-        !measurement ||
-        !textElement ||
-        !editedElement ||
-        !suffixElement
-      ) {
-        return;
-      }
-
-      const width = container.getBoundingClientRect().width;
-
-      if (width <= 0) return;
-
-      measurement.style.width = `${width}px`;
+      if (!active || !paragraph) return;
 
       const lineHeight = Number.parseFloat(
-        window.getComputedStyle(measurement).lineHeight,
+        window.getComputedStyle(paragraph).lineHeight,
       );
 
-      const maxCollapsedHeight = lineHeight * MAX_COLLAPSED_LINES;
+      if (!Number.isFinite(lineHeight) || lineHeight <= 0) return;
 
-      function measureHeight(text: string, collapsed: boolean) {
-        if (!measurement || !textElement || !editedElement || !suffixElement) {
-          return 0;
-        }
+      const collapsedHeight = lineHeight * MAX_COLLAPSED_LINES;
+      const nextHasOverflow = paragraph.scrollHeight > collapsedHeight + 1;
 
-        textElement.textContent = text;
+      setHasOverflow((previous) =>
+        previous === nextHasOverflow ? previous : nextHasOverflow,
+      );
+    }
 
-        editedElement.textContent =
-          !collapsed && editedLabel ? ` ${editedLabel}` : "";
+    function scheduleMeasure() {
+      if (!active || frame !== null) return;
 
-        editedElement.style.display =
-          !collapsed && editedLabel ? "inline" : "none";
-
-        suffixElement.textContent = collapsed ? `… ${readMoreLabel}` : "";
-
-        suffixElement.style.display = collapsed ? "inline-block" : "none";
-
-        return measurement.getBoundingClientRect().height;
-      }
-
-      const naturalHeight = measureHeight(displayContent, false);
-
-      if (naturalHeight <= maxCollapsedHeight + 0.5) {
-        setLayout((previous) => {
-          if (
-            previous?.collapsedText === displayContent &&
-            previous.collapsedHeight === naturalHeight &&
-            previous.fullHeight === naturalHeight &&
-            !previous.hasOverflow
-          ) {
-            return previous;
-          }
-
-          return {
-            collapsedText: displayContent,
-            collapsedHeight: naturalHeight,
-            fullHeight: naturalHeight,
-            hasOverflow: false,
-          };
-        });
-
-        return;
-      }
-
-      const characters =
-        typeof Intl.Segmenter === "function"
-          ? Array.from(
-              new Intl.Segmenter(undefined, {
-                granularity: "grapheme",
-              }).segment(displayContent),
-              (segment) => segment.segment,
-            )
-          : Array.from(displayContent);
-
-      let low = 0;
-      let high = characters.length;
-
-      while (low < high) {
-        const middle = Math.ceil((low + high) / 2);
-
-        const candidate = characters.slice(0, middle).join("").trimEnd();
-
-        if (measureHeight(candidate, true) <= maxCollapsedHeight + 0.5) {
-          low = middle;
-        } else {
-          high = middle - 1;
-        }
-      }
-
-      const collapsedText = characters.slice(0, low).join("").trimEnd();
-
-      const collapsedHeight = measureHeight(collapsedText, true);
-      const fullHeight = measureHeight(displayContent, false);
-
-      setLayout((previous) => {
-        if (
-          previous?.collapsedText === collapsedText &&
-          previous.collapsedHeight === collapsedHeight &&
-          previous.fullHeight === fullHeight &&
-          previous.hasOverflow
-        ) {
-          return previous;
-        }
-
-        return {
-          collapsedText,
-          collapsedHeight,
-          fullHeight,
-          hasOverflow: true,
-        };
+      frame = window.requestAnimationFrame(() => {
+        frame = null;
+        measure();
       });
     }
 
-    measure();
+    scheduleMeasure();
 
-    let previousWidth = container.getBoundingClientRect().width;
     let observer: ResizeObserver | undefined;
 
     if (typeof ResizeObserver !== "undefined") {
-      observer = new ResizeObserver(() => {
-        const width = container.getBoundingClientRect().width;
+      observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
 
-        if (width === previousWidth) return;
+        if (!entry) return;
+
+        const width = entry.contentRect.width;
+
+        if (Math.abs(width - previousWidth) < 0.5) return;
 
         previousWidth = width;
-        measure();
+        scheduleMeasure();
       });
 
       observer.observe(container);
     } else {
-      window.addEventListener("resize", measure);
+      window.addEventListener("resize", scheduleMeasure);
     }
 
-    let active = true;
+    const fonts = document.fonts;
 
-    function handleFontsLoaded() {
-      if (active) measure();
-    }
+    if (fonts) {
+      void fonts.ready.then(() => {
+        scheduleMeasure();
+      });
 
-    if (document.fonts) {
-      void document.fonts.ready.then(handleFontsLoaded);
-      document.fonts.addEventListener("loadingdone", handleFontsLoaded);
+      fonts.addEventListener("loadingdone", scheduleMeasure);
     }
 
     return () => {
       active = false;
+
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame);
+      }
+
       observer?.disconnect();
 
-      window.removeEventListener("resize", measure);
-      document.fonts?.removeEventListener("loadingdone", handleFontsLoaded);
+      window.removeEventListener("resize", scheduleMeasure);
+      fonts?.removeEventListener("loadingdone", scheduleMeasure);
     };
-  }, [displayContent, editedLabel, readMoreLabel]);
+  }, [displayContent, editedLabel]);
 
-  useEffect(() => {
-    if (!animating) return;
-
-    const timeout = window.setTimeout(() => {
-      setAnimating(false);
-    }, 250);
-
-    return () => window.clearTimeout(timeout);
-  }, [animating, expanded]);
-
-  const hasOverflow = layout?.hasOverflow ?? false;
-  const showFullText = expanded || animating || !hasOverflow;
-
-  function handleToggle(nextExpanded: boolean) {
-    if (animating) return;
-
-    if (!nextExpanded && contentViewportRef.current) {
+  function handleToggle() {
+    if (expanded && contentViewportRef.current) {
       contentViewportRef.current.scrollTop = 0;
     }
 
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
-    setAnimating(!reduceMotion);
-    setExpanded(nextExpanded);
+    setExpanded((previous) => !previous);
   }
 
   return (
     <div ref={containerRef} className="relative min-w-0">
-      {/* Hidden measurement */}
-      <p
-        ref={measurementRef}
-        aria-hidden="true"
-        style={{
-          overflowWrap: "anywhere",
-          wordBreak: "normal",
-        }}
-        className="
-          pointer-events-none invisible absolute left-0 top-0
-          m-0 whitespace-pre-wrap text-[15px] leading-6
-        "
-      >
-        <span ref={measurementTextRef} />
-
-        <span
-          ref={measurementEditedRef}
-          className="whitespace-nowrap text-[12px] text-zinc-400"
-        />
-
-        <span
-          ref={measurementSuffixRef}
-          className="
-            inline-block align-top whitespace-pre
-            text-[13px] font-medium leading-6
-          "
-        />
-      </p>
-
-      {/* Text viewport */}
       <div
         ref={contentViewportRef}
         id={contentId}
         style={{
-          height: layout
-            ? expanded
-              ? Math.min(layout.fullHeight, MAX_EXPANDED_HEIGHT)
-              : layout.collapsedHeight
-            : undefined,
-          marginRight: 0,
+          maxHeight: expanded ? MAX_EXPANDED_HEIGHT : undefined,
           overflowX: "hidden",
-          overflowY:
-            expanded &&
-            !animating &&
-            layout &&
-            layout.fullHeight > MAX_EXPANDED_HEIGHT
-              ? "auto"
-              : "hidden",
+          overflowY: expanded ? "auto" : "hidden",
         }}
-        className="
-          content-scrollbar
-          transition-[height] duration-200 ease-in-out
-          motion-reduce:transition-none
-        "
-        onTransitionEnd={(event) => {
-          if (
-            event.target === event.currentTarget &&
-            event.propertyName === "height"
-          ) {
-            setAnimating(false);
-          }
-        }}
+        className="content-scrollbar"
       >
         <p
+          ref={paragraphRef}
           style={{
             overflowWrap: "anywhere",
             wordBreak: "normal",
           }}
-          className="
+          className={`
             m-0 min-w-0 whitespace-pre-wrap
             text-[15px] leading-6
             text-zinc-900 dark:text-zinc-200
-          "
+            ${expanded ? "" : "line-clamp-4"}
+          `}
         >
-          <span>
-            {showFullText ? displayContent : layout?.collapsedText}
+          {displayContent}
 
-            {showFullText && editedLabel && (
-              <span className="whitespace-normal text-[12px] text-zinc-400">
-                {" "}
-                <span className="whitespace-nowrap">{editedLabel}</span>
-              </span>
-            )}
-          </span>
-
-          {hasOverflow && !showFullText && (
-            <span
-              className="
-                inline-block align-top whitespace-pre
-                text-[13px] font-medium leading-6
-              "
-            >
-              {"… "}
-              <button
-                type="button"
-                aria-controls={contentId}
-                aria-expanded={false}
-                disabled={animating}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleToggle(true);
-                }}
-                className={buttonClassName}
-              >
-                {readMoreLabel}
-              </button>
+          {editedLabel && (
+            <span className="whitespace-normal text-[12px] text-zinc-400">
+              {" "}
+              <span className="whitespace-nowrap">{editedLabel}</span>
             </span>
           )}
         </p>
       </div>
 
-      {/* Read less stays outside the scroll viewport */}
-      {hasOverflow && expanded && (
+      {(hasOverflow || expanded) && (
         <div className="mt-1 leading-6">
           <button
             type="button"
             aria-controls={contentId}
-            aria-expanded={true}
-            disabled={animating}
+            aria-expanded={expanded}
             onClick={(event) => {
               event.stopPropagation();
-              handleToggle(false);
+              handleToggle();
             }}
-            className={buttonClassName}
+            className="
+              inline-block cursor-pointer rounded-sm p-0 align-top
+              text-[13px] font-medium leading-6
+              text-zinc-500 hover:text-zinc-900
+              dark:text-zinc-400 dark:hover:text-zinc-200
+              focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-zinc-400
+            "
           >
-            {readLessLabel}
+            {expanded ? readLessLabel : readMoreLabel}
           </button>
         </div>
       )}
     </div>
   );
 }
-
-// -----------------------------------------------------------------------------
-// HELPERS
-// -----------------------------------------------------------------------------
 
 function getInitials(name: string) {
   return Array.from(name.trim())[0]?.toUpperCase() ?? "?";

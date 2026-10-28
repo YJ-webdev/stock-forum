@@ -833,10 +833,12 @@ function CommentTextContent({
           key={`${image.src}-${index}`}
           src={image.src}
           alt={image.alt}
+          loading="lazy"
+          decoding="async"
           className="
-            mt-3 h-auto w-45 max-w-full
-            rounded-lg object-contain
-          "
+    mt-3 h-auto w-45 max-w-full
+    rounded-lg object-contain
+  "
         />
       ))}
 

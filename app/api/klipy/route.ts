@@ -1,3 +1,5 @@
+// app/api/klipy/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 
 const KLIPY_API_URL = "https://api.klipy.com/v2";
@@ -22,6 +24,15 @@ interface KlipyResponse {
   next?: string;
 }
 
+interface GifResult {
+  id: string;
+  title: string;
+  src: string;
+  preview: string;
+  width: number;
+  height: number;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const apiKey = process.env.KLIPY_API_KEY;
@@ -38,8 +49,6 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get("q")?.trim() ?? "";
     const pos = searchParams.get("pos");
 
-    // Search when q exists.
-    // Otherwise show KLIPY's featured GIFs.
     const endpoint = query ? "search" : "featured";
 
     const params = new URLSearchParams({
@@ -65,8 +74,6 @@ export async function GET(request: NextRequest) {
         headers: {
           "Content-Type": "application/json",
         },
-
-        // GIF results can change frequently.
         cache: "no-store",
       },
     );
@@ -83,45 +90,29 @@ export async function GET(request: NextRequest) {
     const data = (await response.json()) as KlipyResponse;
 
     const results = (data.results ?? [])
-      .map((gif) => {
+      .map((gif): GifResult | null => {
         const full = gif.media_formats?.gif;
         const tiny = gif.media_formats?.tinygif;
 
-        // Full GIF is what we'll eventually insert into the post.
-        const src = full?.url ?? tiny?.url;
-
-        // Prefer tinygif inside the picker to reduce bandwidth.
-        const preview = tiny?.url ?? full?.url;
+        // Prefer the smaller GIF for both publishing and picker previews.
+        // Fall back to the full GIF when tinygif has no URL.
+        const selected = tiny?.url ? tiny : full;
+        const src = selected?.url;
 
         if (!src) {
           return null;
         }
 
-        const dimensions = full?.dims ?? tiny?.dims;
-
         return {
           id: gif.id,
           title: gif.title ?? "GIF",
-
           src,
-          preview,
-
-          width: dimensions?.[0] ?? 0,
-          height: dimensions?.[1] ?? 0,
+          preview: src,
+          width: selected.dims?.[0] ?? 0,
+          height: selected.dims?.[1] ?? 0,
         };
       })
-      .filter(
-        (
-          gif,
-        ): gif is {
-          id: string;
-          title: string;
-          src: string;
-          preview: string;
-          width: number;
-          height: number;
-        } => gif !== null,
-      );
+      .filter((gif): gif is GifResult => gif !== null);
 
     return NextResponse.json({
       results,

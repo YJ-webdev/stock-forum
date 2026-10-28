@@ -90,7 +90,6 @@ export function HomeCommunity({
 
   const [comments, setComments] = useState(initialComments);
   const [nextCursor, setNextCursor] = useState(initialNextCursor);
-  const [, setTotalCount] = useState(initialTotalCount);
 
   const [assetSymbol, setAssetSymbol] = useState<string | null>(null);
   const [sort, setSort] = useState<HomeCommentSort>("latest");
@@ -151,7 +150,7 @@ export function HomeCommunity({
     if (useInitialPage) {
       setComments(initialComments);
       setNextCursor(initialNextCursor);
-      setTotalCount(initialTotalCount);
+
       setLoading(false);
 
       return cleanup;
@@ -159,7 +158,7 @@ export function HomeCommunity({
 
     setComments([]);
     setNextCursor(null);
-    setTotalCount(0);
+
     setLoading(true);
 
     async function loadComments() {
@@ -175,7 +174,6 @@ export function HomeCommunity({
 
         setComments(result.comments);
         setNextCursor(result.nextCursor);
-        setTotalCount(result.totalCount);
       } catch (error) {
         if (!isCurrentRequest()) return;
 
@@ -218,8 +216,6 @@ export function HomeCommunity({
     setComments((current) =>
       current.filter((comment) => comment.id !== commentId),
     );
-
-    setTotalCount((current) => Math.max(0, current - 1));
   }, []);
 
   function changeMarket(symbol: string | null) {
@@ -265,7 +261,6 @@ export function HomeCommunity({
       });
 
       setNextCursor(result.nextCursor);
-      setTotalCount(result.totalCount);
     } catch (error) {
       if (requestVersionRef.current !== requestVersion) return;
 
