@@ -269,7 +269,7 @@ export function BullBearVoteCard({
         </div>
 
         <div className="relative h-18 pt-1.5">
-          {market.assetType === "index" && (
+          {market.assetType === "index" && quoteEnabled && (
             <div className="relative z-20 flex flex-col gap-2.5">
               <MarketSentiment
                 symbol={market.symbol}

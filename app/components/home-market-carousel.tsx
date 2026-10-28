@@ -40,7 +40,12 @@ import type { HomeMarketEntry } from "@/types/home-market";
 
 import { useCurrentUser } from "../context/user-context";
 import { BullBearVoteCard } from "./bull-bear-vote-card";
-import { MarketPicker } from "./market-picker";
+
+import dynamic from "next/dynamic";
+
+const MarketPicker = dynamic(() =>
+  import("./market-picker").then((module) => module.MarketPicker),
+);
 
 interface HomeMarketCarouselProps {
   markets: HomeMarketEntry[];
@@ -403,6 +408,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                     >
                       <Link
                         href={`/market/${encodeURIComponent(market.symbol)}`}
+                        prefetch={false}
                         aria-label={formatLabel(labels.view_market, {
                           market: marketNames[market.symbol] ?? market.name,
                         })}
@@ -541,13 +547,15 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
           </DialogHeader>
 
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-6 pb-6">
-            <MarketPicker
-              selectedSymbols={selectedSymbols}
-              onToggle={toggleMarket}
-              existingSymbols={existingSymbols}
-              disabled={isPending}
-              language={userLanguage}
-            />
+            {isPickerOpen && (
+              <MarketPicker
+                selectedSymbols={selectedSymbols}
+                onToggle={toggleMarket}
+                existingSymbols={existingSymbols}
+                disabled={isPending}
+                language={userLanguage}
+              />
+            )}
           </div>
 
           <div className="shrink-0 border-t border-zinc-200 px-6 py-4 dark:border-zinc-800">
