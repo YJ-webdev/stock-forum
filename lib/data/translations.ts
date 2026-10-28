@@ -7156,18 +7156,18 @@ export const PREDICTION_COMMENT_EDIT_LABELS: Record<
 };
 
 export const MARKET_VOTE_EDIT_LABELS: Record<Language, string> = {
-  en: "Edit prediction",
-  ko: "예측 수정",
-  ja: "予測を編集",
-  zh: "编辑预测",
-  de: "Prognose bearbeiten",
-  fr: "Modifier la prévision",
-  es: "Editar predicción",
-  pt: "Editar previsão",
-  it: "Modifica previsione",
+  en: "Change prediction",
+  ko: "예측 변경",
+  ja: "予測を変更",
+  zh: "更改预测",
+  de: "Prognose ändern",
+  fr: "Changer la prévision",
+  es: "Cambiar predicción",
+  pt: "Alterar previsão",
+  it: "Cambia previsione",
   ru: "Изменить прогноз",
-  ar: "تعديل التوقع",
-  hi: "पूर्वानुमान संपादित करें",
+  ar: "تغيير التوقع",
+  hi: "पूर्वानुमान बदलें",
 };
 
 export const PREDICTION_EDIT_UNCHANGED_LABELS: Record<Language, string> = {

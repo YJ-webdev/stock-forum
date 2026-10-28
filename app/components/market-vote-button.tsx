@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
-import { Check, LockKeyhole, Pencil, X } from "lucide-react";
+import { Check, LockKeyhole, X } from "lucide-react";
 import { PiArrowFatLinesUpFill } from "react-icons/pi";
 import { toast } from "sonner";
 import type { JSONContent } from "@tiptap/react";
@@ -767,7 +767,36 @@ export function MarketVoteButton({
           {countdownLabels.closed}
         </span>
       ) : direction ? (
-        <div className="flex min-w-0 items-center gap-2">
+        canEdit ? (
+          <button
+            ref={triggerRef}
+            type="button"
+            disabled={voteButtonDisabled}
+            aria-label={`${marketName}: ${votedLabel}, ${editLabel}`}
+            title={editLabel}
+            aria-haspopup="dialog"
+            aria-expanded={isOpen}
+            aria-controls={isOpen ? popupId : undefined}
+            onClick={(event) => openEditor("edit", event.currentTarget)}
+            className={`
+      ${VOTE_STATUS_CLASS}
+      cursor-pointer rounded-full px-2 transition-colors
+      enabled:hover:bg-zinc-100 enabled:hover:text-zinc-900
+      focus-visible:outline-none
+      focus-visible:ring-2 focus-visible:ring-zinc-400
+      disabled:cursor-default disabled:opacity-50
+      dark:enabled:hover:bg-zinc-800
+      dark:enabled:hover:text-zinc-100
+    `}
+          >
+            <Check
+              className="size-3.5 shrink-0"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            {votedLabel}
+          </button>
+        ) : (
           <span className={VOTE_STATUS_CLASS}>
             <Check
               className="size-3.5 shrink-0"
@@ -776,33 +805,7 @@ export function MarketVoteButton({
             />
             {votedLabel}
           </span>
-
-          {canEdit && (
-            <button
-              ref={triggerRef}
-              type="button"
-              disabled={voteButtonDisabled}
-              aria-label={`${marketName}: ${editLabel}`}
-              title={editLabel}
-              aria-expanded={isOpen}
-              aria-controls={isOpen ? popupId : undefined}
-              onClick={(event) => openEditor("edit", event.currentTarget)}
-              className="
-                flex size-7 shrink-0 cursor-pointer
-                items-center justify-center rounded-full
-                text-zinc-500 transition-colors
-                hover:bg-zinc-100 hover:text-zinc-900
-                focus-visible:outline-none
-                focus-visible:ring-2 focus-visible:ring-zinc-400
-                disabled:cursor-default disabled:opacity-50
-                dark:text-zinc-400 dark:hover:bg-zinc-800
-                dark:hover:text-zinc-100
-              "
-            >
-              <Pencil className="size-3.5" aria-hidden="true" />
-            </button>
-          )}
-        </div>
+        )
       ) : (
         votingWindow.canVote && (
           <div className="flex w-full items-center justify-between gap-2">
