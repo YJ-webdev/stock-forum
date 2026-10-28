@@ -230,12 +230,18 @@ export async function getMostLikedComments(
     return [];
   }
 
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
   const comments = await prisma.comment.findMany({
     where: {
       hasContent: true,
       visibility: "PUBLIC",
       withdrawnAt: null,
       moderatedAt: null,
+
+      createdAt: {
+        gte: since,
+      },
 
       author: {
         status: "ACTIVE",
@@ -316,15 +322,6 @@ export async function getMostLikedComments(
 
   return result;
 }
-
-// -----------------------------------------------------------------------------
-// LEFT PANEL
-//
-// Important:
-// The client calls ONE server action instead of calling
-// getPopularBoards() and getMostLikedComments() separately.
-// Both database jobs also run concurrently.
-// -----------------------------------------------------------------------------
 
 export async function getPanelLeftData(
   commentLimit = 3,
