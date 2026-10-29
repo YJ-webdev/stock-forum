@@ -17,11 +17,13 @@ import { ThemeProvider } from "./components/theme-provider";
 const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-outfit",
+  display: "swap",
 });
 
 const figtree = Figtree({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
 });
 
 const SITE_NAME = "BullBearVote";
