@@ -30,9 +30,17 @@ import {
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-
-import { GifPicker, type GifResult } from "./gif-picker";
 import { VotingCountdown } from "./voting-countdown";
+
+import dynamic from "next/dynamic";
+import type { GifResult } from "./gif-picker";
+
+const GifPicker = dynamic(
+  () => import("./gif-picker").then((module) => module.GifPicker),
+  {
+    ssr: false,
+  },
+);
 
 type VoteDirection = "BULL" | "BEAR";
 
@@ -1029,7 +1037,7 @@ export function PredictionCommentInput({
                     GIF
                   </button>
 
-                  {!chatDisabled && isLoggedIn && (
+                  {gifPickerOpen && !chatDisabled && isLoggedIn && (
                     <GifPicker
                       triggerRef={gifButtonRef}
                       open={gifPickerOpen}

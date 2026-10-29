@@ -1,7 +1,6 @@
 // app/components/layout-shell.tsx
 "use client";
 
-import dynamic from "next/dynamic";
 import {
   Suspense,
   useEffect,
@@ -22,13 +21,39 @@ import { Navbar } from "./navbar";
 import { BreadCrumbs } from "./breadcrumbs";
 import { Footer } from "./footer";
 import { OAuthFragmentCleanup } from "./oauth-fragment-cleanup";
-import { OnboardingCard } from "./onboarding-card";
 import { SideDataLoading } from "./side-data-loading";
-import PanelLeftStream from "./panel-left-stream";
-import PanelLeftMobileStream from "./panel-left-mobile-stream";
-import { LeaderBoardStream } from "./leader-board-stream";
 
 import type { User } from "@/types/user";
+import dynamic from "next/dynamic";
+
+const OnboardingCard = dynamic(
+  () => import("./onboarding-card").then((module) => module.OnboardingCard),
+  {
+    ssr: false,
+  },
+);
+
+const PanelLeftStream = dynamic(() => import("./panel-left-stream"), {
+  ssr: false,
+  loading: LeftPanelLoading,
+});
+
+const PanelLeftMobileStream = dynamic(
+  () => import("./panel-left-mobile-stream"),
+  {
+    ssr: false,
+    loading: MobileLeftLoading,
+  },
+);
+
+const LeaderBoardStream = dynamic(
+  () =>
+    import("./leader-board-stream").then((module) => module.LeaderBoardStream),
+  {
+    ssr: false,
+    loading: SideDataLoading,
+  },
+);
 
 // -----------------------------------------------------------------------------
 // Constants

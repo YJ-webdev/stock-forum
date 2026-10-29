@@ -9,13 +9,22 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { VotingCountdown } from "./voting-countdown";
-import { GifPicker, type GifResult } from "@/app/components/gif-picker";
 
 import { createComment, type MarketPageComments } from "../actions/post";
 import { useCurrentUser } from "@/app/context/user-context";
 
 import { resolveLanguage } from "@/lib/data/languages";
 import { COMMENT_LABELS } from "@/lib/data/translations";
+
+import dynamic from "next/dynamic";
+import type { GifResult } from "./gif-picker";
+
+const GifPicker = dynamic(
+  () => import("./gif-picker").then((module) => module.GifPicker),
+  {
+    ssr: false,
+  },
+);
 
 interface CommentOnlyInputProps {
   initialComment?: string;
@@ -70,7 +79,8 @@ export function CommentOnlyInput({
   const commentLabels = COMMENT_LABELS[userLanguage];
 
   const isLoggedIn = Boolean(user);
-  const isChatRestricted = user?.status === "BANNED";
+  const isChatRestricted =
+    user?.status === "BANNED" || user?.status === "MUTED";
   const editorDisabled = isPending || isChatRestricted;
   const hasContent = comment.trim().length > 0 || Boolean(selectedGif);
 
@@ -340,7 +350,7 @@ export function CommentOnlyInput({
                 GIF
               </button>
 
-              {isLoggedIn && !editorDisabled && (
+              {gifPickerOpen && isLoggedIn && !editorDisabled && (
                 <GifPicker
                   open={gifPickerOpen}
                   onOpenChange={setGifPickerOpen}

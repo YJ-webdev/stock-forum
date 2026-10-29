@@ -31,10 +31,40 @@ import {
 } from "@/lib/data/translations";
 import { getErrorMessage } from "@/lib/utils/get-error-message";
 
-import { CommentOnlyInput } from "./comment-only-input";
-import { PredictionCommentInput } from "./prediction-comment-input";
-import { CommentItem } from "./comment-item";
 import type { GifResult } from "./gif-picker";
+import dynamic from "next/dynamic";
+
+const CommentOnlyInput = dynamic(
+  () =>
+    import("./comment-only-input").then((module) => module.CommentOnlyInput),
+  {
+    loading: () => (
+      <div
+        aria-hidden="true"
+        className="min-h-9 w-full rounded-full bg-zinc-100 dark:bg-zinc-800"
+      />
+    ),
+  },
+);
+
+const PredictionCommentInput = dynamic(
+  () =>
+    import("./prediction-comment-input").then(
+      (module) => module.PredictionCommentInput,
+    ),
+  {
+    loading: () => (
+      <div
+        aria-hidden="true"
+        className="min-h-9 w-full rounded-full bg-zinc-100 dark:bg-zinc-800"
+      />
+    ),
+  },
+);
+
+const CommentItem = dynamic(() =>
+  import("./comment-item").then((module) => module.CommentItem),
+);
 
 type CommentCursor = NonNullable<
   Awaited<ReturnType<typeof getMarketComments>>["nextCursor"]
@@ -45,21 +75,6 @@ type VoteStatus = NonNullable<
 >["status"];
 
 type UpdateVoteResult = Awaited<ReturnType<typeof updateMarketVote>>;
-
-const EDIT_VOTE_LABELS = {
-  en: "Edit vote",
-  ko: "투표 수정",
-  ja: "投票を変更",
-  zh: "修改投票",
-  de: "Abstimmung ändern",
-  fr: "Modifier le vote",
-  es: "Modificar voto",
-  pt: "Editar voto",
-  it: "Modifica voto",
-  ru: "Изменить голос",
-  ar: "تعديل التصويت",
-  hi: "वोट बदलें",
-} as const;
 
 export interface MarketReply {
   id: string;
