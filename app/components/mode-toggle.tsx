@@ -88,7 +88,11 @@ export function ModeToggleContent({
   );
 }
 
-export function ModeToggle({ text }: { text?: string }) {
+interface ModeToggleProps {
+  showLabel?: boolean;
+}
+
+export function ModeToggle({ showLabel = false }: ModeToggleProps) {
   const { mounted, isDark, label, accessibleLabel, toggleTheme } =
     useModeToggle();
 
@@ -97,16 +101,18 @@ export function ModeToggle({ text }: { text?: string }) {
       type="button"
       variant="default"
       aria-label={accessibleLabel}
-      onClick={(event) => {
-        event.preventDefault();
-        toggleTheme();
-      }}
-      className="-ml-0.5 flex w-full cursor-pointer items-center justify-end gap-3 bg-transparent hover:bg-transparent"
+      disabled={!mounted}
+      onClick={toggleTheme}
+      className="
+        -ml-0.5 flex w-full cursor-pointer
+        items-center justify-end gap-3
+        bg-transparent hover:bg-transparent
+      "
     >
       <ModeToggleContent
         mounted={mounted}
         isDark={isDark}
-        label={text ? label : undefined}
+        label={showLabel ? label : undefined}
       />
     </Button>
   );

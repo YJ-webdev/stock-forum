@@ -44,14 +44,14 @@ import { MarketSkeleton } from "./market-skeleton";
 
 interface RelativeStocksProps {
   items: MarketSymbolItem[];
-  setActiveRange: Dispatch<SetStateAction<SelectedRange>>;
+  setActiveRange?: Dispatch<SetStateAction<SelectedRange>>;
   selectedIndex?: number;
   onNavigate?: () => void;
 }
 
 interface RelativeStockRowProps {
   item: MarketSymbolItem;
-  setActiveRange: Dispatch<SetStateAction<SelectedRange>>;
+  setActiveRange?: Dispatch<SetStateAction<SelectedRange>>;
   voteStats?: MarketVoteListStats;
   canVote: boolean;
   showVotingColumns: boolean;
@@ -60,6 +60,7 @@ interface RelativeStockRowProps {
   onNavigate?: () => void;
   priceQuote?: RelativeQuote;
   quotesLoading: boolean;
+  desktop: boolean;
   noVoteYetLabel: string;
 }
 
@@ -243,11 +244,12 @@ export function RelativeStocks({
     stats: {},
   });
 
+  const desktop = useDesktopScreen();
+
   const selectedRowRef = useRef<HTMLTableRowElement | null>(null);
 
-  const { quotes, loading: quotesLoading } = useRelativeQuotes(
-    items.map((item) => item.symbol),
-  );
+  const symbols = useMemo(() => items.map((item) => item.symbol), [items]);
+  const { quotes, loading: quotesLoading } = useRelativeQuotes(symbols);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -444,6 +446,7 @@ export function RelativeStocks({
                   rowRef={isSelected ? selectedRowRef : undefined}
                   onNavigate={onNavigate}
                   priceQuote={quotes[item.symbol]}
+                  desktop={desktop}
                   quotesLoading={quotesLoading}
                   noVoteYetLabel={statisticsLabels.no_vote_yet}
                 />
@@ -467,6 +470,7 @@ function RelativeStockRow({
   onNavigate,
   priceQuote,
   quotesLoading,
+  desktop,
   noVoteYetLabel,
 }: RelativeStockRowProps) {
   const router = useRouter();
@@ -501,26 +505,13 @@ function RelativeStockRow({
         : "text-[#cf0000] dark:text-[#ff4545]";
 
   function navigate() {
-    setActiveRange("1D");
+    setActiveRange?.("1D");
     onNavigate?.();
 
     router.push(`/market/${encodeURIComponent(item.symbol)}`, {
       scroll: true,
     });
   }
-
-  const eligibleForVoting = isVotingAsset(item);
-
-  const hasVotes =
-    eligibleForVoting && showVotingColumns && (voteStats?.totalVotes ?? 0) > 0;
-
-  const myPrediction =
-    eligibleForVoting && showVotingColumns
-      ? (voteStats?.myPrediction ?? null)
-      : null;
-
-  const bullPercent = hasVotes ? (voteStats?.bullPercent ?? 0) : 0;
-  const bearPercent = hasVotes ? (voteStats?.bearPercent ?? 0) : 0;
 
   return (
     <tr
@@ -561,7 +552,7 @@ function RelativeStockRow({
 
       <td className="hidden overflow-hidden align-middle md:table-cell">
         <div className="flex w-full justify-center overflow-hidden">
-          <RelativeSparkline item={item} />
+          {desktop && <RelativeSparkline item={item} />}
         </div>
       </td>
 
@@ -657,152 +648,178 @@ function RelativeStockRow({
       </td>
 
       {showVotingColumns && (
-        <>
-          <td className="pl-4 align-middle">
-            {eligibleForVoting ? (
-              <div
-                role={voteStats ? "img" : undefined}
-                aria-label={
-                  voteStats
-                    ? hasVotes
-                      ? `Bull ${bullPercent} percent, Bear ${bearPercent} percent, ${voteStats.totalVotes} votes`
-                      : noVoteYetLabel
-                    : "Vote statistics unavailable"
-                }
-                title={
-                  voteStats
-                    ? `${voteStats.bullVotes} Bull / ${voteStats.bearVotes} Bear`
-                    : undefined
-                }
-                className="
+        <VotingCells
+          item={item}
+          voteStats={voteStats}
+          canVote={canVote}
+          noVoteYetLabel={noVoteYetLabel}
+        />
+      )}
+    </tr>
+  );
+}
+
+function VotingCells({
+  item,
+  voteStats,
+  canVote,
+  noVoteYetLabel,
+}: Pick<
+  RelativeStockRowProps,
+  "item" | "voteStats" | "canVote" | "noVoteYetLabel"
+>) {
+  const eligibleForVoting = isVotingAsset(item);
+
+  const hasVotes = eligibleForVoting && (voteStats?.totalVotes ?? 0) > 0;
+
+  const myPrediction = eligibleForVoting
+    ? (voteStats?.myPrediction ?? null)
+    : null;
+
+  const bullPercent = hasVotes ? (voteStats?.bullPercent ?? 0) : 0;
+  const bearPercent = hasVotes ? (voteStats?.bearPercent ?? 0) : 0;
+
+  return (
+    <>
+      <td className="pl-4 align-middle">
+        {eligibleForVoting ? (
+          <div
+            role={voteStats ? "img" : undefined}
+            aria-label={
+              voteStats
+                ? hasVotes
+                  ? `Bull ${bullPercent} percent, Bear ${bearPercent} percent, ${voteStats.totalVotes} votes`
+                  : noVoteYetLabel
+                : "Vote statistics unavailable"
+            }
+            title={
+              voteStats
+                ? `${voteStats.bullVotes} Bull / ${voteStats.bearVotes} Bear`
+                : undefined
+            }
+            className="
                   outfit relative mx-auto flex h-7 w-full max-w-28
                   items-center overflow-hidden
                   bg-[radial-gradient(circle,currentColor_0.75px,transparent_0.75px)]
                   bg-size-[3px_3px]
                   text-zinc-200 dark:text-zinc-600/50
                 "
-              >
-                <div
-                  aria-hidden="true"
-                  className="flex w-full items-center justify-around text-[12px] leading-none tabular-nums"
-                >
-                  {hasVotes ? (
-                    <>
-                      {bullPercent > 0 && (
-                        <span className="font-normal text-zinc-800 dark:text-zinc-100">
-                          {bullPercent}%
-                        </span>
-                      )}
-
-                      {bearPercent > 0 && (
-                        <span className="font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
-                          {bearPercent}%
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-[11px] font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
-                      {voteStats === undefined ? "" : noVoteYetLabel}
+          >
+            <div
+              aria-hidden="true"
+              className="flex w-full items-center justify-around text-[12px] leading-none tabular-nums"
+            >
+              {hasVotes ? (
+                <>
+                  {bullPercent > 0 && (
+                    <span className="font-normal text-zinc-800 dark:text-zinc-100">
+                      {bullPercent}%
                     </span>
                   )}
-                </div>
 
-                {hasVotes && (
-                  <div
-                    aria-hidden="true"
-                    className="absolute inset-x-0 bottom-0 flex h-[1.5px]"
-                  >
-                    <div
-                      className="
+                  {bearPercent > 0 && (
+                    <span className="font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
+                      {bearPercent}%
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-[11px] font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
+                  {voteStats === undefined ? "" : noVoteYetLabel}
+                </span>
+              )}
+            </div>
+
+            {hasVotes && (
+              <div
+                aria-hidden="true"
+                className="absolute inset-x-0 bottom-0 flex h-[1.5px]"
+              >
+                <div
+                  className="
                         h-full bg-emerald-600
                         transition-[width] duration-300
                         motion-reduce:transition-none
                         dark:bg-emerald-400
                       "
-                      style={{ width: `${bullPercent}%` }}
-                    />
+                  style={{ width: `${bullPercent}%` }}
+                />
 
-                    <div
-                      className="
+                <div
+                  className="
                         h-full bg-[#cf0000]
                         transition-[width] duration-300
                         motion-reduce:transition-none
                         dark:bg-[#ff4545]
                       "
-                      style={{ width: `${bearPercent}%` }}
-                    />
-                  </div>
-                )}
+                  style={{ width: `${bearPercent}%` }}
+                />
               </div>
-            ) : (
-              <span className="block text-center text-zinc-400">—</span>
             )}
-          </td>
+          </div>
+        ) : (
+          <span className="block text-center text-zinc-400">—</span>
+        )}
+      </td>
 
-          <td className="text-center align-middle">
-            {eligibleForVoting ? (
+      <td className="text-center align-middle">
+        {eligibleForVoting ? (
+          <span
+            role="img"
+            aria-label={
+              myPrediction
+                ? `You voted ${myPrediction.direction}`
+                : canVote
+                  ? "Voting is open"
+                  : "Voting is closed"
+            }
+            title={
+              myPrediction
+                ? `You voted ${myPrediction.direction} · ${myPrediction.pointsBet} pts`
+                : canVote
+                  ? "Voting is open"
+                  : "Voting is closed"
+            }
+            className="relative mx-auto flex size-5 items-center justify-center"
+          >
+            {myPrediction ? (
               <span
-                role="img"
-                aria-label={
-                  myPrediction
-                    ? `You voted ${myPrediction.direction}`
-                    : canVote
-                      ? "Voting is open"
-                      : "Voting is closed"
-                }
-                title={
-                  myPrediction
-                    ? `You voted ${myPrediction.direction} · ${myPrediction.pointsBet} pts`
-                    : canVote
-                      ? "Voting is open"
-                      : "Voting is closed"
-                }
-                className="relative mx-auto flex size-5 items-center justify-center"
+                aria-hidden="true"
+                className={`text-base leading-none ${
+                  myPrediction.direction === "BULL"
+                    ? "text-emerald-500"
+                    : "text-rose-500"
+                }`}
               >
-                {myPrediction ? (
-                  <span
-                    aria-hidden="true"
-                    className={`text-base leading-none ${
-                      myPrediction.direction === "BULL"
-                        ? "text-emerald-500"
-                        : "text-rose-500"
-                    }`}
-                  >
-                    ✘
-                  </span>
-                ) : (
-                  <>
-                    {canVote && (
-                      <span
-                        aria-hidden="true"
-                        className="absolute size-2 animate-ping rounded-full bg-emerald-500/50 motion-reduce:animate-none"
-                      />
-                    )}
-
-                    <span
-                      aria-hidden="true"
-                      className={`relative size-2 rounded-full ${
-                        canVote
-                          ? "bg-emerald-500"
-                          : "bg-zinc-100 dark:bg-zinc-600"
-                      }`}
-                    />
-                  </>
-                )}
+                ✘
               </span>
             ) : (
-              <span className="text-zinc-400">—</span>
+              <>
+                {canVote && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute size-2 animate-ping rounded-full bg-emerald-500/50 motion-reduce:animate-none"
+                  />
+                )}
+
+                <span
+                  aria-hidden="true"
+                  className={`relative size-2 rounded-full ${
+                    canVote ? "bg-emerald-500" : "bg-zinc-100 dark:bg-zinc-600"
+                  }`}
+                />
+              </>
             )}
-          </td>
-        </>
-      )}
-    </tr>
+          </span>
+        ) : (
+          <span className="text-zinc-400">—</span>
+        )}
+      </td>
+    </>
   );
 }
 
-function RelativeSparkline({ item }: { item: MarketSymbolItem }) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [nearViewport, setNearViewport] = useState(false);
+function useDesktopScreen() {
   const [desktop, setDesktop] = useState(false);
 
   useEffect(() => {
@@ -822,8 +839,15 @@ function RelativeSparkline({ item }: { item: MarketSymbolItem }) {
     return () => media.removeListener(update);
   }, []);
 
+  return desktop;
+}
+
+function RelativeSparkline({ item }: { item: MarketSymbolItem }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [nearViewport, setNearViewport] = useState(false);
+
   useEffect(() => {
-    if (!desktop || nearViewport) {
+    if (nearViewport) {
       return;
     }
 
@@ -854,14 +878,14 @@ function RelativeSparkline({ item }: { item: MarketSymbolItem }) {
     observer.observe(container);
 
     return () => observer.disconnect();
-  }, [desktop, nearViewport]);
+  }, [nearViewport]);
 
   return (
     <div
       ref={containerRef}
       className="flex h-10 w-full items-center justify-center"
     >
-      {desktop && nearViewport ? (
+      {nearViewport ? (
         <LoadedRelativeSparkline item={item} />
       ) : (
         <SparklineSkeleton />

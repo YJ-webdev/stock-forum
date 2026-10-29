@@ -19,7 +19,7 @@ interface LoginDialogProps {
   setIsOpen: (isOpen: boolean) => void;
 }
 
-export const LoginDialog = ({ isOpen, setIsOpen }: LoginDialogProps) => {
+export function LoginDialog({ isOpen, setIsOpen }: LoginDialogProps) {
   const user = useCurrentUser();
   const language = resolveLanguage(user?.language);
   const labels = LOGIN_LABELS[language];
@@ -54,12 +54,9 @@ export const LoginDialog = ({ isOpen, setIsOpen }: LoginDialogProps) => {
         <Card
           className="
     my-auto w-full shrink-0
-    rounded-none border-none bg-transparent
-    py-12 shadow-none
+    rounded-none border-0 bg-transparent
+    py-12 shadow-none ring-0
     sm:rounded-2xl sm:py-8
-    border-0 ring-0 outline-none
-focus:ring-0 focus:outline-none
-focus-visible:ring-0 focus-visible:outline-none
   "
         >
           <CardHeader>
@@ -91,4 +88,4 @@ focus-visible:ring-0 focus-visible:outline-none
       </DialogContent>
     </Dialog>
   );
-};
+}

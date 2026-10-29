@@ -3,12 +3,14 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useTransition,
   type PointerEvent,
 } from "react";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -40,8 +42,6 @@ import type { HomeMarketEntry } from "@/types/home-market";
 
 import { useCurrentUser } from "../context/user-context";
 import { BullBearVoteCard } from "./bull-bear-vote-card";
-
-import dynamic from "next/dynamic";
 
 const MarketPicker = dynamic(() =>
   import("./market-picker").then((module) => module.MarketPicker),
@@ -109,7 +109,10 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
   const [isPending, startTransition] = useTransition();
 
   const isEmpty = markets.length === 0;
-  const existingSymbols = markets.map(({ market }) => market.symbol);
+  const existingSymbols = useMemo(
+    () => markets.map(({ market }) => market.symbol),
+    [markets],
+  );
 
   const symbolsToAdd = selectedSymbols.filter(
     (symbol) => !existingSymbols.includes(symbol),
@@ -395,12 +398,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
             >
               <div className="flex min-h-[254.5px] w-max min-w-full items-center gap-8 px-4 py-2">
                 {markets.map(
-                  ({
-                    market,
-                    initialIsWatchlist,
-                    initialVote,
-                    initialVoteSessionKey,
-                  }) => (
+                  ({ market, initialVote, initialVoteSessionKey }) => (
                     <div
                       key={market.symbol}
                       data-carousel-card
@@ -422,7 +420,6 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
 
                       <BullBearVoteCard
                         market={market}
-                        initialIsWatchlist={initialIsWatchlist}
                         initialVote={initialVote}
                         initialVoteSessionKey={initialVoteSessionKey}
                         userLanguage={userLanguage}
@@ -448,73 +445,18 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
               </div>
             </div>
 
-            <button
-              type="button"
-              aria-label={labels.previous}
-              aria-disabled={!canScrollLeft}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-
-                if (canScrollLeft) scrollByCard(-1);
-              }}
-              className={`
-    ${SCROLL_BUTTON_CLASS} left-0
-    ${canScrollLeft ? "cursor-pointer" : "cursor-default"}
-  `}
-            >
-              <span
-                aria-hidden="true"
-                className={`
-      ${SCROLL_BUTTON_FACE_CLASS}
-      ${
-        canScrollLeft
-          ? "text-black group-hover/scroll:bg-zinc-100 dark:text-white dark:group-hover/scroll:bg-zinc-800"
-          : "text-zinc-300 dark:text-zinc-600"
-      }
-    `}
-              >
-                {canScrollLeft ? (
-                  <ChevronLeft className="size-5 " strokeWidth={1.75} />
-                ) : (
-                  <ChevronFirst className="size-5" strokeWidth={1.75} />
-                )}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              aria-label={labels.next}
-              aria-disabled={!canScrollRight}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-
-                if (canScrollRight) scrollByCard(1);
-              }}
-              className={`
-    ${SCROLL_BUTTON_CLASS} right-0
-    ${canScrollRight ? "cursor-pointer" : "cursor-default"}
-  `}
-            >
-              <span
-                aria-hidden="true"
-                className={`
-      ${SCROLL_BUTTON_FACE_CLASS}
-      ${
-        canScrollRight
-          ? "text-black group-hover/scroll:bg-zinc-100 dark:text-white dark:group-hover/scroll:bg-zinc-800"
-          : "text-zinc-300 dark:text-zinc-600"
-      }
-    `}
-              >
-                {canScrollRight ? (
-                  <ChevronRight className="size-5" strokeWidth={1.75} />
-                ) : (
-                  <ChevronLast className="size-5" strokeWidth={1.75} />
-                )}
-              </span>
-            </button>
+            <CarouselScrollButton
+              direction={-1}
+              label={labels.previous}
+              canScroll={canScrollLeft}
+              onScroll={scrollByCard}
+            />
+            <CarouselScrollButton
+              direction={1}
+              label={labels.next}
+              canScroll={canScrollRight}
+              onScroll={scrollByCard}
+            />
           </>
         )}
       </div>
@@ -591,5 +533,53 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+interface CarouselScrollButtonProps {
+  direction: -1 | 1;
+  label: string;
+  canScroll: boolean;
+  onScroll: (direction: -1 | 1) => void;
+}
+
+function CarouselScrollButton({
+  direction,
+  label,
+  canScroll,
+  onScroll,
+}: CarouselScrollButtonProps) {
+  const Icon =
+    direction === -1
+      ? canScroll
+        ? ChevronLeft
+        : ChevronFirst
+      : canScroll
+        ? ChevronRight
+        : ChevronLast;
+
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-disabled={!canScroll}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (canScroll) onScroll(direction);
+      }}
+      className={`${SCROLL_BUTTON_CLASS} ${direction === -1 ? "left-0" : "right-0"} ${canScroll ? "cursor-pointer" : "cursor-default"}`}
+    >
+      <span
+        aria-hidden="true"
+        className={`${SCROLL_BUTTON_FACE_CLASS} ${
+          canScroll
+            ? "text-black group-hover/scroll:bg-zinc-100 dark:text-white dark:group-hover/scroll:bg-zinc-800"
+            : "text-zinc-300 dark:text-zinc-600"
+        }`}
+      >
+        <Icon className="size-5" strokeWidth={1.75} />
+      </span>
+    </button>
   );
 }

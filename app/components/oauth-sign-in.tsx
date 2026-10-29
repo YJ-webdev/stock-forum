@@ -29,7 +29,7 @@ const OAUTH_PROVIDERS = {
     iconSize: 24,
   },
   twitter: {
-    name: "Twitter",
+    name: "X",
     Icon: FaXTwitter,
     iconSize: 24,
   },

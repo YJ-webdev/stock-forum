@@ -13,20 +13,3 @@ export async function handleSignIn(
 export async function handleSignOut() {
   await signOut({ redirect: false });
 }
-
-export async function registerUser(email: string, name: string) {
-  const headerList = await headers();
-  // Reads Vercel header or Cloudflare header as fallback
-  const countryCode =
-    headerList.get("x-vercel-ip-country") ||
-    headerList.get("cf-ipcountry") ||
-    "US";
-
-  return await prisma.user.create({
-    data: {
-      name,
-      email,
-      nationality: countryCode,
-    },
-  });
-}

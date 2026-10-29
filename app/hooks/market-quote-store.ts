@@ -196,18 +196,13 @@ async function fetchQuote(
 
       const changeVal = currentPrice - basePrice;
 
-      const apiPercent =
-        range === "1D" ? json?.dailyChangePercent : json?.rangeChangePercent;
-
-      // Calculate from the same base price used for the displayed change
-      // when the API does not provide a valid percentage.
       const percentVal = (changeVal / basePrice) * 100;
 
+      const decimals = assetType === "currency" ? 4 : 2;
+
       const formattedValue = currentPrice.toLocaleString("en-US", {
-        style: assetType === "crypto" ? "currency" : "decimal",
-        currency: assetType === "crypto" ? "USD" : undefined,
-        minimumFractionDigits: assetType === "currency" ? 4 : 2,
-        maximumFractionDigits: assetType === "currency" ? 4 : 2,
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
       });
 
       entry.data = {

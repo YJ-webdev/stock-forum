@@ -10,8 +10,6 @@ import {
   type KeyboardEvent,
 } from "react";
 
-import type { SelectedRange } from "../hooks/useMarketQuote";
-
 import { useCurrentUser } from "@/app/context/user-context";
 import { resolveLanguage } from "@/lib/data/languages";
 import { MARKET_PICKER_LABELS } from "@/lib/data/translations";
@@ -23,8 +21,29 @@ import {
   COMMODITY_SYMBOLS,
   type MarketSymbolItem,
 } from "@/lib/data/market-symbols";
-
 import { RelativeStocks } from "./relative-stocks";
+
+const MARKET_CATEGORIES: Record<string, MarketSymbolItem[]> = {
+  ...MARKET_SYMBOLS,
+  Crypto: CRYPTO_SYMBOLS,
+  Currency: CURRENCY_SYMBOLS,
+  Commodity: COMMODITY_SYMBOLS,
+};
+
+const CATEGORY_NAMES = Object.keys(MARKET_CATEGORIES);
+const CATEGORY_HOVER_DELAY_MS = 1_000;
+
+function revealCategory(container: HTMLElement, button: HTMLElement) {
+  const containerRect = container.getBoundingClientRect();
+  const buttonRect = button.getBoundingClientRect();
+  const padding = 12;
+
+  if (buttonRect.left < containerRect.left + padding) {
+    container.scrollLeft -= containerRect.left + padding - buttonRect.left;
+  } else if (buttonRect.right > containerRect.right - padding) {
+    container.scrollLeft += buttonRect.right - containerRect.right + padding;
+  }
+}
 
 interface MarketOverviewProps {
   query?: string;
@@ -43,21 +62,8 @@ export default function MarketOverview({
   const language = resolveLanguage(user?.language);
   const categoryLabels = MARKET_PICKER_LABELS[language].groups;
 
-  const marketCategories: Record<string, MarketSymbolItem[]> = useMemo(
-    () => ({
-      ...MARKET_SYMBOLS,
-      Crypto: CRYPTO_SYMBOLS,
-      Currency: CURRENCY_SYMBOLS,
-      Commodity: COMMODITY_SYMBOLS,
-    }),
-    [],
-  );
-
-  const categories = Object.keys(marketCategories);
-
   const [activeTab, setActiveTab] = useState("America");
   const [isBrowsingCategory, setIsBrowsingCategory] = useState(false);
-  const [, setActiveRange] = useState<SelectedRange>("1D");
 
   const overviewRef = useRef<HTMLDivElement>(null);
   const categoriesRef = useRef<HTMLDivElement>(null);
@@ -81,7 +87,7 @@ export default function MarketOverview({
 
     const seen = new Set<string>();
 
-    for (const [category, items] of Object.entries(marketCategories)) {
+    for (const [category, items] of Object.entries(MARKET_CATEGORIES)) {
       for (const item of items) {
         if (seen.has(item.symbol)) {
           continue;
@@ -101,7 +107,7 @@ export default function MarketOverview({
     }
 
     return results;
-  }, [marketCategories, normalizedQuery]);
+  }, [normalizedQuery]);
 
   const matchedCategory = searchResults[0]?.category ?? null;
   const isSearching = hasQuery && !isBrowsingCategory;
@@ -133,15 +139,7 @@ export default function MarketOverview({
       return;
     }
 
-    const containerRect = container.getBoundingClientRect();
-    const buttonRect = activeButton.getBoundingClientRect();
-    const padding = 12;
-
-    if (buttonRect.left < containerRect.left + padding) {
-      container.scrollLeft -= containerRect.left + padding - buttonRect.left;
-    } else if (buttonRect.right > containerRect.right - padding) {
-      container.scrollLeft += buttonRect.right - containerRect.right + padding;
-    }
+    revealCategory(container, activeButton);
   }, [activeTab, language]);
 
   useEffect(() => {
@@ -182,7 +180,7 @@ export default function MarketOverview({
       setActiveTab(category);
       setIsBrowsingCategory(true);
       categoryHoverTimerRef.current = null;
-    }, 1000);
+    }, CATEGORY_HOVER_DELAY_MS);
   }
 
   function handleCategoryKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
@@ -235,20 +233,13 @@ export default function MarketOverview({
     const container = categoriesRef.current;
 
     if (container && nextButton) {
-      const containerRect = container.getBoundingClientRect();
-      const buttonRect = nextButton.getBoundingClientRect();
-
-      if (buttonRect.left < containerRect.left) {
-        container.scrollLeft -= containerRect.left - buttonRect.left + 12;
-      } else if (buttonRect.right > containerRect.right) {
-        container.scrollLeft += buttonRect.right - containerRect.right + 12;
-      }
+      revealCategory(container, nextButton);
     }
   }
 
   const displayedItems = isSearching
     ? searchResults.map((result) => result.item)
-    : (marketCategories[activeTab] ?? []);
+    : (MARKET_CATEGORIES[activeTab] ?? []);
 
   return (
     <div
@@ -273,10 +264,10 @@ export default function MarketOverview({
               flex min-w-0 touch-pan-x items-center
               overflow-x-auto overscroll-x-contain
               scrollbar-none [&::-webkit-scrollbar]:hidden
-              flex-wrap gap-2 overflow-visible px-0
+              flex-nowrap gap-2 px-0
             "
           >
-            {categories.map((category) => {
+            {CATEGORY_NAMES.map((category) => {
               const isActive = activeTab === category;
               const categoryName =
                 categoryLabels[category.toLowerCase()] ??
@@ -346,7 +337,6 @@ export default function MarketOverview({
           <div className="min-w-0 pb-0">
             <RelativeStocks
               items={displayedItems}
-              setActiveRange={setActiveRange}
               selectedIndex={isSearching ? selectedIndex : -1}
               onNavigate={onNavigate}
             />

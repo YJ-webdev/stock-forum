@@ -30,16 +30,20 @@ import { resolveLanguage } from "@/lib/data/languages";
 import { NAVBAR_LABELS } from "@/lib/data/translations";
 
 import { ModeToggle, ModeToggleContent, useModeToggle } from "./mode-toggle";
-import { LoginDialog } from "./log-in-dialog";
 import SearchInput from "./search-input";
 
 import { handleSignOut } from "../actions/auth";
 import { getUnreadNotificationCount } from "../actions/notification";
 
+import dynamic from "next/dynamic";
+
+const LoginDialog = dynamic(() =>
+  import("./log-in-dialog").then((module) => module.LoginDialog),
+);
+
 interface NavbarProps {
   onOpenSearch: () => void;
   onTogglePanel: () => void;
-  onWrite: () => void;
   onAccount: () => void;
   onNotification: () => void;
   onHistory: () => void;
@@ -52,7 +56,7 @@ interface UserMenuProps {
   onOpenChange: (open: boolean) => void;
   onSignOut?: () => Promise<void>;
   onLoginClick: () => void;
-  onWrite: () => void;
+
   onAccount: () => void;
   onNotification: () => void;
   onHistory: () => void;
@@ -74,7 +78,6 @@ function getInitials(user: User) {
 export function Navbar({
   onOpenSearch,
   onTogglePanel,
-  onWrite,
   onAccount,
   onNotification,
   onHistory,
@@ -171,7 +174,6 @@ export function Navbar({
           onOpenChange={handleUserMenuOpenChange}
           onSignOut={handleSignOut}
           onLoginClick={handleLoginClick}
-          onWrite={() => handlePanelAction(onWrite)}
           onAccount={() => handlePanelAction(onAccount)}
           onNotification={() => handlePanelAction(onNotification)}
           onHistory={() => handlePanelAction(onHistory)}
@@ -184,7 +186,9 @@ export function Navbar({
         )}
       </div>
 
-      <LoginDialog isOpen={isLoginOpen} setIsOpen={setIsLoginOpen} />
+      {isLoginOpen && (
+        <LoginDialog isOpen={isLoginOpen} setIsOpen={setIsLoginOpen} />
+      )}
     </nav>
   );
 }

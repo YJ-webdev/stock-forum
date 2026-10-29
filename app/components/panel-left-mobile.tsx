@@ -39,13 +39,32 @@ export default function PanelLeftMobile({
   const boardsHeadingId = useId();
   const commentsHeadingId = useId();
 
-  const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
+  function handlePanelClick(event: React.MouseEvent<HTMLDivElement>) {
+    if (
+      event.defaultPrevented ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
     if (!(event.target instanceof Element)) return;
 
-    if (event.target.closest("button, a")) {
-      setIsOpen(false);
+    const link = event.target.closest<HTMLAnchorElement>("a[href]");
+
+    if (
+      !link ||
+      !event.currentTarget.contains(link) ||
+      link.hasAttribute("download") ||
+      (link.target && link.target !== "_self")
+    ) {
+      return;
     }
-  };
+
+    setIsOpen(false);
+  }
 
   return (
     <aside

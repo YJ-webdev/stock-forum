@@ -1,11 +1,11 @@
 "use client";
 
+import { useEffect, useMemo, useRef, useState } from "react";
 import { TZDate } from "@date-fns/tz";
 
 import { useMarketQuote } from "@/app/hooks/useMarketQuote";
 import type { VoteDirection } from "@/app/actions/market-vote";
 import type { HomeMarketItem } from "@/types/home-market";
-
 import { ALL_MARKET_SYMBOLS, TRADING_HOURS } from "@/lib/data/market-symbols";
 import { resolveLanguage } from "@/lib/data/languages";
 import { CHART_LABELS } from "@/lib/data/translations";
@@ -15,42 +15,40 @@ import { Numeric } from "./numeric";
 import { TrendSparkline } from "./trend-sparkline";
 import { MarketVoteButton } from "./market-vote-button";
 import { MarketSentiment } from "./market-sentiment";
-import { useEffect, useRef, useState } from "react";
 
 interface BullBearVoteCardProps {
   market: HomeMarketItem;
-  initialIsWatchlist: boolean;
   initialVote?: VoteDirection | null;
   initialVoteSessionKey?: string | null;
   userLanguage?: string | null;
 }
 
+const MARKET_BY_SYMBOL = new Map(
+  ALL_MARKET_SYMBOLS.map((market) => [market.symbol, market]),
+);
+
+const EMPTY_SESSION = {
+  sessionStartMs: null,
+  sessionEndMs: null,
+};
+
 function getSparklineSession(
   market: HomeMarketItem,
   history?: { timestampMs: number }[],
-): {
-  sessionStartMs: number | null;
-  sessionEndMs: number | null;
-} {
-  const emptySession = {
-    sessionStartMs: null,
-    sessionEndMs: null,
-  };
+): { sessionStartMs: number | null; sessionEndMs: number | null } {
+  if (!history?.length) return EMPTY_SESSION;
 
-  if (!history?.length) return emptySession;
+  const metadata =
+    MARKET_BY_SYMBOL.get(market.symbol) ??
+    (market.providerSymbol
+      ? MARKET_BY_SYMBOL.get(market.providerSymbol)
+      : undefined);
 
-  const marketMeta =
-    ALL_MARKET_SYMBOLS.find((item) => item.symbol === market.symbol) ??
-    ALL_MARKET_SYMBOLS.find((item) => item.symbol === market.providerSymbol);
-
-  if (!marketMeta?.marketSchedule) return emptySession;
-
-  const schedule = TRADING_HOURS[marketMeta.marketSchedule];
-
-  if (!schedule) return emptySession;
+  if (!metadata?.marketSchedule) return EMPTY_SESSION;
+  const schedule = TRADING_HOURS[metadata.marketSchedule];
+  if (!schedule) return EMPTY_SESSION;
 
   let latestTimestampMs = -Infinity;
-
   for (const point of history) {
     if (
       Number.isFinite(point.timestampMs) &&
@@ -59,34 +57,29 @@ function getSparklineSession(
       latestTimestampMs = point.timestampMs;
     }
   }
+  if (!Number.isFinite(latestTimestampMs)) return EMPTY_SESSION;
 
-  if (!Number.isFinite(latestTimestampMs)) return emptySession;
-
-  // Use the actual trading date when holiday data is returned.
+  // Anchor to the date of the actual candles, including holidays.
   const dataDate = new TZDate(latestTimestampMs, schedule.timezone);
-
   const [openHour, openMinute] = schedule.open.split(":").map(Number);
   const [closeHour, closeMinute] = schedule.close.split(":").map(Number);
 
   if (![openHour, openMinute, closeHour, closeMinute].every(Number.isFinite)) {
-    return emptySession;
+    return EMPTY_SESSION;
   }
 
   const year = dataDate.getFullYear();
   const month = dataDate.getMonth();
-
   const openMinutes = openHour * 60 + openMinute;
   const closeMinutes = closeHour * 60 + closeMinute;
   const isOvernight = closeMinutes <= openMinutes;
-
   let startDay = dataDate.getDate();
 
-  if (isOvernight) {
-    const dataMinutes = dataDate.getHours() * 60 + dataDate.getMinutes();
-
-    if (dataMinutes <= closeMinutes) {
-      startDay -= 1;
-    }
+  if (
+    isOvernight &&
+    dataDate.getHours() * 60 + dataDate.getMinutes() <= closeMinutes
+  ) {
+    startDay -= 1;
   }
 
   return {
@@ -100,7 +93,6 @@ function getSparklineSession(
       0,
       schedule.timezone,
     ).getTime(),
-
     sessionEndMs: new TZDate(
       year,
       month,
@@ -114,6 +106,15 @@ function getSparklineSession(
   };
 }
 
+function QuoteSkeleton({ className }: { className: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50 ${className}`}
+    />
+  );
+}
+
 export function BullBearVoteCard({
   market,
   initialVote = null,
@@ -122,10 +123,12 @@ export function BullBearVoteCard({
 }: BullBearVoteCardProps) {
   const cardRef = useRef<HTMLElement>(null);
   const [quoteEnabled, setQuoteEnabled] = useState(false);
+  const language = resolveLanguage(userLanguage);
+  const chartLabels = CHART_LABELS[language];
 
+  // Enable once the card approaches the horizontal carousel viewport.
   useEffect(() => {
     const card = cardRef.current;
-
     if (!card) return;
 
     if (typeof IntersectionObserver === "undefined") {
@@ -133,32 +136,20 @@ export function BullBearVoteCard({
       return;
     }
 
-    // Existing carousel structure:
-    // scroll container → flex row → card wrapper → article
     const wrapper = card.closest("[data-carousel-card]");
     const scrollContainer = wrapper?.parentElement?.parentElement ?? null;
-
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries.some((entry) => entry.isIntersecting)) return;
-
         setQuoteEnabled(true);
         observer.disconnect();
       },
-      {
-        root: scrollContainer,
-        rootMargin: "0px 200px",
-        threshold: 0,
-      },
+      { root: scrollContainer, rootMargin: "0px 200px", threshold: 0 },
     );
 
     observer.observe(card);
-
     return () => observer.disconnect();
   }, []);
-
-  const language = resolveLanguage(userLanguage);
-  const chartLabels = CHART_LABELS[language];
 
   const { data, loading, error } = useMarketQuote(
     market.providerSymbol ?? market.symbol,
@@ -172,10 +163,14 @@ export function BullBearVoteCard({
   );
 
   const showQuoteLoading = !data && !error;
+  const hasChartData = data?.history.some((point) =>
+    Number.isFinite(point.price),
+  );
+  const showVoting = market.assetType === "index" && quoteEnabled;
 
-  const { sessionStartMs, sessionEndMs } = getSparklineSession(
-    market,
-    data?.history,
+  const { sessionStartMs, sessionEndMs } = useMemo(
+    () => getSparklineSession(market, data?.history),
+    [market, data?.history],
   );
 
   const changeColor = !data
@@ -183,10 +178,6 @@ export function BullBearVoteCard({
     : data.isPositive
       ? "text-[#07b056] dark:text-emerald-400"
       : "text-[#d94141] dark:text-[#ff4545] dark:font-[550]";
-
-  const hasChartData = data?.history.some((point) =>
-    Number.isFinite(point.price),
-  );
 
   return (
     <article
@@ -204,17 +195,14 @@ export function BullBearVoteCard({
         </h3>
       </header>
 
-      <div className="pb-2 mt-2">
+      <div className="mt-2 pb-2">
         <div className="flex h-7 items-center pl-3">
           {data ? (
             <Numeric className="outfit text-[18px] font-extrabold tracking-normal text-zinc-800 tabular-nums dark:text-zinc-100">
               {data.value}
             </Numeric>
           ) : showQuoteLoading ? (
-            <span
-              aria-hidden="true"
-              className="h-4.5 w-24 animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
-            />
+            <QuoteSkeleton className="h-4.5 w-24" />
           ) : (
             <span className="text-[18px] text-zinc-400 dark:text-zinc-500">
               —
@@ -230,10 +218,7 @@ export function BullBearVoteCard({
               {formatChange(data.change)} ({data.percent})
             </p>
           ) : showQuoteLoading ? (
-            <span
-              aria-hidden="true"
-              className="h-3 w-28 animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
-            />
+            <QuoteSkeleton className="h-3 w-28" />
           ) : (
             <span className="text-sm text-zinc-400 dark:text-zinc-500">—</span>
           )}
@@ -256,10 +241,7 @@ export function BullBearVoteCard({
             </div>
           ) : showQuoteLoading ? (
             <div className="flex h-full w-full items-center px-3">
-              <span
-                aria-hidden="true"
-                className="h-10 w-full animate-pulse rounded-sm bg-zinc-100 motion-reduce:animate-none dark:bg-zinc-800/50"
-              />
+              <QuoteSkeleton className="h-10 w-full" />
             </div>
           ) : (
             <span className="text-xs text-zinc-400 dark:text-zinc-500">
@@ -269,14 +251,13 @@ export function BullBearVoteCard({
         </div>
 
         <div className="relative h-18 pt-1.5">
-          {market.assetType === "index" && quoteEnabled && (
+          {showVoting && (
             <div className="relative z-20 flex flex-col gap-2.5">
               <MarketSentiment
                 symbol={market.symbol}
                 userLanguage={language}
                 enabled={quoteEnabled}
               />
-
               <MarketVoteButton
                 marketName={market.name}
                 symbol={market.symbol}

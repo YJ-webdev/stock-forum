@@ -12,7 +12,6 @@ interface MarketVoteRequest {
 }
 
 interface PendingRequest {
-  key: string;
   viewerKey: string;
   symbol: string;
   sessionMs: number;
@@ -134,7 +133,6 @@ export function getBatchedMarketVotes({
 
   const operation = new Promise<MarketVoteListStats>((resolve, reject) => {
     pending.push({
-      key,
       viewerKey: JSON.stringify(viewerId),
       symbol,
       sessionMs: sessionDate.getTime(),

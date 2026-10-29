@@ -85,18 +85,6 @@ function MobileLeftLoading() {
   );
 }
 
-// -----------------------------------------------------------------------------
-// Lazy panels
-// -----------------------------------------------------------------------------
-
-const PostEditor = dynamic(
-  () => import("@/components/post-editor").then((module) => module.PostEditor),
-  {
-    ssr: false,
-    loading: PanelLoading,
-  },
-);
-
 const AccountPanel = dynamic(
   () => import("./account-panel").then((module) => module.AccountPanel),
   {
@@ -155,7 +143,6 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
   const [isDesktopPanelOpen, setIsDesktopPanelOpen] = useState(true);
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
 
-  const [onWrite, setOnWrite] = useState(false);
   const [onAccount, setOnAccount] = useState(false);
   const [onNotification, setOnNotification] = useState(false);
   const [onHistory, setOnHistory] = useState(false);
@@ -166,7 +153,7 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
   const needsOnboarding =
     !!user && (user.nationality == null || user.nationality === "");
 
-  const hasActivePanel = onWrite || onAccount || onNotification || onHistory;
+  const hasActivePanel = onAccount || onNotification || onHistory;
   const showLeaderboard = !hasActivePanel || user === null;
 
   const showDesktopLeftPanel = isMediumScreen && isDesktopPanelOpen;
@@ -268,7 +255,6 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
   // ---------------------------------------------------------------------------
 
   function setActivePanel(panel: ActivePanel) {
-    setOnWrite(panel === "write");
     setOnAccount(panel === "account");
     setOnNotification(panel === "notifications");
     setOnHistory(panel === "history");
@@ -298,10 +284,6 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
     if (window.matchMedia(LARGE_SCREEN_QUERY).matches) {
       panelBRef.current?.resize("30%");
     }
-  }
-
-  function handleWrite() {
-    openPanel("write");
   }
 
   function handleAccount() {
@@ -334,10 +316,6 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
 
   function renderActivePanel() {
     if (!user) return null;
-
-    if (onWrite) {
-      return <PostEditor userId={user.id} setOnWrite={setOnWrite} />;
-    }
 
     if (onAccount) {
       return (
@@ -394,7 +372,6 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
           <Navbar
             onOpenSearch={handleOpenSearch}
             onTogglePanel={handleToggleLeftPanel}
-            onWrite={handleWrite}
             onAccount={handleAccount}
             onNotification={handleNotification}
             onHistory={handleHistory}
