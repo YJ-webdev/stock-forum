@@ -439,6 +439,7 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
                 >
                   <div
                     ref={mainScrollRef}
+                    data-main-scroll
                     className="
                       h-full min-h-0 w-full min-w-0
                       overflow-x-hidden overflow-y-auto

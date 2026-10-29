@@ -682,7 +682,6 @@ export function ReplyTextContent({
     const fonts = document.fonts;
 
     if (fonts) {
-      void fonts.ready.then(scheduleMeasure);
       fonts.addEventListener("loadingdone", scheduleMeasure);
     }
 

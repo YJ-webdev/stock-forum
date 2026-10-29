@@ -7,37 +7,27 @@ interface ScrollToTopButtonProps {
   threshold?: number;
 }
 
-function findScrollContainer(element: HTMLElement): HTMLElement | Window {
-  let parent = element.parentElement;
-
-  while (parent) {
-    const { overflowY } = window.getComputedStyle(parent);
-
-    if (/(auto|scroll|overlay)/.test(overflowY)) {
-      return parent;
-    }
-
-    parent = parent.parentElement;
-  }
-
-  return window;
-}
-
 export function ScrollToTopButton({ threshold = 400 }: ScrollToTopButtonProps) {
   const anchorRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLElement | Window | null>(null);
+
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const anchor = anchorRef.current;
+
     if (!anchor) return;
 
-    const container = findScrollContainer(anchor);
+    const container =
+      anchor.closest<HTMLElement>("[data-main-scroll]") ?? window;
+
     scrollContainerRef.current = container;
 
     function updateVisibility() {
       const scrollTop =
-        container instanceof Window ? container.scrollY : container.scrollTop;
+        container instanceof HTMLElement
+          ? container.scrollTop
+          : container.scrollY;
 
       setVisible(scrollTop >= threshold);
     }
@@ -56,6 +46,7 @@ export function ScrollToTopButton({ threshold = 400 }: ScrollToTopButtonProps) {
 
   function scrollToTop() {
     const container = scrollContainerRef.current;
+
     if (!container) return;
 
     const reduceMotion = window.matchMedia(
