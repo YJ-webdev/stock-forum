@@ -244,15 +244,17 @@ function ContentPanels({
         "
       />
       <div
+        inert={sideWidth === 0}
         style={{
           width: `${sideWidth}%`,
           borderLeftWidth: sideWidth > 0 ? 1 : 0,
         }}
         className="
-          relative z-2 hidden h-full min-h-0 min-w-0 shrink-0 overflow-hidden
-          border-gray-100 bg-white lg:block
-          dark:border-zinc-800 dark:bg-zinc-900
-        "
+    relative z-2 hidden h-full min-h-0 min-w-0
+    shrink-0 overflow-hidden
+    border-gray-100 bg-white lg:block
+    dark:border-zinc-800 dark:bg-zinc-900
+  "
       >
         {sidePanel}
       </div>

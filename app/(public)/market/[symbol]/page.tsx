@@ -2,7 +2,7 @@
 
 import type { Metadata } from "next";
 
-import { getMarketVote, getMarketVoteStats } from "@/app/actions/market-vote";
+import { getMarketVoteStats } from "@/app/actions/market-vote";
 import { isMarketInWatchlist } from "@/app/actions/watchlist";
 
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
@@ -81,26 +81,21 @@ export default async function Page({ params }: PageProps) {
     ? getVotingWindow(symbol, Date.now()).predictionFor
     : null;
 
-  const [initialIsWatchlist, initialVoteStats, initialVote] = await Promise.all(
-    [
-      isMarketInWatchlist(symbol),
+  const [initialIsWatchlist, initialVoteStats] = await Promise.all([
+    isMarketInWatchlist(symbol),
 
-      sessionDate
-        ? getMarketVoteStats({ symbol, sessionDate })
-        : Promise.resolve(null),
-
-      sessionDate
-        ? getMarketVote({ symbol, sessionDate })
-        : Promise.resolve(null),
-    ],
-  );
+    sessionDate
+      ? getMarketVoteStats({ symbol, sessionDate })
+      : Promise.resolve(null),
+  ]);
 
   return (
     <>
       <MarketPageClient
+        key={symbol}
         symbol={symbol}
         initialVoteStats={initialVoteStats}
-        initialVote={initialVote}
+        initialVoteStatsSessionKey={sessionDate?.toISOString() ?? null}
         initialIsWatchlist={initialIsWatchlist}
       />
       <ScrollToTopButton threshold={600} />

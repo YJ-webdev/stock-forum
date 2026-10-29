@@ -20,10 +20,6 @@ interface MarketNewsProps {
   symbol: string;
 }
 
-// -----------------------------------------------------------------------------
-// CLIENT NEWS CACHE
-// -----------------------------------------------------------------------------
-
 const NEWS_CLIENT_CACHE_TIME = 60 * 60 * 1000; // 1 hour
 
 interface NewsCacheEntry {
@@ -57,10 +53,6 @@ function setCachedNews(symbol: string, news: MarketNewsItem[]) {
   });
 }
 
-// -----------------------------------------------------------------------------
-// FORMAT DATE
-// -----------------------------------------------------------------------------
-
 function formatNewsDate(value: Date | string) {
   const date = new Date(value);
 
@@ -88,17 +80,11 @@ export default function MarketNews({ symbol }: MarketNewsProps) {
 
   const [index, setIndex] = useState(0);
 
-  // ---------------------------------------------------------------------------
-  // LOAD NEWS
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
     let cancelled = false;
 
     const cached = getCachedNews(symbol);
 
-    // We already have fresh news for this market.
-    // No server action / DB request is necessary.
     if (cached) {
       setNews(cached);
       setIndex(0);
@@ -137,10 +123,6 @@ export default function MarketNews({ symbol }: MarketNewsProps) {
     };
   }, [symbol]);
 
-  // ---------------------------------------------------------------------------
-  // ROTATE HEADLINES
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
     if (news.length <= 1) {
       return;
@@ -155,58 +137,49 @@ export default function MarketNews({ symbol }: MarketNewsProps) {
     };
   }, [news.length]);
 
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
-
-  if (news.length === 0) {
-    return null;
-  }
-
-  const currentNews = news[index];
-
-  if (!currentNews) {
-    return null;
-  }
+  const currentNews = news[index] ?? news[0];
 
   return (
-    <div className="flex min-w-0 items-center">
-      <Link
-        href={`/market/${encodeURIComponent(symbol)}/news`}
-        className="
-          group
-          flex min-w-0 items-center gap-2
-          text-[15px]
-        "
-      >
-        {currentNews.sourceIcon && (
-          <img
-            src={currentNews.sourceIcon}
-            alt=""
-            className="size-4 shrink-0 rounded-sm"
-          />
-        )}
-
-        <span
+    <div className="flex h-6 w-full min-w-0 items-center">
+      {currentNews && (
+        <Link
+          href={`/market/${encodeURIComponent(symbol)}/news`}
           className="
-            max-w-162.5
-            truncate
-            text-zinc-900
-            transition-colors
-            group-hover:text-zinc-500
-            dark:text-zinc-200
-            dark:group-hover:text-zinc-400
+            group flex w-full min-w-0
+            items-center gap-2 text-[15px] leading-6
           "
         >
-          {currentNews.title}
-        </span>
+          {currentNews.sourceIcon && (
+            <img
+              src={currentNews.sourceIcon}
+              alt=""
+              width={16}
+              height={16}
+              className="size-4 shrink-0 rounded-sm"
+            />
+          )}
 
-        <span className="shrink-0 text-zinc-400">·</span>
+          <span
+            className="
+              min-w-0 truncate
+              text-zinc-900 transition-colors
+              group-hover:text-zinc-500
+              dark:text-zinc-200
+              dark:group-hover:text-zinc-400
+            "
+          >
+            {currentNews.title}
+          </span>
 
-        <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
-          {formatNewsDate(currentNews.publishedAt)}
-        </span>
-      </Link>
+          <span aria-hidden="true" className="shrink-0 text-zinc-400">
+            ·
+          </span>
+
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
+            {formatNewsDate(currentNews.publishedAt)}
+          </span>
+        </Link>
+      )}
     </div>
   );
 }

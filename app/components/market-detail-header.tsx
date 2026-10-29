@@ -1,10 +1,12 @@
 "use client";
 
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { memo, useMemo } from "react";
+import { TrendingDown, TrendingUp } from "lucide-react";
+
+import { resolveLanguage } from "@/lib/data/languages";
+import { MARKET_DETAIL_LABELS, MARKET_LABELS } from "@/lib/data/translations";
 
 import { Numeric } from "./numeric";
-import { resolveLanguage } from "@/lib/data/languages";
-import { MARKET_LABELS, MARKET_DETAIL_LABELS } from "@/lib/data/translations";
 
 export interface MarketDetailHeaderProps {
   rawPrice?: number;
@@ -16,13 +18,29 @@ export interface MarketDetailHeaderProps {
   updatedAt?: number | string;
   onAddToList?: () => void;
   exchangeTimezone: string;
-
-  currentUser?: {
-    language?: string | null;
-  } | null;
+  currentUser?: { language?: string | null } | null;
 }
 
-export function MarketDetailHeader({
+const priceFormatter = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const changeFormatter = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  signDisplay: "exceptZero",
+});
+
+function formatSignedNumber(value: string, percentage = false) {
+  const normalized = value.replace(/[,%]/g, "").trim();
+  if (!normalized) return value;
+  const number = Number(normalized);
+  if (!Number.isFinite(number)) return value;
+  return `${changeFormatter.format(number)}${percentage ? "%" : ""}`;
+}
+
+export const MarketDetailHeader = memo(function MarketDetailHeader({
   rawPrice,
   value,
   change = "+0.00",
@@ -39,29 +57,11 @@ export function MarketDetailHeader({
 
   const displayPrice =
     value ??
-    (rawPrice !== undefined
-      ? rawPrice.toLocaleString("en-US", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
-      : "-");
+    (rawPrice !== undefined && Number.isFinite(rawPrice)
+      ? priceFormatter.format(rawPrice)
+      : "—");
 
-  const changeNumber = Number(change.replace(/,/g, "").trim());
-
-  const formattedChange = Number.isFinite(changeNumber)
-    ? changeNumber.toLocaleString("en-US", {
-        useGrouping: true,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-        signDisplay: "exceptZero",
-      })
-    : change;
-
-  const formatMarketTimestamp = (dateInput?: number | string) => {
-    const date = dateInput !== undefined ? new Date(dateInput) : new Date();
-
-    if (Number.isNaN(date.getTime())) return "-";
-
+  const timestampFormatter = useMemo(() => {
     try {
       return new Intl.DateTimeFormat(language, {
         timeZone: exchangeTimezone,
@@ -74,26 +74,22 @@ export function MarketDetailHeader({
         second: "2-digit",
         hourCycle: "h23",
         timeZoneName: "shortOffset",
-      }).format(date);
+      });
     } catch {
-      return date.toISOString();
+      return null;
     }
-  };
+  }, [language, exchangeTimezone]);
 
-  const percentNumber = Number(percent.replace(/[,%]/g, "").trim());
-
-  const formattedPercent = Number.isFinite(percentNumber)
-    ? `${percentNumber.toLocaleString("en-US", {
-        useGrouping: true,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-        signDisplay: "exceptZero",
-      })}%`
-    : percent;
+  const timestamp = useMemo(() => {
+    if (updatedAt === undefined) return "—";
+    const date = new Date(updatedAt);
+    if (!Number.isFinite(date.getTime())) return "—";
+    return timestampFormatter?.format(date) ?? date.toISOString();
+  }, [updatedAt, timestampFormatter]);
 
   const rangeLabel =
     detailLabels.ranges[selectedRange] ?? detailLabels.ranges["1D"];
-
+  const TrendIcon = isPositive ? TrendingUp : TrendingDown;
   const colorClass = isPositive
     ? "text-emerald-600 dark:text-emerald-400"
     : "text-[#cf0000] dark:text-[#ff4545]";
@@ -109,13 +105,9 @@ export function MarketDetailHeader({
           <div
             className={`flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-lg ${colorClass}`}
           >
-            {isPositive ? (
-              <TrendingUp className="size-5 shrink-0" aria-hidden="true" />
-            ) : (
-              <TrendingDown className="size-5 shrink-0" aria-hidden="true" />
-            )}
-            <span className="jakarta">{formattedPercent}</span>{" "}
-            <span className="jakarta">({formattedChange})</span>
+            <TrendIcon className="size-5 shrink-0" aria-hidden="true" />
+            <span className="jakarta">{formatSignedNumber(percent, true)}</span>
+            <span className="jakarta">({formatSignedNumber(change)})</span>
             <span className="jakarta whitespace-nowrap text-sm">
               {rangeLabel}
             </span>
@@ -123,15 +115,14 @@ export function MarketDetailHeader({
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs font-normal text-zinc-500 dark:text-zinc-400">
-          <span>{formatMarketTimestamp(updatedAt)}</span>
+          <span>{timestamp}</span>
           <span aria-hidden="true">·</span>
           <span>{marketLabels.data_delayed.replace("{minutes}", "15")}</span>
           <span aria-hidden="true">·</span>
-
           <button
             type="button"
-            onClick={() => alert(detailLabels.disclaimer_message)}
-            className="cursor-pointer hover:underline"
+            onClick={() => window.alert(detailLabels.disclaimer_message)}
+            className="cursor-pointer rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {marketLabels.disclaimer}
           </button>
@@ -139,4 +130,4 @@ export function MarketDetailHeader({
       </div>
     </div>
   );
-}
+});
