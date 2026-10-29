@@ -22,11 +22,12 @@ import {
 import { resolveLanguage } from "@/lib/data/languages";
 
 import { HISTORY_LABELS, PROFILE_CARD_LABELS } from "@/lib/data/translations";
-import { BanUserDialog } from "./ban-user-dialog";
 
-// -----------------------------------------------------------------------------
-// TYPES
-// -----------------------------------------------------------------------------
+import dynamic from "next/dynamic";
+
+const BanUserDialog = dynamic(() =>
+  import("./ban-user-dialog").then((module) => module.BanUserDialog),
+);
 
 export interface ProfileUser {
   id: string;

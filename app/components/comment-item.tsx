@@ -31,14 +31,26 @@ import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 import { isDeletedPredictionContent } from "@/lib/utils/is-deleted-prediction-content";
 import { getErrorMessage } from "@/lib/utils/get-error-message";
 
-import { CommentEditInput } from "./comment-edit-input";
-import { PredictionCommentEditInput } from "./prediction-comment-edit-input";
 import { ContentActionsMenu } from "./content-actions-menu";
 import { UserProfileTrigger, type ProfileUser } from "./profile-card";
-import { ReplyInput } from "./reply-input";
 import { ReplyItem, ReplyTextContent } from "./reply-item";
 
 import type { MarketReply } from "./comment";
+import dynamic from "next/dynamic";
+
+const CommentEditInput = dynamic(() =>
+  import("./comment-edit-input").then((module) => module.CommentEditInput),
+);
+
+const PredictionCommentEditInput = dynamic(() =>
+  import("./prediction-comment-edit-input").then(
+    (module) => module.PredictionCommentEditInput,
+  ),
+);
+
+const ReplyInput = dynamic(() =>
+  import("./reply-input").then((module) => module.ReplyInput),
+);
 
 type Comment = MarketPageComments[number];
 

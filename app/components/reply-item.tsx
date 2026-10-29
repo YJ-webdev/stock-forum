@@ -28,10 +28,17 @@ import { getErrorMessage } from "@/lib/utils/get-error-message";
 
 import { ContentActionsMenu } from "./content-actions-menu";
 import { UserProfileTrigger, type ProfileUser } from "./profile-card";
-import { ReplyEditInput } from "./reply-edit-input";
-import { ReplyInput } from "./reply-input";
 
 import type { MarketReply } from "./comment";
+import dynamic from "next/dynamic";
+
+const ReplyEditInput = dynamic(() =>
+  import("./reply-edit-input").then((module) => module.ReplyEditInput),
+);
+
+const ReplyInput = dynamic(() =>
+  import("./reply-input").then((module) => module.ReplyInput),
+);
 
 interface ReplyItemProps {
   reply: MarketReply;
