@@ -7003,20 +7003,101 @@ export const EDIT_VOTE_LABELS: Record<
   },
 };
 
-export const SUBMIT_VALIDATION_LABELS = {
+export const SUBMIT_VALIDATION_LABELS: Record<
+  Language,
+  {
+    direction: string;
+    content: string;
+    unavailable: string;
+    points: string;
+    insufficient_points: string;
+  }
+> = {
   en: {
     direction: "Select Bull or Bear.",
     content: "Write a comment or select a GIF.",
     unavailable: "Voting is currently unavailable.",
     points: "Check your prediction points.",
+    insufficient_points: "You do not have enough points.",
   },
   ko: {
     direction: "Bull 또는 Bear를 선택해 주세요.",
     content: "댓글을 작성하거나 GIF를 선택해 주세요.",
     unavailable: "현재 투표할 수 없습니다.",
     points: "예측 포인트를 확인해 주세요.",
+    insufficient_points: "보유 포인트가 부족합니다.",
   },
-} as const;
+  ja: {
+    direction: "BullまたはBearを選択してください。",
+    content: "コメントを入力するか、GIFを選択してください。",
+    unavailable: "現在、投票できません。",
+    points: "予測ポイントを確認してください。",
+    insufficient_points: "保有ポイントが不足しています。",
+  },
+  zh: {
+    direction: "请选择看涨或看跌。",
+    content: "请撰写评论或选择 GIF。",
+    unavailable: "目前无法投票。",
+    points: "请检查您的预测积分。",
+    insufficient_points: "您的积分不足。",
+  },
+  de: {
+    direction: "Wähle Bull oder Bear.",
+    content: "Schreibe einen Kommentar oder wähle ein GIF.",
+    unavailable: "Eine Abstimmung ist derzeit nicht möglich.",
+    points: "Überprüfe deinen Punkteinsatz.",
+    insufficient_points: "Du hast nicht genügend Punkte.",
+  },
+  fr: {
+    direction: "Choisissez Bull ou Bear.",
+    content: "Rédigez un commentaire ou sélectionnez un GIF.",
+    unavailable: "Le vote est actuellement indisponible.",
+    points: "Vérifiez les points misés sur votre prévision.",
+    insufficient_points: "Vous n’avez pas assez de points.",
+  },
+  es: {
+    direction: "Selecciona Bull o Bear.",
+    content: "Escribe un comentario o selecciona un GIF.",
+    unavailable: "La votación no está disponible actualmente.",
+    points: "Revisa los puntos de tu predicción.",
+    insufficient_points: "No tienes suficientes puntos.",
+  },
+  pt: {
+    direction: "Selecione Bull ou Bear.",
+    content: "Escreva um comentário ou selecione um GIF.",
+    unavailable: "A votação está indisponível no momento.",
+    points: "Confira os pontos da sua previsão.",
+    insufficient_points: "Você não tem pontos suficientes.",
+  },
+  it: {
+    direction: "Seleziona Bull o Bear.",
+    content: "Scrivi un commento o seleziona una GIF.",
+    unavailable: "Al momento non è possibile votare.",
+    points: "Controlla i punti della tua previsione.",
+    insufficient_points: "Non hai abbastanza punti.",
+  },
+  ru: {
+    direction: "Выберите Bull или Bear.",
+    content: "Напишите комментарий или выберите GIF.",
+    unavailable: "Голосование сейчас недоступно.",
+    points: "Проверьте количество баллов для прогноза.",
+    insufficient_points: "У вас недостаточно баллов.",
+  },
+  ar: {
+    direction: "اختر صعودًا أو هبوطًا.",
+    content: "اكتب تعليقًا أو اختر صورة GIF.",
+    unavailable: "التصويت غير متاح حاليًا.",
+    points: "تحقق من نقاط توقعك.",
+    insufficient_points: "ليس لديك نقاط كافية.",
+  },
+  hi: {
+    direction: "Bull या Bear चुनें।",
+    content: "टिप्पणी लिखें या GIF चुनें।",
+    unavailable: "अभी वोट देना उपलब्ध नहीं है।",
+    points: "अपने पूर्वानुमान के अंक जाँचें।",
+    insufficient_points: "आपके पास पर्याप्त अंक नहीं हैं।",
+  },
+};
 
 export const PREDICTION_COMMENT_EDIT_LABELS: Record<
   Language,

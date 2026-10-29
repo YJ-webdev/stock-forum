@@ -780,12 +780,11 @@ export function MarketVoteButton({
             onClick={(event) => openEditor("edit", event.currentTarget)}
             className={`
       ${VOTE_STATUS_CLASS}
-      cursor-pointer rounded-full px-2 transition-colors
-      enabled:hover:bg-zinc-100 enabled:hover:text-zinc-900
+      cursor-pointer transition-colors
+       enabled:hover:text-zinc-900
       focus-visible:outline-none
       focus-visible:ring-2 focus-visible:ring-zinc-400
       disabled:cursor-default disabled:opacity-50
-      dark:enabled:hover:bg-zinc-800
       dark:enabled:hover:text-zinc-100
     `}
           >

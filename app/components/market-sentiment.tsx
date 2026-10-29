@@ -199,7 +199,7 @@ export function MarketSentiment({
             </>
           ) : (
             <span className="font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
-              {stats ? labels.no_vote_yet : "—"}
+              {labels.no_vote_yet}
             </span>
           )}
         </div>

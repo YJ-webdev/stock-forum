@@ -126,7 +126,6 @@ export function BullBearVoteCard({
   const language = resolveLanguage(userLanguage);
   const chartLabels = CHART_LABELS[language];
 
-  // Enable once the card approaches the horizontal carousel viewport.
   useEffect(() => {
     const card = cardRef.current;
     if (!card) return;

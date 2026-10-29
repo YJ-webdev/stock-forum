@@ -176,9 +176,7 @@ export function PredictionCommentInput({
   const submittingRef = useRef(false);
 
   const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   const activePointerRef = useRef<number | null>(null);
 
   // A new editing session should mount with a new key.
@@ -235,8 +233,7 @@ export function PredictionCommentInput({
   const hasChanges = commentChanged || voteChanged;
   const saveUnchanged = isEditing && !hasChanges;
 
-  const validationLabels =
-    SUBMIT_VALIDATION_LABELS[language === "ko" ? "ko" : "en"];
+  const validationLabels = SUBMIT_VALIDATION_LABELS[language];
 
   const availablePoints = Number.isFinite(userPoints)
     ? Math.max(0, userPoints)
@@ -246,6 +243,14 @@ export function PredictionCommentInput({
 
   const pointsLimit =
     Math.floor(Math.min(500, availableMaxBet, availablePoints) / 50) * 50;
+
+  // Keep new predictions within the available balance.
+  // Existing predictions retain their saved stake while editing.
+  useEffect(() => {
+    if (!isLoggedIn || isEditing || voteLocked) return;
+
+    setBetAmount((previous) => clampPoints(previous, pointsLimit));
+  }, [isLoggedIn, isEditing, voteLocked, pointsLimit, setBetAmount]);
 
   const validBet =
     !isLoggedIn ||
@@ -261,6 +266,7 @@ export function PredictionCommentInput({
   const holdStateRef = useRef({
     pointsDisabled,
     pointsLimit,
+    availablePoints,
     betAmount,
     setBetAmount,
   });
@@ -269,10 +275,11 @@ export function PredictionCommentInput({
     holdStateRef.current = {
       pointsDisabled,
       pointsLimit,
+      availablePoints,
       betAmount,
       setBetAmount,
     };
-  }, [pointsDisabled, pointsLimit, betAmount, setBetAmount]);
+  }, [pointsDisabled, pointsLimit, availablePoints, betAmount, setBetAmount]);
 
   const stopPointsHold = useCallback(() => {
     if (holdTimeoutRef.current !== null) {
@@ -292,22 +299,38 @@ export function PredictionCommentInput({
     (change: number): boolean => {
       const state = holdStateRef.current;
 
-      if (
-        state.pointsDisabled ||
-        (change < 0 && state.betAmount <= 0) ||
-        (change > 0 && state.betAmount >= state.pointsLimit)
-      ) {
+      if (state.pointsDisabled) {
         stopPointsHold();
         return false;
       }
 
-      state.setBetAmount((previous) =>
-        clampPoints(previous + change, state.pointsLimit),
-      );
+      const nextAmount = state.betAmount + change;
+
+      if (nextAmount < 0) {
+        stopPointsHold();
+        return false;
+      }
+
+      if (nextAmount > state.pointsLimit) {
+        stopPointsHold();
+
+        if (nextAmount > state.availablePoints) {
+          toast.error(validationLabels.insufficient_points, {
+            id: "insufficient-points",
+          });
+        }
+
+        return false;
+      }
+
+      const nextBet = clampPoints(nextAmount, state.pointsLimit);
+
+      state.betAmount = nextBet;
+      state.setBetAmount(nextBet);
 
       return true;
     },
-    [stopPointsHold],
+    [stopPointsHold, validationLabels.insufficient_points],
   );
 
   const startPointsHold = (
@@ -799,7 +822,7 @@ export function PredictionCommentInput({
                   <button
                     type="button"
                     aria-label="Increase points"
-                    disabled={pointsDisabled || betAmount >= pointsLimit}
+                    disabled={pointsDisabled || betAmount >= 500}
                     onPointerDown={(event) => startPointsHold(event, 50)}
                     onPointerUp={handlePointerEnd}
                     onPointerCancel={handlePointerEnd}

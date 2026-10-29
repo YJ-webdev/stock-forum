@@ -2,16 +2,17 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
-import type { PanelImperativeHandle } from "react-resizable-panels";
-
 import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-
+  Suspense,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
+import { usePathname } from "next/navigation";
 import { UserProvider } from "../context/user-context";
 import { PointBalanceProvider } from "../context/point-balance-context";
 
@@ -125,11 +126,145 @@ type ActivePanel = "write" | "account" | "notifications" | "history" | null;
 // Layout
 // -----------------------------------------------------------------------------
 
+interface ContentPanelsProps {
+  children: ReactNode;
+  sidePanel: ReactNode;
+  sideWidth: number;
+  onSideWidthChange: (width: number) => void;
+}
+
+function ContentPanels({
+  children,
+  sidePanel,
+  sideWidth,
+  onSideWidthChange,
+}: ContentPanelsProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mainPanelId = useId();
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    containerWidth: number;
+    startWidth: number;
+  } | null>(null);
+
+  function updateWidth(width: number) {
+    onSideWidthChange(Math.min(70, Math.max(0, width)));
+  }
+
+  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!event.isPrimary || event.button !== 0) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const width = container.getBoundingClientRect().width;
+    if (width <= 0) return;
+
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      containerWidth: width,
+      startWidth: sideWidth,
+    };
+  }
+
+  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const delta = ((drag.startX - event.clientX) / drag.containerWidth) * 100;
+    updateWidth(drag.startWidth + delta);
+  }
+
+  function handlePointerEnd(event: ReactPointerEvent<HTMLDivElement>) {
+    if (dragRef.current?.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const step = event.shiftKey ? 10 : 2;
+    switch (event.key) {
+      case "ArrowLeft":
+        event.preventDefault();
+        updateWidth(sideWidth + step);
+        break;
+      case "ArrowRight":
+        event.preventDefault();
+        updateWidth(sideWidth - step);
+        break;
+      case "Home":
+        event.preventDefault();
+        updateWidth(70);
+        break;
+      case "End":
+        event.preventDefault();
+        updateWidth(0);
+        break;
+    }
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="flex h-full min-h-0 min-w-0 overflow-hidden"
+    >
+      <div
+        id={mainPanelId}
+        className="h-full min-h-0 min-w-0 flex-1 overflow-hidden"
+      >
+        {children}
+      </div>
+      <div
+        role="separator"
+        aria-label="Resize main content"
+        aria-controls={mainPanelId}
+        aria-orientation="vertical"
+        aria-valuemin={30}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(100 - sideWidth)}
+        tabIndex={0}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+        onLostPointerCapture={() => {
+          dragRef.current = null;
+        }}
+        onKeyDown={handleKeyDown}
+        onDoubleClick={() => updateWidth(30)}
+        className="
+          relative z-10 hidden w-0 shrink-0 touch-none
+          cursor-col-resize select-none
+          before:absolute before:inset-y-0 before:-left-1 before:w-2
+          focus-visible:outline-none focus-visible:before:bg-zinc-400/40
+          lg:block
+        "
+      />
+      <div
+        style={{
+          width: `${sideWidth}%`,
+          borderLeftWidth: sideWidth > 0 ? 1 : 0,
+        }}
+        className="
+          relative z-2 hidden h-full min-h-0 min-w-0 shrink-0 overflow-hidden
+          border-gray-100 bg-white lg:block
+          dark:border-zinc-800 dark:bg-zinc-900
+        "
+      >
+        {sidePanel}
+      </div>
+    </div>
+  );
+}
+
 export default function LayoutShell({ user, children }: LayoutShellProps) {
   const pathname = usePathname();
   const showFooter = FOOTER_PATHS.has(pathname);
 
-  const panelBRef = useRef<PanelImperativeHandle>(null);
+  const [sidePanelWidth, setSidePanelWidth] = useState(30);
   const mainScrollRef = useRef<HTMLDivElement>(null);
 
   const sideDataRequestRef = useRef<Promise<LayoutSideData> | null>(null);
@@ -281,7 +416,7 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
     setActivePanel(panel);
 
     if (window.matchMedia(LARGE_SCREEN_QUERY).matches) {
-      panelBRef.current?.resize("30%");
+      setSidePanelWidth(30);
     }
   }
 
@@ -437,49 +572,22 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
               )}
             </div>
 
-            {/* Main content and desktop right panel */}
+            {/* The main content stays mounted across screen sizes. */}
             <div className="h-full min-h-0 min-w-0 overflow-hidden">
-              {isLargeScreen ? (
-                <ResizablePanelGroup
-                  id="layout-content-panels"
-                  orientation="horizontal"
-                  className="h-full min-h-0"
-                >
-                  <ResizablePanel
-                    id="layout-main-panel"
-                    defaultSize="70%"
-                    minSize="30%"
-                    className="min-h-0 min-w-0 overflow-hidden"
-                  >
-                    {mainContent}
-                  </ResizablePanel>
-
-                  <ResizableHandle className="w-0 border-gray-50" />
-
-                  <ResizablePanel
-                    id="layout-side-panel"
-                    panelRef={panelBRef}
-                    defaultSize="30%"
-                    minSize="0%"
-                    className="
-          relative z-2 min-h-0 min-w-0 overflow-hidden
-          border-l border-gray-100 bg-white
-          dark:border-zinc-800 dark:bg-zinc-900
-        "
-                  >
+              <ContentPanels
+                sideWidth={sidePanelWidth}
+                onSideWidthChange={setSidePanelWidth}
+                sidePanel={
+                  isLargeScreen ? (
                     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
                       <div
-                        className={`
-              min-h-0 min-w-0
-              ${
-                showLeaderboard
-                  ? "flex h-[45%] shrink-0 flex-col overflow-hidden"
-                  : "flex-1 overflow-x-hidden overflow-y-auto"
-              }
-            `}
+                        className={`min-h-0 min-w-0 ${
+                          showLeaderboard
+                            ? "flex h-[45%] shrink-0 flex-col overflow-hidden"
+                            : "flex-1 overflow-x-hidden overflow-y-auto"
+                        }`}
                       >
                         {renderActivePanel()}
-
                         {showLeaderboard && (
                           <Suspense fallback={<SideDataLoading />}>
                             {sideDataPromise ? (
@@ -494,11 +602,11 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
                         )}
                       </div>
                     </div>
-                  </ResizablePanel>
-                </ResizablePanelGroup>
-              ) : (
-                mainContent
-              )}
+                  ) : null
+                }
+              >
+                {mainContent}
+              </ContentPanels>
             </div>
           </div>
 
