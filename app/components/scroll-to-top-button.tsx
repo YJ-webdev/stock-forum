@@ -32,13 +32,14 @@ export function ScrollToTopButton({ threshold = 400 }: ScrollToTopButtonProps) {
       setVisible(scrollTop >= threshold);
     }
 
-    updateVisibility();
+    const frame = window.requestAnimationFrame(updateVisibility);
 
     container.addEventListener("scroll", updateVisibility, {
       passive: true,
     });
 
     return () => {
+      window.cancelAnimationFrame(frame);
       container.removeEventListener("scroll", updateVisibility);
       scrollContainerRef.current = null;
     };
