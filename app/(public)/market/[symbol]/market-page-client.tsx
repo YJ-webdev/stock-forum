@@ -1088,17 +1088,15 @@ export default function MarketPageClient({
           </div>
         </>
       ) : (
-        <div
-          aria-hidden="true"
-          className="relative mt-3 mb-4 min-h-28 w-full px-4"
-        >
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <Skeleton className="h-9 w-40 rounded-md" />
-            <Skeleton className="h-7 w-44 rounded-md" />
+        <div aria-hidden="true" className="relative mt-3 min-h-28 w-full px-4">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <Skeleton className="h-[42.5px] w-40 rounded-md sm:h-9" />
+            <Skeleton className="h-10 w-44 rounded-md sm:h-7" />
           </div>
-          <div className="mt-2 flex flex-wrap gap-1.5">
+
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1.5">
             <Skeleton className="h-4 w-48 rounded-sm" />
-            <Skeleton className="h-4 w-24 rounded-sm" />
+            <Skeleton className="h-3.75 w-24 rounded-sm" />
           </div>
         </div>
       )}
