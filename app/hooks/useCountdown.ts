@@ -1,61 +1,94 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+interface CountdownState {
+  hours: string;
+  minutes: string;
+  seconds: string;
+  isExpired: boolean;
+}
+
+const INITIAL_STATE: CountdownState = {
+  hours: "00",
+  minutes: "00",
+  seconds: "00",
+  isExpired: false,
+};
 
 export function useCountdown(
   targetDate: Date | string | number | null,
   onExpire?: () => void,
 ) {
-  const [timeLeft, setTimeLeft] = useState({
-    hours: "00",
-    minutes: "00",
-    seconds: "00",
-    isExpired: false,
-  });
+  const [timeLeft, setTimeLeft] = useState<CountdownState>(INITIAL_STATE);
+
+  const onExpireRef = useRef(onExpire);
+  const expiredTargetRef = useRef<number | null>(null);
+
+  const targetMs =
+    targetDate === null
+      ? null
+      : targetDate instanceof Date
+        ? targetDate.getTime()
+        : new Date(targetDate).getTime();
 
   useEffect(() => {
-    if (targetDate === null) {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
+
+  useEffect(() => {
+    if (targetMs === null || !Number.isFinite(targetMs)) {
+      expiredTargetRef.current = null;
+      setTimeLeft(INITIAL_STATE);
       return;
     }
 
-    const updateCountdown = () => {
-      const now = Date.now();
-      const target = new Date(targetDate).getTime();
-      const difference = target - now;
+    let timer: number | null = null;
 
-      if (difference <= 0) {
-        setTimeLeft({
-          hours: "00",
-          minutes: "00",
-          seconds: "00",
-          isExpired: true,
-        });
+    function updateCountdown() {
+      const difference = targetMs! - Date.now();
+      const isExpired = difference <= 0;
+      const totalSeconds = Math.max(0, Math.floor(difference / 1000));
 
-        onExpire?.();
+      const next: CountdownState = {
+        hours: String(Math.floor(totalSeconds / 3600)).padStart(2, "0"),
+        minutes: String(Math.floor((totalSeconds % 3600) / 60)).padStart(
+          2,
+          "0",
+        ),
+        seconds: String(totalSeconds % 60).padStart(2, "0"),
+        isExpired,
+      };
 
+      setTimeLeft((previous) =>
+        previous.hours === next.hours &&
+        previous.minutes === next.minutes &&
+        previous.seconds === next.seconds &&
+        previous.isExpired === next.isExpired
+          ? previous
+          : next,
+      );
+
+      if (isExpired) {
+        if (expiredTargetRef.current !== targetMs) {
+          expiredTargetRef.current = targetMs;
+          onExpireRef.current?.();
+        }
         return;
       }
 
-      const totalHours = Math.floor(difference / (1000 * 60 * 60));
-
-      const minutes = Math.floor((difference / (1000 * 60)) % 60);
-
-      const seconds = Math.floor((difference / 1000) % 60);
-
-      setTimeLeft({
-        hours: String(totalHours).padStart(2, "0"),
-        minutes: String(minutes).padStart(2, "0"),
-        seconds: String(seconds).padStart(2, "0"),
-        isExpired: false,
-      });
-    };
+      expiredTargetRef.current = null;
+      timer = window.setTimeout(updateCountdown, 1000);
+    }
 
     updateCountdown();
 
-    const interval = window.setInterval(updateCountdown, 1000);
-
     return () => {
-      window.clearInterval(interval);
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
     };
-  }, [targetDate, onExpire]);
+  }, [targetMs]);
 
   return timeLeft;
 }

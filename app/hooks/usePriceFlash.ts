@@ -1,29 +1,33 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
 
 export type FlashState = "up" | "down" | "none";
 
 export function usePriceFlash(currentPrice: number): FlashState {
   const [flash, setFlash] = useState<FlashState>("none");
-  const prevPriceRef = useRef<number>(currentPrice);
+  const previousPriceRef = useRef(currentPrice);
 
   useEffect(() => {
-    const prevPrice = prevPriceRef.current;
+    const previousPrice = previousPriceRef.current;
+    previousPriceRef.current = currentPrice;
 
-    if (currentPrice > prevPrice) {
-      setFlash("up");
-    } else if (currentPrice < prevPrice) {
-      setFlash("down");
+    if (
+      !Number.isFinite(currentPrice) ||
+      !Number.isFinite(previousPrice) ||
+      currentPrice === previousPrice
+    ) {
+      setFlash("none");
+      return;
     }
 
-    // Update reference for the next cycle
-    prevPriceRef.current = currentPrice;
+    setFlash(currentPrice > previousPrice ? "up" : "down");
 
-    // Reset flash state after animation duration (1 second)
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setFlash("none");
     }, 1000);
 
-    return () => clearTimeout(timer);
+    return () => window.clearTimeout(timer);
   }, [currentPrice]);
 
   return flash;

@@ -14,13 +14,23 @@ function isPrice(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
-function getExchangeDate(date: Date, timezone: string) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
+const exchangeDateFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getExchangeDate(date: Date, timezone: string): string {
+  let formatter = exchangeDateFormatters.get(timezone);
+
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
+    exchangeDateFormatters.set(timezone, formatter);
+  }
+
+  const parts = formatter.formatToParts(date);
 
   const year = parts.find((part) => part.type === "year")?.value;
   const month = parts.find((part) => part.type === "month")?.value;
