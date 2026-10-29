@@ -615,7 +615,7 @@ export function ReplyTextContent({
   const displayContent = content.trimEnd();
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const contentViewportRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const paragraphRef = useRef<HTMLParagraphElement>(null);
 
   const [expanded, setExpanded] = useState(false);
@@ -629,22 +629,19 @@ export function ReplyTextContent({
 
     let active = true;
     let frame: number | null = null;
+    let previousWidth: number | null = null;
+    let observer: ResizeObserver | undefined;
 
-    let previousWidth = container.getBoundingClientRect().width;
-
-    function measure() {
+    function measureOverflow() {
       if (!active || !paragraph) return;
 
       const lineHeight = Number.parseFloat(
         window.getComputedStyle(paragraph).lineHeight,
       );
 
-      if (!Number.isFinite(lineHeight) || lineHeight <= 0) {
-        return;
-      }
+      if (!Number.isFinite(lineHeight) || lineHeight <= 0) return;
 
       const collapsedHeight = lineHeight * MAX_COLLAPSED_LINES;
-
       const nextHasOverflow = paragraph.scrollHeight > collapsedHeight + 1;
 
       setHasOverflow((previous) =>
@@ -657,23 +654,17 @@ export function ReplyTextContent({
 
       frame = window.requestAnimationFrame(() => {
         frame = null;
-        measure();
+        measureOverflow();
       });
     }
 
-    scheduleMeasure();
-
-    let observer: ResizeObserver | undefined;
-
     if (typeof ResizeObserver !== "undefined") {
-      observer = new ResizeObserver((entries) => {
-        const entry = entries[0];
-
+      observer = new ResizeObserver(([entry]) => {
         if (!entry) return;
 
         const width = entry.contentRect.width;
 
-        if (Math.abs(width - previousWidth) < 0.5) {
+        if (previousWidth !== null && Math.abs(width - previousWidth) < 0.5) {
           return;
         }
 
@@ -686,13 +677,12 @@ export function ReplyTextContent({
       window.addEventListener("resize", scheduleMeasure);
     }
 
+    scheduleMeasure();
+
     const fonts = document.fonts;
 
     if (fonts) {
-      void fonts.ready.then(() => {
-        scheduleMeasure();
-      });
-
+      void fonts.ready.then(scheduleMeasure);
       fonts.addEventListener("loadingdone", scheduleMeasure);
     }
 
@@ -704,20 +694,14 @@ export function ReplyTextContent({
       }
 
       observer?.disconnect();
-
       window.removeEventListener("resize", scheduleMeasure);
-
       fonts?.removeEventListener("loadingdone", scheduleMeasure);
     };
   }, [displayContent, editedLabel]);
 
-  function handleExpand() {
-    setExpanded(true);
-  }
-
   function handleCollapse() {
-    if (contentViewportRef.current) {
-      contentViewportRef.current.scrollTop = 0;
+    if (viewportRef.current) {
+      viewportRef.current.scrollTop = 0;
     }
 
     setExpanded(false);
@@ -727,27 +711,26 @@ export function ReplyTextContent({
     <div ref={containerRef} className="relative min-w-0">
       <div className="relative min-w-0">
         <div
-          ref={contentViewportRef}
+          ref={viewportRef}
           id={contentId}
+          className="content-scrollbar overflow-x-hidden"
           style={{
             maxHeight: expanded ? MAX_EXPANDED_HEIGHT : undefined,
-            overflowX: "hidden",
             overflowY: expanded ? "auto" : "hidden",
           }}
-          className="content-scrollbar"
         >
           <p
             ref={paragraphRef}
-            style={{
-              overflowWrap: "anywhere",
-              wordBreak: "normal",
-            }}
             className={`
               m-0 min-w-0 whitespace-pre-wrap
               text-[15px] leading-6
               text-zinc-900 dark:text-zinc-200
               ${expanded ? "" : "line-clamp-4"}
             `}
+            style={{
+              overflowWrap: "anywhere",
+              wordBreak: "normal",
+            }}
           >
             {displayContent}
 
@@ -760,7 +743,6 @@ export function ReplyTextContent({
           </p>
         </div>
 
-        {/* Overlay stays within the existing four-line height. */}
         {hasOverflow && !expanded && (
           <button
             type="button"
@@ -768,14 +750,13 @@ export function ReplyTextContent({
             aria-expanded={false}
             onClick={(event) => {
               event.stopPropagation();
-              handleExpand();
+              setExpanded(true);
             }}
             className="
               absolute right-0 bottom-0 z-10
               max-w-full cursor-pointer truncate
               rounded-md bg-zinc-100 px-2
-              text-[13px] font-medium leading-6
-              text-zinc-600
+              text-[13px] font-medium leading-6 text-zinc-600
               transition-colors
               hover:bg-zinc-200 hover:text-zinc-900
               focus-visible:outline-none
@@ -789,7 +770,6 @@ export function ReplyTextContent({
         )}
       </div>
 
-      {/* This appears only after the user expands the text. */}
       {expanded && (
         <div className="mt-1 leading-6">
           <button
@@ -803,11 +783,11 @@ export function ReplyTextContent({
             className="
               inline-block cursor-pointer rounded-sm
               p-0 align-top
-              text-[13px] font-medium leading-6
-              text-zinc-500 hover:text-zinc-900
-              dark:text-zinc-400 dark:hover:text-zinc-200
+              text-[13px] font-medium leading-6 text-zinc-500
+              hover:text-zinc-900
               focus-visible:outline-none
               focus-visible:ring-2 focus-visible:ring-zinc-400
+              dark:text-zinc-400 dark:hover:text-zinc-200
             "
           >
             {readLessLabel}
