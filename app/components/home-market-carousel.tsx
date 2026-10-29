@@ -147,28 +147,30 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
   useEffect(() => {
     const element = scrollRef.current;
 
-    updateScrollButtons();
-
-    if (!element) return;
-
-    if (typeof ResizeObserver === "undefined") {
-      window.addEventListener("resize", updateScrollButtons);
-
-      return () => {
-        window.removeEventListener("resize", updateScrollButtons);
-      };
+    if (!element) {
+      updateScrollButtons();
+      return;
     }
 
-    const observer = new ResizeObserver(updateScrollButtons);
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(updateScrollButtons);
 
-    observer.observe(element);
+      observer.observe(element);
 
-    if (element.firstElementChild) {
-      observer.observe(element.firstElementChild);
+      if (element.firstElementChild) {
+        observer.observe(element.firstElementChild);
+      }
+
+      return () => observer.disconnect();
     }
+
+    const frame = window.requestAnimationFrame(updateScrollButtons);
+
+    window.addEventListener("resize", updateScrollButtons);
 
     return () => {
-      observer.disconnect();
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updateScrollButtons);
     };
   }, [markets, updateScrollButtons]);
 
