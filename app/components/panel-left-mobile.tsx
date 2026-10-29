@@ -40,13 +40,7 @@ export default function PanelLeftMobile({
   const commentsHeadingId = useId();
 
   function handlePanelClick(event: React.MouseEvent<HTMLDivElement>) {
-    if (
-      event.defaultPrevented ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
       return;
     }
 
@@ -68,17 +62,20 @@ export default function PanelLeftMobile({
 
   return (
     <aside
+      inert={!isOpen}
+      aria-hidden={!isOpen}
       className={`
-        fixed top-18 left-0 z-30
-        h-[calc(100dvh-72px)] w-full
-        border-r border-zinc-100 bg-white
-        transition-transform duration-300 ease-out
-        dark:border-zinc-800 dark:bg-zinc-900
-        sm:hidden
-        ${isOpen ? "translate-x-0" : "-translate-x-full"}
-      `}
+    fixed top-18 left-0 z-30
+    h-[calc(100dvh-72px)] w-full
+    border-r border-zinc-100 bg-white
+    transition-transform duration-300 ease-out
+    motion-reduce:transition-none
+    dark:border-zinc-800 dark:bg-zinc-900
+    sm:hidden
+    ${isOpen ? "translate-x-0" : "-translate-x-full"}
+  `}
     >
-      <div onClick={handlePanelClick} className="h-full w-full">
+      <div onClickCapture={handlePanelClick} className="h-full w-full">
         <ScrollArea className="h-full">
           <div className="flex min-h-[calc(100dvh-72px)] flex-col py-3">
             <section aria-labelledby={boardsHeadingId} className="mt-1">

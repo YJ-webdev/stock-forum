@@ -936,7 +936,7 @@ export default function MarketPageClient({
         <>
           {/* Header */}
 
-          <div className="relative mt-3 mb-4 flex min-h-28 w-full items-start justify-between">
+          <div className="relative mt-3 flex min-h-28 w-full items-start justify-between">
             <MarketDetailHeader
               value={data.value}
               rawPrice={data.rawPrice}
@@ -1106,7 +1106,11 @@ export default function MarketPageClient({
       {/* Market sentiment */}
 
       {canPredict && (
-        <div className={`${ibmPlexMono.className} mx-4 mt-7`}>
+        <div
+          className={`${ibmPlexMono.className} mx-4 sm:pb-6 ${
+            showDetailChart ? "pt-12" : "pt-8 sm:pt-2"
+          }`}
+        >
           {voteStats ? (
             <div className="flex flex-col gap-5 rounded-xl border bg-zinc-50 px-5 py-4 dark:bg-zinc-800/50 sm:flex-row sm:items-start sm:justify-between">
               {/* Voter nationalities */}
@@ -1198,7 +1202,10 @@ export default function MarketPageClient({
 
       {/* Discussion */}
 
-      <div ref={discussionRef} className="mx-4 mt-8">
+      <div
+        ref={discussionRef}
+        className={`mx-4 ${showDetailChart ? "mt-10" : "mt-8"}`}
+      >
         {canPredict && voteLookupFailed && (
           <button
             type="button"
