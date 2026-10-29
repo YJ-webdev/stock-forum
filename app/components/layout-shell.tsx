@@ -189,7 +189,6 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
 
     function updateLargeScreen() {
       setIsLargeScreen(largeMedia.matches);
-      panelBRef.current?.resize(largeMedia.matches ? "30%" : "0%");
     }
 
     updateMediumScreen();
@@ -351,9 +350,23 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
     return null;
   }
 
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
+  const mainContent = (
+    <div
+      ref={mainScrollRef}
+      data-main-scroll
+      className="
+      h-full min-h-0 w-full min-w-0
+      overflow-x-hidden overflow-y-auto
+      bg-white dark:bg-zinc-900
+    "
+    >
+      <div className={`min-h-full ${showFooter ? "flex flex-col" : "pb-14"}`}>
+        {pathname !== "/" && <BreadCrumbs />}
+        {children}
+        {showFooter && <Footer />}
+      </div>
+    </div>
+  );
 
   return (
     <UserProvider user={user}>
@@ -426,89 +439,66 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
 
             {/* Main content and desktop right panel */}
             <div className="h-full min-h-0 min-w-0 overflow-hidden">
-              <ResizablePanelGroup
-                id="layout-content-panels"
-                orientation="horizontal"
-                className="h-full min-h-0"
-              >
-                <ResizablePanel
-                  id="layout-main-panel"
-                  defaultSize="70%"
-                  minSize="30%"
-                  className="min-h-0 min-w-0 overflow-hidden"
+              {isLargeScreen ? (
+                <ResizablePanelGroup
+                  id="layout-content-panels"
+                  orientation="horizontal"
+                  className="h-full min-h-0"
                 >
-                  <div
-                    ref={mainScrollRef}
-                    data-main-scroll
-                    className="
-                      h-full min-h-0 w-full min-w-0
-                      overflow-x-hidden overflow-y-auto
-                      bg-white dark:bg-zinc-900
-                    "
+                  <ResizablePanel
+                    id="layout-main-panel"
+                    defaultSize="70%"
+                    minSize="30%"
+                    className="min-h-0 min-w-0 overflow-hidden"
                   >
-                    <div
-                      className={`min-h-full ${
-                        showFooter ? "flex flex-col" : "pb-14"
-                      }`}
-                    >
-                      {pathname !== "/" && <BreadCrumbs />}
-                      {children}
-                      {showFooter && <Footer />}
-                    </div>
-                  </div>
-                </ResizablePanel>
+                    {mainContent}
+                  </ResizablePanel>
 
-                <ResizableHandle className="hidden w-0 border-gray-50 lg:flex" />
+                  <ResizableHandle className="w-0 border-gray-50" />
 
-                <ResizablePanel
-                  id="layout-side-panel"
-                  panelRef={panelBRef}
-                  defaultSize="30%"
-                  minSize="0%"
-                  className="
-                    relative z-2 min-h-0 min-w-0 overflow-hidden
-                    border-l border-gray-100 bg-white
-                    dark:border-zinc-800 dark:bg-zinc-900
-                  "
-                >
-                  <div
+                  <ResizablePanel
+                    id="layout-side-panel"
+                    panelRef={panelBRef}
+                    defaultSize="30%"
+                    minSize="0%"
                     className="
-                      hidden h-full min-h-0 min-w-0
-                      flex-col overflow-hidden lg:flex
-                    "
+          relative z-2 min-h-0 min-w-0 overflow-hidden
+          border-l border-gray-100 bg-white
+          dark:border-zinc-800 dark:bg-zinc-900
+        "
                   >
-                    <div
-                      className={`
-                        min-h-0 min-w-0
-                        ${
-                          showLeaderboard
-                            ? "flex h-[45%] shrink-0 flex-col overflow-hidden"
-                            : "flex-1 overflow-x-hidden overflow-y-auto"
-                        }
-                      `}
-                    >
-                      {isLargeScreen && (
-                        <>
-                          {renderActivePanel()}
+                    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+                      <div
+                        className={`
+              min-h-0 min-w-0
+              ${
+                showLeaderboard
+                  ? "flex h-[45%] shrink-0 flex-col overflow-hidden"
+                  : "flex-1 overflow-x-hidden overflow-y-auto"
+              }
+            `}
+                      >
+                        {renderActivePanel()}
 
-                          {showLeaderboard && (
-                            <Suspense fallback={<SideDataLoading />}>
-                              {sideDataPromise ? (
-                                <LeaderBoardStream
-                                  sideDataPromise={sideDataPromise}
-                                  user={user}
-                                />
-                              ) : (
-                                <SideDataLoading />
-                              )}
-                            </Suspense>
-                          )}
-                        </>
-                      )}
+                        {showLeaderboard && (
+                          <Suspense fallback={<SideDataLoading />}>
+                            {sideDataPromise ? (
+                              <LeaderBoardStream
+                                sideDataPromise={sideDataPromise}
+                                user={user}
+                              />
+                            ) : (
+                              <SideDataLoading />
+                            )}
+                          </Suspense>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </ResizablePanel>
-              </ResizablePanelGroup>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              ) : (
+                mainContent
+              )}
             </div>
           </div>
 

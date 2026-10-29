@@ -139,7 +139,7 @@
   }
 }
 
-@media (width < 1024px) {
+/* @media (width < 1024px) {
   #layout-content-panels > #layout-main-panel {
     flex: 1 1 0% !important;
     width: 100% !important;
@@ -150,7 +150,7 @@
   #layout-content-panels > #layout-side-panel {
     display: none !important;
   }
-}
+} */
 
 .outfit {
   font-family: var(--font-outfit), system-ui, sans-serif;
