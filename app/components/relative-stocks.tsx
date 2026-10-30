@@ -526,7 +526,7 @@ function RelativeStockRow({
         transition-colors last:border-b-0
         hover:cursor-pointer hover:bg-zinc-100/60
         focus:bg-zinc-100 focus:outline-none
-        dark:border-zinc-700/50 dark:text-zinc-100
+        dark:border-zinc-700/50 dark:text-zinc-300
         dark:hover:bg-zinc-700/20 dark:focus:bg-zinc-700/60
         md:text-[15px]
         ${isSelected ? "bg-zinc-100 dark:bg-zinc-700/60" : ""}
@@ -536,7 +536,7 @@ function RelativeStockRow({
         <div className="ml-4 min-w-0">
           <div
             title={item.displaySymbol ?? item.symbol}
-            className="truncate text-[16px] font-medium leading-4.5 md:text-[17px]"
+            className="truncate text-[16px] font-medium leading-4.5 md:text-[17px] dark:text-zinc-100"
           >
             {item.displaySymbol ?? item.symbol}
           </div>
@@ -556,7 +556,7 @@ function RelativeStockRow({
         </div>
       </td>
 
-      <td className="whitespace-nowrap pr-2 align-middle text-right font-medium dark:font-normal">
+      <td className="whitespace-nowrap pr-2 align-middle text-right font-medium ">
         <div className="flex h-5 w-full items-center justify-end">
           {isInitialLoading ? (
             <NumberSkeleton className="w-24" />
@@ -617,7 +617,7 @@ function RelativeStockRow({
       <td
         className={`
           hidden whitespace-nowrap py-3.5 align-middle
-          text-right font-medium dark:font-semibold md:table-cell
+          text-right font-medium  md:table-cell
           ${priceColor}
         `}
       >
@@ -633,7 +633,7 @@ function RelativeStockRow({
       <td
         className={`
           hidden whitespace-nowrap py-3.5 align-middle text-right
-          font-medium dark:font-semibold md:table-cell
+          font-medium  md:table-cell
           ${showVotingColumns ? "" : "md:pr-4"}
           ${priceColor}
         `}
@@ -712,19 +712,19 @@ function VotingCells({
               {hasVotes ? (
                 <>
                   {bullPercent > 0 && (
-                    <span className="font-normal text-zinc-800 dark:text-zinc-100">
+                    <span className="font-normal text-zinc-800 dark:text-zinc-300">
                       {bullPercent}%
                     </span>
                   )}
 
                   {bearPercent > 0 && (
-                    <span className="font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
+                    <span className="font-normal text-zinc-800  dark:text-zinc-300">
                       {bearPercent}%
                     </span>
                   )}
                 </>
               ) : (
-                <span className="text-[11px] font-normal text-zinc-800 dark:font-light dark:text-zinc-100">
+                <span className="text-[11px] font-normal text-zinc-800  dark:text-zinc-300">
                   {voteStats === undefined ? "" : noVoteYetLabel}
                 </span>
               )}

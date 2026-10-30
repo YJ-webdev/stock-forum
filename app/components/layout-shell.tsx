@@ -236,12 +236,12 @@ function ContentPanels({
       ref={containerRef}
       className="flex h-full min-h-0 min-w-0 overflow-hidden"
     >
-      <div
+      <main
         id={mainPanelId}
         className="h-full min-h-0 min-w-0 flex-1 overflow-hidden"
       >
         {children}
-      </div>
+      </main>
       <div
         role="separator"
         aria-label="Resize main content"

@@ -71,6 +71,7 @@ export const COMMENT_LABELS: Record<
     comment: string;
     write: string;
     login: string;
+    login_gif: string;
     failed: string;
     success: string;
     posting: string;
@@ -80,6 +81,7 @@ export const COMMENT_LABELS: Record<
     comment: "Comment",
     write: "Write a comment...",
     login: "Log in to write a comment...",
+    login_gif: "Log in to add a GIF.",
     failed: "Failed to add comment.",
     success: "Comment added.",
     posting: "Posting...",
@@ -88,6 +90,7 @@ export const COMMENT_LABELS: Record<
     comment: "완료",
     write: "의견을 입력하세요...",
     login: "작성하려면 로그인하세요...",
+    login_gif: "GIF를 추가하려면 로그인하세요.",
     failed: "코멘트를 등록하지 못했습니다.",
     success: "코멘트가 등록되었습니다.",
     posting: "등록 중...",
@@ -96,6 +99,7 @@ export const COMMENT_LABELS: Record<
     comment: "投稿",
     write: "コメントを入力してください...",
     login: "コメントするにはログインしてください...",
+    login_gif: "GIFを追加するにはログインしてください。",
     failed: "コメントを投稿できませんでした。",
     success: "コメントを投稿しました。",
     posting: "投稿中...",
@@ -104,6 +108,7 @@ export const COMMENT_LABELS: Record<
     comment: "发表",
     write: "写下你的看法...",
     login: "请登录后发表评论...",
+    login_gif: "请登录后添加 GIF。",
     failed: "评论发表失败。",
     success: "评论已发表。",
     posting: "发表中...",
@@ -112,6 +117,7 @@ export const COMMENT_LABELS: Record<
     comment: "Kommentieren",
     write: "Schreibe einen Kommentar...",
     login: "Melde dich an, um einen Kommentar zu schreiben...",
+    login_gif: "Melde dich an, um ein GIF hinzuzufügen.",
     failed: "Der Kommentar konnte nicht veröffentlicht werden.",
     success: "Kommentar veröffentlicht.",
     posting: "Veröffentlichen...",
@@ -120,6 +126,7 @@ export const COMMENT_LABELS: Record<
     comment: "Publier",
     write: "Écrivez un commentaire...",
     login: "Connectez-vous pour écrire un commentaire...",
+    login_gif: "Connectez-vous pour ajouter un GIF.",
     failed: "Impossible de publier le commentaire.",
     success: "Commentaire publié.",
     posting: "Publication...",
@@ -128,6 +135,7 @@ export const COMMENT_LABELS: Record<
     comment: "Publicar",
     write: "Escribe un comentario...",
     login: "Inicia sesión para escribir un comentario...",
+    login_gif: "Inicia sesión para añadir un GIF.",
     failed: "No se pudo publicar el comentario.",
     success: "Comentario publicado.",
     posting: "Publicando...",
@@ -136,6 +144,7 @@ export const COMMENT_LABELS: Record<
     comment: "Publicar",
     write: "Escreva um comentário...",
     login: "Entre para escrever um comentário...",
+    login_gif: "Entre para adicionar um GIF.",
     failed: "Não foi possível publicar o comentário.",
     success: "Comentário publicado.",
     posting: "Publicando...",
@@ -144,6 +153,7 @@ export const COMMENT_LABELS: Record<
     comment: "Pubblica",
     write: "Scrivi un commento...",
     login: "Accedi per scrivere un commento...",
+    login_gif: "Accedi per aggiungere una GIF.",
     failed: "Impossibile pubblicare il commento.",
     success: "Commento pubblicato.",
     posting: "Pubblicazione...",
@@ -152,6 +162,7 @@ export const COMMENT_LABELS: Record<
     comment: "Отправить",
     write: "Напишите комментарий...",
     login: "Войдите, чтобы написать комментарий...",
+    login_gif: "Войдите, чтобы добавить GIF.",
     failed: "Не удалось опубликовать комментарий.",
     success: "Комментарий опубликован.",
     posting: "Опубликование...",
@@ -160,6 +171,7 @@ export const COMMENT_LABELS: Record<
     comment: "نشر",
     write: "اكتب تعليقًا...",
     login: "سجّل الدخول لكتابة تعليق...",
+    login_gif: "سجّل الدخول لإضافة صورة GIF.",
     failed: "تعذّر نشر التعليق.",
     success: "تم نشر التعليق.",
     posting: "نشر...",
@@ -168,6 +180,7 @@ export const COMMENT_LABELS: Record<
     comment: "पोस्ट करें",
     write: "अपनी राय लिखें...",
     login: "कमेंट लिखने के लिए लॉग इन करें...",
+    login_gif: "GIF जोड़ने के लिए लॉग इन करें।",
     failed: "कमेंट पोस्ट नहीं हो सका।",
     success: "कमेंट पोस्ट हो गया।",
     posting: "पोस्ट हो रहा है...",

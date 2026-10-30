@@ -287,6 +287,7 @@ export default function SearchInput({
           id={SEARCH_INPUT_ID}
           type="text"
           value={input}
+          role="combobox"
           readOnly={tourPreview}
           placeholder={labels.placeholder}
           aria-label={labels.search_markets}
@@ -320,6 +321,7 @@ export default function SearchInput({
         ref={panelRef}
         anchor={anchorRef}
         id={SEARCH_RESULTS_ID}
+        role="dialog"
         data-tour="search"
         aria-label={labels.results}
         side="bottom"

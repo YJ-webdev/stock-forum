@@ -2154,10 +2154,30 @@ export async function getHomeComments({
     ],
   };
 
+  const guestId = userId
+    ? null
+    : ((await cookies()).get("bbv_guest_voter")?.value ?? null);
+
+  const likeWhere: Prisma.CommentLikeWhereInput = userId
+    ? { userId }
+    : guestId
+      ? { guestId, userId: null }
+      : { id: { in: [] } };
+
   const select = {
     ...getCommentSelect(userId, isAdmin),
+
+    likes: {
+      where: likeWhere,
+      select: {
+        id: true,
+      },
+    },
+
     assets: {
-      select: { assetSymbol: true },
+      select: {
+        assetSymbol: true,
+      },
     },
   } satisfies Prisma.CommentSelect;
 

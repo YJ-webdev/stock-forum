@@ -579,7 +579,7 @@ export function CommentItem({
                   </div>
                 )}
 
-                <span className="min-w-0 shrink truncate text-[13px] text-zinc-500">
+                <span className="min-w-0 shrink truncate text-[13px]  text-zinc-600  dark:text-zinc-400">
                   {formatTimeAgo(comment.createdAt, language)}
                 </span>
 

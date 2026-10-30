@@ -584,14 +584,10 @@ export function MarketComments({
 
   return (
     <section className="w-full">
-      <div className="mb-3 flex items-center gap-2">
-        <h2 className="text-[13px] text-zinc-600 dark:text-zinc-500">
-          {labels.heading}
-        </h2>
+      <div className="mb-3 flex items-center gap-1 text-[13px] text-zinc-600  dark:text-zinc-400">
+        <h2 className="">{labels.heading}</h2>
 
-        <span className="jakarta text-sm text-zinc-500">
-          {totalCount.toLocaleString(language)}
-        </span>
+        <span className="">{totalCount.toLocaleString(language)}</span>
       </div>
 
       {/* Edit an existing prediction */}

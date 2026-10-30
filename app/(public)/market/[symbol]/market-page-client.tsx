@@ -911,7 +911,7 @@ export default function MarketPageClient({
 
       <div className="relative mt-5 w-full space-y-2 px-4">
         <div className="flex items-start justify-between gap-4">
-          <h1 className="outfit mt-8 text-[44px] font-bold leading-none tracking-tight text-gray-500/50 dark:text-zinc-700">
+          <h1 className="outfit mt-8 text-[44px] font-bold leading-none tracking-tight text-gray-500/50 dark:text-zinc-500/60">
             {selectedName}
           </h1>
 
@@ -1106,7 +1106,7 @@ export default function MarketPageClient({
       {canPredict && (
         <div
           className={`${ibmPlexMono.className} mx-4 sm:pb-6 ${
-            showDetailChart ? "pt-12" : "pt-8 sm:pt-2"
+            showDetailChart ? "pt-12 sm:pt-14" : "pt-8 sm:pt-2"
           }`}
         >
           {voteStats ? (

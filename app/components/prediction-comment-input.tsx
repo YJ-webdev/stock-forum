@@ -1,5 +1,7 @@
+// app/components/prediction-comment-input.tsx
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   useCallback,
   useEffect,
@@ -32,7 +34,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { VotingCountdown } from "./voting-countdown";
 
-import dynamic from "next/dynamic";
 import type { GifResult } from "./gif-picker";
 
 const GifPicker = dynamic(
@@ -42,7 +43,39 @@ const GifPicker = dynamic(
   },
 );
 
+// -----------------------------------------------------------------------------
+// Types and constants
+// -----------------------------------------------------------------------------
+
 type VoteDirection = "BULL" | "BEAR";
+
+const POINT_STEP = 50;
+const MAX_PREDICTION_POINTS = 500;
+const HOLD_DELAY_MS = 350;
+const HOLD_REPEAT_MS = 90;
+const TEXTAREA_MAX_HEIGHT = 240;
+const VOTE_DIRECTIONS: readonly VoteDirection[] = ["BULL", "BEAR"];
+
+const VOTE_BUTTON_CLASS = `
+  relative z-10 flex h-full flex-1
+  cursor-pointer touch-manipulation
+  items-center justify-center rounded-full
+  transition-colors disabled:cursor-default
+`;
+
+const POINT_BUTTON_CLASS = `
+  flex h-8 w-7 shrink-0 cursor-pointer touch-none select-none
+  items-center justify-center rounded-md
+  text-lg text-zinc-500 dark:text-zinc-100
+  transition-colors
+  hover:bg-zinc-200 active:bg-zinc-200
+  focus-visible:outline-none
+  focus-visible:ring-2 focus-visible:ring-zinc-400
+  disabled:cursor-default disabled:opacity-30
+  disabled:hover:bg-transparent
+  dark:hover:bg-zinc-700 dark:active:bg-zinc-700
+  dark:disabled:hover:bg-transparent
+`;
 
 interface PredictionCommentInputProps {
   variant?: "default" | "popup";
@@ -93,24 +126,16 @@ interface PredictionCommentInputProps {
   showCountdown: boolean;
 }
 
-const POINT_BUTTON_CLASS = `
-  flex h-8 w-7 shrink-0 cursor-pointer touch-none select-none
-  items-center justify-center rounded-md
-  text-lg text-zinc-500 dark:text-zinc-100
-  transition-colors
-  hover:bg-zinc-200 active:bg-zinc-200
-  focus-visible:outline-none
-  focus-visible:ring-2 focus-visible:ring-zinc-400
-  disabled:cursor-default disabled:opacity-30
-  disabled:hover:bg-transparent
-  dark:hover:bg-zinc-700 dark:active:bg-zinc-700
-  dark:disabled:hover:bg-transparent
-`;
+// -----------------------------------------------------------------------------
+// Content helpers
+// -----------------------------------------------------------------------------
 
 function clampPoints(value: number, limit: number): number {
   if (!Number.isFinite(value)) return 0;
 
-  return Math.floor(Math.max(0, Math.min(limit, value)) / 50) * 50;
+  return (
+    Math.floor(Math.max(0, Math.min(limit, value)) / POINT_STEP) * POINT_STEP
+  );
 }
 
 function buildCommentContent(
@@ -144,6 +169,119 @@ function buildCommentContent(
     content: nodes,
   };
 }
+
+// -----------------------------------------------------------------------------
+// Presentational controls
+// -----------------------------------------------------------------------------
+
+interface DirectionToggleProps {
+  direction: VoteDirection | null;
+  disabled: boolean;
+  bullLabel: string;
+  bearLabel: string;
+  onSelect: (direction: VoteDirection) => void;
+}
+
+function DirectionToggle({
+  direction,
+  disabled,
+  bullLabel,
+  bearLabel,
+  onSelect,
+}: DirectionToggleProps) {
+  const backgroundClass =
+    direction === "BULL"
+      ? "bg-emerald-600/15"
+      : direction === "BEAR"
+        ? "bg-rose-700/15"
+        : "bg-zinc-200 dark:bg-zinc-700";
+
+  return (
+    <div
+      className={`
+        relative flex h-8 w-30 shrink-0 items-center
+        rounded-full p-0.5 text-[14px] font-normal
+        transition-colors duration-200
+        ${backgroundClass}
+        ${disabled ? "opacity-50" : ""}
+      `}
+    >
+      {direction && (
+        <span
+          aria-hidden="true"
+          className={`
+            pointer-events-none absolute left-0.5 top-0.5
+            h-7 w-14.5 rounded-full
+            transition-transform duration-200 ease-out
+            motion-reduce:transition-none
+            ${
+              direction === "BULL"
+                ? "translate-x-0 bg-emerald-600"
+                : "translate-x-14.5 bg-rose-700"
+            }
+          `}
+        />
+      )}
+
+      {VOTE_DIRECTIONS.map((value) => (
+        <button
+          key={value}
+          type="button"
+          aria-pressed={direction === value}
+          disabled={disabled}
+          onClick={() => onSelect(value)}
+          className={`${VOTE_BUTTON_CLASS} ${
+            direction === value ? "text-white" : "text-zinc-400"
+          }`}
+        >
+          {value === "BULL" ? bullLabel : bearLabel}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+interface PointStepButtonProps {
+  change: number;
+  disabled: boolean;
+  onStart: (event: PointerEvent<HTMLButtonElement>, change: number) => void;
+  onEnd: (event: { pointerId: number }) => void;
+  onStep: (change: number) => boolean;
+}
+
+function PointStepButton({
+  change,
+  disabled,
+  onStart,
+  onEnd,
+  onStep,
+}: PointStepButtonProps) {
+  const increasing = change > 0;
+
+  return (
+    <button
+      type="button"
+      aria-label={increasing ? "Increase points" : "Decrease points"}
+      disabled={disabled}
+      onPointerDown={(event) => onStart(event, change)}
+      onPointerUp={onEnd}
+      onPointerCancel={onEnd}
+      onLostPointerCapture={onEnd}
+      onClick={(event) => {
+        // Pointer input is handled on pointerdown; keyboard/AT clicks run here.
+        if (event.detail === 0) onStep(change);
+      }}
+      onContextMenu={(event) => event.preventDefault()}
+      className={POINT_BUTTON_CLASS}
+    >
+      {increasing ? "+" : "−"}
+    </button>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Prediction composer
+// -----------------------------------------------------------------------------
 
 export function PredictionCommentInput({
   variant = "default",
@@ -203,6 +341,7 @@ export function PredictionCommentInput({
   const commentOnlyLabel = COMMENT_ONLY_LABELS[language];
   const editLabels = EDIT_VOTE_LABELS[language];
   const unchangedLabel = PREDICTION_EDIT_UNCHANGED_LABELS[language];
+  const validationLabels = SUBMIT_VALIDATION_LABELS[language];
 
   const isEditing = mode !== "create";
   const isCombinedEdit = mode === "edit-comment";
@@ -241,8 +380,6 @@ export function PredictionCommentInput({
   const hasChanges = commentChanged || voteChanged;
   const saveUnchanged = isEditing && !hasChanges;
 
-  const validationLabels = SUBMIT_VALIDATION_LABELS[language];
-
   const availablePoints = Number.isFinite(userPoints)
     ? Math.max(0, userPoints)
     : 0;
@@ -250,26 +387,24 @@ export function PredictionCommentInput({
   const availableMaxBet = Number.isFinite(maxBet) ? Math.max(0, maxBet) : 0;
 
   const pointsLimit =
-    Math.floor(Math.min(500, availableMaxBet, availablePoints) / 50) * 50;
-
-  // Keep new predictions within the available balance.
-  // Existing predictions retain their saved stake while editing.
-  useEffect(() => {
-    if (!isLoggedIn || isEditing || voteLocked) return;
-
-    setBetAmount((previous) => clampPoints(previous, pointsLimit));
-  }, [isLoggedIn, isEditing, voteLocked, pointsLimit, setBetAmount]);
+    Math.floor(
+      Math.min(MAX_PREDICTION_POINTS, availableMaxBet, availablePoints) /
+        POINT_STEP,
+    ) * POINT_STEP;
 
   const validBet =
     !isLoggedIn ||
     (Number.isInteger(betAmount) &&
       betAmount >= 0 &&
       betAmount <= pointsLimit &&
-      betAmount % 50 === 0);
+      betAmount % POINT_STEP === 0);
 
   const showMax = pointsLimit > 0 && betAmount >= pointsLimit;
 
   const lockedVoteLabel = editLabels.locked;
+  const showGifPicker = gifPickerOpen && !chatDisabled && isLoggedIn;
+  const showClosingCountdown =
+    !voteLocked && showCountdown && countdownType === "VOTING_CLOSES";
 
   const holdStateRef = useRef({
     pointsDisabled,
@@ -278,6 +413,14 @@ export function PredictionCommentInput({
     betAmount,
     setBetAmount,
   });
+
+  // Keep new predictions within the available balance.
+  // Existing predictions retain their saved stake while editing.
+  useEffect(() => {
+    if (!isLoggedIn || isEditing || voteLocked) return;
+
+    setBetAmount((previous) => clampPoints(previous, pointsLimit));
+  }, [isLoggedIn, isEditing, voteLocked, pointsLimit, setBetAmount]);
 
   useLayoutEffect(() => {
     holdStateRef.current = {
@@ -323,9 +466,7 @@ export function PredictionCommentInput({
         stopPointsHold();
 
         if (nextAmount > state.availablePoints) {
-          toast.error(validationLabels.insufficient_points, {
-            id: "insufficient-points",
-          });
+          toast.error(validationLabels.insufficient_points);
         }
 
         return false;
@@ -368,8 +509,8 @@ export function PredictionCommentInput({
 
       holdIntervalRef.current = setInterval(() => {
         stepPoints(change);
-      }, 90);
-    }, 350);
+      }, HOLD_REPEAT_MS);
+    }, HOLD_DELAY_MS);
   };
 
   const handlePointerEnd = (event: { pointerId: number }) => {
@@ -426,7 +567,7 @@ export function PredictionCommentInput({
     if (!textarea) return;
 
     const resize = () => {
-      const maxHeight = 240;
+      const maxHeight = TEXTAREA_MAX_HEIGHT;
 
       textarea.style.height = "auto";
 
@@ -462,23 +603,51 @@ export function PredictionCommentInput({
   }, [comment, showCommentEditor]);
 
   const showLoginMessage = () => {
-    toast.error(commentLabels.login.replace(/\.{3}$/, ""), {
-      id: "login-required",
-    });
+    toast.error(commentLabels.login.replace(/\.{3}$/, ""));
+  };
+
+  const handleGifPickerToggle = () => {
+    if (!isLoggedIn) {
+      toast.error(commentLabels.login_gif);
+      return;
+    }
+
+    if (chatDisabled || submittingRef.current) {
+      toast.error(validationLabels.unavailable);
+      return;
+    }
+
+    setGifPickerOpen((open) => !open);
+  };
+
+  const handleGifSelect = (gif: GifResult) => {
+    if (chatDisabled || !isLoggedIn || submittingRef.current) return;
+
+    setSelectedGif(gif);
+    setGifPickerOpen(false);
+  };
+
+  const handleGifRemove = () => {
+    if (chatDisabled || submittingRef.current) return;
+
+    setSelectedGif(null);
+  };
+
+  const handleCancel = () => {
+    if (busy || submittingRef.current) return;
+
+    stopPointsHold();
+    onCancel?.();
   };
 
   const handleLockedVoteClick = () => {
     stopPointsHold();
 
-    toast.info(lockedVoteLabel, {
-      id: "prediction-edit-closed",
-    });
+    toast.info(lockedVoteLabel);
   };
 
   const handleUnchangedSave = () => {
-    toast.info(unchangedLabel, {
-      id: "prediction-edit-unchanged",
-    });
+    toast.info(unchangedLabel);
   };
 
   const handleDirectionClick = (nextDirection: VoteDirection) => {
@@ -705,70 +874,13 @@ export function PredictionCommentInput({
               "
             >
               {/* Bull / Bear */}
-              <div
-                className={`
-                  relative flex h-8 w-30 shrink-0 items-center
-                  rounded-full p-0.5 text-[14px] font-normal
-                  transition-colors duration-200
-                  ${
-                    direction === "BULL"
-                      ? "bg-emerald-600/15"
-                      : direction === "BEAR"
-                        ? "bg-rose-700/15"
-                        : "bg-zinc-200 dark:bg-zinc-700"
-                  }
-                  ${controlsDisabled ? "opacity-50" : ""}
-                `}
-              >
-                {direction && (
-                  <span
-                    aria-hidden="true"
-                    className={`
-                      pointer-events-none absolute left-0.5 top-0.5
-                      h-7 w-14.5 rounded-full
-                      transition-transform duration-200 ease-out
-                      motion-reduce:transition-none
-                      ${
-                        direction === "BULL"
-                          ? "translate-x-0 bg-emerald-600"
-                          : "translate-x-14.5 bg-rose-700"
-                      }
-                    `}
-                  />
-                )}
-
-                <button
-                  type="button"
-                  aria-pressed={direction === "BULL"}
-                  disabled={controlsDisabled}
-                  onClick={() => handleDirectionClick("BULL")}
-                  className={`
-                    relative z-10 flex h-full flex-1
-                    cursor-pointer touch-manipulation
-                    items-center justify-center rounded-full
-                    transition-colors disabled:cursor-default
-                    ${direction === "BULL" ? "text-white" : "text-zinc-500"}
-                  `}
-                >
-                  {voteLabels.bull}
-                </button>
-
-                <button
-                  type="button"
-                  aria-pressed={direction === "BEAR"}
-                  disabled={controlsDisabled}
-                  onClick={() => handleDirectionClick("BEAR")}
-                  className={`
-                    relative z-10 flex h-full flex-1
-                    cursor-pointer touch-manipulation
-                    items-center justify-center rounded-full
-                    transition-colors disabled:cursor-default
-                    ${direction === "BEAR" ? "text-white" : "text-zinc-500"}
-                  `}
-                >
-                  {voteLabels.bear}
-                </button>
-              </div>
+              <DirectionToggle
+                direction={direction}
+                disabled={controlsDisabled}
+                bullLabel={voteLabels.bull}
+                bearLabel={voteLabels.bear}
+                onSelect={handleDirectionClick}
+              />
 
               {/* Prediction points */}
               {isLoggedIn && (
@@ -784,24 +896,13 @@ export function PredictionCommentInput({
                     }
                   `}
                 >
-                  <button
-                    type="button"
-                    aria-label="Decrease points"
+                  <PointStepButton
+                    change={-POINT_STEP}
                     disabled={pointsDisabled || betAmount <= 0}
-                    onPointerDown={(event) => startPointsHold(event, -50)}
-                    onPointerUp={handlePointerEnd}
-                    onPointerCancel={handlePointerEnd}
-                    onLostPointerCapture={handlePointerEnd}
-                    onClick={(event) => {
-                      if (event.detail === 0) {
-                        stepPoints(-50);
-                      }
-                    }}
-                    onContextMenu={(event) => event.preventDefault()}
-                    className={POINT_BUTTON_CLASS}
-                  >
-                    −
-                  </button>
+                    onStart={startPointsHold}
+                    onEnd={handlePointerEnd}
+                    onStep={stepPoints}
+                  />
 
                   <span
                     aria-label="Prediction points"
@@ -827,24 +928,15 @@ export function PredictionCommentInput({
                     </span>
                   )}
 
-                  <button
-                    type="button"
-                    aria-label="Increase points"
-                    disabled={pointsDisabled || betAmount >= 500}
-                    onPointerDown={(event) => startPointsHold(event, 50)}
-                    onPointerUp={handlePointerEnd}
-                    onPointerCancel={handlePointerEnd}
-                    onLostPointerCapture={handlePointerEnd}
-                    onClick={(event) => {
-                      if (event.detail === 0) {
-                        stepPoints(50);
-                      }
-                    }}
-                    onContextMenu={(event) => event.preventDefault()}
-                    className={POINT_BUTTON_CLASS}
-                  >
-                    +
-                  </button>
+                  <PointStepButton
+                    change={POINT_STEP}
+                    disabled={
+                      pointsDisabled || betAmount >= MAX_PREDICTION_POINTS
+                    }
+                    onStart={startPointsHold}
+                    onEnd={handlePointerEnd}
+                    onStep={stepPoints}
+                  />
                 </div>
               )}
 
@@ -978,13 +1070,7 @@ export function PredictionCommentInput({
                 type="button"
                 aria-label="Remove GIF"
                 disabled={chatDisabled}
-                onClick={() => {
-                  if (chatDisabled || submittingRef.current) {
-                    return;
-                  }
-
-                  setSelectedGif(null);
-                }}
+                onClick={handleGifRemove}
                 className="
                     absolute right-2 top-2
                     flex size-7 cursor-pointer
@@ -1013,47 +1099,24 @@ export function PredictionCommentInput({
                   <button
                     ref={gifButtonRef}
                     type="button"
-                    disabled={chatDisabled || !isLoggedIn}
                     aria-label="Select GIF"
-                    aria-expanded={gifPickerOpen && !chatDisabled && isLoggedIn}
-                    onClick={() => {
-                      if (
-                        chatDisabled ||
-                        !isLoggedIn ||
-                        submittingRef.current
-                      ) {
-                        return;
-                      }
-
-                      setGifPickerOpen((open) => !open);
-                    }}
+                    aria-expanded={showGifPicker}
+                    onClick={handleGifPickerToggle}
                     className="
                       cursor-pointer rounded-md px-2 py-1
                       text-sm font-medium text-zinc-500
                       hover:bg-zinc-200 dark:hover:bg-zinc-700
-                      disabled:cursor-not-allowed disabled:opacity-50
                     "
                   >
                     GIF
                   </button>
 
-                  {gifPickerOpen && !chatDisabled && isLoggedIn && (
+                  {showGifPicker && (
                     <GifPicker
                       triggerRef={gifButtonRef}
                       open={gifPickerOpen}
                       onOpenChange={setGifPickerOpen}
-                      onSelect={(gif) => {
-                        if (
-                          chatDisabled ||
-                          !isLoggedIn ||
-                          submittingRef.current
-                        ) {
-                          return;
-                        }
-
-                        setSelectedGif(gif);
-                        setGifPickerOpen(false);
-                      }}
+                      onSelect={handleGifSelect}
                     />
                   )}
                 </>
@@ -1061,32 +1124,23 @@ export function PredictionCommentInput({
             </div>
 
             <div className="flex min-w-0 items-center justify-end gap-2">
-              {!voteLocked &&
-                showCountdown &&
-                countdownType === "VOTING_CLOSES" && (
-                  <div className="hidden @[380px]:block">
-                    <VotingCountdown
-                      targetMs={targetMs}
-                      type={countdownType}
-                      showCountdown={showCountdown}
-                      isMarketOpen={isMarketOpen}
-                      userLanguage={language}
-                    />
-                  </div>
-                )}
+              {showClosingCountdown && (
+                <div className="hidden @[380px]:block">
+                  <VotingCountdown
+                    targetMs={targetMs}
+                    type="VOTING_CLOSES"
+                    showCountdown={showCountdown}
+                    isMarketOpen={isMarketOpen}
+                    userLanguage={language}
+                  />
+                </div>
+              )}
 
               {isEditing && onCancel && (
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => {
-                    if (busy || submittingRef.current) {
-                      return;
-                    }
-
-                    stopPointsHold();
-                    onCancel();
-                  }}
+                  onClick={handleCancel}
                   className="
                     shrink-0 cursor-pointer rounded-md px-2 py-1
                     text-sm text-zinc-500 hover:text-zinc-800

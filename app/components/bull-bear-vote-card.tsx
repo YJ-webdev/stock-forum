@@ -188,7 +188,7 @@ export function BullBearVoteCard({
       <header>
         <h3
           title={market.name}
-          className="outfit truncate pl-2.5 text-[28px] font-bold tracking-normal text-gray-500/50 dark:text-zinc-600"
+          className="outfit truncate pl-2.5 text-[30px] font-extrabold tracking-normal text-gray-500/50 dark:text-zinc-500/60"
         >
           {market.name}
         </h3>
