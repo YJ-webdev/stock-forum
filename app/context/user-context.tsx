@@ -1,18 +1,26 @@
-// app/context/user-context.tsx
 "use client";
 
-import { User } from "@/types/user";
 import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
 } from "react";
+
+import type { User } from "@/types/user";
 
 interface UserContextValue {
   user: User | null;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  setUser: Dispatch<SetStateAction<User | null>>;
+}
+
+interface UserProviderProps {
+  user: User | null;
+  children: ReactNode;
 }
 
 const UserContext = createContext<UserContextValue | null>(null);
@@ -20,40 +28,38 @@ const UserContext = createContext<UserContextValue | null>(null);
 export function UserProvider({
   user: initialUser,
   children,
-}: {
-  user: User | null;
-  children: ReactNode;
-}) {
+}: UserProviderProps) {
   const [user, setUser] = useState<User | null>(initialUser);
 
-  // Server에서 새로운 user가 들어오는 경우에도 동기화
   useEffect(() => {
     setUser(initialUser);
   }, [initialUser]);
 
-  return (
-    <UserContext.Provider value={{ user, setUser }}>
-      {children}
-    </UserContext.Provider>
+  const value = useMemo<UserContextValue>(
+    () => ({
+      user,
+      setUser,
+    }),
+    [user],
   );
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+}
+
+function useUserContext() {
+  const context = useContext(UserContext);
+
+  if (!context) {
+    throw new Error("User hooks must be used within UserProvider.");
+  }
+
+  return context;
 }
 
 export function useCurrentUser() {
-  const context = useContext(UserContext);
-
-  if (!context) {
-    throw new Error("useCurrentUser must be used within UserProvider.");
-  }
-
-  return context.user;
+  return useUserContext().user;
 }
 
 export function useSetCurrentUser() {
-  const context = useContext(UserContext);
-
-  if (!context) {
-    throw new Error("useSetCurrentUser must be used within UserProvider.");
-  }
-
-  return context.setUser;
+  return useUserContext().setUser;
 }

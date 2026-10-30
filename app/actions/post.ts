@@ -7,10 +7,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-import {
-  ALL_MARKET_SYMBOLS,
-  type MarketSymbolItem,
-} from "@/lib/data/market-symbols";
+import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 
 import { resolveLanguage } from "@/lib/data/languages";
 import { COMMENT_ACTION_LABELS } from "@/lib/data/translations";
