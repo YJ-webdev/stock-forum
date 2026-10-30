@@ -435,7 +435,7 @@ export function CommentItem({
         relative -mx-4 -my-3 scroll-mt-0 px-4 py-4
         transition-colors
         ${showEditor ? "" : "hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50"}
-        ${isHighlighted ? "bg-amber-50/80 dark:bg-amber-950/20" : ""}
+        ${isHighlighted ? "bg-amber-50/80 dark:bg-olive-800" : ""}
       `}
     >
       {showEditor ? (
@@ -526,7 +526,7 @@ export function CommentItem({
                       focus-visible:ring-zinc-400
                     "
                   >
-                    <span className="block truncate text-[14px] font-semibold hover:underline">
+                    <span className="block truncate text-[14px] dark:text-muted-foreground font-semibold hover:underline">
                       {username}
                     </span>
                   </button>

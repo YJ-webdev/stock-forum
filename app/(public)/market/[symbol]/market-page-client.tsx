@@ -1106,7 +1106,7 @@ export default function MarketPageClient({
       {canPredict && (
         <div
           className={`${ibmPlexMono.className} mx-4 sm:pb-6 ${
-            showDetailChart ? "pt-12 sm:pt-14" : "pt-8 sm:pt-2"
+            showDetailChart ? "pt-12 sm:pt-16" : "pt-8 sm:pt-2"
           }`}
         >
           {voteStats ? (
