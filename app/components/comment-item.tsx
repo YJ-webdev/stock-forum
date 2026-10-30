@@ -558,51 +558,51 @@ export function CommentItem({
         )
       ) : (
         <div className="z-1 flex gap-3">
-          {/* <UserProfileTrigger
+          <UserProfileTrigger
             target={profileTarget}
             currentUserId={currentUserId}
             language={language}
             isAdmin={isAdmin}
-          > */}
-          <button
-            type="button"
-            aria-label={username}
-            className="
+          >
+            <button
+              type="button"
+              aria-label={username}
+              className="
                 relative z-10 size-9 shrink-0 self-start
                 cursor-pointer rounded-full
                 focus-visible:outline-none
                 focus-visible:ring-2 focus-visible:ring-zinc-400
                 focus-visible:ring-offset-2
               "
-          >
-            {avatar}
-          </button>
-          {/* </UserProfileTrigger> */}
+            >
+              {avatar}
+            </button>
+          </UserProfileTrigger>
 
           <div className="min-w-0 flex-1">
             <div className="group/comment relative min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-1.5">
-                {/* <UserProfileTrigger
+                <UserProfileTrigger
                   target={profileTarget}
                   currentUserId={currentUserId}
                   language={language}
                   isAdmin={isAdmin}
-                > */}
-                <button
-                  type="button"
-                  className="
+                >
+                  <button
+                    type="button"
+                    className="
                       min-w-0 max-w-full shrink cursor-pointer
                       rounded-sm text-start
                       focus-visible:outline-none
                       focus-visible:ring-2
                       focus-visible:ring-zinc-400
                     "
-                >
-                  <span className="block truncate text-[14px] font-semibold hover:underline dark:text-muted-foreground">
-                    {username}
-                  </span>
-                </button>
-                {/* </UserProfileTrigger> */}
+                  >
+                    <span className="block truncate text-[14px] font-semibold hover:underline dark:text-muted-foreground">
+                      {username}
+                    </span>
+                  </button>
+                </UserProfileTrigger>
 
                 {marketname && marketSymbol && (
                   <Link

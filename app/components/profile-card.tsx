@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
-
-import { useEffect, useState, type ReactElement } from "react";
-
+import dynamic from "next/dynamic";
+import {
+  cloneElement,
+  useEffect,
+  useState,
+  type MouseEventHandler,
+  type ReactElement,
+} from "react";
 import { Ban, RotateCcw } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 import {
   Popover,
   PopoverContent,
@@ -20,10 +24,7 @@ import {
 } from "@/app/actions/profile";
 
 import { resolveLanguage } from "@/lib/data/languages";
-
 import { HISTORY_LABELS, PROFILE_CARD_LABELS } from "@/lib/data/translations";
-
-import dynamic from "next/dynamic";
 
 const BanUserDialog = dynamic(() =>
   import("./ban-user-dialog").then((module) => module.BanUserDialog),
@@ -62,18 +63,19 @@ interface UserProfileTriggerProps {
   onBanRequest?: (target: ProfileUser) => void;
 }
 
-// -----------------------------------------------------------------------------
-// CACHE
-// Follow status belongs to the viewer, so include their ID in the key.
-// -----------------------------------------------------------------------------
-
-const PROFILE_CACHE_TIME = 30 * 1000;
-const MAX_CACHE_ENTRIES = 100;
+interface ProfileTriggerElementProps {
+  onClick?: MouseEventHandler<HTMLElement>;
+  "aria-haspopup"?: "dialog";
+  "aria-expanded"?: boolean;
+}
 
 interface ProfileCacheEntry {
   data: UserProfileCardData;
   fetchedAt: number;
 }
+
+const PROFILE_CACHE_TIME = 30_000;
+const MAX_CACHE_ENTRIES = 100;
 
 const profileCache = new Map<string, ProfileCacheEntry>();
 
@@ -92,17 +94,11 @@ function saveCache(key: string, data: UserProfileCardData, fetchedAt: number) {
   while (profileCache.size > MAX_CACHE_ENTRIES) {
     const oldestKey = profileCache.keys().next().value;
 
-    if (oldestKey === undefined) {
-      break;
-    }
+    if (oldestKey === undefined) break;
 
     profileCache.delete(oldestKey);
   }
 }
-
-// -----------------------------------------------------------------------------
-// TIER
-// -----------------------------------------------------------------------------
 
 const TIER_NAMES: Record<UserProfileCardData["tier"], string> = {
   UNRANKED: "Unranked",
@@ -132,10 +128,6 @@ const TIER_CLASSES: Record<UserProfileCardData["tier"], string> = {
     "border-sky-600/20 bg-sky-500/10 text-sky-700 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-400",
 };
 
-// -----------------------------------------------------------------------------
-// PROFILE TRIGGER / POPOVER
-// -----------------------------------------------------------------------------
-
 export function UserProfileTrigger({
   target,
   currentUserId,
@@ -147,11 +139,16 @@ export function UserProfileTrigger({
   onBanRequest,
 }: UserProfileTriggerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
+  const [activated, setActivated] = useState(false);
   const [banTarget, setBanTarget] = useState<ProfileUser | null>(null);
 
   const profileOpen = open ?? internalOpen;
 
   function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) {
+      setActivated(true);
+    }
+
     if (open === undefined) {
       setInternalOpen(nextOpen);
     }
@@ -170,6 +167,24 @@ export function UserProfileTrigger({
     setBanTarget(selectedUser);
   }
 
+  // Skip Popover initialization until the first interaction.
+  if (!activated && !profileOpen) {
+    const trigger = children as ReactElement<ProfileTriggerElementProps>;
+
+    return cloneElement(trigger, {
+      "aria-haspopup": "dialog",
+      "aria-expanded": false,
+
+      onClick: (event) => {
+        trigger.props.onClick?.(event);
+
+        if (event.defaultPrevented) return;
+
+        handleOpenChange(true);
+      },
+    });
+  }
+
   return (
     <>
       <Popover modal={false} open={profileOpen} onOpenChange={handleOpenChange}>
@@ -180,9 +195,9 @@ export function UserProfileTrigger({
           side="bottom"
           sideOffset={8}
           className="
-    w-80 max-w-[calc(100vw-2rem)]
-    overflow-hidden rounded-xl p-0
-  "
+            w-80 max-w-[calc(100vw-2rem)]
+            overflow-hidden rounded-xl p-0
+          "
         >
           {profileOpen && (
             <ProfileCard
@@ -211,10 +226,6 @@ export function UserProfileTrigger({
     </>
   );
 }
-
-// -----------------------------------------------------------------------------
-// PROFILE CARD
-// -----------------------------------------------------------------------------
 
 export function ProfileCard(props: ProfileCardProps) {
   return (
@@ -251,10 +262,6 @@ function ProfileCardContent({
   const [loadFailed, setLoadFailed] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
-  // ---------------------------------------------------------------------------
-  // LOAD
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
     let cancelled = false;
 
@@ -283,20 +290,18 @@ function ProfileCardContent({
       try {
         const result = await getUserProfileCard(userId);
 
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
-        // Use the authenticated viewer returned by the server.
         const actualKey = getCacheKey(userId, result.viewerId);
 
         saveCache(actualKey, result, Date.now());
         setProfile(result);
       } catch (error) {
-        if (!cancelled) {
-          console.error("Failed to load profile card:", error);
-          setLoadFailed(true);
-        }
+        if (cancelled) return;
+
+        console.error("Failed to load profile card:", error);
+
+        setLoadFailed(true);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -310,10 +315,6 @@ function ProfileCardContent({
       cancelled = true;
     };
   }, [userId, cacheKey, retryKey]);
-
-  // ---------------------------------------------------------------------------
-  // DISPLAY
-  // ---------------------------------------------------------------------------
 
   const displayName =
     (profile ? profile.name : initialName)?.trim() || commonLabels.user;
@@ -329,7 +330,6 @@ function ProfileCardContent({
 
   return (
     <div className="rounded-xl p-4 text-zinc-800 dark:bg-black dark:text-zinc-200">
-      {/* Image / name / tier */}
       <div className="flex min-w-0 items-center gap-3">
         <Avatar className="size-12 shrink-0">
           <AvatarImage
@@ -362,7 +362,6 @@ function ProfileCardContent({
         </div>
       </div>
 
-      {/* Initial loading */}
       {loading && !profile && (
         <div
           role="status"
@@ -381,7 +380,6 @@ function ProfileCardContent({
         </div>
       )}
 
-      {/* Watchlist */}
       {profile && (
         <div className="mt-4">
           <p className="mb-2 text-xs font-normal text-zinc-400 dark:text-zinc-500">
@@ -403,9 +401,11 @@ function ProfileCardContent({
                     hover:border-zinc-100 hover:bg-zinc-100
                     hover:text-zinc-900
                     focus-visible:outline-none
-                    focus-visible:ring-2 focus-visible:ring-zinc-400
+                    focus-visible:ring-2
+                    focus-visible:ring-zinc-400
                     dark:border-zinc-700 dark:text-zinc-100
-                    dark:hover:border-zinc-600 dark:hover:bg-zinc-800
+                    dark:hover:border-zinc-600
+                    dark:hover:bg-zinc-800
                     dark:hover:text-zinc-100
                   "
                 >
@@ -421,7 +421,6 @@ function ProfileCardContent({
         </div>
       )}
 
-      {/* Status message */}
       {profile?.statusMessage && (
         <p
           className="
@@ -433,7 +432,6 @@ function ProfileCardContent({
         </p>
       )}
 
-      {/* Load error / retry */}
       {loadFailed && (
         <div role="alert" className="mt-4 text-center">
           <p className="text-xs text-rose-500">{commonLabels.load_failed}</p>
@@ -443,7 +441,8 @@ function ProfileCardContent({
             onClick={() => setRetryKey((current) => current + 1)}
             disabled={loading}
             className="
-              mt-2 inline-flex cursor-pointer items-center gap-1.5
+              mt-2 inline-flex cursor-pointer
+              items-center gap-1.5
               text-xs text-zinc-500 underline
               hover:text-zinc-900
               disabled:cursor-default disabled:opacity-50
@@ -451,12 +450,12 @@ function ProfileCardContent({
             "
           >
             <RotateCcw className="size-3" aria-hidden="true" />
+
             {commonLabels.retry}
           </button>
         </div>
       )}
 
-      {/* Admin moderation */}
       {canModerate && (
         <div className="-mx-4 -mb-4 mt-4 border-t border-border">
           <button
@@ -473,28 +472,30 @@ function ProfileCardContent({
               });
             }}
             className={`
-        flex min-h-11 w-full cursor-pointer
-        items-center justify-center gap-2
-        rounded-b-xl px-3 py-2
-        text-sm font-medium transition-colors
-        focus-visible:outline-none
-        focus-visible:ring-2 focus-visible:ring-inset
-        disabled:cursor-not-allowed disabled:opacity-50
-        ${
-          isBanned
-            ? `
-              text-emerald-600 hover:bg-emerald-50
-              focus-visible:ring-emerald-400
-              dark:text-emerald-400
-              dark:hover:bg-emerald-950/40
-            `
-            : `
-              text-red-600 hover:bg-red-50
-              focus-visible:ring-red-400
-              dark:text-red-400 dark:hover:bg-red-950/40
-            `
-        }
-      `}
+              flex min-h-11 w-full cursor-pointer
+              items-center justify-center gap-2
+              rounded-b-xl px-3 py-2
+              text-sm font-medium transition-colors
+              focus-visible:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-inset
+              disabled:cursor-not-allowed disabled:opacity-50
+              ${
+                isBanned
+                  ? `
+                    text-emerald-600 hover:bg-emerald-50
+                    focus-visible:ring-emerald-400
+                    dark:text-emerald-400
+                    dark:hover:bg-emerald-950/40
+                  `
+                  : `
+                    text-red-600 hover:bg-red-50
+                    focus-visible:ring-red-400
+                    dark:text-red-400
+                    dark:hover:bg-red-950/40
+                  `
+              }
+            `}
           >
             {isBanned ? (
               <RotateCcw className="size-4" aria-hidden="true" />
