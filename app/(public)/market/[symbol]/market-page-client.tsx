@@ -33,7 +33,7 @@ import {
 import { createComment, type MarketPageComments } from "@/app/actions/post";
 
 import type { GifResult } from "@/app/components/gif-picker";
-import type { JSONContent } from "@tiptap/react";
+import { buildCommentContent } from "@/lib/utils/build-comment-content";
 
 import { useCurrentUser } from "@/app/context/user-context";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -552,30 +552,9 @@ export default function MarketPageClient({
     const trimmedComment = canWriteComment ? comment.trim() : "";
     const submittedGif = canWriteComment ? gif : null;
 
-    const content: JSONContent | null =
+    const content =
       trimmedComment || submittedGif
-        ? {
-            type: "doc",
-            content: [
-              ...(trimmedComment
-                ? trimmedComment.split(/\r?\n/).map((line) => ({
-                    type: "paragraph",
-                    content: line ? [{ type: "text", text: line }] : [],
-                  }))
-                : []),
-              ...(submittedGif
-                ? [
-                    {
-                      type: "image",
-                      attrs: {
-                        src: submittedGif.src,
-                        alt: submittedGif.title,
-                      },
-                    },
-                  ]
-                : []),
-            ],
-          }
+        ? buildCommentContent(trimmedComment, submittedGif)
         : null;
 
     submittingVoteRef.current = true;

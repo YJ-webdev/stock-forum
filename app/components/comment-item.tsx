@@ -2,6 +2,7 @@
 
 import type { JSONContent } from "@tiptap/react";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { RiHeartFill } from "react-icons/ri";
@@ -36,7 +37,6 @@ import { UserProfileTrigger, type ProfileUser } from "./profile-card";
 import { ReplyItem, ReplyTextContent } from "./reply-item";
 
 import type { MarketReply } from "./comment";
-import dynamic from "next/dynamic";
 
 const CommentEditInput = dynamic(() =>
   import("./comment-edit-input").then((module) => module.CommentEditInput),
@@ -120,8 +120,18 @@ export function CommentItem({
   const [isModerating, setIsModerating] = useState(false);
   const [isReporting, setIsReporting] = useState(false);
 
+  const repliesLoadingRef = useRef(false);
+  const repliesRequestVersionRef = useRef(0);
+  const autoOpenAttemptRef = useRef<string | null>(null);
+
+  const replyContextKey = JSON.stringify([comment.id, currentUserId ?? null]);
+
+  const activeReplyContextRef = useRef<string | null>(replyContextKey);
+
+  activeReplyContextRef.current = replyContextKey;
+
   const isAdmin = currentUser?.role === "ADMIN";
-  const isAuthor = currentUser?.id === comment.author.id;
+  const isAuthor = currentUserId === comment.author.id;
 
   const replyCount = comment.replyCount;
   const username = comment.author.name ?? labels.guest;
@@ -130,7 +140,7 @@ export function CommentItem({
     highlightTargetComment && targetCommentId === comment.id;
 
   const isDeletedPredictionComment =
-    !!comment.prediction && isDeletedPredictionContent(comment.content);
+    Boolean(comment.prediction) && isDeletedPredictionContent(comment.content);
 
   const initialEditContent: JSONContent = isDeletedPredictionComment
     ? {
@@ -145,13 +155,51 @@ export function CommentItem({
     image: comment.author.image ?? null,
   };
 
+  // Invalidate requests when the viewer or comment changes.
+  useEffect(() => {
+    activeReplyContextRef.current = replyContextKey;
+
+    repliesRequestVersionRef.current += 1;
+    repliesLoadingRef.current = false;
+    autoOpenAttemptRef.current = null;
+
+    setShowReplies(false);
+    setReplies([]);
+    setRepliesLoaded(false);
+    setRepliesLoading(false);
+    setReplying(false);
+    setIsEditing(false);
+    setEditingPrediction(false);
+
+    return () => {
+      repliesRequestVersionRef.current += 1;
+      repliesLoadingRef.current = false;
+
+      if (activeReplyContextRef.current === replyContextKey) {
+        activeReplyContextRef.current = null;
+      }
+    };
+  }, [replyContextKey]);
+
   const loadReplies = useCallback(async () => {
-    if (repliesLoading) return;
+    if (repliesLoadingRef.current) return;
+
+    const requestVersion = ++repliesRequestVersionRef.current;
+
+    function isCurrentRequest() {
+      return (
+        activeReplyContextRef.current === replyContextKey &&
+        repliesRequestVersionRef.current === requestVersion
+      );
+    }
+
+    repliesLoadingRef.current = true;
+    setRepliesLoading(true);
 
     try {
-      setRepliesLoading(true);
-
       const result = await getCommentReplies(comment.id);
+
+      if (!isCurrentRequest()) return;
 
       setReplies(result);
       setRepliesLoaded(true);
@@ -161,19 +209,26 @@ export function CommentItem({
         replyCount: result.length,
       }));
     } catch (error) {
+      if (!isCurrentRequest()) return;
+
       toast.error(getErrorMessage(error, labels.action_failed));
     } finally {
-      setRepliesLoading(false);
+      if (isCurrentRequest()) {
+        repliesLoadingRef.current = false;
+        setRepliesLoading(false);
+      }
     }
-  }, [comment.id, repliesLoading, onUpdate, labels.action_failed]);
+  }, [comment.id, replyContextKey, onUpdate, labels.action_failed]);
 
-  const toggleReplies = async () => {
-    if (!showReplies && !repliesLoaded) {
-      await loadReplies();
+  function toggleReplies() {
+    const nextOpen = !showReplies;
+
+    setShowReplies(nextOpen);
+
+    if (nextOpen && !repliesLoaded) {
+      void loadReplies();
     }
-
-    setShowReplies((previous) => !previous);
-  };
+  }
 
   const threadEvents = {
     onMouseEnter: () => setThreadHovered(true),
@@ -181,20 +236,38 @@ export function CommentItem({
     onClick: toggleReplies,
   };
 
+  // Attempt automatic loading once per navigation target.
+  // A failed request can be retried manually by reopening replies.
   useEffect(() => {
-    if (!shouldOpenReplies) return;
+    if (!shouldOpenReplies) {
+      autoOpenAttemptRef.current = null;
+      return;
+    }
 
+    const targetKey = JSON.stringify([replyContextKey, targetReplyId]);
+
+    if (autoOpenAttemptRef.current === targetKey) {
+      return;
+    }
+
+    autoOpenAttemptRef.current = targetKey;
     setShowReplies(true);
 
     if (!repliesLoaded) {
       void loadReplies();
     }
-  }, [shouldOpenReplies, repliesLoaded, loadReplies]);
+  }, [
+    shouldOpenReplies,
+    replyContextKey,
+    targetReplyId,
+    repliesLoaded,
+    loadReplies,
+  ]);
 
   useEffect(() => {
     if (targetCommentId !== comment.id) return;
 
-    const frame = requestAnimationFrame(() => {
+    const frame = window.requestAnimationFrame(() => {
       const element = commentRef.current;
 
       if (!element) return;
@@ -202,7 +275,7 @@ export function CommentItem({
       let scrollContainer = element.parentElement;
 
       while (scrollContainer) {
-        const { overflowY } = getComputedStyle(scrollContainer);
+        const { overflowY } = window.getComputedStyle(scrollContainer);
 
         if (
           /^(auto|scroll|overlay)$/.test(overflowY) &&
@@ -225,7 +298,7 @@ export function CommentItem({
       });
     });
 
-    return () => cancelAnimationFrame(frame);
+    return () => window.cancelAnimationFrame(frame);
   }, [targetCommentId, comment.id]);
 
   useEffect(() => {
@@ -233,32 +306,26 @@ export function CommentItem({
     setLikeCount(comment.likeCount);
   }, [comment.id, comment.likedByMe, comment.likeCount]);
 
-  // Leave edit mode if the viewer changes.
-  useEffect(() => {
-    setIsEditing(false);
-    setEditingPrediction(false);
-  }, [comment.id, currentUserId]);
-
-  const handleEdit = () => {
+  function handleEdit() {
     if (!isAuthor || comment.withdrawnAt || comment.moderatedAt) {
       return;
     }
 
     setEditingPrediction(Boolean(comment.prediction));
     setIsEditing(true);
-  };
+  }
 
-  const handleCancelEdit = () => {
+  function handleCancelEdit() {
     setIsEditing(false);
     setEditingPrediction(false);
-  };
+  }
 
-  const handleDelete = async () => {
+  async function handleDelete() {
     if (isDeleting) return;
 
-    try {
-      setIsDeleting(true);
+    setIsDeleting(true);
 
+    try {
       const result = await deleteComment(comment.id);
 
       if (
@@ -293,14 +360,14 @@ export function CommentItem({
     } finally {
       setIsDeleting(false);
     }
-  };
+  }
 
-  const handleHideComment = async () => {
+  async function handleHideComment() {
     if (isModerating) return;
 
-    try {
-      setIsModerating(true);
+    setIsModerating(true);
 
+    try {
       const result = await hideComment(comment.id);
 
       onUpdate(comment.id, (current) => ({
@@ -314,23 +381,14 @@ export function CommentItem({
     } finally {
       setIsModerating(false);
     }
-  };
+  }
 
-  const handleReplyCreated = (newReply: MarketReply) => {
-    setReplies((current) => [...current, newReply]);
-
-    onUpdate(comment.id, (current) => ({
-      ...current,
-      replyCount: current.replyCount + 1,
-    }));
-  };
-
-  const handleRestoreComment = async () => {
+  async function handleRestoreComment() {
     if (isModerating) return;
 
-    try {
-      setIsModerating(true);
+    setIsModerating(true);
 
+    try {
       await restoreComment(comment.id);
 
       onUpdate(comment.id, (current) => ({
@@ -344,15 +402,29 @@ export function CommentItem({
     } finally {
       setIsModerating(false);
     }
-  };
+  }
 
-  const handleCommentLike = () => {
+  function handleReplyCreated(newReply: MarketReply) {
+    setReplies((current) =>
+      current.some((reply) => reply.id === newReply.id)
+        ? current
+        : [...current, newReply],
+    );
+
+    onUpdate(comment.id, (current) => ({
+      ...current,
+      replyCount: current.replyCount + 1,
+    }));
+  }
+
+  function handleCommentLike() {
     if (isLikePending) return;
 
     const previousLiked = likedByMe;
     const previousCount = likeCount;
 
     setLikedByMe(!previousLiked);
+
     setLikeCount((count) =>
       previousLiked ? Math.max(0, count - 1) : count + 1,
     );
@@ -378,9 +450,9 @@ export function CommentItem({
         toast.error(getErrorMessage(error, labels.action_failed));
       }
     });
-  };
+  }
 
-  const handleReportComment = async () => {
+  async function handleReportComment() {
     if (isReporting) return;
 
     if (!currentUser) {
@@ -388,9 +460,9 @@ export function CommentItem({
       return;
     }
 
-    try {
-      setIsReporting(true);
+    setIsReporting(true);
 
+    try {
       const result = await reportComment(comment.id);
 
       if (result.success) {
@@ -401,7 +473,7 @@ export function CommentItem({
     } finally {
       setIsReporting(false);
     }
-  };
+  }
 
   const replyCountLabel = labels.reply_count.replace(
     "{count}",
@@ -526,7 +598,7 @@ export function CommentItem({
                       focus-visible:ring-zinc-400
                     "
                   >
-                    <span className="block truncate text-[14px] dark:text-muted-foreground font-semibold hover:underline">
+                    <span className="block truncate text-[14px] font-semibold hover:underline dark:text-muted-foreground">
                       {username}
                     </span>
                   </button>
@@ -579,7 +651,7 @@ export function CommentItem({
                   </div>
                 )}
 
-                <span className="min-w-0 shrink truncate text-[13px]  text-zinc-600  dark:text-zinc-400">
+                <span className="min-w-0 shrink truncate text-[13px] text-zinc-600 dark:text-zinc-400">
                   {formatTimeAgo(comment.createdAt, language)}
                 </span>
 
@@ -683,6 +755,10 @@ export function CommentItem({
                     setReplying(false);
                     setShowReplies(true);
                     handleReplyCreated(newReply);
+
+                    if (!repliesLoaded) {
+                      void loadReplies();
+                    }
                   }}
                 />
               )}
@@ -762,6 +838,21 @@ export function CommentItem({
               <div className="py-3 text-sm text-zinc-400">
                 {labels.loading_replies}
               </div>
+            )}
+
+            {showReplies && !repliesLoading && !repliesLoaded && (
+              <button
+                type="button"
+                onClick={() => void loadReplies()}
+                className="
+                    mt-3 cursor-pointer text-sm text-zinc-500
+                    underline underline-offset-4
+                    hover:text-zinc-900
+                    dark:hover:text-zinc-200
+                  "
+              >
+                {labels.show_replies}
+              </button>
             )}
 
             {showReplies && !repliesLoading && replies.length > 0 && (
@@ -900,6 +991,7 @@ function CommentTextContent({
       )}
 
       {images.map((image, index) => (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           key={`${image.src}-${index}`}
           src={image.src}

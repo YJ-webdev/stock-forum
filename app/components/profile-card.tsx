@@ -180,19 +180,21 @@ export function UserProfileTrigger({
           side="bottom"
           sideOffset={8}
           className="
-            w-80 max-w-[calc(100vw-2rem)]
-            overflow-hidden rounded-xl p-0
-          "
+    w-80 max-w-[calc(100vw-2rem)]
+    overflow-hidden rounded-xl p-0
+  "
         >
-          <ProfileCard
-            userId={target.id}
-            name={target.name}
-            image={target.image}
-            currentUserId={currentUserId}
-            language={language}
-            isAdmin={isAdmin}
-            onBanRequest={handleBanRequest}
-          />
+          {profileOpen && (
+            <ProfileCard
+              userId={target.id}
+              name={target.name}
+              image={target.image}
+              currentUserId={currentUserId}
+              language={language}
+              isAdmin={isAdmin}
+              onBanRequest={handleBanRequest}
+            />
+          )}
         </PopoverContent>
       </Popover>
 
