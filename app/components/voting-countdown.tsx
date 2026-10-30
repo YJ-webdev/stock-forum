@@ -23,47 +23,59 @@ export function VotingCountdown({
   onExpire,
   userLanguage,
 }: VotingCountdownProps) {
+  const shouldShow =
+    targetMs !== null &&
+    Number.isFinite(targetMs) &&
+    type === "VOTING_CLOSES" &&
+    showCountdown &&
+    !isMarketOpen;
+
+  if (!shouldShow || targetMs === null) return null;
+
+  return (
+    <ClosingCountdown
+      key={targetMs}
+      targetMs={targetMs}
+      onExpire={onExpire}
+      userLanguage={userLanguage}
+    />
+  );
+}
+
+interface ClosingCountdownProps {
+  targetMs: number;
+  onExpire?: () => void;
+  userLanguage?: string | null;
+}
+
+function ClosingCountdown({
+  targetMs,
+  onExpire,
+  userLanguage,
+}: ClosingCountdownProps) {
   const language = resolveLanguage(userLanguage);
   const labels = VOTING_COUNTDOWN_LABELS[language];
 
   const { hours, minutes, seconds } = useCountdown(targetMs, onExpire);
 
-  const countdown = `${hours}:${minutes}:${seconds}`;
-
   const isExpired =
     Number(hours) === 0 && Number(minutes) === 0 && Number(seconds) === 0;
 
-  const shouldShowCountdown =
-    targetMs !== null &&
-    type !== null &&
-    (type === "VOTING_OPENS" || (type === "VOTING_CLOSES" && showCountdown));
+  const countdown = `${hours}:${minutes}:${seconds}`;
 
-  if (!shouldShowCountdown) {
-    return (
-      <div className="mr-2 text-[12px] text-zinc-500 dark:text-zinc-400">
-        {isMarketOpen ? labels.closed : ""}
-      </div>
-    );
-  }
-
-  const countdownLabel = (
-    type === "VOTING_OPENS" ? labels.opens_in : labels.closes_in
-  ).replace("{countdown}", countdown);
+  const label = isExpired
+    ? labels.closed
+    : labels.closes_in.replace("{countdown}", countdown);
 
   return (
     <div
       className="
         hidden shrink-0 items-center gap-1
-        whitespace-nowrap text-[12px] text-zinc-800 dark:text-zinc-300 sm:flex
+        whitespace-nowrap text-[12px]
+        text-zinc-800 dark:text-zinc-300 sm:flex
       "
     >
-      <span className="tabular-nums">
-        {isExpired
-          ? type === "VOTING_OPENS"
-            ? labels.now_open
-            : labels.closed
-          : countdownLabel}
-      </span>
+      <span className="tabular-nums">{label}</span>
     </div>
   );
 }
