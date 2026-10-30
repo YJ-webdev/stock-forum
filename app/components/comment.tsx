@@ -8,19 +8,17 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { getMarketComments, type MarketPageComments } from "@/app/actions/post";
-
 import type {
   getMarketVote,
   updateMarketVote,
 } from "@/app/actions/market-vote";
 
 import { useCurrentUser } from "@/app/context/user-context";
-
+import type { CommentDraft } from "@/app/hooks/use-comment-draft";
 import type { PredictionDirection } from "@/generated/prisma/enums";
 
 import { resolveLanguage } from "@/lib/data/languages";
@@ -66,6 +64,7 @@ export interface MarketReply {
   parentId: string | null;
   content: string;
   gifUrl: string | null;
+
   createdAt: Date;
   updatedAt: Date;
   editedAt: Date | null;
@@ -119,6 +118,7 @@ interface MarketCommentsProps {
     countdownType: "VOTING_OPENS" | "VOTING_CLOSES" | null;
     showCountdown: boolean;
   } | null;
+
   onPredictionEdited?: (
     prediction: NonNullable<MarketPageComments[number]["prediction"]>,
   ) => void;
@@ -138,11 +138,17 @@ export function MarketComments({
   const loadMoreLabel = LOAD_MORE_LABELS[language];
 
   const searchParams = useSearchParams();
+
   const targetCommentId = searchParams.get("comment");
   const targetReplyId = searchParams.get("reply");
   const highlightTargetComment = Boolean(targetCommentId);
 
   const viewerId = user?.id ?? null;
+
+  const [draft, setDraft] = useState<CommentDraft>({
+    text: "",
+    gif: null,
+  });
 
   const [direction, setDirection] = useState<PredictionDirection | null>(null);
 
@@ -154,17 +160,18 @@ export function MarketComments({
   const [editBetAmount, setEditBetAmount] = useState(0);
   const [isSavingVote, setIsSavingVote] = useState(false);
 
-  const savingVoteRef = useRef(false);
-  const mountedRef = useRef(false);
-
   const [comments, setComments] = useState<MarketPageComments>([]);
+
   const [nextCursor, setNextCursor] = useState<CommentCursor | null>(null);
 
   const [totalCount, setTotalCount] = useState(0);
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const [commentsRefreshVersion, setCommentsRefreshVersion] = useState(0);
 
+  const savingVoteRef = useRef(false);
+  const mountedRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const requestVersionRef = useRef(0);
   const knownCommentIdsRef = useRef(new Set<string>());
@@ -186,6 +193,12 @@ export function MarketComments({
 
   activeVoteLookupKeyRef.current = prediction?.voteLookupKey ?? null;
 
+  // Session changes preserve the draft.
+  // Changing the account or market starts a new draft.
+  useEffect(() => {
+    setDraft({ text: "", gif: null });
+  }, [assetSymbol, viewerId]);
+
   useEffect(() => {
     mountedRef.current = true;
 
@@ -204,8 +217,6 @@ export function MarketComments({
     };
   }, [commentContextKey]);
 
-  // Refreshing after a vote edit reloads the first page so
-  // prediction badges come from the latest server data.
   useEffect(() => {
     const requestVersion = ++requestVersionRef.current;
     let cancelled = false;
@@ -220,8 +231,9 @@ export function MarketComments({
     setCommentsLoading(true);
     setIsLoadingMore(false);
 
-    const isCurrentRequest = () =>
-      !cancelled && requestVersionRef.current === requestVersion;
+    function isCurrentRequest() {
+      return !cancelled && requestVersionRef.current === requestVersion;
+    }
 
     async function loadInitialComments() {
       try {
@@ -256,6 +268,7 @@ export function MarketComments({
         if (!isCurrentRequest()) return;
 
         console.error("Failed to load comments:", error);
+
         toast.error(getErrorMessage(error, errorFallbackRef.current));
       } finally {
         if (isCurrentRequest()) {
@@ -292,7 +305,9 @@ export function MarketComments({
         currentSessionStartMs,
       );
 
-      if (requestVersionRef.current !== requestVersion) return;
+      if (requestVersionRef.current !== requestVersion) {
+        return;
+      }
 
       for (const comment of result.comments) {
         knownCommentIdsRef.current.add(comment.id);
@@ -309,9 +324,12 @@ export function MarketComments({
 
       setNextCursor(result.nextCursor);
     } catch (error) {
-      if (requestVersionRef.current !== requestVersion) return;
+      if (requestVersionRef.current !== requestVersion) {
+        return;
+      }
 
       console.error("Failed to load more comments:", error);
+
       toast.error(getErrorMessage(error, errorFallbackRef.current));
     } finally {
       if (requestVersionRef.current === requestVersion) {
@@ -338,7 +356,9 @@ export function MarketComments({
   );
 
   const removeComment = useCallback((commentId: string) => {
-    if (!knownCommentIdsRef.current.delete(commentId)) return;
+    if (!knownCommentIdsRef.current.delete(commentId)) {
+      return;
+    }
 
     setComments((current) =>
       current.filter((comment) => comment.id !== commentId),
@@ -348,10 +368,14 @@ export function MarketComments({
   }, []);
 
   const addComment = useCallback((comment: MarketPageComments[number]) => {
-    if (knownCommentIdsRef.current.has(comment.id)) return;
+    if (knownCommentIdsRef.current.has(comment.id)) {
+      return;
+    }
 
     knownCommentIdsRef.current.add(comment.id);
+
     setComments((current) => [comment, ...current]);
+
     setTotalCount((current) => current + 1);
   }, []);
 
@@ -361,6 +385,7 @@ export function MarketComments({
         return;
       }
 
+      setDraft({ text: "", gif: null });
       addComment(comment);
     },
     [commentContextKey, addComment],
@@ -368,8 +393,8 @@ export function MarketComments({
 
   const hasAlreadyVoted = prediction?.selectedVote != null;
 
-  // Members edit predictions through their linked comment.
-  // Guests keep the standalone vote editor.
+  // Members edit through the linked prediction comment.
+  // Guests use the standalone vote editor.
   const canEditVote = Boolean(
     !user?.id &&
     prediction &&
@@ -383,7 +408,6 @@ export function MarketComments({
     prediction && canEditVote && editingVoteKey === prediction.voteLookupKey,
   );
 
-  // Discard edit mode when the voter/session changes or voting closes.
   useEffect(() => {
     setEditingVoteKey(null);
     setEditDirection(null);
@@ -413,8 +437,7 @@ export function MarketComments({
     prediction.canVote &&
     !prediction.isMarketOpen;
 
-  // Initial prediction submission only.
-  const submitVote = (comment: string, gif: GifResult | null) => {
+  function submitVote(comment: string, gif: GifResult | null) {
     if (!prediction || prediction.isPending || savingVoteRef.current) {
       return;
     }
@@ -435,6 +458,7 @@ export function MarketComments({
     }
 
     const isMember = Boolean(user?.id);
+
     const submittedAmount = isMember ? prediction.betAmount : 0;
 
     if (
@@ -462,32 +486,17 @@ export function MarketComments({
       canWriteComment ? gif : null,
       isMember ? onCommentCreated : undefined,
     );
-  };
+  }
 
-  const startEditingVote = () => {
-    if (
-      !prediction ||
-      !canEditVote ||
-      prediction.isPending ||
-      savingVoteRef.current
-    ) {
-      return;
-    }
-
-    setEditDirection(prediction.selectedVote);
-    setEditBetAmount(user?.id ? prediction.selectedPointsBet : 0);
-    setEditingVoteKey(prediction.voteLookupKey);
-  };
-
-  const cancelEditingVote = () => {
+  function cancelEditingVote() {
     if (savingVoteRef.current) return;
 
     setEditingVoteKey(null);
     setEditDirection(null);
     setEditBetAmount(0);
-  };
+  }
 
-  const saveEditedVote = async () => {
+  async function saveEditedVote() {
     if (
       !prediction ||
       !isEditingVote ||
@@ -545,14 +554,10 @@ export function MarketComments({
       setEditDirection(null);
       setEditBetAmount(0);
 
-      // Invalidate in-flight comment requests immediately.
       requestVersionRef.current += 1;
 
-      // Reload server data to update linked prediction badges.
       setCommentsRefreshVersion((value) => value + 1);
     } catch (error) {
-      // The parent handles normal action errors and returns null.
-      // This catches unexpected failures.
       console.error("Failed to update vote:", error);
 
       if (
@@ -569,17 +574,16 @@ export function MarketComments({
         setIsSavingVote(false);
       }
     }
-  };
+  }
 
   return (
     <section className="w-full">
-      <div className="mb-3 flex items-center gap-1 text-[13px] text-zinc-600  dark:text-zinc-400">
-        <h2 className="">{labels.heading}</h2>
+      <div className="mb-3 flex items-center gap-1 text-[13px] text-zinc-600 dark:text-zinc-400">
+        <h2>{labels.heading}</h2>
 
-        <span className="">{totalCount.toLocaleString(language)}</span>
+        <span>{totalCount.toLocaleString(language)}</span>
       </div>
 
-      {/* Edit an existing prediction */}
       {prediction && isEditingVote ? (
         <PredictionCommentInput
           key={`edit:${prediction.voteLookupKey}`}
@@ -607,13 +611,15 @@ export function MarketComments({
       ) : prediction && showPredictionInput ? (
         <PredictionCommentInput
           key={`create:${commentContextKey}:${prediction.voteLookupKey}`}
+          draft={draft}
+          onDraftChange={setDraft}
           assetSymbol={assetSymbol}
           onCommentCreated={onCommentCreated}
           direction={direction}
           setDirection={setDirection}
           betAmount={user?.id ? prediction.betAmount : 0}
-          userPoints={user?.id ? prediction.userPoints : 0}
           setBetAmount={prediction.setBetAmount}
+          userPoints={user?.id ? prediction.userPoints : 0}
           maxBet={maxBet}
           currentUser={user}
           isMarketOpen={prediction.isMarketOpen}
@@ -623,15 +629,17 @@ export function MarketComments({
             prediction.isPending ||
             isSavingVote
           }
+          isPending={prediction.isPending || isSavingVote}
           submitVote={submitVote}
           targetMs={prediction.targetMs}
           countdownType={prediction.countdownType}
           showCountdown={prediction.showCountdown}
-          isPending={prediction.isPending || isSavingVote}
         />
       ) : (
         <CommentOnlyInput
           key={commentContextKey}
+          draft={draft}
+          onDraftChange={setDraft}
           assetSymbol={assetSymbol}
           targetMs={prediction?.targetMs ?? null}
           countdownType={prediction?.countdownType ?? null}
@@ -686,7 +694,6 @@ export function MarketComments({
                   }
                   highlightTargetComment={highlightTargetComment}
                   onPredictionEdited={(updatedPrediction) => {
-                    // Ignore a save callback from a previous viewer or market session.
                     if (activeCommentContextRef.current !== commentContextKey) {
                       return;
                     }
@@ -706,8 +713,19 @@ export function MarketComments({
             type="button"
             disabled={isLoadingMore}
             aria-busy={isLoadingMore}
-            onClick={() => void loadMoreComments()}
-            className="cursor-pointer rounded-md px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            onClick={() => {
+              void loadMoreComments();
+            }}
+            className="
+              cursor-pointer rounded-md px-4 py-2
+              text-sm text-zinc-600
+              hover:bg-zinc-100
+              focus-visible:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-ring
+              disabled:cursor-wait disabled:opacity-50
+              dark:text-zinc-400 dark:hover:bg-zinc-800
+            "
           >
             {isLoadingMore ? labels.loading_more : loadMoreLabel}
           </button>

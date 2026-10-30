@@ -10,11 +10,6 @@ import { useCurrentUser } from "@/app/context/user-context";
 import { usePointBalance } from "@/app/context/point-balance-context";
 
 import { resolveLanguage } from "@/lib/data/languages";
-import { getVotingWindow } from "@/lib/utils/get-voting-window";
-import { getErrorMessage } from "@/lib/utils/get-error-message";
-import { isDeletedPredictionContent } from "@/lib/utils/is-deleted-prediction-content";
-import { buildCommentContent } from "@/lib/utils/build-comment-content";
-
 import {
   COMMENT_LABELS,
   COMMENT_ACTION_LABELS,
@@ -22,11 +17,21 @@ import {
   PREDICTION_COMMENT_EDIT_LABELS,
 } from "@/lib/data/translations";
 
+import { getVotingWindow } from "@/lib/utils/get-voting-window";
+import { getErrorMessage } from "@/lib/utils/get-error-message";
+import { isDeletedPredictionContent } from "@/lib/utils/is-deleted-prediction-content";
+import { buildCommentContent } from "@/lib/utils/build-comment-content";
+
 import { PredictionCommentInput } from "./prediction-comment-input";
 import type { GifResult } from "./gif-picker";
 
+// -----------------------------------------------------------------------------
+// Types and constants
+// -----------------------------------------------------------------------------
+
 type VoteDirection = "BULL" | "BEAR";
 type EditResult = Awaited<ReturnType<typeof editComment>>;
+type VotingWindow = ReturnType<typeof getVotingWindow>;
 
 const POINT_STEP = 50;
 const MAX_PREDICTION_POINTS = 500;
@@ -48,6 +53,10 @@ interface PredictionCommentEditInputProps {
   onSaved: (result: EditResult) => void | Promise<void>;
   onSavingChange?: (saving: boolean) => void;
 }
+
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
 
 function getNodeText(node: JSONContent): string {
   if (node.type === "text") return node.text ?? "";
@@ -98,6 +107,21 @@ function getInitialContent(content: JSONContent): {
   };
 }
 
+function hasSameVotingState(previous: VotingWindow, next: VotingWindow) {
+  return (
+    previous.isMarketOpen === next.isMarketOpen &&
+    previous.canVote === next.canVote &&
+    previous.predictionFor?.getTime() === next.predictionFor?.getTime() &&
+    previous.targetMs === next.targetMs &&
+    previous.countdownType === next.countdownType &&
+    previous.showCountdown === next.showCountdown
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Prediction comment editor
+// -----------------------------------------------------------------------------
+
 export function PredictionCommentEditInput({
   commentId,
   initialContent,
@@ -116,6 +140,7 @@ export function PredictionCommentEditInput({
   const actionLabels = COMMENT_ACTION_LABELS[language];
   const editLabels = COMMENT_EDIT_LABELS[language];
 
+  // Mount with a new key when opening a different editing session.
   const [initial] = useState(() => getInitialContent(initialContent));
 
   const [direction, setDirection] = useState<VoteDirection | null>(
@@ -128,6 +153,10 @@ export function PredictionCommentEditInput({
   const submittingRef = useRef(false);
   const mountedRef = useRef(false);
 
+  // ---------------------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------------------
+
   useEffect(() => {
     mountedRef.current = true;
 
@@ -136,24 +165,38 @@ export function PredictionCommentEditInput({
     };
   }, []);
 
+  // Check every second, but publish only voting-state changes.
   useEffect(() => {
-    function updateTime() {
+    function updateVotingState() {
       if (document.visibilityState !== "visible") return;
 
-      setNow(Date.now());
+      const currentTime = Date.now();
+      const next = getVotingWindow(prediction.symbol, currentTime);
+
+      setNow((previousTime) => {
+        const previous = getVotingWindow(prediction.symbol, previousTime);
+
+        return hasSameVotingState(previous, next) ? previousTime : currentTime;
+      });
     }
 
-    const timer = window.setInterval(updateTime, 1000);
+    updateVotingState();
 
-    window.addEventListener("focus", updateTime);
-    document.addEventListener("visibilitychange", updateTime);
+    const timer = window.setInterval(updateVotingState, 1000);
+
+    window.addEventListener("focus", updateVotingState);
+    document.addEventListener("visibilitychange", updateVotingState);
 
     return () => {
       window.clearInterval(timer);
-      window.removeEventListener("focus", updateTime);
-      document.removeEventListener("visibilitychange", updateTime);
+      window.removeEventListener("focus", updateVotingState);
+      document.removeEventListener("visibilitychange", updateVotingState);
     };
-  }, []);
+  }, [prediction.symbol]);
+
+  // ---------------------------------------------------------------------------
+  // Voting window and points
+  // ---------------------------------------------------------------------------
 
   const sessionMs = new Date(prediction.sessionDate).getTime();
 
@@ -185,6 +228,10 @@ export function PredictionCommentEditInput({
     Math.floor(Math.min(MAX_PREDICTION_POINTS, availablePoints) / POINT_STEP) *
     POINT_STEP;
 
+  const hasClosingTarget = votingWindow.countdownType === "VOTING_CLOSES";
+
+  const showClosingCountdown = hasClosingTarget && votingWindow.showCountdown;
+
   // ---------------------------------------------------------------------------
   // Actions
   // ---------------------------------------------------------------------------
@@ -208,10 +255,12 @@ export function PredictionCommentEditInput({
       return;
     }
 
-    const canEditVoteNow = getEditWindow(Date.now()).editable;
+    // Always validate against the actual time when saving.
+    const currentTime = Date.now();
+    const canEditVoteNow = getEditWindow(currentTime).editable;
 
     if (!canEditVoteNow && !voteLocked) {
-      setNow(Date.now());
+      setNow(currentTime);
       toast.info(labels.closed_during_edit);
       return;
     }
@@ -326,9 +375,9 @@ export function PredictionCommentEditInput({
         buttonDisabled={!user}
         isPending={isPending}
         submitVote={handleSave}
-        targetMs={votingWindow.targetMs}
-        countdownType={votingWindow.countdownType}
-        showCountdown={votingWindow.showCountdown}
+        targetMs={hasClosingTarget ? votingWindow.targetMs : null}
+        countdownType={hasClosingTarget ? "VOTING_CLOSES" : null}
+        showCountdown={showClosingCountdown}
       />
     </div>
   );

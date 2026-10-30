@@ -1,32 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 import type { JSONContent } from "@tiptap/react";
-import { X } from "lucide-react";
 import { toast } from "sonner";
 
 import { createComment, type MarketPageComments } from "@/app/actions/post";
 import { useCurrentUser } from "@/app/context/user-context";
+import {
+  useCommentDraft,
+  type CommentDraftProps,
+} from "@/app/hooks/use-comment-draft";
 
 import { resolveLanguage } from "@/lib/data/languages";
 import {
   COMMENT_LABELS,
   SUBMIT_VALIDATION_LABELS,
 } from "@/lib/data/translations";
+import { buildCommentContent } from "@/lib/utils/build-comment-content";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 import { CommentTextarea } from "./comment-textarea";
 import { GifButton } from "./gif-button";
+import { GifPreview } from "./gif-preview";
 import { VotingCountdown } from "./voting-countdown";
 import type { GifResult } from "./gif-picker";
-import { GifPreview } from "./gif-preview";
-import { buildCommentContent } from "@/lib/utils/build-comment-content";
 
 type Comment = MarketPageComments[number];
 
-interface CommentOnlyInputProps {
+interface CommentOnlyInputProps extends CommentDraftProps {
   initialComment?: string;
 
   submitComment?: (input: {
@@ -51,6 +54,8 @@ interface CommentOnlyInputProps {
 }
 
 export function CommentOnlyInput({
+  draft,
+  onDraftChange,
   initialComment = "",
   submitComment = createComment,
   assetSymbol,
@@ -63,14 +68,20 @@ export function CommentOnlyInput({
 }: CommentOnlyInputProps) {
   const user = useCurrentUser();
 
-  const [comment, setComment] = useState(initialComment);
-  const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
+  const { comment, setComment, selectedGif, setSelectedGif } = useCommentDraft(
+    initialComment,
+    null,
+    draft,
+    onDraftChange,
+  );
+
   const [isPending, startTransition] = useTransition();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const submittingRef = useRef(false);
 
   const language = resolveLanguage(user?.language ?? currentUser?.language);
+
   const commentLabels = COMMENT_LABELS[language];
   const validationLabels = SUBMIT_VALIDATION_LABELS[language];
 
@@ -79,7 +90,8 @@ export function CommentOnlyInput({
   const isChatRestricted =
     user?.status === "BANNED" || user?.status === "MUTED";
 
-  const inputReadOnly = !isLoggedIn || isChatRestricted || isPending;
+  const inputReadOnly = !isLoggedIn || isPending || isChatRestricted;
+
   const hasContent = comment.trim().length > 0 || Boolean(selectedGif);
 
   const showClosingCountdown =
@@ -98,13 +110,7 @@ export function CommentOnlyInput({
 
     setComment("");
     setSelectedGif(null);
-  }, [isLoggedIn]);
-
-  function handleCommentChange(value: string) {
-    if (inputReadOnly || submittingRef.current) return;
-
-    setComment(value);
-  }
+  }, [isLoggedIn, setComment, setSelectedGif]);
 
   function handleGifSelect(gif: GifResult) {
     if (inputReadOnly || submittingRef.current) return;
@@ -201,7 +207,11 @@ export function CommentOnlyInput({
           <CommentTextarea
             textareaRef={textareaRef}
             value={comment}
-            onValueChange={handleCommentChange}
+            onValueChange={(value) => {
+              if (inputReadOnly || submittingRef.current) return;
+
+              setComment(value);
+            }}
             placeholder={inputLabel}
             isLoggedIn={isLoggedIn}
             isChatRestricted={isChatRestricted}
@@ -221,15 +231,17 @@ export function CommentOnlyInput({
           )}
 
           <div className="@container flex items-center justify-between gap-2 pb-2">
-            <GifButton
-              isLoggedIn={isLoggedIn}
-              isChatRestricted={isChatRestricted}
-              busy={isPending}
-              loginMessage={commentLabels.login_gif}
-              restrictedMessage={commentLabels.restricted}
-              isSubmitting={() => submittingRef.current}
-              onSelect={handleGifSelect}
-            />
+            <div className="flex shrink-0 items-center gap-1">
+              <GifButton
+                isLoggedIn={isLoggedIn}
+                isChatRestricted={isChatRestricted}
+                busy={isPending}
+                loginMessage={commentLabels.login_gif}
+                restrictedMessage={commentLabels.restricted}
+                isSubmitting={() => submittingRef.current}
+                onSelect={handleGifSelect}
+              />
+            </div>
 
             <div className="flex min-w-0 items-center justify-end gap-2">
               {showClosingCountdown && (
@@ -237,7 +249,7 @@ export function CommentOnlyInput({
                   <VotingCountdown
                     targetMs={targetMs}
                     type="VOTING_CLOSES"
-                    showCountdown={showCountdown}
+                    showCountdown={showClosingCountdown}
                     isMarketOpen={isMarketOpen}
                     userLanguage={language}
                   />
