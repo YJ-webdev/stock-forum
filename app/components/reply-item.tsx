@@ -275,6 +275,7 @@ export function ReplyItem({
             isAdmin={isAdmin}
             open={openProfile === "avatar"}
             onOpenChange={(open) => handleProfileOpenChange("avatar", open)}
+            onBanRequest={onBanRequest}
           >
             <button
               type="button"
@@ -339,6 +340,7 @@ export function ReplyItem({
               isAdmin={isAdmin}
               open={openProfile === "name"}
               onOpenChange={(open) => handleProfileOpenChange("name", open)}
+              onBanRequest={onBanRequest}
             >
               <button
                 type="button"

@@ -981,13 +981,22 @@ function CommentTextContent({
   return (
     <>
       {text && (
-        <ReplyTextContent
-          key={text}
-          content={text}
-          editedLabel={editedLabel}
-          readMoreLabel={readMoreLabel}
-          readLessLabel={readLessLabel}
-        />
+        <p
+          className="
+      m-0 min-w-0 whitespace-pre-wrap
+      text-[15px] leading-6
+      text-zinc-900 dark:text-zinc-200
+    "
+          style={{ overflowWrap: "anywhere" }}
+        >
+          {text}
+
+          {editedLabel && (
+            <span className="ml-1 text-[12px] text-zinc-400">
+              {editedLabel}
+            </span>
+          )}
+        </p>
       )}
 
       {images.map((image, index) => (

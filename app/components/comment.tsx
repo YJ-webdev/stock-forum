@@ -652,7 +652,7 @@ export function MarketComments({
 
       <div className="space-y-3">
         {commentsLoading ? (
-          <div className="pt-4 text-center text-sm text-zinc-400">
+          <div role="status" className="pt-4 text-center text-sm text-zinc-400">
             {labels.loading}
           </div>
         ) : comments.length === 0 ? (
@@ -679,7 +679,13 @@ export function MarketComments({
             return (
               <div key={comment.id} className="dark:bg-zinc-900">
                 {showSessionBoundary && (
-                  <div className="mb-4 border-t border-dashed border-zinc-200 dark:border-zinc-800" />
+                  <div
+                    aria-hidden="true"
+                    className="
+                mb-4 border-t border-dashed
+                border-zinc-200 dark:border-zinc-800
+              "
+                  />
                 )}
 
                 <CommentItem
