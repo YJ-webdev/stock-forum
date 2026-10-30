@@ -1193,7 +1193,7 @@ export default function MarketPageClient({
           </button>
         )}
 
-        {/* <MarketComments
+        <MarketComments
           key={selectedSymbol}
           assetSymbol={selectedSymbol}
           onPredictionEdited={handlePredictionEdited}
@@ -1221,8 +1221,7 @@ export default function MarketPageClient({
           currentSessionStartMs={
             canPredict ? votingWindow.currentSessionStartMs : null
           }
-        /> */}
-        <div aria-hidden="true" className="min-h-96" />
+        />
       </div>
     </div>
   );
