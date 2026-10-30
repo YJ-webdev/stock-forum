@@ -660,51 +660,50 @@ export function MarketComments({
             {labels.empty}
           </div>
         ) : (
-          // comments.map((comment, index) => {
-          //   const previousComment = comments[index - 1];
+          comments.map((comment, index) => {
+            const previousComment = comments[index - 1];
 
-          //   const isCurrentSession =
-          //     currentSessionStartMs !== null &&
-          //     new Date(comment.createdAt).getTime() >= currentSessionStartMs;
+            const isCurrentSession =
+              currentSessionStartMs !== null &&
+              new Date(comment.createdAt).getTime() >= currentSessionStartMs;
 
-          //   const previousIsCurrentSession =
-          //     currentSessionStartMs !== null &&
-          //     previousComment !== undefined &&
-          //     new Date(previousComment.createdAt).getTime() >=
-          //       currentSessionStartMs;
+            const previousIsCurrentSession =
+              currentSessionStartMs !== null &&
+              previousComment !== undefined &&
+              new Date(previousComment.createdAt).getTime() >=
+                currentSessionStartMs;
 
-          //   const showSessionBoundary =
-          //     index > 0 && previousIsCurrentSession && !isCurrentSession;
+            const showSessionBoundary =
+              index > 0 && previousIsCurrentSession && !isCurrentSession;
 
-          //   return (
-          //     <div key={comment.id} className="dark:bg-zinc-900">
-          //       {showSessionBoundary && (
-          //         <div className="mb-4 border-t border-dashed border-zinc-200 dark:border-zinc-800" />
-          //       )}
+            return (
+              <div key={comment.id} className="dark:bg-zinc-900">
+                {showSessionBoundary && (
+                  <div className="mb-4 border-t border-dashed border-zinc-200 dark:border-zinc-800" />
+                )}
 
-          //       <CommentItem
-          //         comment={comment}
-          //         currentUser={user}
-          //         onUpdate={updateComment}
-          //         onRemove={removeComment}
-          //         targetCommentId={targetCommentId}
-          //         targetReplyId={targetReplyId}
-          //         shouldOpenReplies={
-          //           Boolean(targetReplyId) && targetCommentId === comment.id
-          //         }
-          //         highlightTargetComment={highlightTargetComment}
-          //         onPredictionEdited={(updatedPrediction) => {
-          //           if (activeCommentContextRef.current !== commentContextKey) {
-          //             return;
-          //           }
+                <CommentItem
+                  comment={comment}
+                  currentUser={user}
+                  onUpdate={updateComment}
+                  onRemove={removeComment}
+                  targetCommentId={targetCommentId}
+                  targetReplyId={targetReplyId}
+                  shouldOpenReplies={
+                    Boolean(targetReplyId) && targetCommentId === comment.id
+                  }
+                  highlightTargetComment={highlightTargetComment}
+                  onPredictionEdited={(updatedPrediction) => {
+                    if (activeCommentContextRef.current !== commentContextKey) {
+                      return;
+                    }
 
-          //           onPredictionEdited?.(updatedPrediction);
-          //         }}
-          //       />
-          //     </div>
-          //   );
-          // })
-          <div aria-hidden="true" className="min-h-96" />
+                    onPredictionEdited?.(updatedPrediction);
+                  }}
+                />
+              </div>
+            );
+          })
         )}
       </div>
 

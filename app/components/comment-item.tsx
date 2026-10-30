@@ -558,7 +558,7 @@ export function CommentItem({
         )
       ) : (
         <div className="z-1 flex gap-3">
-          <UserProfileTrigger
+          {/* <UserProfileTrigger
             target={profileTarget}
             currentUserId={currentUserId}
             language={language}
@@ -577,12 +577,12 @@ export function CommentItem({
             >
               {avatar}
             </button>
-          </UserProfileTrigger>
+          </UserProfileTrigger> */}
 
           <div className="min-w-0 flex-1">
             <div className="group/comment relative min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-1.5">
-                <UserProfileTrigger
+                {/* <UserProfileTrigger
                   target={profileTarget}
                   currentUserId={currentUserId}
                   language={language}
@@ -602,7 +602,7 @@ export function CommentItem({
                       {username}
                     </span>
                   </button>
-                </UserProfileTrigger>
+                </UserProfileTrigger> */}
 
                 {marketname && marketSymbol && (
                   <Link
