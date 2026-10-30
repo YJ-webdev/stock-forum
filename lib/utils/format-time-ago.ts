@@ -1,47 +1,76 @@
-// lib/utils/format-time-ago.ts
+const MAX_CACHED_LOCALES = 32;
 
-export function formatTimeAgo(
-  date: Date | string,
-  language = "en",
-  justNow = "Just now",
-) {
-  const value = new Date(date);
-  const time = value.getTime();
+const relativeTimeFormatters = new Map<string, Intl.RelativeTimeFormat>();
+const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
 
-  if (!Number.isFinite(time)) {
-    return "";
-  }
+function getRelativeTimeFormatter(language: string) {
+  const cached = relativeTimeFormatters.get(language);
 
-  const diff = Math.max(0, Date.now() - time);
-
-  const minute = 60 * 1000;
-  const hour = 60 * minute;
-  const day = 24 * hour;
-
-  if (diff < minute) {
-    return justNow;
-  }
+  if (cached) return cached;
 
   const formatter = new Intl.RelativeTimeFormat(language, {
     numeric: "always",
     style: "short",
   });
 
-  if (diff < hour) {
-    return formatter.format(-Math.floor(diff / minute), "minute");
+  if (relativeTimeFormatters.size >= MAX_CACHED_LOCALES) {
+    relativeTimeFormatters.clear();
   }
 
-  if (diff < day) {
-    return formatter.format(-Math.floor(diff / hour), "hour");
-  }
+  relativeTimeFormatters.set(language, formatter);
 
-  if (diff < 7 * day) {
-    return formatter.format(-Math.floor(diff / day), "day");
-  }
+  return formatter;
+}
 
-  return new Intl.DateTimeFormat(language, {
+function getDateTimeFormatter(language: string) {
+  const cached = dateTimeFormatters.get(language);
+
+  if (cached) return cached;
+
+  const formatter = new Intl.DateTimeFormat(language, {
     year: "numeric",
     month: "short",
     day: "numeric",
-  }).format(value);
+  });
+
+  if (dateTimeFormatters.size >= MAX_CACHED_LOCALES) {
+    dateTimeFormatters.clear();
+  }
+
+  dateTimeFormatters.set(language, formatter);
+
+  return formatter;
+}
+
+export function formatTimeAgo(
+  value: Date | string | number,
+  language = "en",
+  justNowLabel = "Just now",
+): string {
+  const date = new Date(value);
+  const timestamp = date.getTime();
+
+  if (!Number.isFinite(timestamp)) return "";
+
+  const elapsed = Math.max(0, Date.now() - timestamp);
+
+  if (elapsed < 60_000) {
+    return justNowLabel;
+  }
+
+  if (elapsed >= 604_800_000) {
+    return getDateTimeFormatter(language).format(date);
+  }
+
+  const formatter = getRelativeTimeFormatter(language);
+
+  if (elapsed < 3_600_000) {
+    return formatter.format(-Math.floor(elapsed / 60_000), "minute");
+  }
+
+  if (elapsed < 86_400_000) {
+    return formatter.format(-Math.floor(elapsed / 3_600_000), "hour");
+  }
+
+  return formatter.format(-Math.floor(elapsed / 86_400_000), "day");
 }
