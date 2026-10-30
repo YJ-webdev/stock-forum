@@ -75,6 +75,7 @@ export const COMMENT_LABELS: Record<
     failed: string;
     success: string;
     posting: string;
+    restricted: string;
   }
 > = {
   en: {
@@ -85,6 +86,7 @@ export const COMMENT_LABELS: Record<
     failed: "Failed to add comment.",
     success: "Comment added.",
     posting: "Posting...",
+    restricted: "Your chat access is restricted. You cannot write comments.",
   },
   ko: {
     comment: "완료",
@@ -94,6 +96,7 @@ export const COMMENT_LABELS: Record<
     failed: "코멘트를 등록하지 못했습니다.",
     success: "코멘트가 등록되었습니다.",
     posting: "등록 중...",
+    restricted: "채팅 이용이 제한되어 댓글을 작성할 수 없습니다.",
   },
   ja: {
     comment: "投稿",
@@ -103,6 +106,8 @@ export const COMMENT_LABELS: Record<
     failed: "コメントを投稿できませんでした。",
     success: "コメントを投稿しました。",
     posting: "投稿中...",
+    restricted:
+      "チャットの利用が制限されているため、コメントを投稿できません。",
   },
   zh: {
     comment: "发表",
@@ -112,6 +117,7 @@ export const COMMENT_LABELS: Record<
     failed: "评论发表失败。",
     success: "评论已发表。",
     posting: "发表中...",
+    restricted: "聊天权限受限，无法发表评论。",
   },
   de: {
     comment: "Kommentieren",
@@ -121,6 +127,8 @@ export const COMMENT_LABELS: Record<
     failed: "Der Kommentar konnte nicht veröffentlicht werden.",
     success: "Kommentar veröffentlicht.",
     posting: "Veröffentlichen...",
+    restricted:
+      "Dein Chat-Zugang ist eingeschränkt. Du kannst keine Kommentare schreiben.",
   },
   fr: {
     comment: "Publier",
@@ -130,6 +138,8 @@ export const COMMENT_LABELS: Record<
     failed: "Impossible de publier le commentaire.",
     success: "Commentaire publié.",
     posting: "Publication...",
+    restricted:
+      "Votre accès au chat est restreint. Vous ne pouvez pas commenter.",
   },
   es: {
     comment: "Publicar",
@@ -139,6 +149,8 @@ export const COMMENT_LABELS: Record<
     failed: "No se pudo publicar el comentario.",
     success: "Comentario publicado.",
     posting: "Publicando...",
+    restricted:
+      "Tu acceso al chat está restringido. No puedes escribir comentarios.",
   },
   pt: {
     comment: "Publicar",
@@ -148,6 +160,7 @@ export const COMMENT_LABELS: Record<
     failed: "Não foi possível publicar o comentário.",
     success: "Comentário publicado.",
     posting: "Publicando...",
+    restricted: "Seu acesso ao chat está restrito. Você não pode comentar.",
   },
   it: {
     comment: "Pubblica",
@@ -157,6 +170,8 @@ export const COMMENT_LABELS: Record<
     failed: "Impossibile pubblicare il commento.",
     success: "Commento pubblicato.",
     posting: "Pubblicazione...",
+    restricted:
+      "Il tuo accesso alla chat è limitato. Non puoi scrivere commenti.",
   },
   ru: {
     comment: "Отправить",
@@ -166,6 +181,7 @@ export const COMMENT_LABELS: Record<
     failed: "Не удалось опубликовать комментарий.",
     success: "Комментарий опубликован.",
     posting: "Опубликование...",
+    restricted: "Ваш доступ к чату ограничен. Вы не можете писать комментарии.",
   },
   ar: {
     comment: "نشر",
@@ -175,6 +191,7 @@ export const COMMENT_LABELS: Record<
     failed: "تعذّر نشر التعليق.",
     success: "تم نشر التعليق.",
     posting: "نشر...",
+    restricted: "وصولك إلى الدردشة مقيّد. لا يمكنك كتابة تعليقات.",
   },
   hi: {
     comment: "पोस्ट करें",
@@ -184,6 +201,7 @@ export const COMMENT_LABELS: Record<
     failed: "कमेंट पोस्ट नहीं हो सका।",
     success: "कमेंट पोस्ट हो गया।",
     posting: "पोस्ट हो रहा है...",
+    restricted: "चैट का उपयोग प्रतिबंधित है। आप टिप्पणी नहीं लिख सकते।",
   },
 };
 

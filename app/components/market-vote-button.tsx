@@ -6,7 +6,6 @@ import dynamic from "next/dynamic";
 import { Check, LockKeyhole, X } from "lucide-react";
 import { PiArrowFatLinesUpFill } from "react-icons/pi";
 import { toast } from "sonner";
-import type { JSONContent } from "@tiptap/react";
 
 import {
   getMarketVote,
@@ -19,6 +18,7 @@ import { createComment, getPredictionCommentForEdit } from "@/app/actions/post";
 import { useCurrentUser } from "@/app/context/user-context";
 import { usePointBalance } from "@/app/context/point-balance-context";
 
+import { buildCommentContent } from "@/lib/utils/build-comment-content";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { resolveLanguage } from "@/lib/data/languages";
 import {
@@ -123,38 +123,6 @@ function getSessionKey(
   sessionDate: ReturnType<typeof getVotingWindow>["predictionFor"],
 ) {
   return sessionDate ? new Date(sessionDate).toISOString() : null;
-}
-
-function buildCommentContent(
-  comment: string,
-  gif: GifResult | null,
-): JSONContent {
-  const text = comment.trim();
-  const nodes: JSONContent[] = [];
-
-  if (text) {
-    for (const line of text.split(/\r\n|\r|\n/)) {
-      nodes.push({
-        type: "paragraph",
-        content: line ? [{ type: "text", text: line }] : [],
-      });
-    }
-  }
-
-  if (gif) {
-    nodes.push({
-      type: "image",
-      attrs: {
-        src: gif.src,
-        alt: gif.title,
-      },
-    });
-  }
-
-  return {
-    type: "doc",
-    content: nodes,
-  };
 }
 
 export function MarketVoteButton({
@@ -437,11 +405,15 @@ export function MarketVoteButton({
         savedPointsBet = result.pointsBet;
         savedStatus = result.status;
       } else if (userId) {
+        const submittedComment = canWriteComment ? comment.trim() : "";
+        const submittedGif = canWriteComment ? gif : null;
+
+        const hasContent = Boolean(submittedComment || submittedGif);
+
         const result = await createComment({
-          content: buildCommentContent(
-            canWriteComment ? comment : "",
-            canWriteComment ? gif : null,
-          ),
+          content: hasContent
+            ? buildCommentContent(submittedComment, submittedGif)
+            : null,
           assetSymbols: [symbol],
           prediction: {
             direction: submittedDirection,

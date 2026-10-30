@@ -54,8 +54,7 @@ export function VotingCountdown({
     <div
       className="
         hidden shrink-0 items-center gap-1
-        whitespace-nowrap text-[12px] text-zinc-500
-        dark:text-zinc-400 sm:flex
+        whitespace-nowrap text-[12px] text-zinc-800 dark:text-zinc-300 sm:flex
       "
     >
       <span className="tabular-nums">

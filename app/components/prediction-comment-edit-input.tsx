@@ -13,7 +13,10 @@ import { resolveLanguage } from "@/lib/data/languages";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { getErrorMessage } from "@/lib/utils/get-error-message";
 import { isDeletedPredictionContent } from "@/lib/utils/is-deleted-prediction-content";
+import { buildCommentContent } from "@/lib/utils/build-comment-content";
+
 import {
+  COMMENT_LABELS,
   COMMENT_ACTION_LABELS,
   COMMENT_EDIT_LABELS,
   PREDICTION_COMMENT_EDIT_LABELS,
@@ -24,6 +27,9 @@ import type { GifResult } from "./gif-picker";
 
 type VoteDirection = "BULL" | "BEAR";
 type EditResult = Awaited<ReturnType<typeof editComment>>;
+
+const POINT_STEP = 50;
+const MAX_PREDICTION_POINTS = 500;
 
 interface PredictionCommentEditInputProps {
   commentId: string;
@@ -92,32 +98,6 @@ function getInitialContent(content: JSONContent): {
   };
 }
 
-function buildContent(text: string, gif: GifResult | null): JSONContent {
-  const nodes: JSONContent[] = [];
-  const trimmed = text.trim();
-
-  if (trimmed) {
-    for (const line of trimmed.split(/\r\n|\r|\n/)) {
-      nodes.push({
-        type: "paragraph",
-        content: line ? [{ type: "text", text: line }] : [],
-      });
-    }
-  }
-
-  if (gif) {
-    nodes.push({
-      type: "image",
-      attrs: {
-        src: gif.src,
-        alt: gif.title,
-      },
-    });
-  }
-
-  return { type: "doc", content: nodes };
-}
-
 export function PredictionCommentEditInput({
   commentId,
   initialContent,
@@ -132,6 +112,7 @@ export function PredictionCommentEditInput({
 
   const language = resolveLanguage(user?.language);
   const labels = PREDICTION_COMMENT_EDIT_LABELS[language];
+  const commentLabels = COMMENT_LABELS[language];
   const actionLabels = COMMENT_ACTION_LABELS[language];
   const editLabels = COMMENT_EDIT_LABELS[language];
 
@@ -157,51 +138,60 @@ export function PredictionCommentEditInput({
 
   useEffect(() => {
     function updateTime() {
-      setNow(Date.now());
-    }
+      if (document.visibilityState !== "visible") return;
 
-    function handleVisibilityChange() {
-      if (document.visibilityState === "visible") updateTime();
+      setNow(Date.now());
     }
 
     const timer = window.setInterval(updateTime, 1000);
 
     window.addEventListener("focus", updateTime);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("visibilitychange", updateTime);
 
     return () => {
       window.clearInterval(timer);
       window.removeEventListener("focus", updateTime);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("visibilitychange", updateTime);
     };
   }, []);
 
   const sessionMs = new Date(prediction.sessionDate).getTime();
 
   function getEditWindow(time: number) {
-    const window = getVotingWindow(prediction.symbol, time);
+    const votingWindow = getVotingWindow(prediction.symbol, time);
 
     const editable =
       prediction.status === "PENDING" &&
-      !window.isMarketOpen &&
-      window.canVote &&
+      !votingWindow.isMarketOpen &&
+      votingWindow.canVote &&
       Number.isFinite(sessionMs) &&
-      window.predictionFor?.getTime() === sessionMs;
+      votingWindow.predictionFor?.getTime() === sessionMs;
 
-    return { window, editable };
+    return {
+      votingWindow,
+      editable,
+    };
   }
 
-  const { window: votingWindow, editable } = getEditWindow(now);
+  const { votingWindow, editable } = getEditWindow(now);
   const voteLocked = !editable;
 
   const availablePoints = Math.max(
     0,
     points + (editable ? prediction.pointsBet : 0),
   );
-  const maxBet = Math.floor(Math.min(500, availablePoints) / 50) * 50;
+
+  const maxBet =
+    Math.floor(Math.min(MAX_PREDICTION_POINTS, availablePoints) / POINT_STEP) *
+    POINT_STEP;
+
+  // ---------------------------------------------------------------------------
+  // Actions
+  // ---------------------------------------------------------------------------
 
   function handleCancel() {
     if (isPending || submittingRef.current) return;
+
     onCancel();
   }
 
@@ -213,19 +203,24 @@ export function PredictionCommentEditInput({
       return;
     }
 
+    if (user.status === "MUTED" || user.status === "BANNED") {
+      toast.error(commentLabels.restricted);
+      return;
+    }
+
     const canEditVoteNow = getEditWindow(Date.now()).editable;
 
     if (!canEditVoteNow && !voteLocked) {
       setNow(Date.now());
-
-      toast.info(labels.closed_during_edit, {
-        id: "prediction-edit-closed",
-      });
+      toast.info(labels.closed_during_edit);
       return;
     }
 
     let submittedPrediction:
-      | { direction: VoteDirection; pointsBet: number }
+      | {
+          direction: VoteDirection;
+          pointsBet: number;
+        }
       | undefined;
 
     if (canEditVoteNow) {
@@ -238,7 +233,7 @@ export function PredictionCommentEditInput({
         !Number.isInteger(betAmount) ||
         betAmount < 0 ||
         betAmount > maxBet ||
-        betAmount % 50 !== 0
+        betAmount % POINT_STEP !== 0
       ) {
         toast.error(labels.invalid_points);
         return;
@@ -250,7 +245,7 @@ export function PredictionCommentEditInput({
       };
     }
 
-    const content = buildContent(text, gif);
+    const content = buildCommentContent(text, gif);
 
     submittingRef.current = true;
     onSavingChange?.(true);
@@ -270,6 +265,7 @@ export function PredictionCommentEditInput({
             setNow(Date.now());
             toast.error(getErrorMessage(error, editLabels.update_failed));
           }
+
           return;
         }
 
@@ -290,6 +286,7 @@ export function PredictionCommentEditInput({
             "Saved prediction comment, but local UI update failed:",
             error,
           );
+
           toast.info(labels.saved_refreshing);
         } finally {
           router.refresh();
@@ -300,6 +297,10 @@ export function PredictionCommentEditInput({
       }
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   return (
     <div className="min-w-0">

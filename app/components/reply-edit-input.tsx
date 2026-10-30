@@ -1,26 +1,24 @@
 "use client";
 
-import {
-  useLayoutEffect,
-  useRef,
-  useState,
-  useTransition,
-  type KeyboardEvent,
-} from "react";
-import { X } from "lucide-react";
+import { useRef, useState, useTransition, type KeyboardEvent } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import { editReply } from "@/app/actions/post";
 import { useCurrentUser } from "@/app/context/user-context";
 
 import { resolveLanguage } from "@/lib/data/languages";
 import {
+  COMMENT_LABELS,
   COMMENT_EDIT_LABELS,
   REPLY_EDIT_LABELS,
 } from "@/lib/data/translations";
 
-import { GifPicker, type GifResult } from "./gif-picker";
+import { Button } from "@/components/ui/button";
+
+import { CommentTextarea } from "./comment-textarea";
+import { GifButton } from "./gif-button";
+import type { GifResult } from "./gif-picker";
+import { GifPreview } from "./gif-preview";
 
 interface ReplyEditInputProps {
   replyId: string;
@@ -29,8 +27,6 @@ interface ReplyEditInputProps {
   onCancel: () => void;
   onSaved: () => void | Promise<void>;
 }
-
-const MAX_TEXTAREA_HEIGHT = 240;
 
 export function ReplyEditInput({
   replyId,
@@ -44,72 +40,51 @@ export function ReplyEditInput({
 
   const labels = REPLY_EDIT_LABELS[language];
   const editLabels = COMMENT_EDIT_LABELS[language];
+  const commentLabels = COMMENT_LABELS[language];
 
   const [content, setContent] = useState(initialContent);
   const [gifUrl, setGifUrl] = useState<string | null>(initialGifUrl);
-  const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const gifButtonRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
 
-  const isChatRestricted = user?.status === "BANNED";
-  const editorDisabled = isPending || isChatRestricted;
+  const isLoggedIn = Boolean(user);
+
+  const isChatRestricted =
+    user?.status === "MUTED" || user?.status === "BANNED";
+
+  const inputReadOnly = !isLoggedIn || isChatRestricted || isPending;
 
   const hasContent = content.trim().length > 0 || Boolean(gifUrl);
 
   const hasChanges =
     content.trim() !== initialContent.trim() || gifUrl !== initialGifUrl;
 
-  const saveDisabled = editorDisabled || !hasContent || !hasChanges;
+  // Allow guests and restricted users to receive access feedback.
+  const saveDisabled =
+    isPending ||
+    (isLoggedIn && !isChatRestricted && (!hasContent || !hasChanges));
 
-  useLayoutEffect(() => {
-    const textarea = textareaRef.current;
+  const inputLabel = isLoggedIn ? labels.placeholder : commentLabels.login;
 
-    if (!textarea) return;
+  function handleContentChange(value: string) {
+    if (inputReadOnly || submittingRef.current) return;
 
-    function resizeTextarea() {
-      if (!textarea) return;
+    setContent(value);
+  }
 
-      textarea.style.height = "auto";
+  function handleGifSelect(gif: GifResult) {
+    if (inputReadOnly || submittingRef.current) return;
 
-      const contentHeight = textarea.scrollHeight;
+    setGifUrl(gif.src);
+  }
 
-      textarea.style.height = `${Math.min(
-        contentHeight,
-        MAX_TEXTAREA_HEIGHT,
-      )}px`;
+  function handleGifRemove() {
+    if (inputReadOnly || submittingRef.current) return;
 
-      textarea.style.overflowY =
-        contentHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden";
-    }
-
-    resizeTextarea();
-
-    if (typeof ResizeObserver === "undefined") {
-      window.addEventListener("resize", resizeTextarea);
-
-      return () => {
-        window.removeEventListener("resize", resizeTextarea);
-      };
-    }
-
-    let previousWidth = textarea.getBoundingClientRect().width;
-
-    const observer = new ResizeObserver(() => {
-      const width = textarea.getBoundingClientRect().width;
-
-      if (width === previousWidth) return;
-
-      previousWidth = width;
-      resizeTextarea();
-    });
-
-    observer.observe(textarea);
-
-    return () => observer.disconnect();
-  }, [content]);
+    setGifUrl(null);
+  }
 
   function handleCancel() {
     if (isPending || submittingRef.current) return;
@@ -117,35 +92,51 @@ export function ReplyEditInput({
     onCancel();
   }
 
-  function handleGifSelect(gif: GifResult) {
-    if (editorDisabled || submittingRef.current) return;
-
-    setGifUrl(gif.src);
-    setGifPickerOpen(false);
-  }
-
   function handleSave() {
-    if (saveDisabled || submittingRef.current) return;
+    if (isPending || submittingRef.current) return;
+
+    if (!isLoggedIn) {
+      toast.error(commentLabels.login.replace(/\.{3}$/, ""));
+      return;
+    }
+
+    if (isChatRestricted) {
+      toast.error(commentLabels.restricted);
+      return;
+    }
+
+    if (!hasContent || !hasChanges) return;
+
+    const submittedContent = content.trim();
+    const submittedGifUrl = gifUrl;
 
     submittingRef.current = true;
-    setGifPickerOpen(false);
 
     startTransition(async () => {
       try {
-        await editReply({
-          replyId,
-          content: content.trim(),
-          gifUrl,
-        });
+        try {
+          await editReply({
+            replyId,
+            content: submittedContent,
+            gifUrl: submittedGifUrl,
+          });
+        } catch (error) {
+          toast.error(
+            error instanceof Error && error.message
+              ? error.message
+              : labels.update_failed,
+          );
 
-        await onSaved();
+          return;
+        }
+
         toast.success(labels.updated);
-      } catch (error) {
-        toast.error(
-          error instanceof Error && error.message
-            ? error.message
-            : labels.update_failed,
-        );
+
+        try {
+          await onSaved();
+        } catch (error) {
+          console.error("Failed to update saved reply in the UI:", error);
+        }
       } finally {
         submittingRef.current = false;
       }
@@ -153,15 +144,15 @@ export function ReplyEditInput({
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (isPending || event.nativeEvent.isComposing) return;
+    if (isPending || submittingRef.current || event.nativeEvent.isComposing) {
+      return;
+    }
 
     if (event.key === "Escape") {
       event.preventDefault();
       handleCancel();
       return;
     }
-
-    if (isChatRestricted) return;
 
     if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
@@ -170,104 +161,38 @@ export function ReplyEditInput({
   }
 
   return (
-    <div className="rounded-lg bg-zinc-100 px-3 pt-3 dark:bg-zinc-800">
-      {/* Text */}
-      <textarea
-        ref={textareaRef}
-        rows={1}
+    <div className="rounded-lg bg-zinc-100 px-2.5 dark:bg-zinc-800">
+      <CommentTextarea
+        textareaRef={textareaRef}
         value={content}
-        disabled={editorDisabled}
-        onChange={(event) => {
-          if (editorDisabled || submittingRef.current) return;
-
-          setContent(event.target.value);
-        }}
+        onValueChange={handleContentChange}
+        placeholder={inputLabel}
+        isLoggedIn={isLoggedIn}
+        isChatRestricted={isChatRestricted}
+        busy={isPending}
+        loginMessage={commentLabels.login}
+        restrictedMessage={commentLabels.restricted}
         onKeyDown={handleKeyDown}
-        placeholder={labels.placeholder}
-        aria-label={labels.placeholder}
-        style={{
-          marginBottom: 16,
-          overflowX: "hidden",
-        }}
-        className="
-          content-scrollbar block min-h-10 w-full resize-none
-          overflow-hidden bg-transparent
-          text-[15px] leading-6 outline-none
-          placeholder:text-zinc-400
-          disabled:cursor-not-allowed disabled:opacity-60
-        "
       />
 
-      {/* GIF preview */}
       {gifUrl && (
-        <div className="relative mb-2 w-fit max-w-full">
-          <img
-            src={gifUrl}
-            alt="GIF"
-            className="
-              block max-h-52 w-auto max-w-full
-              rounded-lg object-contain
-            "
-          />
-
-          <button
-            type="button"
-            disabled={editorDisabled}
-            onClick={() => {
-              if (editorDisabled || submittingRef.current) return;
-
-              setGifUrl(null);
-            }}
-            aria-label={editLabels.remove_gif}
-            title={editLabels.remove_gif}
-            className="
-              absolute top-2 right-2
-              flex size-7 cursor-pointer items-center justify-center
-              rounded-full bg-black/60 text-white
-              transition-colors hover:bg-black/75
-              disabled:cursor-not-allowed disabled:opacity-50
-            "
-          >
-            <X className="size-4" aria-hidden="true" />
-          </button>
-        </div>
+        <GifPreview
+          src={gifUrl}
+          disabled={inputReadOnly}
+          onRemove={handleGifRemove}
+        />
       )}
 
-      {/* Bottom actions */}
       <div className="flex items-center justify-between gap-2 pb-2">
-        <div className="relative">
-          <button
-            ref={gifButtonRef}
-            type="button"
-            disabled={editorDisabled}
-            onClick={() => {
-              if (editorDisabled || submittingRef.current) return;
-
-              setGifPickerOpen((previous) => !previous);
-            }}
-            aria-label={editLabels.select_gif}
-            title={editLabels.select_gif}
-            aria-expanded={!editorDisabled && gifPickerOpen}
-            className="
-              cursor-pointer rounded-md px-2 py-1
-              text-sm font-medium text-zinc-500
-              hover:bg-zinc-200
-              disabled:cursor-not-allowed disabled:opacity-50
-              dark:hover:bg-zinc-700
-            "
-          >
-            GIF
-          </button>
-
-          {!editorDisabled && (
-            <GifPicker
-              open={gifPickerOpen}
-              onOpenChange={setGifPickerOpen}
-              onSelect={handleGifSelect}
-              triggerRef={gifButtonRef}
-            />
-          )}
-        </div>
+        <GifButton
+          isLoggedIn={isLoggedIn}
+          isChatRestricted={isChatRestricted}
+          busy={isPending}
+          loginMessage={commentLabels.login_gif}
+          restrictedMessage={commentLabels.restricted}
+          isSubmitting={() => submittingRef.current}
+          onSelect={handleGifSelect}
+        />
 
         <div className="flex items-center gap-2">
           <Button
