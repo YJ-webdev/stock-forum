@@ -33,7 +33,7 @@ export function TrendSparkline({
 
   const gradientId = `sparkline-gradient-${rawId.replace(/:/g, "")}`;
 
-  const points = data.filter((point) => Number.isFinite(point.price)).slice();
+  const points = data.filter((point) => Number.isFinite(point.price));
 
   const hasValidTimestamps =
     points.length > 0 &&

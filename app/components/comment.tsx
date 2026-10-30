@@ -27,7 +27,6 @@ import { resolveLanguage } from "@/lib/data/languages";
 import {
   COMMENT_ACTION_LABELS,
   COMMENT_VIEW_LABELS,
-  VOTE_LABELS,
 } from "@/lib/data/translations";
 import { getErrorMessage } from "@/lib/utils/get-error-message";
 
@@ -35,6 +34,21 @@ import { CommentOnlyInput } from "./comment-only-input";
 import { PredictionCommentInput } from "./prediction-comment-input";
 import { CommentItem } from "./comment-item";
 import type { GifResult } from "./gif-picker";
+
+const LOAD_MORE_LABELS = {
+  en: "Load more",
+  ko: "더 보기",
+  ja: "もっと見る",
+  zh: "加载更多",
+  de: "Mehr laden",
+  fr: "Charger plus",
+  es: "Cargar más",
+  pt: "Carregar mais",
+  it: "Carica altro",
+  ru: "Загрузить ещё",
+  ar: "تحميل المزيد",
+  hi: "और लोड करें",
+} as const;
 
 type CommentCursor = NonNullable<
   Awaited<ReturnType<typeof getMarketComments>>["nextCursor"]
@@ -121,7 +135,7 @@ export function MarketComments({
   const language = resolveLanguage(user?.language);
   const labels = COMMENT_VIEW_LABELS[language];
   const actionLabels = COMMENT_ACTION_LABELS[language];
-  const voteLabels = VOTE_LABELS[language];
+  const loadMoreLabel = LOAD_MORE_LABELS[language];
 
   const searchParams = useSearchParams();
   const targetCommentId = searchParams.get("comment");
@@ -151,7 +165,6 @@ export function MarketComments({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [commentsRefreshVersion, setCommentsRefreshVersion] = useState(0);
 
-  const loadMoreRef = useRef<HTMLDivElement>(null);
   const loadingMoreRef = useRef(false);
   const requestVersionRef = useRef(0);
   const knownCommentIdsRef = useRef(new Set<string>());
@@ -352,30 +365,6 @@ export function MarketComments({
     },
     [commentContextKey, addComment],
   );
-
-  useEffect(() => {
-    const element = loadMoreRef.current;
-
-    if (!element || !nextCursor || commentsLoading || isLoadingMore) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          void loadMoreComments();
-        }
-      },
-      {
-        rootMargin: "600px 0px",
-        threshold: 0,
-      },
-    );
-
-    observer.observe(element);
-
-    return () => observer.disconnect();
-  }, [nextCursor, commentsLoading, isLoadingMore, loadMoreComments]);
 
   const hasAlreadyVoted = prediction?.selectedVote != null;
 
@@ -712,33 +701,16 @@ export function MarketComments({
       </div>
 
       {!commentsLoading && nextCursor && (
-        <div
-          ref={loadMoreRef}
-          className="flex h-20 items-center justify-center"
-        >
-          {isLoadingMore && (
-            <div
-              role="status"
-              className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400"
-            >
-              <span className="sr-only">{labels.loading_more}</span>
-
-              <span
-                aria-hidden="true"
-                className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.3s]"
-              />
-
-              <span
-                aria-hidden="true"
-                className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.15s]"
-              />
-
-              <span
-                aria-hidden="true"
-                className="size-1 animate-bounce rounded-full bg-current"
-              />
-            </div>
-          )}
+        <div className="flex h-20 items-center justify-center">
+          <button
+            type="button"
+            disabled={isLoadingMore}
+            aria-busy={isLoadingMore}
+            onClick={() => void loadMoreComments()}
+            className="cursor-pointer rounded-md px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          >
+            {isLoadingMore ? labels.loading_more : loadMoreLabel}
+          </button>
         </div>
       )}
     </section>

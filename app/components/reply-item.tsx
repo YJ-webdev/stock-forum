@@ -723,7 +723,7 @@ export function ReplyTextContent({
             className={`
               m-0 min-w-0 whitespace-pre-wrap
               text-[15px] leading-6
-              text-zinc-900 dark:text-zinc-300
+              text-zinc-900 dark:text-zinc-200
               ${expanded ? "" : "line-clamp-4"}
             `}
             style={{
