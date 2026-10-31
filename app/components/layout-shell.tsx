@@ -62,14 +62,6 @@ const LeaderBoardStream = dynamic(
 const MEDIUM_SCREEN_QUERY = "(min-width: 640px)";
 const LARGE_SCREEN_QUERY = "(min-width: 1024px)";
 
-const FOOTER_PATHS = new Set([
-  "/",
-  "/help",
-  "/feedback",
-  "/privacy-terms",
-  "/disclaimer",
-]);
-
 // -----------------------------------------------------------------------------
 // Loading states
 // -----------------------------------------------------------------------------
@@ -289,7 +281,6 @@ function ContentPanels({
 
 export default function LayoutShell({ user, children }: LayoutShellProps) {
   const pathname = usePathname();
-  const showFooter = FOOTER_PATHS.has(pathname);
 
   const [sidePanelWidth, setSidePanelWidth] = useState(30);
   const mainScrollRef = useRef<HTMLDivElement>(null);
@@ -522,10 +513,10 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
       bg-white dark:bg-zinc-900
     "
     >
-      <div className={`min-h-full ${showFooter ? "flex flex-col" : ""}`}>
+      <div className="flex min-h-full flex-col">
         {pathname !== "/" && <BreadCrumbs />}
         {children}
-        {showFooter && <Footer />}
+        <Footer />
       </div>
     </div>
   );

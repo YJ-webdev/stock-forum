@@ -2240,7 +2240,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: string;
     latest: string;
     most_liked: string;
-    loading: string;
     loading_discussions: string;
     load_failed: string;
     load_more_failed: string;
@@ -2248,7 +2247,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: string;
     share_market: string;
     share_view: string;
-    view_more: string;
   }
 > = {
   en: {
@@ -2257,7 +2255,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: "Sort discussions",
     latest: "Latest",
     most_liked: "Most liked",
-    loading: "Loading...",
     loading_discussions: "Loading discussions...",
     load_failed: "Could not load discussions.",
     load_more_failed: "Could not load more discussions.",
@@ -2265,7 +2262,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: "No discussions yet.",
     share_market: "Share your view on {market}.",
     share_view: "Share your view and start the conversation.",
-    view_more: "View more discussions",
   },
   ko: {
     all_markets: "전체 시장",
@@ -2273,7 +2269,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: "게시글 정렬",
     latest: "최신순",
     most_liked: "좋아요순",
-    loading: "불러오는 중...",
     loading_discussions: "게시글을 불러오는 중...",
     load_failed: "게시글을 불러오지 못했습니다.",
     load_more_failed: "추가 게시글을 불러오지 못했습니다.",
@@ -2281,7 +2276,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: "아직 게시글이 없습니다.",
     share_market: "{market}에 대한 의견을 남겨보세요.",
     share_view: "의견을 남기고 대화를 시작해보세요.",
-    view_more: "게시글 더 보기",
   },
   ja: {
     all_markets: "すべての市場",
@@ -2289,7 +2283,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: "投稿の並び替え",
     latest: "新着順",
     most_liked: "いいね順",
-    loading: "読み込み中...",
     loading_discussions: "投稿を読み込み中...",
     load_failed: "投稿を読み込めませんでした。",
     load_more_failed: "追加の投稿を読み込めませんでした。",
@@ -2297,7 +2290,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: "まだ投稿がありません。",
     share_market: "{market}について意見を投稿しましょう。",
     share_view: "意見を投稿して会話を始めましょう。",
-    view_more: "投稿をもっと見る",
   },
   zh: {
     all_markets: "全部市场",
@@ -2305,7 +2297,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: "帖子排序",
     latest: "最新",
     most_liked: "最多点赞",
-    loading: "加载中...",
     loading_discussions: "正在加载帖子...",
     load_failed: "无法加载帖子。",
     load_more_failed: "无法加载更多帖子。",
@@ -2313,7 +2304,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: "暂无帖子。",
     share_market: "分享你对{market}的看法。",
     share_view: "分享你的看法，开启讨论。",
-    view_more: "查看更多帖子",
   },
   de: {
     all_markets: "Alle Märkte",
@@ -2321,7 +2311,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: "Beiträge sortieren",
     latest: "Neueste",
     most_liked: "Meiste Likes",
-    loading: "Wird geladen...",
     loading_discussions: "Beiträge werden geladen...",
     load_failed: "Beiträge konnten nicht geladen werden.",
     load_more_failed: "Weitere Beiträge konnten nicht geladen werden.",
@@ -2329,7 +2318,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: "Noch keine Beiträge.",
     share_market: "Teile deine Meinung zu {market}.",
     share_view: "Teile deine Meinung und starte eine Diskussion.",
-    view_more: "Weitere Beiträge anzeigen",
   },
   fr: {
     all_markets: "Tous les marchés",
@@ -2337,7 +2325,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: "Trier les publications",
     latest: "Plus récentes",
     most_liked: "Plus aimées",
-    loading: "Chargement...",
     loading_discussions: "Chargement des publications...",
     load_failed: "Impossible de charger les publications.",
     load_more_failed: "Impossible de charger davantage de publications.",
@@ -2345,7 +2332,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: "Aucune publication pour le moment.",
     share_market: "Partagez votre avis sur {market}.",
     share_view: "Partagez votre avis et lancez la discussion.",
-    view_more: "Voir plus de publications",
   },
   es: {
     all_markets: "Todos los mercados",
@@ -2353,7 +2339,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: "Ordenar publicaciones",
     latest: "Más recientes",
     most_liked: "Más Me gusta",
-    loading: "Cargando...",
     loading_discussions: "Cargando publicaciones...",
     load_failed: "No se pudieron cargar las publicaciones.",
     load_more_failed: "No se pudieron cargar más publicaciones.",
@@ -2361,7 +2346,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: "Aún no hay publicaciones.",
     share_market: "Comparte tu opinión sobre {market}.",
     share_view: "Comparte tu opinión e inicia la conversación.",
-    view_more: "Ver más publicaciones",
   },
   pt: {
     all_markets: "Todos os mercados",
@@ -2369,7 +2353,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: "Ordenar publicações",
     latest: "Mais recentes",
     most_liked: "Mais curtidas",
-    loading: "Carregando...",
     loading_discussions: "Carregando publicações...",
     load_failed: "Não foi possível carregar as publicações.",
     load_more_failed: "Não foi possível carregar mais publicações.",
@@ -2377,7 +2360,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: "Ainda não há publicações.",
     share_market: "Compartilhe sua opinião sobre {market}.",
     share_view: "Compartilhe sua opinião e inicie a conversa.",
-    view_more: "Ver mais publicações",
   },
   it: {
     all_markets: "Tutti i mercati",
@@ -2385,7 +2367,7 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: "Ordina i post",
     latest: "Più recenti",
     most_liked: "Più apprezzati",
-    loading: "Caricamento...",
+
     loading_discussions: "Caricamento dei post...",
     load_failed: "Impossibile caricare i post.",
     load_more_failed: "Impossibile caricare altri post.",
@@ -2393,7 +2375,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: "Ancora nessun post.",
     share_market: "Condividi la tua opinione su {market}.",
     share_view: "Condividi la tua opinione e avvia la conversazione.",
-    view_more: "Mostra altri post",
   },
   ru: {
     all_markets: "Все рынки",
@@ -2401,7 +2382,7 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: "Сортировать публикации",
     latest: "Новые",
     most_liked: "Больше лайков",
-    loading: "Загрузка...",
+
     loading_discussions: "Загрузка публикаций...",
     load_failed: "Не удалось загрузить публикации.",
     load_more_failed: "Не удалось загрузить больше публикаций.",
@@ -2409,7 +2390,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: "Публикаций пока нет.",
     share_market: "Поделитесь мнением о {market}.",
     share_view: "Поделитесь мнением и начните обсуждение.",
-    view_more: "Показать больше публикаций",
   },
   ar: {
     all_markets: "جميع الأسواق",
@@ -2417,7 +2397,7 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: "ترتيب المنشورات",
     latest: "الأحدث",
     most_liked: "الأكثر إعجابًا",
-    loading: "جارٍ التحميل...",
+
     loading_discussions: "جارٍ تحميل المنشورات...",
     load_failed: "تعذّر تحميل المنشورات.",
     load_more_failed: "تعذّر تحميل المزيد من المنشورات.",
@@ -2425,7 +2405,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: "لا توجد منشورات بعد.",
     share_market: "شارك رأيك حول {market}.",
     share_view: "شارك رأيك وابدأ النقاش.",
-    view_more: "عرض المزيد من المنشورات",
   },
   hi: {
     all_markets: "सभी बाज़ार",
@@ -2433,7 +2412,7 @@ export const HOME_COMMUNITY_LABELS: Record<
     sort_discussions: "पोस्ट क्रमबद्ध करें",
     latest: "नवीनतम",
     most_liked: "सबसे अधिक पसंद",
-    loading: "लोड हो रहा है...",
+
     loading_discussions: "पोस्ट लोड हो रही हैं...",
     load_failed: "पोस्ट लोड नहीं हो सकीं।",
     load_more_failed: "और पोस्ट लोड नहीं हो सकीं।",
@@ -2441,7 +2420,6 @@ export const HOME_COMMUNITY_LABELS: Record<
     empty: "अभी तक कोई पोस्ट नहीं है।",
     share_market: "{market} पर अपनी राय साझा करें।",
     share_view: "अपनी राय साझा करें और बातचीत शुरू करें।",
-    view_more: "और पोस्ट देखें",
   },
 };
 
@@ -7295,4 +7273,25 @@ export const PREDICTION_EDIT_UNCHANGED_LABELS: Record<Language, string> = {
   ru: "Изменения не внесены.",
   ar: "لم يتم إجراء أي تغييرات.",
   hi: "कोई बदलाव नहीं किया गया है।",
+};
+
+export const LOAD_MORE_BUTTON_LABELS: Record<
+  Language,
+  {
+    loading: string;
+    load_more: string;
+  }
+> = {
+  en: { loading: "Loading...", load_more: "Load more" },
+  ko: { loading: "불러오는 중...", load_more: "더 보기" },
+  ja: { loading: "読み込み中...", load_more: "もっと見る" },
+  zh: { loading: "加载中...", load_more: "加载更多" },
+  de: { loading: "Wird geladen...", load_more: "Mehr laden" },
+  fr: { loading: "Chargement...", load_more: "Voir plus" },
+  es: { loading: "Cargando...", load_more: "Ver más" },
+  pt: { loading: "Carregando...", load_more: "Ver mais" },
+  it: { loading: "Caricamento...", load_more: "Mostra altro" },
+  ru: { loading: "Загрузка...", load_more: "Показать ещё" },
+  ar: { loading: "جارٍ التحميل...", load_more: "عرض المزيد" },
+  hi: { loading: "लोड हो रहा है...", load_more: "और देखें" },
 };

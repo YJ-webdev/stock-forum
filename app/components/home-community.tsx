@@ -298,7 +298,11 @@ export function HomeCommunity({
   }
 
   return (
-    <div className="w-full min-w-0 pb-10">
+    <div
+      className={`w-full min-w-0 ${
+        !loading && !loadError && !nextCursor ? "pb-14" : "pb-4"
+      }`}
+    >
       <div className="mt-2 mb-7 flex flex-wrap items-center gap-2">
         {[
           {
@@ -494,8 +498,6 @@ export function HomeCommunity({
       {!loading && !loadError && nextCursor && (
         <LoadMoreButton
           loading={loadingMore}
-          loadingLabel={labels.loading}
-          label={labels.view_more}
           onClick={() => void loadMoreComments()}
         />
       )}

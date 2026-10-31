@@ -38,23 +38,9 @@ import { CommentOnlyInput } from "./comment-only-input";
 import { PredictionCommentInput } from "./prediction-comment-input";
 import { CommentItem } from "./comment-item";
 import type { GifResult } from "./gif-picker";
+import { LoadMoreButton } from "./load-more-button";
 
 const TIME_REFRESH_INTERVAL_MS = 60_000;
-
-const LOAD_MORE_LABELS = {
-  en: "Load more",
-  ko: "더 보기",
-  ja: "もっと見る",
-  zh: "加载更多",
-  de: "Mehr laden",
-  fr: "Charger plus",
-  es: "Cargar más",
-  pt: "Carregar mais",
-  it: "Carica altro",
-  ru: "Загрузить ещё",
-  ar: "تحميل المزيد",
-  hi: "और लोड करें",
-} as const;
 
 type CommentCursor = NonNullable<MarketCommentsPage["nextCursor"]>;
 
@@ -167,7 +153,6 @@ export function MarketComments({
   const language = resolveLanguage(user?.language);
   const labels = COMMENT_VIEW_LABELS[language];
   const actionLabels = COMMENT_ACTION_LABELS[language];
-  const loadMoreLabel = LOAD_MORE_LABELS[language];
 
   const searchParams = useSearchParams();
 
@@ -678,7 +663,9 @@ export function MarketComments({
   }
 
   return (
-    <section className="w-full">
+    <section
+      className={`w-full ${!commentsLoading && !nextCursor ? "pb-14" : "pb-4"}`}
+    >
       <div className="mb-3 flex items-center gap-1 text-[13px] text-zinc-600 dark:text-zinc-400">
         <h2>{labels.heading}</h2>
         <span>{totalCount.toLocaleString(language)}</span>
@@ -817,28 +804,12 @@ export function MarketComments({
       </div>
 
       {!commentsLoading && nextCursor && (
-        <div className="flex h-20 items-center justify-center">
-          <button
-            type="button"
-            disabled={isLoadingMore}
-            aria-busy={isLoadingMore}
-            onClick={() => {
-              void loadMoreComments();
-            }}
-            className="
-              cursor-pointer rounded-md px-4 py-2
-              text-sm text-zinc-600
-              hover:bg-zinc-100
-              focus-visible:outline-none
-              focus-visible:ring-2
-              focus-visible:ring-ring
-              disabled:cursor-wait disabled:opacity-50
-              dark:text-zinc-400 dark:hover:bg-zinc-800
-            "
-          >
-            {isLoadingMore ? labels.loading_more : loadMoreLabel}
-          </button>
-        </div>
+        <LoadMoreButton
+          loading={isLoadingMore}
+          onClick={() => {
+            void loadMoreComments();
+          }}
+        />
       )}
     </section>
   );

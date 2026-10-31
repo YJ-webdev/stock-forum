@@ -2,19 +2,20 @@
 
 import { ChevronDown } from "lucide-react";
 
+import { useCurrentUser } from "@/app/context/user-context";
+import { resolveLanguage } from "@/lib/data/languages";
+import { LOAD_MORE_BUTTON_LABELS } from "@/lib/data/translations";
+
 interface LoadMoreButtonProps {
   loading: boolean;
-  loadingLabel: string;
-  label: string;
   onClick: () => void;
 }
 
-export function LoadMoreButton({
-  loading,
-  loadingLabel,
-  label,
-  onClick,
-}: LoadMoreButtonProps) {
+export function LoadMoreButton({ loading, onClick }: LoadMoreButtonProps) {
+  const user = useCurrentUser();
+  const language = resolveLanguage(user?.language);
+  const labels = LOAD_MORE_BUTTON_LABELS[language];
+
   return (
     <div className="flex justify-center py-4">
       <button
@@ -31,11 +32,12 @@ export function LoadMoreButton({
           focus-visible:ring-2
           focus-visible:ring-zinc-400
           disabled:cursor-wait disabled:opacity-50
+          motion-reduce:transition-none
           dark:text-zinc-400 dark:hover:bg-zinc-800
           dark:hover:text-zinc-100
         "
       >
-        {loading ? loadingLabel : label}
+        {loading ? labels.loading : labels.load_more}
 
         <ChevronDown className="size-4" strokeWidth={1.5} aria-hidden="true" />
       </button>
