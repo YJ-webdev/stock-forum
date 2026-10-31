@@ -174,13 +174,3 @@
 .dark .content-scrollbar::-webkit-scrollbar-thumb {
   background: #52525b;
 }
-
-.layout-side-panel {
-  display: none;
-}
-
-@media (min-width: 1024px) {
-  .layout-side-panel {
-    display: block;
-  }
-}

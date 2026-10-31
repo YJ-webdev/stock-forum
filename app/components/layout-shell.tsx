@@ -275,10 +275,9 @@ function ContentPanels({
           borderLeftWidth: sideWidth > 0 ? 1 : 0,
         }}
         className="
-    layout-side-panel
-    relative z-2 h-full min-h-0 min-w-0
+    relative z-2 hidden h-full min-h-0 min-w-0
     shrink-0 overflow-hidden
-    border-gray-100 bg-white
+    border-gray-100 bg-white lg:block
     dark:border-zinc-800 dark:bg-zinc-900
   "
       >
@@ -630,13 +629,7 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
                         )}
                       </div>
                     </div>
-                  ) : (
-                    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
-                      <div className="flex h-[45%] min-h-0 shrink-0 flex-col overflow-hidden">
-                        <SideDataLoading />
-                      </div>
-                    </div>
-                  )
+                  ) : null
                 }
               >
                 {mainContent}
