@@ -80,7 +80,11 @@ export async function generateMetadata({
 export default async function Page({ params }: PageProps) {
   const { symbol, canPredict } = await resolveMarket(params);
 
-  const votingWindow = canPredict ? getVotingWindow(symbol, Date.now()) : null;
+  const initialNowMs = Date.now();
+
+  const votingWindow = canPredict
+    ? getVotingWindow(symbol, initialNowMs)
+    : null;
 
   const sessionDate = votingWindow?.predictionFor ?? null;
 
@@ -111,6 +115,7 @@ export default async function Page({ params }: PageProps) {
       <MarketPageClient
         key={symbol}
         symbol={symbol}
+        initialNowMs={initialNowMs}
         initialVoteStats={initialVoteStats}
         initialVoteStatsSessionKey={sessionDate?.toISOString() ?? null}
         initialIsWatchlist={initialIsWatchlist}

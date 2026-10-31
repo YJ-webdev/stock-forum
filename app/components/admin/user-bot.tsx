@@ -829,6 +829,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
           {submittedComments.map((entry) => (
             <CommentItem
               key={entry.comment.id}
+              initialNowMs={Date.now()}
               comment={entry.comment}
               currentUser={currentUser}
               marketname={entry.marketName}
