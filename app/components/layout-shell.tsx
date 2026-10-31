@@ -522,7 +522,7 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
       bg-white dark:bg-zinc-900
     "
     >
-      <div className={`min-h-full ${showFooter ? "flex flex-col" : "pb-14"}`}>
+      <div className={`min-h-full ${showFooter ? "flex flex-col" : ""}`}>
         {pathname !== "/" && <BreadCrumbs />}
         {children}
         {showFooter && <Footer />}

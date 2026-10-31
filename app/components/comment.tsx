@@ -784,7 +784,7 @@ export function MarketComments({
                   <div
                     aria-hidden="true"
                     className="
-                      mb-4 border-t border-dashed
+                      mb-3  border-t border-dashed
                       border-zinc-200 dark:border-zinc-800
                     "
                   />
