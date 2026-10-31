@@ -4,6 +4,8 @@ import { TZDate } from "@date-fns/tz";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import dynamic from "next/dynamic";
+import { IBM_Plex_Mono } from "next/font/google";
 
 import {
   type ChartRange,
@@ -11,15 +13,6 @@ import {
   useMarketQuote,
 } from "@/app/hooks/useMarketQuote";
 import { refreshMarketQuote } from "@/app/hooks/market-quote-store";
-
-import { MarketDetailHeader } from "@/app/components/market-detail-header";
-
-import { getVotingWindow } from "@/lib/utils/get-voting-window";
-import {
-  ALL_MARKET_SYMBOLS,
-  TRADING_HOURS,
-  type AssetType,
-} from "@/lib/data/market-symbols";
 
 import {
   getMarketVote,
@@ -29,26 +22,29 @@ import {
   type MarketVoteStats,
   type VoteDirection,
 } from "@/app/actions/market-vote";
-
 import {
   createComment,
   type MarketCommentsPage,
   type MarketPageComments,
 } from "@/app/actions/post";
 
-import type { InitialMarketQuote } from "@/lib/utils/build-market-quote";
-import type { GifResult } from "@/app/components/gif-picker";
-import { buildCommentContent } from "@/lib/utils/build-comment-content";
-
 import { useCurrentUser } from "@/app/context/user-context";
-import { Skeleton } from "@/components/ui/skeleton";
+import { usePointBalance } from "@/app/context/point-balance-context";
+
+import { MarketDetailHeader } from "@/app/components/market-detail-header";
 import { TrendSparkline } from "@/app/components/trend-sparkline";
 import { MarketComments } from "@/app/components/comment";
-import { usePointBalance } from "@/app/context/point-balance-context";
-import { countryCodeToFlag } from "@/lib/utils/nationality-flag";
-
-import MarketNews from "@/app/components/market-news";
 import { MarketActionsMenu } from "@/app/components/market-action-menu";
+import MarketNews from "@/app/components/market-news";
+import type { GifResult } from "@/app/components/gif-picker";
+
+import { Skeleton } from "@/components/ui/skeleton";
+
+import {
+  ALL_MARKET_SYMBOLS,
+  TRADING_HOURS,
+  type AssetType,
+} from "@/lib/data/market-symbols";
 import {
   CHART_LABELS,
   OTHER_LABELS,
@@ -57,8 +53,11 @@ import {
   VOTE_TOAST_LABELS,
 } from "@/lib/data/translations";
 import { resolveLanguage } from "@/lib/data/languages";
-import { IBM_Plex_Mono } from "next/font/google";
-import dynamic from "next/dynamic";
+
+import { getVotingWindow } from "@/lib/utils/get-voting-window";
+import { buildCommentContent } from "@/lib/utils/build-comment-content";
+import { countryCodeToFlag } from "@/lib/utils/nationality-flag";
+import type { InitialMarketQuote } from "@/lib/utils/build-market-quote";
 
 const DetailChart = dynamic(
   () =>
@@ -78,6 +77,7 @@ const DetailChart = dynamic(
     ),
   },
 );
+
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -89,12 +89,15 @@ const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
 
 interface MarketPageClientProps {
   symbol: string;
+
   initialVoteStats: MarketVoteStats | null;
   initialVoteStatsSessionKey: string | null;
   initialIsWatchlist: boolean;
+
   initialCommentsPage: MarketCommentsPage;
   initialCommentsViewerId: string | null;
   initialCommentsSessionStartMs: number | null;
+
   initialMarketQuote: InitialMarketQuote | null;
 }
 
@@ -163,8 +166,8 @@ function getChartSession(
 
   let startDay = day;
 
-  // For an overnight session, a candle before the closing
-  // time belongs to the session that started the day before.
+  // A candle before an overnight session's closing time
+  // belongs to the session that started the day before.
   if (isOvernight) {
     const dataMinutes = dataDate.getHours() * 60 + dataDate.getMinutes();
 
@@ -201,7 +204,8 @@ function getChartSession(
   };
 }
 
-// Check deadlines every second; publish only changes consumed by this page.
+// Check deadlines every second, but only publish values
+// that affect the page.
 function useLiveVotingWindow(symbol: string, enabled: boolean) {
   const [session, setSession] = useState(() => ({
     symbol,
@@ -213,9 +217,12 @@ function useLiveVotingWindow(symbol: string, enabled: boolean) {
 
     function updateWindow() {
       if (document.visibilityState !== "visible") return;
+
       const next = getVotingWindow(symbol, Date.now());
+
       setSession((previous) => {
         const current = previous.window;
+
         if (
           previous.symbol === symbol &&
           current.isMarketOpen === next.isMarketOpen &&
@@ -225,17 +232,26 @@ function useLiveVotingWindow(symbol: string, enabled: boolean) {
           current.targetMs === next.targetMs &&
           current.countdownType === next.countdownType &&
           current.showCountdown === next.showCountdown
-        )
+        ) {
           return previous;
-        return { symbol, window: next };
+        }
+
+        return {
+          symbol,
+          window: next,
+        };
       });
     }
 
     updateWindow();
+
     const timer = window.setInterval(updateWindow, 1000);
+
     document.addEventListener("visibilitychange", updateWindow);
+
     return () => {
       window.clearInterval(timer);
+
       document.removeEventListener("visibilitychange", updateWindow);
     };
   }, [symbol, enabled]);
@@ -268,6 +284,7 @@ export default function MarketPageClient({
 
   const [betAmount, setBetAmount] = useState(50);
   const [showDetailChart, setShowDetailChart] = useState(false);
+
   const [statsRefreshVersion, setStatsRefreshVersion] = useState(0);
 
   const [voteSelection, setVoteSelection] = useState<{
@@ -285,7 +302,9 @@ export default function MarketPageClient({
   });
 
   const [checkedVoteKey, setCheckedVoteKey] = useState<string | null>(null);
+
   const [voteLookupFailed, setVoteLookupFailed] = useState(false);
+
   const [voteRefreshVersion, setVoteRefreshVersion] = useState(0);
 
   const submittingVoteRef = useRef(false);
@@ -295,6 +314,7 @@ export default function MarketPageClient({
   const [voteStats, setVoteStats] = useState<MarketVoteStats | null>(
     initialVoteStats,
   );
+
   const statsSessionKeyRef = useRef(
     initialVoteStats !== null ? initialVoteStatsSessionKey : null,
   );
@@ -302,6 +322,7 @@ export default function MarketPageClient({
   const [activeRange, setActiveRange] = useState<SelectedRange>("1D");
 
   const [isPending, startTransition] = useTransition();
+
   const discussionRef = useRef<HTMLDivElement>(null);
   const rangeRequestRef = useRef(0);
 
@@ -313,6 +334,7 @@ export default function MarketPageClient({
   );
 
   const selectedName = symbolMeta?.name ?? selectedSymbol;
+
   const selectedDisplaySymbol = symbolMeta?.displaySymbol ?? selectedSymbol;
 
   const selectedAssetType = symbolMeta?.assetType ?? "index";
@@ -372,6 +394,7 @@ export default function MarketPageClient({
 
   useEffect(() => {
     let cancelled = false;
+
     const revision = voteRevisionRef.current;
 
     setVoteLookupFailed(false);
@@ -387,6 +410,7 @@ export default function MarketPageClient({
       activeVoteKeyRef.current === voteLookupKey;
 
     const sessionDate = new Date(voteSessionKey);
+
     async function loadVote() {
       try {
         const vote = await getMarketVote({
@@ -402,11 +426,13 @@ export default function MarketPageClient({
           pointsBet: vote?.pointsBet ?? 0,
           status: vote?.status ?? null,
         });
+
         setVoteLookupFailed(false);
       } catch (error) {
         if (!isCurrentRequest()) return;
 
         setVoteLookupFailed(true);
+
         console.error("Failed to load prediction:", error);
       } finally {
         if (isCurrentRequest()) {
@@ -446,6 +472,7 @@ export default function MarketPageClient({
 
     const sessionKey = voteSessionKey;
     const revision = statsRevisionRef.current;
+
     let cancelled = false;
 
     if (statsSessionKeyRef.current !== sessionKey) {
@@ -458,7 +485,11 @@ export default function MarketPageClient({
           symbol: selectedSymbol,
           sessionDate: new Date(sessionKey),
         });
-        if (cancelled || revision !== statsRevisionRef.current) return;
+
+        if (cancelled || revision !== statsRevisionRef.current) {
+          return;
+        }
+
         statsSessionKeyRef.current = sessionKey;
         setVoteStats(stats);
       } catch (error) {
@@ -467,6 +498,7 @@ export default function MarketPageClient({
     }
 
     void loadStats();
+
     return () => {
       cancelled = true;
     };
@@ -515,6 +547,7 @@ export default function MarketPageClient({
     }
 
     const currentWindow = getVotingWindow(selectedSymbol, Date.now());
+
     const sessionDate = currentWindow.predictionFor;
 
     if (!currentWindow.canVote || !sessionDate) {
@@ -560,6 +593,7 @@ export default function MarketPageClient({
       user?.status !== "MUTED";
 
     const trimmedComment = canWriteComment ? comment.trim() : "";
+
     const submittedGif = canWriteComment ? gif : null;
 
     const content =
@@ -569,7 +603,7 @@ export default function MarketPageClient({
 
     submittingVoteRef.current = true;
 
-    // Invalidate any lookup that started before this submission.
+    // Prevent earlier lookups from overwriting this submission.
     voteRevisionRef.current += 1;
     statsRevisionRef.current += 1;
 
@@ -580,6 +614,7 @@ export default function MarketPageClient({
 
       try {
         let createdComment: MarketPageComments[number] | null = null;
+
         let updatedPoints: number | null = null;
 
         if (user?.id) {
@@ -615,6 +650,7 @@ export default function MarketPageClient({
           pointsBet: submittedAmount,
           status: "PENDING",
         });
+
         setCheckedVoteKey(submittedKey);
         setVoteLookupFailed(false);
 
@@ -649,6 +685,7 @@ export default function MarketPageClient({
           }).then((stats) => {
             if (isCurrentView()) {
               statsSessionKeyRef.current = sessionDate.toISOString();
+
               setVoteStats(stats);
             }
           }),
@@ -667,7 +704,7 @@ export default function MarketPageClient({
               : "Failed to submit prediction.",
           );
 
-          // Restore the server's vote state after an uncertain failure.
+          // Restore the server state after an uncertain failure.
           setVoteRefreshVersion((value) => value + 1);
         } else {
           console.error("Failed to update prediction UI:", error);
@@ -702,6 +739,7 @@ export default function MarketPageClient({
     }
 
     const currentWindow = getVotingWindow(selectedSymbol, Date.now());
+
     const sessionDate = currentWindow.predictionFor;
 
     if (!currentWindow.canVote || !sessionDate) {
@@ -743,7 +781,7 @@ export default function MarketPageClient({
 
     submittingVoteRef.current = true;
 
-    // Prevent an older lookup from overwriting this save.
+    // Prevent earlier lookups from overwriting this save.
     voteRevisionRef.current += 1;
     statsRevisionRef.current += 1;
 
@@ -795,7 +833,7 @@ export default function MarketPageClient({
         userLanguage === "ko" ? "투표를 저장했어요." : "Prediction saved.",
       );
 
-      // A statistics refresh failure must not turn a successful
+      // A failed statistics refresh must not turn a successful
       // save into a reported submission failure.
       try {
         const stats = await getMarketVoteStats({
@@ -805,6 +843,7 @@ export default function MarketPageClient({
 
         if (isCurrentView()) {
           statsSessionKeyRef.current = sessionDate.toISOString();
+
           setVoteStats(stats);
         }
       } catch (error) {
@@ -830,7 +869,7 @@ export default function MarketPageClient({
 
     if (range === activeRange) return;
 
-    const chartInterval = range === "1D" ? "1m" : undefined;
+    const requestedInterval = range === "1D" ? "1m" : undefined;
 
     const result = await refreshMarketQuote(
       selectedSymbol,
@@ -838,7 +877,7 @@ export default function MarketPageClient({
       range,
       selectedDisplaySymbol,
       selectedAssetType as AssetType,
-      chartInterval,
+      requestedInterval,
     );
 
     if (requestId !== rangeRequestRef.current) return;
@@ -854,8 +893,10 @@ export default function MarketPageClient({
   const handlePredictionEdited = (
     prediction: NonNullable<MarketPageComments[number]["prediction"]>,
   ) => {
-    // Reject a callback belonging to a previous viewer or session.
-    if (activeVoteKeyRef.current !== voteLookupKey) return;
+    // Reject a callback belonging to a previous viewer/session.
+    if (activeVoteKeyRef.current !== voteLookupKey) {
+      return;
+    }
 
     if (!user?.id || !canPredict) return;
     if (prediction.symbol !== selectedSymbol) return;
@@ -870,7 +911,6 @@ export default function MarketPageClient({
       return;
     }
 
-    // Prevent an older vote lookup from overwriting the saved result.
     voteRevisionRef.current += 1;
     statsRevisionRef.current += 1;
 
@@ -884,7 +924,6 @@ export default function MarketPageClient({
     setCheckedVoteKey(voteLookupKey);
     setVoteLookupFailed(false);
 
-    // Fetch updated Bull/Bear percentages using the existing effect.
     setStatsRefreshVersion((value) => value + 1);
   };
 
@@ -945,12 +984,12 @@ export default function MarketPageClient({
                 aria-expanded={showDetailChart}
                 onClick={() => setShowDetailChart(true)}
                 className="
-    relative mr-3 flex w-auto cursor-pointer
-    flex-col items-stretch gap-0
-    rounded-md border-none bg-transparent p-0
-    focus-visible:outline-none
-    focus-visible:ring-2 focus-visible:ring-ring
-  "
+                  relative mr-3 flex w-auto cursor-pointer
+                  flex-col items-stretch gap-0
+                  rounded-md border-none bg-transparent p-0
+                  focus-visible:outline-none
+                  focus-visible:ring-2 focus-visible:ring-ring
+                "
               >
                 <div className="relative mx-3 mt-5 flex cursor-pointer justify-start">
                   <TrendSparkline
@@ -1042,7 +1081,7 @@ export default function MarketPageClient({
 
                     {/* Range selector */}
 
-                    <div className="mt-4 mx-4 md:mx-0 flex flex-wrap gap-1 sm:gap-2 items-center justify-start sm:justify-start">
+                    <div className="mx-4 mt-4 flex flex-wrap items-center justify-start gap-1 sm:gap-2 md:mx-0">
                       {RANGES.map((range) => {
                         const isActive = activeRange === range;
 
@@ -1053,17 +1092,18 @@ export default function MarketPageClient({
                             aria-pressed={isActive}
                             onClick={() => void handleRangeChange(range)}
                             className={`
-        cursor-pointer rounded-full
-        px-3.25 py-1.25 text-xs font-medium
-        transition-colors
-        focus-visible:outline-none
-        focus-visible:ring-2 focus-visible:ring-ring
-        ${
-          isActive
-            ? "bg-zinc-100/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
-            : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-600/50"
-        }
-      `}
+                              cursor-pointer rounded-full
+                              px-3.25 py-1.25 text-xs font-medium
+                              transition-colors
+                              focus-visible:outline-none
+                              focus-visible:ring-2
+                              focus-visible:ring-ring
+                              ${
+                                isActive
+                                  ? "bg-zinc-100/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
+                                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-600/50"
+                              }
+                            `}
                           >
                             {chartLabels.ranges[range] ?? range}
                           </button>
@@ -1094,9 +1134,11 @@ export default function MarketPageClient({
 
       {canPredict && (
         <div
-          className={`${ibmPlexMono.className} mx-4 sm:pb-6 ${
-            showDetailChart ? "pt-12 sm:pt-16" : "pt-8 sm:pt-2"
-          }`}
+          className={`
+            ${ibmPlexMono.className}
+            mx-4 sm:pb-6
+            ${showDetailChart ? "pt-12 sm:pt-16" : "pt-8 sm:pt-2"}
+          `}
         >
           {voteStats ? (
             <div className="flex flex-col gap-5 rounded-xl border bg-zinc-50 px-5 py-4 dark:bg-zinc-800/50 sm:flex-row sm:items-start sm:justify-between">
@@ -1106,6 +1148,7 @@ export default function MarketPageClient({
                 <p className="text-[14px] font-medium">
                   {statisticsLabels.voters}
                 </p>
+
                 {voteStats.totalVotes > 0 ? (
                   <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
                     {voteStats.nationalities.map((country) => (
@@ -1204,11 +1247,11 @@ export default function MarketPageClient({
         )}
 
         <MarketComments
+          key={selectedSymbol}
+          assetSymbol={selectedSymbol}
           initialCommentsPage={initialCommentsPage}
           initialCommentsViewerId={initialCommentsViewerId}
           initialCommentsSessionStartMs={initialCommentsSessionStartMs}
-          key={selectedSymbol}
-          assetSymbol={selectedSymbol}
           onPredictionEdited={handlePredictionEdited}
           prediction={
             canPredict
