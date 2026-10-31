@@ -710,6 +710,7 @@ function NotificationPanelContent({
                         key={notification.id}
                         notification={notification}
                         language={language}
+                        nowMs={sectionNow.getTime()}
                         isPending={mutationDisabled}
                         isOpen={swipedNotificationId === notification.id}
                         onOpen={() => setSwipedNotificationId(notification.id)}
@@ -777,6 +778,7 @@ function NotificationPanelContent({
 function NotificationItem({
   notification,
   language,
+  nowMs,
   isPending,
   isOpen,
   onOpen,
@@ -786,6 +788,7 @@ function NotificationItem({
 }: {
   notification: MyNotification;
   language: ResolvedLanguage;
+  nowMs: number;
   isPending: boolean;
   isOpen: boolean;
   onOpen: () => void;
@@ -964,7 +967,12 @@ function NotificationItem({
             dateTime={dateTime}
             className="mt-1.5 block truncate text-xs text-zinc-400 dark:text-zinc-500"
           >
-            {formatTimeAgo(notification.createdAt, language, labels.just_now)}
+            {formatTimeAgo(
+              notification.createdAt,
+              language,
+              labels.just_now,
+              nowMs,
+            )}
           </time>
         </span>
       </button>

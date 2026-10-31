@@ -1,3 +1,5 @@
+// app/components/comment.tsx
+
 "use client";
 
 import {
@@ -36,6 +38,8 @@ import { CommentOnlyInput } from "./comment-only-input";
 import { PredictionCommentInput } from "./prediction-comment-input";
 import { CommentItem } from "./comment-item";
 import type { GifResult } from "./gif-picker";
+
+const TIME_REFRESH_INTERVAL_MS = 60_000;
 
 const LOAD_MORE_LABELS = {
   en: "Load more",
@@ -89,6 +93,7 @@ export interface MarketReply {
 }
 
 interface MarketCommentsProps {
+  initialNowMs: number;
   initialCommentsPage: MarketCommentsPage;
   initialCommentsViewerId: string | null;
   initialCommentsSessionStartMs: number | null;
@@ -148,6 +153,7 @@ function getCommentContextKey(
 }
 
 export function MarketComments({
+  initialNowMs,
   assetSymbol,
   prediction,
   currentSessionStartMs,
@@ -187,12 +193,13 @@ export function MarketComments({
     page: initialCommentsPage,
   });
 
-  // After a context change, returning to the original context
-  // must fetch fresh comments.
+  // Returning to an earlier context must fetch fresh comments.
   const canReuseInitialCommentsRef = useRef(true);
 
   const matchesInitialComments =
     initialCommentsRef.current.contextKey === commentContextKey;
+
+  const [nowMs, setNowMs] = useState(initialNowMs);
 
   const [draft, setDraft] = useState<CommentDraft>({
     text: "",
@@ -226,7 +233,6 @@ export function MarketComments({
   );
 
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-
   const [commentsRefreshVersion, setCommentsRefreshVersion] = useState(0);
 
   const savingVoteRef = useRef(false);
@@ -252,6 +258,21 @@ export function MarketComments({
   );
 
   activeVoteLookupKeyRef.current = prediction?.voteLookupKey ?? null;
+
+  // Match server time during hydration, then update client time.
+  useEffect(() => {
+    const updateNow = () => {
+      setNowMs(Date.now());
+    };
+
+    updateNow();
+
+    const timer = window.setInterval(updateNow, TIME_REFRESH_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [initialNowMs]);
 
   // Session changes preserve the draft.
   // Changing the account or market starts a new draft.
@@ -293,8 +314,7 @@ export function MarketComments({
       canReuseInitialCommentsRef.current = false;
     }
 
-    // Initial comments already came from the server.
-    // Preserve local updates and skip a duplicate request.
+    // Preserve local updates and skip the duplicate initial request.
     if (canReuseInitialCommentsRef.current && matchesInitialContext) {
       setCommentsLoading(false);
       setIsLoadingMore(false);
@@ -332,7 +352,6 @@ export function MarketComments({
         if (!isCurrentRequest()) return;
 
         const previouslyKnownIds = new Set(knownCommentIdsRef.current);
-
         const resultIds = new Set(result.comments.map((comment) => comment.id));
 
         const addedDuringLoadCount = [...previouslyKnownIds].filter(
@@ -342,6 +361,8 @@ export function MarketComments({
         for (const id of resultIds) {
           knownCommentIdsRef.current.add(id);
         }
+
+        setNowMs(Date.now());
 
         // Preserve comments submitted while loading.
         setComments((current) => [
@@ -355,7 +376,6 @@ export function MarketComments({
         if (!isCurrentRequest()) return;
 
         console.error("Failed to load comments:", error);
-
         toast.error(getErrorMessage(error, errorFallbackRef.current));
       } finally {
         if (isCurrentRequest()) {
@@ -400,6 +420,8 @@ export function MarketComments({
         knownCommentIdsRef.current.add(comment.id);
       }
 
+      setNowMs(Date.now());
+
       setComments((current) => {
         const existingIds = new Set(current.map((comment) => comment.id));
 
@@ -416,7 +438,6 @@ export function MarketComments({
       }
 
       console.error("Failed to load more comments:", error);
-
       toast.error(getErrorMessage(error, errorFallbackRef.current));
     } finally {
       if (requestVersionRef.current === requestVersion) {
@@ -461,8 +482,8 @@ export function MarketComments({
 
     knownCommentIdsRef.current.add(comment.id);
 
+    setNowMs(Date.now());
     setComments((current) => [comment, ...current]);
-
     setTotalCount((current) => current + 1);
   }, []);
 
@@ -545,7 +566,6 @@ export function MarketComments({
     }
 
     const isMember = Boolean(user?.id);
-
     const submittedAmount = isMember ? prediction.betAmount : 0;
 
     if (
@@ -642,7 +662,6 @@ export function MarketComments({
       setEditBetAmount(0);
 
       requestVersionRef.current += 1;
-
       setCommentsRefreshVersion((value) => value + 1);
     } catch (error) {
       console.error("Failed to update vote:", error);
@@ -667,7 +686,6 @@ export function MarketComments({
     <section className="w-full">
       <div className="mb-3 flex items-center gap-1 text-[13px] text-zinc-600 dark:text-zinc-400">
         <h2>{labels.heading}</h2>
-
         <span>{totalCount.toLocaleString(language)}</span>
       </div>
 
@@ -778,6 +796,7 @@ export function MarketComments({
                 )}
 
                 <CommentItem
+                  initialNowMs={nowMs}
                   comment={comment}
                   currentUser={user}
                   onUpdate={updateComment}

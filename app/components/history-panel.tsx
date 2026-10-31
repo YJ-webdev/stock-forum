@@ -884,7 +884,12 @@ function HistoryPanelContent({
                                   text-zinc-400 dark:text-zinc-500
                                 "
                               >
-                                {formatTimeAgo(activity.createdAt, language)}
+                                {formatTimeAgo(
+                                  activity.createdAt,
+                                  language,
+                                  undefined,
+                                  sectionNow.getTime(),
+                                )}
                               </time>
                             </span>
                           </button>

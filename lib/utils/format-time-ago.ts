@@ -31,6 +31,7 @@ function getDateTimeFormatter(language: string) {
     year: "numeric",
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
   });
 
   if (dateTimeFormatters.size >= MAX_CACHED_LOCALES) {
@@ -46,13 +47,16 @@ export function formatTimeAgo(
   value: Date | string | number,
   language = "en",
   justNowLabel = "Just now",
+  nowMs = Date.now(),
 ): string {
   const date = new Date(value);
   const timestamp = date.getTime();
 
-  if (!Number.isFinite(timestamp)) return "";
+  if (!Number.isFinite(timestamp) || !Number.isFinite(nowMs)) {
+    return "";
+  }
 
-  const elapsed = Math.max(0, Date.now() - timestamp);
+  const elapsed = Math.max(0, nowMs - timestamp);
 
   if (elapsed < 60_000) {
     return justNowLabel;

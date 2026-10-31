@@ -13,6 +13,7 @@ import {
   type HomeCommentSort,
 } from "@/app/actions/post";
 import { useCurrentUser } from "@/app/context/user-context";
+
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { resolveLanguage } from "@/lib/data/languages";
 import { HOME_COMMUNITY_LABELS } from "@/lib/data/translations";
@@ -30,9 +31,11 @@ import { HomeCommentComposer } from "./home-comment-composer";
 import { LoadMoreButton } from "./load-more-button";
 
 interface HomeCommunityProps {
+  initialNowMs: number;
   initialComments: HomeComments;
   initialNextCursor: HomeCommentCursor | null;
   initialTotalCount: number;
+
   markets: {
     symbol: string;
     displaySymbol: string;
@@ -44,6 +47,7 @@ interface HomeCommunityProps {
 type Comment = HomeComments[number];
 
 const COMMENTS_TIMEOUT_MS = 15_000;
+const TIME_REFRESH_INTERVAL_MS = 60_000;
 
 function withTimeout<T>(
   promise: Promise<T>,
@@ -68,6 +72,7 @@ function withTimeout<T>(
 }
 
 export function HomeCommunity({
+  initialNowMs,
   initialComments,
   initialNextCursor,
   initialTotalCount,
@@ -80,13 +85,7 @@ export function HomeCommunity({
   const labels = HOME_COMMUNITY_LABELS[language];
   const labelsRef = useRef(labels);
 
-  useEffect(() => {
-    labelsRef.current = labels;
-  }, [labels]);
-
-  const targetCommentId = searchParams.get("comment");
-  const targetReplyId = searchParams.get("reply");
-  const from = searchParams.get("from");
+  const [nowMs, setNowMs] = useState(initialNowMs);
 
   const [comments, setComments] = useState(initialComments);
   const [nextCursor, setNextCursor] = useState(initialNextCursor);
@@ -110,6 +109,10 @@ export function HomeCommunity({
   const viewerId = user?.id ?? null;
   const viewerRole = user?.role ?? null;
 
+  const targetCommentId = searchParams.get("comment");
+  const targetReplyId = searchParams.get("reply");
+  const from = searchParams.get("from");
+
   const marketBySymbol = useMemo(
     () => new Map(ALL_MARKET_SYMBOLS.map((market) => [market.symbol, market])),
     [],
@@ -120,6 +123,25 @@ export function HomeCommunity({
 
   const highlightTargetComment =
     Boolean(targetCommentId) && (from === "most-liked" || from === "report");
+
+  useEffect(() => {
+    labelsRef.current = labels;
+  }, [labels]);
+
+  // Match the server's reference time during hydration, then use client time.
+  useEffect(() => {
+    const updateNow = () => {
+      setNowMs(Date.now());
+    };
+
+    updateNow();
+
+    const timer = window.setInterval(updateNow, TIME_REFRESH_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [initialNowMs]);
 
   useEffect(() => {
     const requestVersion = ++requestVersionRef.current;
@@ -150,7 +172,6 @@ export function HomeCommunity({
     if (useInitialPage) {
       setComments(initialComments);
       setNextCursor(initialNextCursor);
-
       setLoading(false);
 
       return cleanup;
@@ -158,7 +179,6 @@ export function HomeCommunity({
 
     setComments([]);
     setNextCursor(null);
-
     setLoading(true);
 
     async function loadComments() {
@@ -172,6 +192,7 @@ export function HomeCommunity({
 
         if (!isCurrentRequest()) return;
 
+        setNowMs(Date.now());
         setComments(result.comments);
         setNextCursor(result.nextCursor);
       } catch (error) {
@@ -251,6 +272,8 @@ export function HomeCommunity({
 
       if (requestVersionRef.current !== requestVersion) return;
 
+      setNowMs(Date.now());
+
       setComments((current) => {
         const existingIds = new Set(current.map((comment) => comment.id));
 
@@ -275,7 +298,7 @@ export function HomeCommunity({
   }
 
   return (
-    <div className=" w-full min-w-0 pb-10">
+    <div className="w-full min-w-0 pb-10">
       <div className="mt-2 mb-7 flex flex-wrap items-center gap-2">
         {[
           {
@@ -295,28 +318,28 @@ export function HomeCommunity({
               aria-pressed={active}
               onClick={() => changeMarket(market.symbol)}
               className={`
-          inline-flex h-8.5 shrink-0 cursor-pointer
-          items-center justify-center whitespace-nowrap
-          rounded-full border px-3.5 text-sm font-medium
-          transition-colors
-          focus-visible:outline-none
-          focus-visible:ring-2
-          focus-visible:ring-zinc-400
-          ${
-            active
-              ? `
-                border-transparent bg-zinc-500/50 text-white
-                dark:bg-[#515151] dark:text-zinc-100
-              `
-              : `
-                border-zinc-300 text-zinc-500
-                hover:border-zinc-400
-                dark:border-zinc-700 dark:text-zinc-500
-                dark:hover:border-zinc-700
-                dark:hover:text-zinc-100
-              `
-          }
-        `}
+                inline-flex h-8.5 shrink-0 cursor-pointer
+                items-center justify-center whitespace-nowrap
+                rounded-full border px-3.5 text-sm font-medium
+                transition-colors
+                focus-visible:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-zinc-400
+                ${
+                  active
+                    ? `
+                      border-transparent bg-zinc-500/50 text-white
+                      dark:bg-[#515151] dark:text-zinc-100
+                    `
+                    : `
+                      border-zinc-300 text-zinc-500
+                      hover:border-zinc-400
+                      dark:border-zinc-700 dark:text-zinc-500
+                      dark:hover:border-zinc-700
+                      dark:hover:text-zinc-100
+                    `
+                }
+              `}
             >
               {market.displaySymbol}
             </button>
@@ -340,9 +363,9 @@ export function HomeCommunity({
             <SelectContent
               align="end"
               className="
-          rounded-xl border-zinc-200 bg-white
-          dark:border-zinc-700 dark:bg-zinc-900
-        "
+                rounded-xl border-zinc-200 bg-white
+                dark:border-zinc-700 dark:bg-zinc-900
+              "
             >
               <SelectItem value="latest" className="cursor-pointer rounded-lg">
                 {labels.latest}
@@ -441,6 +464,7 @@ export function HomeCommunity({
               return (
                 <div key={comment.id} className="min-w-0">
                   <CommentItem
+                    initialNowMs={nowMs}
                     marketname={marketname}
                     marketSymbol={marketSymbol}
                     comment={comment}

@@ -62,6 +62,8 @@ export type CommentUser = {
 };
 
 export interface CommentItemProps {
+  initialNowMs: number;
+
   marketname?: string | null;
   marketSymbol?: string | null;
 
@@ -93,6 +95,7 @@ export function CommentItem({
   highlightTargetComment,
   marketname,
   marketSymbol,
+  initialNowMs,
 }: CommentItemProps) {
   const currentUserId = currentUser?.id;
   const language = resolveLanguage(currentUser?.language);
@@ -653,7 +656,12 @@ export function CommentItem({
                 )}
 
                 <span className="min-w-0 shrink truncate text-[13px] text-zinc-600 dark:text-zinc-400">
-                  {formatTimeAgo(comment.createdAt, language)}
+                  {formatTimeAgo(
+                    comment.createdAt,
+                    language,
+                    undefined,
+                    initialNowMs,
+                  )}
                 </span>
 
                 <ContentActionsMenu

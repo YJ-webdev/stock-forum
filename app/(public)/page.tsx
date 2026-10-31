@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 
 import { auth } from "@/auth";
+
 import { resolveLanguage } from "@/lib/data/languages";
 import { HOME_LABELS } from "@/lib/data/translations";
 
@@ -52,6 +53,8 @@ export default async function Home() {
     getHomeCommunityMarkets(),
   ]);
 
+  const initialNowMs = Date.now();
+
   const language = resolveLanguage(session?.user?.language);
   const labels = HOME_LABELS[language];
 
@@ -74,7 +77,7 @@ export default async function Home() {
         >
           {labels.predict}
         </p>
-        {/* bull or bear? */}
+
         <HomeMarketCarousel markets={markets} />
       </section>
 
@@ -85,14 +88,15 @@ export default async function Home() {
 
         <p
           className="
-            truncate text-xs font-normal
-            tracking-wider text-muted-foreground/50
+            truncate text-xs font-normal tracking-wider
+            text-muted-foreground/50
           "
         >
           {labels.latest_comments}
         </p>
-        {/* write composer */}
+
         <HomeCommunity
+          initialNowMs={initialNowMs}
           initialComments={community.comments}
           initialNextCursor={community.nextCursor}
           initialTotalCount={community.totalCount}
