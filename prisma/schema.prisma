@@ -260,6 +260,8 @@ model Reply {
 
   content    String
   gifUrl     String?
+  gifWidth   Int?
+  gifHeight  Int?
   visibility ContentVisibility @default(PUBLIC)
 
   // Comment this reply belongs to
@@ -268,11 +270,11 @@ model Reply {
 
   // Author
   authorId String
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   // Parent reply
   parentId String?
-  parent   Reply?  @relation("ReplyThread", fields: [parentId], references: [id], onDelete: Cascade)
+  parent   Reply? @relation("ReplyThread", fields: [parentId], references: [id], onDelete: Cascade)
 
   // Child replies
   replies       Reply[]        @relation("ReplyThread")

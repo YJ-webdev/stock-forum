@@ -2,7 +2,6 @@
 
 import { useRef, useState, useTransition, type KeyboardEvent } from "react";
 import type { JSONContent } from "@tiptap/react";
-import { X } from "lucide-react";
 import { toast } from "sonner";
 
 import { editComment } from "@/app/actions/post";
@@ -15,13 +14,15 @@ import {
   CONTENT_RESULT_LABELS,
 } from "@/lib/data/translations";
 
+import { buildCommentContent } from "@/lib/utils/build-comment-content";
+import { getGifDimensions } from "@/lib/utils/gif-dimensions";
+
 import { Button } from "@/components/ui/button";
 
 import { CommentTextarea } from "./comment-textarea";
 import { GifButton } from "./gif-button";
-import type { GifResult } from "./gif-picker";
 import { GifPreview } from "./gif-preview";
-import { buildCommentContent } from "@/lib/utils/build-comment-content";
+import type { GifResult } from "./gif-picker";
 
 interface CommentEditInputProps {
   commentId: string;
@@ -40,6 +41,8 @@ interface EditableGif {
   src: string;
   preview?: string;
   title: string;
+  width: number | null;
+  height: number | null;
 }
 
 function getNodeText(node: JSONContent): string {
@@ -61,13 +64,19 @@ function getInitialComment(content: JSONContent): {
       paragraphs.push(getNodeText(node));
     }
 
-    if (node.type === "image" && node.attrs?.src) {
-      const src = String(node.attrs.src);
+    if (
+      node.type === "image" &&
+      typeof node.attrs?.src === "string" &&
+      node.attrs.src
+    ) {
+      const dimensions = getGifDimensions(node.attrs.width, node.attrs.height);
 
       gif = {
-        src,
-        preview: src,
-        title: String(node.attrs.alt ?? "GIF"),
+        src: node.attrs.src,
+        preview: node.attrs.src,
+        title: typeof node.attrs.alt === "string" ? node.attrs.alt : "GIF",
+        width: dimensions?.width ?? null,
+        height: dimensions?.height ?? null,
       };
     }
   }
@@ -94,9 +103,11 @@ export function CommentEditInput({
   const [initial] = useState(() => getInitialComment(initialContent));
 
   const [comment, setComment] = useState(initial.text);
+
   const [selectedGif, setSelectedGif] = useState<EditableGif | null>(
     initial.gif,
   );
+
   const [isPending, startTransition] = useTransition();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -115,7 +126,7 @@ export function CommentEditInput({
     comment.trim() !== initial.text.trim() ||
     (selectedGif?.src ?? null) !== (initial.gif?.src ?? null);
 
-  // Keep access feedback available for guests and restricted users.
+  // Keep access feedback available for guests/restricted users.
   const saveDisabled =
     isPending ||
     (isLoggedIn && !isChatRestricted && (!hasContent || !hasChanges));
@@ -131,10 +142,14 @@ export function CommentEditInput({
   function handleGifSelect(gif: GifResult) {
     if (inputReadOnly || submittingRef.current) return;
 
+    const dimensions = getGifDimensions(gif.width, gif.height);
+
     setSelectedGif({
       src: gif.src,
       preview: gif.preview,
       title: gif.title,
+      width: dimensions?.width ?? null,
+      height: dimensions?.height ?? null,
     });
   }
 

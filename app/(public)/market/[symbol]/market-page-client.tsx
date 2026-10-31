@@ -82,7 +82,9 @@ const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   display: "swap",
-  preload: false,
+  preload: true,
+  adjustFontFallback: true,
+  fallback: ["monospace"],
 });
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
@@ -1268,6 +1270,7 @@ export default function MarketPageClient({
                   handleVote,
                   handleUpdateVote,
                   isPending: isPending || isVoteChecking || voteLookupFailed,
+                  isSubmitting: isPending,
                   targetMs: votingWindow.targetMs,
                   countdownType: votingWindow.countdownType,
                   showCountdown: votingWindow.showCountdown,

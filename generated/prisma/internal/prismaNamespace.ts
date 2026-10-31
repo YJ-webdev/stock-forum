@@ -2311,6 +2311,8 @@ export const ReplyScalarFieldEnum = {
   id: 'id',
   content: 'content',
   gifUrl: 'gifUrl',
+  gifWidth: 'gifWidth',
+  gifHeight: 'gifHeight',
   visibility: 'visibility',
   commentId: 'commentId',
   authorId: 'authorId',

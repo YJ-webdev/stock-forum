@@ -1,8 +1,12 @@
 import type { JSONContent } from "@tiptap/react";
 
+import { getGifDimensions } from "@/lib/utils/gif-dimensions";
+
 interface CommentGif {
   src: string;
   title: string;
+  width?: number | null;
+  height?: number | null;
 }
 
 export function buildCommentContent(
@@ -22,11 +26,14 @@ export function buildCommentContent(
   }
 
   if (gif) {
+    const dimensions = getGifDimensions(gif.width, gif.height);
+
     content.push({
       type: "image",
       attrs: {
         src: gif.src,
         alt: gif.title,
+        ...(dimensions ?? {}),
       },
     });
   }

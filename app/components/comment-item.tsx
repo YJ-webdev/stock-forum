@@ -8,6 +8,7 @@ import { ChevronDown } from "lucide-react";
 import { RiHeartFill } from "react-icons/ri";
 import { toast } from "sonner";
 
+import { getGifDimensions } from "@/lib/utils/gif-dimensions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { toggleCommentLike } from "@/app/actions/like";
@@ -945,6 +946,16 @@ export function CommentItem({
   );
 }
 
+function getImageDimension(value: unknown): number | undefined {
+  if (typeof value !== "number" && typeof value !== "string") {
+    return undefined;
+  }
+
+  const dimension = Number(value);
+
+  return Number.isFinite(dimension) && dimension > 0 ? dimension : undefined;
+}
+
 function CommentTextContent({
   content,
   editedLabel,
@@ -957,7 +968,13 @@ function CommentTextContent({
   readLessLabel: string;
 }) {
   const paragraphs: string[] = [];
-  const images: { src: string; alt: string }[] = [];
+
+  const images: {
+    src: string;
+    alt: string;
+    width?: number;
+    height?: number;
+  }[] = [];
 
   for (const node of content.content ?? []) {
     if (node.type === "paragraph") {
@@ -969,9 +986,12 @@ function CommentTextContent({
       typeof node.attrs?.src === "string" &&
       node.attrs.src
     ) {
+      const dimensions = getGifDimensions(node.attrs.width, node.attrs.height);
+
       images.push({
         src: node.attrs.src,
         alt: typeof node.attrs.alt === "string" ? node.attrs.alt : "GIF",
+        ...(dimensions ?? {}),
       });
     }
   }
@@ -996,10 +1016,12 @@ function CommentTextContent({
           key={`${image.src}-${index}`}
           src={image.src}
           alt={image.alt}
+          width={image.width}
+          height={image.height}
           loading="lazy"
           decoding="async"
           className="
-            mt-3 h-auto w-45 max-w-full
+            mt-3 block h-auto w-45 max-w-full
             rounded-lg object-contain
           "
         />

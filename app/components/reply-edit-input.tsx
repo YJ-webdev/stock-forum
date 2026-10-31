@@ -12,26 +12,40 @@ import {
   COMMENT_EDIT_LABELS,
   REPLY_EDIT_LABELS,
 } from "@/lib/data/translations";
+import { getGifDimensions } from "@/lib/utils/gif-dimensions";
 
 import { Button } from "@/components/ui/button";
 
 import { CommentTextarea } from "./comment-textarea";
 import { GifButton } from "./gif-button";
-import type { GifResult } from "./gif-picker";
 import { GifPreview } from "./gif-preview";
+import type { GifResult } from "./gif-picker";
 
 interface ReplyEditInputProps {
   replyId: string;
   initialContent: string;
   initialGifUrl: string | null;
+  initialGifWidth?: number | null;
+  initialGifHeight?: number | null;
+
   onCancel: () => void;
   onSaved: () => void | Promise<void>;
+}
+
+interface EditableReplyGif {
+  src: string;
+  preview?: string;
+  title: string;
+  width: number | null;
+  height: number | null;
 }
 
 export function ReplyEditInput({
   replyId,
   initialContent,
   initialGifUrl,
+  initialGifWidth = null,
+  initialGifHeight = null,
   onCancel,
   onSaved,
 }: ReplyEditInputProps) {
@@ -43,7 +57,23 @@ export function ReplyEditInput({
   const commentLabels = COMMENT_LABELS[language];
 
   const [content, setContent] = useState(initialContent);
-  const [gifUrl, setGifUrl] = useState<string | null>(initialGifUrl);
+
+  const [selectedGif, setSelectedGif] = useState<EditableReplyGif | null>(
+    () => {
+      if (!initialGifUrl) return null;
+
+      const dimensions = getGifDimensions(initialGifWidth, initialGifHeight);
+
+      return {
+        src: initialGifUrl,
+        preview: initialGifUrl,
+        title: "GIF",
+        width: dimensions?.width ?? null,
+        height: dimensions?.height ?? null,
+      };
+    },
+  );
+
   const [isPending, startTransition] = useTransition();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -56,12 +86,14 @@ export function ReplyEditInput({
 
   const inputReadOnly = !isLoggedIn || isChatRestricted || isPending;
 
+  const gifUrl = selectedGif?.src ?? null;
+
   const hasContent = content.trim().length > 0 || Boolean(gifUrl);
 
   const hasChanges =
     content.trim() !== initialContent.trim() || gifUrl !== initialGifUrl;
 
-  // Allow guests and restricted users to receive access feedback.
+  // Keep access feedback available for guests/restricted users.
   const saveDisabled =
     isPending ||
     (isLoggedIn && !isChatRestricted && (!hasContent || !hasChanges));
@@ -77,13 +109,21 @@ export function ReplyEditInput({
   function handleGifSelect(gif: GifResult) {
     if (inputReadOnly || submittingRef.current) return;
 
-    setGifUrl(gif.src);
+    const dimensions = getGifDimensions(gif.width, gif.height);
+
+    setSelectedGif({
+      src: gif.src,
+      preview: gif.preview,
+      title: gif.title,
+      width: dimensions?.width ?? null,
+      height: dimensions?.height ?? null,
+    });
   }
 
   function handleGifRemove() {
     if (inputReadOnly || submittingRef.current) return;
 
-    setGifUrl(null);
+    setSelectedGif(null);
   }
 
   function handleCancel() {
@@ -108,7 +148,12 @@ export function ReplyEditInput({
     if (!hasContent || !hasChanges) return;
 
     const submittedContent = content.trim();
-    const submittedGifUrl = gifUrl;
+    const submittedGifUrl = selectedGif?.src ?? null;
+
+    const dimensions = getGifDimensions(
+      selectedGif?.width,
+      selectedGif?.height,
+    );
 
     submittingRef.current = true;
 
@@ -119,6 +164,8 @@ export function ReplyEditInput({
             replyId,
             content: submittedContent,
             gifUrl: submittedGifUrl,
+            gifWidth: dimensions?.width ?? null,
+            gifHeight: dimensions?.height ?? null,
           });
         } catch (error) {
           toast.error(
@@ -175,9 +222,11 @@ export function ReplyEditInput({
         onKeyDown={handleKeyDown}
       />
 
-      {gifUrl && (
+      {selectedGif && (
         <GifPreview
-          src={gifUrl}
+          src={selectedGif.src}
+          preview={selectedGif.preview}
+          title={selectedGif.title}
           disabled={inputReadOnly}
           onRemove={handleGifRemove}
         />

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { X } from "lucide-react";
 import { toast } from "sonner";
 
 import { createReply } from "@/app/actions/post";
@@ -9,16 +8,17 @@ import { useCurrentUser } from "@/app/context/user-context";
 
 import { resolveLanguage } from "@/lib/data/languages";
 import { COMMENT_LABELS, REPLY_INPUT_LABELS } from "@/lib/data/translations";
+import { getGifDimensions } from "@/lib/utils/gif-dimensions";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 import { CommentTextarea } from "./comment-textarea";
 import { GifButton } from "./gif-button";
+import { GifPreview } from "./gif-preview";
 
 import type { GifResult } from "./gif-picker";
 import type { MarketReply } from "./comment";
-import { GifPreview } from "./gif-preview";
 
 interface ReplyInputProps {
   commentId: string;
@@ -58,12 +58,14 @@ export function ReplyInput({
 
   const [reply, setReply] = useState("");
   const [selectedGif, setSelectedGif] = useState<GifResult | null>(null);
+
   const [isPending, startTransition] = useTransition();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const submittingRef = useRef(false);
 
   const language = resolveLanguage(user?.language ?? currentUser?.language);
+
   const labels = REPLY_INPUT_LABELS[language];
   const commentLabels = COMMENT_LABELS[language];
 
@@ -73,6 +75,7 @@ export function ReplyInput({
     user?.status === "BANNED" || user?.status === "MUTED";
 
   const inputReadOnly = !isLoggedIn || isChatRestricted || isPending;
+
   const hasContent = reply.trim().length > 0 || Boolean(selectedGif);
 
   const inputLabel = isLoggedIn
@@ -91,10 +94,6 @@ export function ReplyInput({
     setReply("");
     setSelectedGif(null);
   }, [isLoggedIn]);
-
-  // ---------------------------------------------------------------------------
-  // Draft actions
-  // ---------------------------------------------------------------------------
 
   function handleReplyChange(value: string) {
     if (inputReadOnly || submittingRef.current) return;
@@ -123,10 +122,6 @@ export function ReplyInput({
     onCancel();
   }
 
-  // ---------------------------------------------------------------------------
-  // Submission
-  // ---------------------------------------------------------------------------
-
   function handleSubmit() {
     if (isPending || submittingRef.current) return;
 
@@ -149,6 +144,11 @@ export function ReplyInput({
     const content = reply.trim();
     const gifUrl = selectedGif?.src ?? null;
 
+    const dimensions = getGifDimensions(
+      selectedGif?.width,
+      selectedGif?.height,
+    );
+
     submittingRef.current = true;
 
     startTransition(async () => {
@@ -161,6 +161,8 @@ export function ReplyInput({
             parentId,
             content,
             gifUrl,
+            gifWidth: dimensions?.width ?? null,
+            gifHeight: dimensions?.height ?? null,
           });
         } catch (error) {
           console.error("Failed to create reply:", error);

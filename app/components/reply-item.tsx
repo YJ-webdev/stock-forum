@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useTransition } from "react";
-
+import dynamic from "next/dynamic";
 import { RiHeartFill } from "react-icons/ri";
 import { toast } from "sonner";
 
@@ -25,12 +25,12 @@ import {
 
 import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 import { getErrorMessage } from "@/lib/utils/get-error-message";
+import { getGifDimensions } from "@/lib/utils/gif-dimensions";
 
 import { ContentActionsMenu } from "./content-actions-menu";
 import { UserProfileTrigger, type ProfileUser } from "./profile-card";
 
 import type { MarketReply } from "./comment";
-import dynamic from "next/dynamic";
 
 const ReplyEditInput = dynamic(() =>
   import("./reply-edit-input").then((module) => module.ReplyEditInput),
@@ -85,6 +85,7 @@ export function ReplyItem({
   const [showReplyInput, setShowReplyInput] = useState(false);
 
   const [childrenCollapsed, setChildrenCollapsed] = useState(true);
+
   const [threadHovered, setThreadHovered] = useState(false);
 
   const [openProfile, setOpenProfile] = useState<"avatar" | "name" | null>(
@@ -93,6 +94,7 @@ export function ReplyItem({
 
   const [likedByMe, setLikedByMe] = useState(reply.likedByMe);
   const [likeCount, setLikeCount] = useState(reply.likeCount);
+
   const [isLikePending, startLikeTransition] = useTransition();
 
   const username = reply.author.name ?? labels.guest;
@@ -104,6 +106,8 @@ export function ReplyItem({
     name: username,
     image: reply.author.image ?? null,
   };
+
+  const gifDimensions = getGifDimensions(reply.gifWidth, reply.gifHeight);
 
   const childReplies = replies.filter((child) => child.parentId === reply.id);
 
@@ -194,6 +198,7 @@ export function ReplyItem({
     const previousCount = likeCount;
 
     setLikedByMe(!previousLiked);
+
     setLikeCount((count) =>
       previousLiked ? Math.max(0, count - 1) : count + 1,
     );
@@ -263,10 +268,12 @@ export function ReplyItem({
     setLikedByMe(reply.likedByMe);
     setLikeCount(reply.likeCount);
   }, [reply.id, reply.likedByMe, reply.likeCount]);
+
   return (
     <div id={`reply-${reply.id}`} className="relative scroll-mt-0">
       <div className="group/reply relative flex gap-3">
         {/* Avatar */}
+
         <div className="relative z-1 shrink-0">
           <UserProfileTrigger
             target={profileTarget}
@@ -304,6 +311,7 @@ export function ReplyItem({
 
         <div className="relative min-w-0 flex-1">
           {/* Thread rail */}
+
           {hasChild && (
             <button
               type="button"
@@ -325,13 +333,15 @@ export function ReplyItem({
                 className={`
                   pointer-events-none absolute
                   left-2 top-0 -bottom-6 w-px
-                  transition-colors ${railColor}
+                  transition-colors
+                  ${railColor}
                 `}
               />
             </button>
           )}
 
           {/* Header */}
+
           <div className="flex min-w-0 items-center gap-1.5">
             <UserProfileTrigger
               target={profileTarget}
@@ -378,6 +388,7 @@ export function ReplyItem({
           </div>
 
           {/* Content */}
+
           {reply.moderatedAt ? (
             <p className="mt-1 text-[15px] italic text-zinc-400">
               {labels.hidden_reply}
@@ -387,6 +398,8 @@ export function ReplyItem({
               replyId={reply.id}
               initialContent={reply.content}
               initialGifUrl={reply.gifUrl}
+              initialGifWidth={reply.gifWidth}
+              initialGifHeight={reply.gifHeight}
               onCancel={() => setIsEditing(false)}
               onSaved={async () => {
                 setIsEditing(false);
@@ -406,21 +419,25 @@ export function ReplyItem({
               )}
 
               {reply.gifUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={reply.gifUrl}
                   alt="GIF"
+                  width={gifDimensions?.width}
+                  height={gifDimensions?.height}
                   loading="lazy"
                   decoding="async"
                   className="
-      mt-3 h-auto w-45 max-w-full
-      rounded-lg object-contain
-    "
+                    mt-3 block h-auto w-45 max-w-full
+                    rounded-lg object-contain
+                  "
                 />
               )}
             </>
           )}
 
           {/* Actions */}
+
           {!reply.moderatedAt && !isEditing && (
             <div className="mt-2 flex items-center gap-4">
               <button
@@ -474,6 +491,7 @@ export function ReplyItem({
           )}
 
           {/* Reply input */}
+
           {!reply.moderatedAt && showReplyInput && (
             <ReplyInput
               commentId={reply.commentId}
@@ -502,6 +520,7 @@ export function ReplyItem({
       </div>
 
       {/* Child replies */}
+
       {hasChild &&
         (childrenCollapsed ? (
           <button
@@ -515,7 +534,8 @@ export function ReplyItem({
               className={`
                 pointer-events-none absolute left-2 top-0
                 h-4 w-8 rounded-bl-xl border-b border-l
-                transition-colors ${curveColor}
+                transition-colors
+                ${curveColor}
               `}
             />
 
@@ -537,6 +557,7 @@ export function ReplyItem({
               return (
                 <div key={childReply.id} className="relative pl-12">
                   {/* Vertical rail */}
+
                   <button
                     type="button"
                     aria-label={labels.collapse_replies}
@@ -550,12 +571,14 @@ export function ReplyItem({
                       className={`
                         pointer-events-none absolute
                         left-2 -top-2 bottom-0 w-px
-                        transition-colors ${railColor}
+                        transition-colors
+                        ${railColor}
                       `}
                     />
                   </button>
 
                   {/* Curve */}
+
                   <button
                     type="button"
                     aria-label={labels.collapse_replies}
@@ -569,7 +592,8 @@ export function ReplyItem({
                       className={`
                         pointer-events-none absolute left-2 top-0
                         h-4 w-8 rounded-bl-xl border-b border-l
-                        transition-colors ${curveColor}
+                        transition-colors
+                        ${curveColor}
                       `}
                     />
                   </button>
@@ -594,7 +618,7 @@ export function ReplyItem({
 }
 
 // -----------------------------------------------------------------------------
-// TEXT / READ MORE
+// Text / Read more
 // -----------------------------------------------------------------------------
 
 interface ReplyTextContentProps {
@@ -641,9 +665,12 @@ export function ReplyTextContent({
         window.getComputedStyle(paragraph).lineHeight,
       );
 
-      if (!Number.isFinite(lineHeight) || lineHeight <= 0) return;
+      if (!Number.isFinite(lineHeight) || lineHeight <= 0) {
+        return;
+      }
 
       const collapsedHeight = lineHeight * MAX_COLLAPSED_LINES;
+
       const nextHasOverflow = paragraph.scrollHeight > collapsedHeight + 1;
 
       setHasOverflow((previous) =>
@@ -695,7 +722,9 @@ export function ReplyTextContent({
       }
 
       observer?.disconnect();
+
       window.removeEventListener("resize", scheduleMeasure);
+
       fonts?.removeEventListener("loadingdone", scheduleMeasure);
     };
   }, [displayContent, editedLabel]);
@@ -799,6 +828,10 @@ export function ReplyTextContent({
   );
 }
 
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+
 function getInitials(name: string) {
   return Array.from(name.trim())[0]?.toUpperCase() ?? "?";
 }
@@ -823,6 +856,7 @@ function hasDescendant(
   }
 
   const pending = [...(childrenByParent.get(parentId) ?? [])];
+
   const visited = new Set<string>([parentId]);
 
   while (pending.length > 0) {
@@ -832,6 +866,7 @@ function hasDescendant(
     if (id === targetId) return true;
 
     visited.add(id);
+
     pending.push(...(childrenByParent.get(id) ?? []));
   }
 

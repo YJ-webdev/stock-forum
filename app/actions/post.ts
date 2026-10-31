@@ -19,6 +19,7 @@ import { getContentText } from "@/lib/moderation/get-content-text";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { recordUserActivity } from "@/lib/activity/record-user-activity";
 import { getReferenceClose } from "@/lib/utils/get-reference-close";
+import { getGifDimensions } from "@/lib/utils/gif-dimensions";
 
 const MARKET_COMMENTS_PAGE_SIZE = 20;
 const HOME_COMMENTS_PAGE_SIZE = 10;
@@ -45,14 +46,20 @@ const REPLY_SELECT = {
   commentId: true,
   parentId: true,
   content: true,
+
   gifUrl: true,
+  gifWidth: true,
+  gifHeight: true,
+
   createdAt: true,
   updatedAt: true,
   editedAt: true,
   moderatedAt: true,
+
   author: {
     select: AUTHOR_SELECT,
   },
+
   _count: {
     select: {
       likes: true,
@@ -1448,11 +1455,15 @@ export async function createReply({
   parentId = null,
   content,
   gifUrl = null,
+  gifWidth = null,
+  gifHeight = null,
 }: {
   commentId: string;
   parentId?: string | null;
   content: string;
   gifUrl?: string | null;
+  gifWidth?: number | null;
+  gifHeight?: number | null;
 }) {
   const session = await auth();
 
@@ -1469,6 +1480,8 @@ export async function createReply({
   if (!trimmedContent && !gifUrl) {
     throw new Error(labels.write_reply);
   }
+
+  const dimensions = gifUrl ? getGifDimensions(gifWidth, gifHeight) : null;
 
   const moderationResult = moderateContent(trimmedContent);
 
@@ -1552,7 +1565,11 @@ export async function createReply({
     const reply = await tx.reply.create({
       data: {
         content: trimmedContent,
+
         gifUrl,
+        gifWidth: dimensions?.width ?? null,
+        gifHeight: dimensions?.height ?? null,
+
         commentId,
         authorId: userId,
         parentId,
@@ -1605,10 +1622,14 @@ export async function editReply({
   replyId,
   content,
   gifUrl = null,
+  gifWidth = null,
+  gifHeight = null,
 }: {
   replyId: string;
   content: string;
   gifUrl?: string | null;
+  gifWidth?: number | null;
+  gifHeight?: number | null;
 }) {
   const session = await auth();
 
@@ -1625,6 +1646,10 @@ export async function editReply({
   if (!trimmedContent && !gifUrl) {
     throw new Error(labels.write_reply);
   }
+
+  const submittedDimensions = gifUrl
+    ? getGifDimensions(gifWidth, gifHeight)
+    : null;
 
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`
@@ -1656,9 +1681,14 @@ export async function editReply({
         authorId: true,
         commentId: true,
         content: true,
+
         gifUrl: true,
+        gifWidth: true,
+        gifHeight: true,
+
         moderatedAt: true,
         visibility: true,
+
         comment: {
           select: {
             assets: {
@@ -1684,12 +1714,40 @@ export async function editReply({
       throw new Error(labels.reply_not_editable);
     }
 
-    // Preserve the original timestamp and history for unchanged content.
-    if (reply.content === trimmedContent && reply.gifUrl === gifUrl) {
-      const unchangedReply = await tx.reply.findUniqueOrThrow({
-        where: { id: replyId },
-        select: REPLY_SELECT,
-      });
+    const existingDimensions =
+      gifUrl && gifUrl === reply.gifUrl
+        ? getGifDimensions(reply.gifWidth, reply.gifHeight)
+        : null;
+
+    const dimensions = gifUrl
+      ? (submittedDimensions ?? existingDimensions)
+      : null;
+
+    const nextGifWidth = dimensions?.width ?? null;
+    const nextGifHeight = dimensions?.height ?? null;
+
+    const contentChanged =
+      reply.content !== trimmedContent || reply.gifUrl !== gifUrl;
+
+    const dimensionsChanged =
+      reply.gifWidth !== nextGifWidth || reply.gifHeight !== nextGifHeight;
+
+    if (!contentChanged) {
+      // Metadata-only changes should not create an edited
+      // badge or a content-edit activity.
+      const unchangedReply = dimensionsChanged
+        ? await tx.reply.update({
+            where: { id: replyId },
+            data: {
+              gifWidth: nextGifWidth,
+              gifHeight: nextGifHeight,
+            },
+            select: REPLY_SELECT,
+          })
+        : await tx.reply.findUniqueOrThrow({
+            where: { id: replyId },
+            select: REPLY_SELECT,
+          });
 
       return {
         success: true,
@@ -1708,7 +1766,11 @@ export async function editReply({
       where: { id: replyId },
       data: {
         content: trimmedContent,
+
         gifUrl,
+        gifWidth: nextGifWidth,
+        gifHeight: nextGifHeight,
+
         visibility,
         editedAt: new Date(),
       },

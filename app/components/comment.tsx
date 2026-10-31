@@ -64,8 +64,12 @@ export interface MarketReply {
   id: string;
   commentId: string;
   parentId: string | null;
+
   content: string;
+
   gifUrl: string | null;
+  gifWidth: number | null;
+  gifHeight: number | null;
 
   createdAt: Date;
   updatedAt: Date;
@@ -101,7 +105,12 @@ interface MarketCommentsProps {
     voteLookupKey: string;
 
     isMarketOpen: boolean;
+
+    // Blocks controls during lookup, submission, or lookup failure.
     isPending: boolean;
+
+    // Shows submission labels only during an actual submission.
+    isSubmitting: boolean;
 
     userPoints: number;
     betAmount: number;
@@ -178,8 +187,8 @@ export function MarketComments({
     page: initialCommentsPage,
   });
 
-  // Once the context changes, returning to the original context
-  // must fetch fresh comments instead of skipping the request.
+  // After a context change, returning to the original context
+  // must fetch fresh comments.
   const canReuseInitialCommentsRef = useRef(true);
 
   const matchesInitialComments =
@@ -284,8 +293,8 @@ export function MarketComments({
       canReuseInitialCommentsRef.current = false;
     }
 
-    // The first matching render already has server-provided comments.
-    // Keep local changes and skip the duplicate initial request.
+    // Initial comments already came from the server.
+    // Preserve local updates and skip a duplicate request.
     if (canReuseInitialCommentsRef.current && matchesInitialContext) {
       setCommentsLoading(false);
       setIsLoadingMore(false);
@@ -334,7 +343,7 @@ export function MarketComments({
           knownCommentIdsRef.current.add(id);
         }
 
-        // Preserve comments submitted while the request was running.
+        // Preserve comments submitted while loading.
         setComments((current) => [
           ...current.filter((comment) => !resultIds.has(comment.id)),
           ...result.comments,
@@ -679,6 +688,7 @@ export function MarketComments({
           isMarketOpen={prediction.isMarketOpen}
           buttonDisabled={!canEditVote || prediction.isPending || isSavingVote}
           isPending={prediction.isPending || isSavingVote}
+          isSubmitting={prediction.isSubmitting || isSavingVote}
           submitVote={() => {
             void saveEditedVote();
           }}
@@ -708,6 +718,7 @@ export function MarketComments({
             isSavingVote
           }
           isPending={prediction.isPending || isSavingVote}
+          isSubmitting={prediction.isSubmitting || isSavingVote}
           submitVote={submitVote}
           targetMs={prediction.targetMs}
           countdownType={prediction.countdownType}

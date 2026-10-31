@@ -107,6 +107,7 @@ interface PredictionCommentInputProps extends CommentDraftProps {
   isMarketOpen: boolean;
   buttonDisabled: boolean;
   isPending: boolean;
+  isSubmitting?: boolean;
 
   submitVote: (comment: string, gif: GifResult | null) => void;
 
@@ -257,6 +258,7 @@ export function PredictionCommentInput({
   isMarketOpen,
   buttonDisabled,
   isPending,
+  isSubmitting = isPending,
   submitVote,
   submitComment = createComment,
   targetMs,
@@ -716,14 +718,14 @@ export function PredictionCommentInput({
   }
 
   const submitLabel = isEditing
-    ? isPending
+    ? isSubmitting
       ? editLabels.saving
       : editLabels.save
     : isCommentOnly
       ? commentPending
         ? commentLabels.posting
         : commentLabels.comment
-      : isPending
+      : isSubmitting
         ? voteLabels.voting
         : voteLabels.vote;
 
@@ -976,22 +978,23 @@ export function PredictionCommentInput({
                 </button>
               )}
 
-              <span className="relative inline-flex shrink-0 rounded-md">
+              <span className="relative inline-flex h-9 shrink-0 rounded-md">
                 <Button
                   type="button"
                   size="sm"
                   disabled={busy || saveUnchanged}
                   onClick={handleSubmit}
                   className="
-                    shrink-0 cursor-pointer border-none
-                    bg-transparent text-zinc-800 shadow-none
-                    transition-colors hover:bg-transparent
-                    dark:bg-transparent dark:text-zinc-100
-                    dark:hover:bg-transparent
-                    disabled:cursor-not-allowed
-                    disabled:bg-transparent disabled:opacity-50
-                    dark:disabled:bg-transparent
-                  "
+  h-full shrink-0
+  cursor-pointer border-none
+  bg-transparent text-zinc-800 shadow-none
+  transition-colors hover:bg-transparent
+  dark:bg-transparent dark:text-zinc-100
+  dark:hover:bg-transparent
+  disabled:cursor-not-allowed
+  disabled:bg-transparent disabled:opacity-50
+  dark:disabled:bg-transparent
+"
                 >
                   {!isCommentOnly && (
                     <Flag
