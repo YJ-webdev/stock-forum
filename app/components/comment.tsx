@@ -11,7 +11,11 @@ import {
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
-import { getMarketComments, type MarketPageComments } from "@/app/actions/post";
+import {
+  getMarketComments,
+  MarketCommentsPage,
+  type MarketPageComments,
+} from "@/app/actions/post";
 import type {
   getMarketVote,
   updateMarketVote,
@@ -83,6 +87,10 @@ export interface MarketReply {
 }
 
 interface MarketCommentsProps {
+  initialCommentsPage: MarketCommentsPage;
+  initialCommentsViewerId: string | null;
+  initialCommentsSessionStartMs: number | null;
+
   assetSymbol: string;
   currentSessionStartMs: number | null;
 
@@ -129,6 +137,9 @@ export function MarketComments({
   prediction,
   currentSessionStartMs,
   onPredictionEdited,
+  initialCommentsPage,
+  initialCommentsViewerId,
+  initialCommentsSessionStartMs,
 }: MarketCommentsProps) {
   const user = useCurrentUser();
 
@@ -145,6 +156,19 @@ export function MarketComments({
 
   const viewerId = user?.id ?? null;
 
+  const initialCommentsRef = useRef({
+    contextKey: JSON.stringify([
+      assetSymbol,
+      initialCommentsViewerId,
+      initialCommentsSessionStartMs,
+    ]),
+    page: initialCommentsPage,
+  });
+
+  const matchesInitialComments =
+    initialCommentsRef.current.contextKey ===
+    JSON.stringify([assetSymbol, viewerId, currentSessionStartMs]);
+
   const [draft, setDraft] = useState<CommentDraft>({
     text: "",
     gif: null,
@@ -160,12 +184,22 @@ export function MarketComments({
   const [editBetAmount, setEditBetAmount] = useState(0);
   const [isSavingVote, setIsSavingVote] = useState(false);
 
-  const [comments, setComments] = useState<MarketPageComments>([]);
+  const [comments, setComments] = useState<MarketPageComments>(() =>
+    matchesInitialComments ? initialCommentsRef.current.page.comments : [],
+  );
 
-  const [nextCursor, setNextCursor] = useState<CommentCursor | null>(null);
+  const [nextCursor, setNextCursor] = useState<CommentCursor | null>(() =>
+    matchesInitialComments ? initialCommentsRef.current.page.nextCursor : null,
+  );
 
-  const [totalCount, setTotalCount] = useState(0);
-  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(() =>
+    matchesInitialComments ? initialCommentsRef.current.page.totalCount : 0,
+  );
+
+  const [commentsLoading, setCommentsLoading] = useState(
+    !matchesInitialComments,
+  );
+
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const [commentsRefreshVersion, setCommentsRefreshVersion] = useState(0);
@@ -174,7 +208,13 @@ export function MarketComments({
   const mountedRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const requestVersionRef = useRef(0);
-  const knownCommentIdsRef = useRef(new Set<string>());
+  const knownCommentIdsRef = useRef(
+    new Set<string>(
+      matchesInitialComments
+        ? initialCommentsRef.current.page.comments.map((comment) => comment.id)
+        : [],
+    ),
+  );
 
   const errorFallbackRef = useRef(labels.action_failed);
   errorFallbackRef.current = labels.action_failed;
@@ -222,6 +262,26 @@ export function MarketComments({
     let cancelled = false;
 
     loadingMoreRef.current = false;
+
+    const initialSnapshot = initialCommentsRef.current;
+
+    if (
+      commentsRefreshVersion === 0 &&
+      initialSnapshot.contextKey ===
+        JSON.stringify([assetSymbol, viewerId, currentSessionStartMs])
+    ) {
+      setCommentsLoading(false);
+      setIsLoadingMore(false);
+
+      return () => {
+        cancelled = true;
+
+        if (requestVersionRef.current === requestVersion) {
+          requestVersionRef.current += 1;
+        }
+      };
+    }
+
     knownCommentIdsRef.current.clear();
 
     setDirection(null);

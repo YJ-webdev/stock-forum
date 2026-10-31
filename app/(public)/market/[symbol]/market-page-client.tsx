@@ -30,7 +30,11 @@ import {
   type VoteDirection,
 } from "@/app/actions/market-vote";
 
-import { createComment, type MarketPageComments } from "@/app/actions/post";
+import {
+  createComment,
+  type MarketCommentsPage,
+  type MarketPageComments,
+} from "@/app/actions/post";
 
 import type { GifResult } from "@/app/components/gif-picker";
 import { buildCommentContent } from "@/lib/utils/build-comment-content";
@@ -87,13 +91,11 @@ interface MarketPageClientProps {
   initialVoteStats: MarketVoteStats | null;
   initialVoteStatsSessionKey: string | null;
   initialIsWatchlist: boolean;
+  initialCommentsPage: MarketCommentsPage;
+  initialCommentsViewerId: string | null;
+  initialCommentsSessionStartMs: number | null;
 }
 
-/**
- * Use the date of the actual chart data.
- * This also keeps the correct session when the API returns
- * the last available trading day during a holiday or weekend.
- */
 function getChartSession(
   symbol: string,
   history: { timestampMs: number }[] | undefined,
@@ -246,6 +248,9 @@ export default function MarketPageClient({
   initialVoteStats,
   initialVoteStatsSessionKey,
   initialIsWatchlist,
+  initialCommentsPage,
+  initialCommentsViewerId,
+  initialCommentsSessionStartMs,
 }: MarketPageClientProps) {
   const user = useCurrentUser();
   const userLanguage = resolveLanguage(user?.language);
@@ -1194,6 +1199,9 @@ export default function MarketPageClient({
         )}
 
         <MarketComments
+          initialCommentsPage={initialCommentsPage}
+          initialCommentsViewerId={initialCommentsViewerId}
+          initialCommentsSessionStartMs={initialCommentsSessionStartMs}
           key={selectedSymbol}
           assetSymbol={selectedSymbol}
           onPredictionEdited={handlePredictionEdited}

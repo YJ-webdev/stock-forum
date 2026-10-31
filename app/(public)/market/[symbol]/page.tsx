@@ -2,6 +2,8 @@
 
 import type { Metadata } from "next";
 
+import { auth } from "@/auth";
+import { getMarketComments } from "@/app/actions/post";
 import { getMarketVoteStats } from "@/app/actions/market-vote";
 import { isMarketInWatchlist } from "@/app/actions/watchlist";
 
@@ -77,17 +79,23 @@ export async function generateMetadata({
 export default async function Page({ params }: PageProps) {
   const { symbol, canPredict } = await resolveMarket(params);
 
-  const sessionDate = canPredict
-    ? getVotingWindow(symbol, Date.now()).predictionFor
-    : null;
+  const votingWindow = canPredict ? getVotingWindow(symbol, Date.now()) : null;
 
-  const [initialIsWatchlist, initialVoteStats] = await Promise.all([
-    isMarketInWatchlist(symbol),
+  const sessionDate = votingWindow?.predictionFor ?? null;
+  const currentSessionStartMs = votingWindow?.currentSessionStartMs ?? null;
 
-    sessionDate
-      ? getMarketVoteStats({ symbol, sessionDate })
-      : Promise.resolve(null),
-  ]);
+  const [initialIsWatchlist, initialVoteStats, initialCommentsPage, session] =
+    await Promise.all([
+      isMarketInWatchlist(symbol),
+
+      sessionDate
+        ? getMarketVoteStats({ symbol, sessionDate })
+        : Promise.resolve(null),
+
+      getMarketComments(symbol, null, currentSessionStartMs),
+
+      auth(),
+    ]);
 
   return (
     <>
@@ -97,7 +105,11 @@ export default async function Page({ params }: PageProps) {
         initialVoteStats={initialVoteStats}
         initialVoteStatsSessionKey={sessionDate?.toISOString() ?? null}
         initialIsWatchlist={initialIsWatchlist}
+        initialCommentsPage={initialCommentsPage}
+        initialCommentsViewerId={session?.user?.id ?? null}
+        initialCommentsSessionStartMs={currentSessionStartMs}
       />
+
       <ScrollToTopButton threshold={600} />
     </>
   );
