@@ -629,7 +629,13 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
                         )}
                       </div>
                     </div>
-                  ) : null
+                  ) : (
+                    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+                      <div className="flex h-[45%] min-h-0 shrink-0 flex-col overflow-hidden">
+                        <SideDataLoading />
+                      </div>
+                    </div>
+                  )
                 }
               >
                 {mainContent}
