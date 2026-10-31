@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { IBM_Plex_Mono } from "next/font/google";
 
+import type { CommentImage } from "@/lib/types/comment-image";
 import {
   type ChartRange,
   type SelectedRange,
@@ -518,6 +519,7 @@ export default function MarketPageClient({
     comment: string,
     gif: GifResult | null,
     onSuccess?: (comment: MarketPageComments[number]) => void | Promise<void>,
+    image: CommentImage | null = null,
   ) => {
     if (!canPredict) {
       toast.error("Predictions are not available for this asset.");
@@ -542,9 +544,10 @@ export default function MarketPageClient({
     }
 
     const currentWindow = getVotingWindow(selectedSymbol, Date.now());
+
     const sessionDate = currentWindow.predictionFor;
 
-    if (!currentWindow.canVote || !sessionDate) {
+    if (currentWindow.isMarketOpen || !currentWindow.canVote || !sessionDate) {
       toast.error(
         currentWindow.isMarketOpen
           ? "Voting is closed while the market is open."
@@ -587,11 +590,15 @@ export default function MarketPageClient({
       user?.status !== "MUTED";
 
     const trimmedComment = canWriteComment ? comment.trim() : "";
-    const submittedGif = canWriteComment ? gif : null;
+
+    const submittedImage = canWriteComment ? image : null;
+
+    // Keep a single attachment; an uploaded image takes priority.
+    const submittedGif = canWriteComment && !submittedImage ? gif : null;
 
     const content =
-      trimmedComment || submittedGif
-        ? buildCommentContent(trimmedComment, submittedGif)
+      trimmedComment || submittedGif || submittedImage
+        ? buildCommentContent(trimmedComment, submittedGif, submittedImage)
         : null;
 
     submittingVoteRef.current = true;
@@ -606,6 +613,7 @@ export default function MarketPageClient({
 
       try {
         let createdComment: MarketPageComments[number] | null = null;
+
         let updatedPoints: number | null = null;
 
         if (user?.id) {
@@ -676,6 +684,7 @@ export default function MarketPageClient({
           }).then((stats) => {
             if (isCurrentView()) {
               statsSessionKeyRef.current = sessionDate.toISOString();
+
               setVoteStats(stats);
             }
           }),

@@ -8,7 +8,14 @@ const nextConfig: NextConfig = {
   },
 
   images: {
+    qualities: [50, 75, 85],
+
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lfpsj0ziaamfikqh.public.blob.vercel-storage.com",
+        pathname: "/comment-images/**",
+      },
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",

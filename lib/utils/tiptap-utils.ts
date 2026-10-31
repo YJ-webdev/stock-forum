@@ -7,12 +7,14 @@ export function hasEditorContent(
 ): boolean {
   if (!node) return false;
 
-  if (node.text?.trim()) {
+  if (node.type === "text" && node.text?.trim()) {
     return true;
   }
 
   if (node.type === "image") {
-    return true;
+    return (
+      typeof node.attrs?.src === "string" && node.attrs.src.trim().length > 0
+    );
   }
 
   return node.content?.some(hasEditorContent) ?? false;

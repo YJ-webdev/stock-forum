@@ -17,6 +17,7 @@ import {
   PREDICTION_COMMENT_EDIT_LABELS,
 } from "@/lib/data/translations";
 
+import type { CommentImage } from "@/lib/types/comment-image";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { getErrorMessage } from "@/lib/utils/get-error-message";
 import { isDeletedPredictionContent } from "@/lib/utils/is-deleted-prediction-content";
@@ -24,10 +25,6 @@ import { buildCommentContent } from "@/lib/utils/build-comment-content";
 
 import { PredictionCommentInput } from "./prediction-comment-input";
 import type { GifResult } from "./gif-picker";
-
-// -----------------------------------------------------------------------------
-// Types and constants
-// -----------------------------------------------------------------------------
 
 type VoteDirection = "BULL" | "BEAR";
 type EditResult = Awaited<ReturnType<typeof editComment>>;
@@ -55,9 +52,11 @@ interface PredictionCommentEditInputProps {
   onSavingChange?: (saving: boolean) => void;
 }
 
-// -----------------------------------------------------------------------------
-// Helpers
-// -----------------------------------------------------------------------------
+interface InitialContent {
+  text: string;
+  gif: GifResult | null;
+  image: CommentImage | null;
+}
 
 function getNodeText(node: JSONContent): string {
   if (node.type === "text") return node.text ?? "";
@@ -66,16 +65,25 @@ function getNodeText(node: JSONContent): string {
   return (node.content ?? []).map(getNodeText).join("");
 }
 
-function getInitialContent(content: JSONContent): {
-  text: string;
-  gif: GifResult | null;
-} {
+function getDimension(value: unknown): number | null {
+  const number = Number(value);
+
+  return Number.isInteger(number) && number > 0 ? number : null;
+}
+
+function getInitialContent(content: JSONContent): InitialContent {
   if (isDeletedPredictionContent(content)) {
-    return { text: "", gif: null };
+    return {
+      text: "",
+      gif: null,
+      image: null,
+    };
   }
 
   const paragraphs: string[] = [];
+
   let gif: GifResult | null = null;
+  let image: CommentImage | null = null;
 
   for (const node of content.content ?? []) {
     if (node.type === "paragraph") {
@@ -83,28 +91,46 @@ function getInitialContent(content: JSONContent): {
     }
 
     if (
-      node.type === "image" &&
-      typeof node.attrs?.src === "string" &&
-      node.attrs.src
+      node.type !== "image" ||
+      typeof node.attrs?.src !== "string" ||
+      !node.attrs.src.trim()
     ) {
-      const src = node.attrs.src;
-      const width = Number(node.attrs.width);
-      const height = Number(node.attrs.height);
+      continue;
+    }
 
+    const src = node.attrs.src;
+    const width = getDimension(node.attrs.width);
+    const height = getDimension(node.attrs.height);
+
+    if (node.attrs.mediaType === "image") {
+      image = {
+        src,
+        title: typeof node.attrs.alt === "string" ? node.attrs.alt : "Image",
+        width: width ?? 1,
+        height: height ?? 1,
+        mediaType: "image",
+      };
+
+      gif = null;
+    } else {
+      // Existing image nodes without mediaType are legacy GIFs.
       gif = {
         id: src,
-        title: typeof node.attrs.alt === "string" ? node.attrs.alt : "GIF",
         src,
         preview: src,
-        width: Number.isFinite(width) && width > 0 ? width : 0,
-        height: Number.isFinite(height) && height > 0 ? height : 0,
+        title: typeof node.attrs.alt === "string" ? node.attrs.alt : "GIF",
+        width: width ?? 0,
+        height: height ?? 0,
       };
+
+      image = null;
     }
   }
 
   return {
     text: paragraphs.join("\n"),
     gif,
+    image,
   };
 }
 
@@ -118,10 +144,6 @@ function hasSameVotingState(previous: VotingWindow, next: VotingWindow) {
     previous.showCountdown === next.showCountdown
   );
 }
-
-// -----------------------------------------------------------------------------
-// Prediction comment editor
-// -----------------------------------------------------------------------------
 
 export function PredictionCommentEditInput({
   refreshOnSaved = true,
@@ -137,12 +159,12 @@ export function PredictionCommentEditInput({
   const { points, setPoints } = usePointBalance();
 
   const language = resolveLanguage(user?.language);
+
   const labels = PREDICTION_COMMENT_EDIT_LABELS[language];
   const commentLabels = COMMENT_LABELS[language];
   const actionLabels = COMMENT_ACTION_LABELS[language];
   const editLabels = COMMENT_EDIT_LABELS[language];
 
-  // Mount with a new key when opening a different editing session.
   const [initial] = useState(() => getInitialContent(initialContent));
 
   const [direction, setDirection] = useState<VoteDirection | null>(
@@ -155,10 +177,6 @@ export function PredictionCommentEditInput({
   const submittingRef = useRef(false);
   const mountedRef = useRef(false);
 
-  // ---------------------------------------------------------------------------
-  // Lifecycle
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
     mountedRef.current = true;
 
@@ -167,7 +185,6 @@ export function PredictionCommentEditInput({
     };
   }, []);
 
-  // Check every second, but publish only voting-state changes.
   useEffect(() => {
     function updateVotingState() {
       if (document.visibilityState !== "visible") return;
@@ -195,10 +212,6 @@ export function PredictionCommentEditInput({
       document.removeEventListener("visibilitychange", updateVotingState);
     };
   }, [prediction.symbol]);
-
-  // ---------------------------------------------------------------------------
-  // Voting window and points
-  // ---------------------------------------------------------------------------
 
   const sessionMs = new Date(prediction.sessionDate).getTime();
 
@@ -234,17 +247,17 @@ export function PredictionCommentEditInput({
 
   const showClosingCountdown = hasClosingTarget && votingWindow.showCountdown;
 
-  // ---------------------------------------------------------------------------
-  // Actions
-  // ---------------------------------------------------------------------------
-
   function handleCancel() {
     if (isPending || submittingRef.current) return;
 
     onCancel();
   }
 
-  function handleSave(text: string, gif: GifResult | null) {
+  function handleSave(
+    text: string,
+    gif: GifResult | null,
+    image: CommentImage | null,
+  ) {
     if (isPending || submittingRef.current) return;
 
     if (!user) {
@@ -257,7 +270,6 @@ export function PredictionCommentEditInput({
       return;
     }
 
-    // Always validate against the actual time when saving.
     const currentTime = Date.now();
     const canEditVoteNow = getEditWindow(currentTime).editable;
 
@@ -296,13 +308,14 @@ export function PredictionCommentEditInput({
       };
     }
 
-    const content = buildCommentContent(text, gif);
+    const content = buildCommentContent(text, gif, image);
 
     submittingRef.current = true;
-    onSavingChange?.(true);
 
     startTransition(async () => {
       try {
+        onSavingChange?.(true);
+
         let result: EditResult;
 
         try {
@@ -314,6 +327,7 @@ export function PredictionCommentEditInput({
         } catch (error) {
           if (mountedRef.current) {
             setNow(Date.now());
+
             toast.error(getErrorMessage(error, editLabels.update_failed));
           }
 
@@ -340,7 +354,9 @@ export function PredictionCommentEditInput({
 
           toast.info(labels.saved_refreshing);
         } finally {
-          if (refreshOnSaved) router.refresh();
+          if (refreshOnSaved) {
+            router.refresh();
+          }
         }
       } finally {
         submittingRef.current = false;
@@ -348,10 +364,6 @@ export function PredictionCommentEditInput({
       }
     });
   }
-
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
 
   return (
     <div className="min-w-0">
@@ -363,6 +375,7 @@ export function PredictionCommentEditInput({
         voteLocked={voteLocked}
         initialComment={initial.text}
         initialGif={initial.gif}
+        initialImage={initial.image}
         onCancel={handleCancel}
         assetSymbol={prediction.symbol}
         onCommentCreated={() => {}}

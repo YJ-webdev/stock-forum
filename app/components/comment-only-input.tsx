@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { toast } from "sonner";
 
@@ -13,17 +13,20 @@ import {
 
 import { resolveLanguage } from "@/lib/data/languages";
 import {
+  COMMENT_IMAGE_LABELS,
   COMMENT_LABELS,
   SUBMIT_VALIDATION_LABELS,
 } from "@/lib/data/translations";
+import type { CommentImage } from "@/lib/types/comment-image";
 import { buildCommentContent } from "@/lib/utils/build-comment-content";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 import { CommentTextarea } from "./comment-textarea";
-import { GifButton } from "./gif-button";
 import { GifPreview } from "./gif-preview";
+import { ImagePreview } from "./image-preview";
+import { MediaButtons } from "./media-buttons";
 import { VotingCountdown } from "./voting-countdown";
 import type { GifResult } from "./gif-picker";
 
@@ -68,21 +71,27 @@ export function CommentOnlyInput({
 }: CommentOnlyInputProps) {
   const user = useCurrentUser();
 
-  const { comment, setComment, selectedGif, setSelectedGif } = useCommentDraft(
-    initialComment,
-    null,
-    draft,
-    onDraftChange,
-  );
+  const {
+    comment,
+    selectedGif,
+    selectedImage,
+    setComment,
+    setSelectedGif,
+    setSelectedImage,
+    clearDraft,
+  } = useCommentDraft(initialComment, null, draft, onDraftChange);
 
   const [isPending, startTransition] = useTransition();
+  const [imageUploading, setImageUploading] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const submittingRef = useRef(false);
+  const imageUploadingRef = useRef(false);
 
   const language = resolveLanguage(user?.language ?? currentUser?.language);
 
   const commentLabels = COMMENT_LABELS[language];
+  const imageLabels = COMMENT_IMAGE_LABELS[language];
   const validationLabels = SUBMIT_VALIDATION_LABELS[language];
 
   const isLoggedIn = Boolean(user);
@@ -90,9 +99,13 @@ export function CommentOnlyInput({
   const isChatRestricted =
     user?.status === "BANNED" || user?.status === "MUTED";
 
+  const busy = isPending || imageUploading;
+
+  // Text can still be edited while an image uploads.
   const inputReadOnly = !isLoggedIn || isPending || isChatRestricted;
 
-  const hasContent = comment.trim().length > 0 || Boolean(selectedGif);
+  const hasContent =
+    comment.trim().length > 0 || Boolean(selectedGif) || Boolean(selectedImage);
 
   const showClosingCountdown =
     showCountdown && countdownType === "VOTING_CLOSES";
@@ -108,24 +121,56 @@ export function CommentOnlyInput({
   useEffect(() => {
     if (isLoggedIn) return;
 
-    setComment("");
-    setSelectedGif(null);
-  }, [isLoggedIn, setComment, setSelectedGif]);
+    clearDraft();
+  }, [isLoggedIn, clearDraft]);
+
+  function handleCommentChange(value: string) {
+    if (inputReadOnly || submittingRef.current) return;
+
+    setComment(value);
+  }
+
+  function handleImageUploadingChange(uploading: boolean) {
+    imageUploadingRef.current = uploading;
+    setImageUploading(uploading);
+  }
 
   function handleGifSelect(gif: GifResult) {
-    if (inputReadOnly || submittingRef.current) return;
+    if (inputReadOnly || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     setSelectedGif(gif);
   }
 
   function handleGifRemove() {
-    if (inputReadOnly || submittingRef.current) return;
+    if (inputReadOnly || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     setSelectedGif(null);
   }
 
+  function handleImageSelect(image: CommentImage) {
+    // Upload completion runs before the uploading state is cleared.
+    if (inputReadOnly || submittingRef.current) return;
+
+    // The draft hook also clears the selected GIF.
+    setSelectedImage(image);
+  }
+
+  function handleImageRemove() {
+    if (inputReadOnly || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
+
+    setSelectedImage(null);
+  }
+
   function handleSubmit() {
-    if (isPending || submittingRef.current) return;
+    if (isPending || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     if (!isLoggedIn) {
       toast.error(commentLabels.login.replace(/\.{3}$/, ""));
@@ -143,7 +188,7 @@ export function CommentOnlyInput({
       return;
     }
 
-    const content = buildCommentContent(comment, selectedGif);
+    const content = buildCommentContent(comment, selectedGif, selectedImage);
 
     submittingRef.current = true;
 
@@ -170,8 +215,7 @@ export function CommentOnlyInput({
           return;
         }
 
-        setComment("");
-        setSelectedGif(null);
+        clearDraft();
 
         toast.success(commentLabels.success);
 
@@ -207,11 +251,7 @@ export function CommentOnlyInput({
           <CommentTextarea
             textareaRef={textareaRef}
             value={comment}
-            onValueChange={(value) => {
-              if (inputReadOnly || submittingRef.current) return;
-
-              setComment(value);
-            }}
+            onValueChange={handleCommentChange}
             placeholder={inputLabel}
             isLoggedIn={isLoggedIn}
             isChatRestricted={isChatRestricted}
@@ -225,23 +265,33 @@ export function CommentOnlyInput({
               src={selectedGif.src}
               preview={selectedGif.preview}
               title={selectedGif.title}
-              disabled={inputReadOnly}
+              disabled={inputReadOnly || busy}
               onRemove={handleGifRemove}
             />
           )}
 
+          {isLoggedIn && selectedImage && (
+            <ImagePreview
+              image={selectedImage}
+              removeLabel={imageLabels.remove}
+              disabled={inputReadOnly || busy}
+              onRemove={handleImageRemove}
+            />
+          )}
+
           <div className="@container flex items-center justify-between gap-2 pb-2">
-            <div className="flex shrink-0 items-center gap-1">
-              <GifButton
-                isLoggedIn={isLoggedIn}
-                isChatRestricted={isChatRestricted}
-                busy={isPending}
-                loginMessage={commentLabels.login_gif}
-                restrictedMessage={commentLabels.restricted}
-                isSubmitting={() => submittingRef.current}
-                onSelect={handleGifSelect}
-              />
-            </div>
+            <MediaButtons
+              isLoggedIn={isLoggedIn}
+              isChatRestricted={isChatRestricted}
+              busy={isPending}
+              imageLabels={imageLabels}
+              gifLoginMessage={commentLabels.login_gif}
+              restrictedMessage={commentLabels.restricted}
+              isSubmitting={() => submittingRef.current}
+              onImageSelect={handleImageSelect}
+              onGifSelect={handleGifSelect}
+              onUploadingChange={handleImageUploadingChange}
+            />
 
             <div className="flex min-w-0 items-center justify-end gap-2">
               {showClosingCountdown && (
@@ -259,7 +309,8 @@ export function CommentOnlyInput({
               <Button
                 type="button"
                 size="sm"
-                disabled={isPending}
+                disabled={busy}
+                aria-busy={busy}
                 onClick={handleSubmit}
                 className="
                   shrink-0 cursor-pointer border-none
@@ -272,7 +323,11 @@ export function CommentOnlyInput({
                   dark:disabled:bg-transparent
                 "
               >
-                {isPending ? commentLabels.posting : commentLabels.comment}
+                {imageUploading
+                  ? imageLabels.uploading
+                  : isPending
+                    ? commentLabels.posting
+                    : commentLabels.comment}
               </Button>
             </div>
           </div>

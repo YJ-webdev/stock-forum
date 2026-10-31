@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ComponentProps } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { toast } from "sonner";
+import type { CommentImage } from "@/lib/types/comment-image";
 
 import {
   generateBotComment,
@@ -447,6 +448,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
   async function handlePredictionSubmit(
     comment: string,
     gif: GifResult | null,
+    image: CommentImage | null = null,
   ) {
     if (
       !selectedBot ||
@@ -468,13 +470,21 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
     const submittedMarket = selectedMarket;
     const submittedSelectionKey = selectionKey;
 
+    const submittedImage = image;
+    const submittedGif = submittedImage ? null : gif;
+    const submittedText = comment.trim();
+
+    const hasContent = Boolean(submittedText || submittedGif || submittedImage);
+
     requestInFlightRef.current = true;
     setIsSubmitting(true);
 
-    // Ignore an older background lookup after this operation starts.
+    // Ignore an older background lookup.
     stateRequestRevisionRef.current += 1;
     setLoadingState(false);
     setStateError(null);
+
+    let predictionSaved = false;
 
     try {
       const freshState = await getBotMarketState(
@@ -497,7 +507,11 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
         throw new Error("This bot already voted for this session.");
       }
 
-      if (!freshState.canVote || !freshState.sessionDate) {
+      if (
+        !freshState.canVote ||
+        freshState.isMarketOpen ||
+        !freshState.sessionDate
+      ) {
         throw new Error("Voting is closed.");
       }
 
@@ -514,18 +528,20 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
         throw new Error("This bot has insufficient points.");
       }
 
-      const hasContent = Boolean(comment.trim() || gif);
-
       const result = await createComment({
         botUserId: submittedBot.id,
         assetSymbols: [submittedMarket.symbol],
-        content: hasContent ? buildCommentContent(comment, gif) : null,
+        content: hasContent
+          ? buildCommentContent(submittedText, submittedGif, submittedImage)
+          : null,
         prediction: {
           direction: submittedDirection,
           pointsBet: submittedAmount,
           sessionDate: new Date(freshState.sessionDate),
         },
       });
+
+      predictionSaved = true;
 
       if (result.comment) {
         addSubmittedComment(
@@ -550,16 +566,20 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
           : "Bot prediction submitted.",
       );
     } catch (error) {
-      toast.error(getErrorMessage(error, REQUEST_FAILED));
+      if (predictionSaved) {
+        console.error("Bot prediction saved, but the UI update failed:", error);
 
-      // Reconcile status after a failed or uncertain submission.
+        toast.info("Prediction saved. Refresh to see the latest status.");
+      } else {
+        toast.error(getErrorMessage(error, REQUEST_FAILED));
+      }
+
       setRefreshRevision((revision) => revision + 1);
     } finally {
       requestInFlightRef.current = false;
       setIsSubmitting(false);
     }
   }
-
   // ---------------------------------------------------------------------------
   // Status text
   // ---------------------------------------------------------------------------
@@ -589,7 +609,7 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
       return "Voting is closed. You can still post a comment.";
     }
 
-    return "Choose Bull or Bear to vote, or select Comment only. Text and GIFs are optional when voting.";
+    return "Choose Bull or Bear to vote, or select Comment only. Text, GIFs, and images are optional when voting.";
   }
 
   const pointsLabel =
@@ -810,8 +830,8 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
                     maxBet={maxBet}
                     buttonDisabled={!canPredict}
                     isPending={isBusy}
-                    submitVote={(comment, gif) => {
-                      void handlePredictionSubmit(comment, gif);
+                    submitVote={(comment, gif, image) => {
+                      void handlePredictionSubmit(comment, gif, image);
                     }}
                     {...countdownProps}
                   />

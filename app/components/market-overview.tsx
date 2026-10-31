@@ -14,6 +14,7 @@ import {
 import { useCurrentUser } from "@/app/context/user-context";
 import { resolveLanguage } from "@/lib/data/languages";
 import { MARKET_PICKER_LABELS } from "@/lib/data/translations";
+import type { CommentImage } from "@/lib/types/comment-image";
 
 import {
   MARKET_SYMBOLS,
@@ -637,10 +638,17 @@ function OverviewPredictionPopup({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [close]);
 
-  async function submitVote(comment: string, gif: GifResult | null) {
-    if (savingRef.current || loading || loadError || (editing && viewerId))
+  async function submitVote(
+    comment: string,
+    gif: GifResult | null,
+    image: CommentImage | null = null,
+  ) {
+    if (savingRef.current || loading || loadError || (editing && viewerId)) {
       return;
+    }
+
     const liveWindow = getVotingWindow(item.symbol, Date.now());
+
     if (
       !liveWindow.canVote ||
       liveWindow.isMarketOpen ||
@@ -650,15 +658,19 @@ function OverviewPredictionPopup({
       toast.error(toastLabels.unavailable);
       return;
     }
+
     if (inputDisabled) {
       toast.error(toastLabels.unavailable);
       return;
     }
+
     if (!direction) {
       toast.error(validationLabels.direction);
       return;
     }
+
     const submittedAmount = viewerId ? betAmount : 0;
+
     if (
       !Number.isInteger(submittedAmount) ||
       submittedAmount < 0 ||
@@ -671,6 +683,9 @@ function OverviewPredictionPopup({
 
     savingRef.current = true;
     setSaving(true);
+
+    let saved = false;
+
     try {
       if (editing) {
         const result = await updateMarketVote({
@@ -679,13 +694,24 @@ function OverviewPredictionPopup({
           pointsBet: 0,
           sessionDate: new Date(sessionMs),
         });
-        if (result.points !== null) setPoints(result.points);
+
+        saved = true;
+
+        if (result.points !== null) {
+          setPoints(result.points);
+        }
       } else if (viewerId) {
         const canWrite = user?.status !== "BANNED" && user?.status !== "MUTED";
+
+        const submittedImage = canWrite ? image : null;
+
+        const submittedGif = canWrite && !submittedImage ? gif : null;
+
         const result = await createComment({
           content: buildCommentContent(
             canWrite ? comment : "",
-            canWrite ? gif : null,
+            submittedGif,
+            submittedImage,
           ),
           assetSymbols: [item.symbol],
           prediction: {
@@ -694,7 +720,12 @@ function OverviewPredictionPopup({
             sessionDate: new Date(sessionMs),
           },
         });
-        if (result.points !== null) setPoints(result.points);
+
+        saved = true;
+
+        if (result.points !== null) {
+          setPoints(result.points);
+        }
       } else {
         await submitMarketVote({
           symbol: item.symbol,
@@ -702,10 +733,15 @@ function OverviewPredictionPopup({
           pointsBet: 0,
           sessionDate: new Date(sessionMs),
         });
+
+        saved = true;
       }
+
       if (!mountedRef.current) return;
-      if (editing) toast.success(editLabels.saved_combined);
-      else
+
+      if (editing) {
+        toast.success(editLabels.saved_combined);
+      } else {
         toast.success(
           (submittedAmount > 0
             ? toastLabels.success_with_points
@@ -717,15 +753,31 @@ function OverviewPredictionPopup({
             )
             .replace("{points}", submittedAmount.toLocaleString(language)),
         );
+      }
+
       finish();
     } catch (error) {
-      if (mountedRef.current)
+      if (saved) {
+        console.error("Prediction saved, but the UI update failed:", error);
+
+        if (mountedRef.current) {
+          onClose();
+        }
+
+        return;
+      }
+
+      if (mountedRef.current) {
         toast.error(
           error instanceof Error ? error.message : toastLabels.failed,
         );
+      }
     } finally {
       savingRef.current = false;
-      if (mountedRef.current) setSaving(false);
+
+      if (mountedRef.current) {
+        setSaving(false);
+      }
     }
   }
 
@@ -830,8 +882,8 @@ function OverviewPredictionPopup({
             buttonDisabled={inputDisabled}
             isPending={saving}
             isSubmitting={saving}
-            submitVote={(comment, gif) => {
-              void submitVote(comment, gif);
+            submitVote={(comment, gif, image) => {
+              void submitVote(comment, gif, image);
             }}
             targetMs={windowState.targetMs}
             countdownType={windowState.countdownType}

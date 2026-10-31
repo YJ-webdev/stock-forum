@@ -24,6 +24,7 @@ import {
 
 import { resolveLanguage } from "@/lib/data/languages";
 import {
+  COMMENT_IMAGE_LABELS,
   COMMENT_LABELS,
   COMMENT_ONLY_LABELS,
   EDIT_VOTE_LABELS,
@@ -31,16 +32,18 @@ import {
   SUBMIT_VALIDATION_LABELS,
   VOTE_LABELS,
 } from "@/lib/data/translations";
+import type { CommentImage } from "@/lib/types/comment-image";
 import { buildCommentContent } from "@/lib/utils/build-comment-content";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 import { CommentTextarea } from "./comment-textarea";
-import { GifButton } from "./gif-button";
 import { GifPreview } from "./gif-preview";
+import { ImagePreview } from "./image-preview";
 import { VotingCountdown } from "./voting-countdown";
 import type { GifResult } from "./gif-picker";
+import { MediaButtons } from "./media-buttons";
 
 type VoteDirection = "BULL" | "BEAR";
 
@@ -81,6 +84,8 @@ interface PredictionCommentInputProps extends CommentDraftProps {
 
   initialComment?: string;
   initialGif?: GifResult | null;
+  initialImage?: CommentImage | null;
+
   onCancel?: () => void;
 
   assetSymbol: string;
@@ -109,7 +114,11 @@ interface PredictionCommentInputProps extends CommentDraftProps {
   isPending: boolean;
   isSubmitting?: boolean;
 
-  submitVote: (comment: string, gif: GifResult | null) => void;
+  submitVote: (
+    comment: string,
+    gif: GifResult | null,
+    image: CommentImage | null,
+  ) => void;
 
   submitComment?: (input: {
     content: JSONContent;
@@ -121,20 +130,28 @@ interface PredictionCommentInputProps extends CommentDraftProps {
   showCountdown: boolean;
 }
 
-function clampPoints(value: number, limit: number): number {
-  if (!Number.isFinite(value)) return 0;
-
-  return (
-    Math.floor(Math.max(0, Math.min(limit, value)) / POINT_STEP) * POINT_STEP
-  );
-}
-
 interface DirectionToggleProps {
   direction: VoteDirection | null;
   disabled: boolean;
   bullLabel: string;
   bearLabel: string;
   onSelect: (direction: VoteDirection) => void;
+}
+
+interface PointStepButtonProps {
+  change: number;
+  disabled: boolean;
+  onStart: (event: PointerEvent<HTMLButtonElement>, change: number) => void;
+  onEnd: (event: { pointerId: number }) => void;
+  onStep: (change: number) => boolean;
+}
+
+function clampPoints(value: number, limit: number): number {
+  if (!Number.isFinite(value)) return 0;
+
+  return (
+    Math.floor(Math.max(0, Math.min(limit, value)) / POINT_STEP) * POINT_STEP
+  );
 }
 
 function DirectionToggle({
@@ -196,14 +213,6 @@ function DirectionToggle({
   );
 }
 
-interface PointStepButtonProps {
-  change: number;
-  disabled: boolean;
-  onStart: (event: PointerEvent<HTMLButtonElement>, change: number) => void;
-  onEnd: (event: { pointerId: number }) => void;
-  onStep: (change: number) => boolean;
-}
-
 function PointStepButton({
   change,
   disabled,
@@ -223,7 +232,6 @@ function PointStepButton({
       onPointerCancel={onEnd}
       onLostPointerCapture={onEnd}
       onClick={(event) => {
-        // Keyboard and assistive-technology clicks.
         if (event.detail === 0) {
           onStep(change);
         }
@@ -245,6 +253,7 @@ export function PredictionCommentInput({
   onDraftChange,
   initialComment = "",
   initialGif = null,
+  initialImage = null,
   onCancel,
   assetSymbol,
   onCommentCreated,
@@ -269,17 +278,28 @@ export function PredictionCommentInput({
 
   const [commentOnly, setCommentOnly] = useState(direction === null);
 
-  const { comment, setComment, selectedGif, setSelectedGif } = useCommentDraft(
+  const {
+    comment,
+    setComment,
+    selectedGif,
+    setSelectedGif,
+    selectedImage,
+    setSelectedImage,
+    clearDraft,
+  } = useCommentDraft(
     initialComment,
     initialGif,
     draft,
     onDraftChange,
+    initialImage,
   );
 
   const [commentPending, startCommentTransition] = useTransition();
+  const [imageUploading, setImageUploading] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const submittingRef = useRef(false);
+  const imageUploadingRef = useRef(false);
 
   const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -287,7 +307,8 @@ export function PredictionCommentInput({
 
   const initialValuesRef = useRef({
     comment: initialComment.trim(),
-    gifSrc: initialGif?.src ?? null,
+    gifSrc: initialImage ? null : (initialGif?.src ?? null),
+    imageSrc: initialImage?.src ?? null,
     direction,
     betAmount,
   });
@@ -296,6 +317,7 @@ export function PredictionCommentInput({
 
   const voteLabels = VOTE_LABELS[language];
   const commentLabels = COMMENT_LABELS[language];
+  const imageLabels = COMMENT_IMAGE_LABELS[language];
   const commentOnlyLabel = COMMENT_ONLY_LABELS[language];
   const editLabels = EDIT_VOTE_LABELS[language];
   const unchangedLabel = PREDICTION_EDIT_UNCHANGED_LABELS[language];
@@ -311,7 +333,8 @@ export function PredictionCommentInput({
   const isChatRestricted =
     user?.status === "BANNED" || user?.status === "MUTED";
 
-  const busy = isPending || commentPending;
+  const savePending = isPending || isSubmitting || commentPending;
+  const busy = savePending || imageUploading;
 
   const canWriteComment = showCommentEditor && isLoggedIn && !isChatRestricted;
 
@@ -321,14 +344,16 @@ export function PredictionCommentInput({
 
   const pointsDisabled = controlsDisabled || !isLoggedIn || isCommentOnly;
 
-  const hasContent = comment.trim().length > 0 || Boolean(selectedGif);
+  const hasContent =
+    comment.trim().length > 0 || Boolean(selectedGif) || Boolean(selectedImage);
 
   const initialValues = initialValuesRef.current;
 
   const commentChanged =
     isCombinedEdit &&
     (comment.trim() !== initialValues.comment ||
-      (selectedGif?.src ?? null) !== initialValues.gifSrc);
+      (selectedGif?.src ?? null) !== initialValues.gifSrc ||
+      (selectedImage?.src ?? null) !== initialValues.imageSrc);
 
   const voteChanged =
     !voteLocked &&
@@ -358,7 +383,6 @@ export function PredictionCommentInput({
       betAmount % POINT_STEP === 0);
 
   const showMax = pointsLimit > 0 && betAmount >= pointsLimit;
-
   const lockedVoteLabel = editLabels.locked;
 
   const showClosingCountdown =
@@ -406,7 +430,7 @@ export function PredictionCommentInput({
     (change: number): boolean => {
       const state = holdStateRef.current;
 
-      if (state.pointsDisabled) {
+      if (state.pointsDisabled || imageUploadingRef.current) {
         stopPointsHold();
         return false;
       }
@@ -446,7 +470,8 @@ export function PredictionCommentInput({
       event.button !== 0 ||
       !event.isPrimary ||
       activePointerRef.current !== null ||
-      holdStateRef.current.pointsDisabled
+      holdStateRef.current.pointsDisabled ||
+      imageUploadingRef.current
     ) {
       return;
     }
@@ -491,6 +516,7 @@ export function PredictionCommentInput({
     window.addEventListener("pointerup", handlePointerRelease);
     window.addEventListener("pointercancel", handlePointerRelease);
     window.addEventListener("blur", stopPointsHold);
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
@@ -499,6 +525,7 @@ export function PredictionCommentInput({
       window.removeEventListener("pointerup", handlePointerRelease);
       window.removeEventListener("pointercancel", handlePointerRelease);
       window.removeEventListener("blur", stopPointsHold);
+
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [stopPointsHold]);
@@ -512,17 +539,30 @@ export function PredictionCommentInput({
   useEffect(() => {
     if (isLoggedIn) return;
 
-    setComment("");
-    setSelectedGif(null);
+    clearDraft();
     setCommentOnly(true);
-  }, [isLoggedIn, setComment, setSelectedGif]);
+  }, [isLoggedIn, clearDraft]);
 
   function showLoginMessage() {
     toast.error(commentLabels.login.replace(/\.{3}$/, ""));
   }
 
+  function handleImageUploadingChange(uploading: boolean) {
+    imageUploadingRef.current = uploading;
+    setImageUploading(uploading);
+
+    if (uploading) {
+      stopPointsHold();
+    }
+  }
+
   function handleGifSelect(gif: GifResult) {
-    if (!isLoggedIn || chatDisabled || submittingRef.current) {
+    if (
+      !canWriteComment ||
+      chatDisabled ||
+      submittingRef.current ||
+      imageUploadingRef.current
+    ) {
       return;
     }
 
@@ -530,15 +570,44 @@ export function PredictionCommentInput({
   }
 
   function handleGifRemove() {
-    if (!isLoggedIn || chatDisabled || submittingRef.current) {
+    if (
+      !canWriteComment ||
+      chatDisabled ||
+      submittingRef.current ||
+      imageUploadingRef.current
+    ) {
       return;
     }
 
     setSelectedGif(null);
   }
 
+  function handleImageSelect(image: CommentImage) {
+    // ImageButton calls this before clearing its uploading state.
+    if (!canWriteComment || savePending || submittingRef.current) {
+      return;
+    }
+
+    setSelectedImage(image);
+  }
+
+  function handleImageRemove() {
+    if (
+      !canWriteComment ||
+      chatDisabled ||
+      submittingRef.current ||
+      imageUploadingRef.current
+    ) {
+      return;
+    }
+
+    setSelectedImage(null);
+  }
+
   function handleCancel() {
-    if (busy || submittingRef.current) return;
+    if (busy || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     stopPointsHold();
     onCancel?.();
@@ -554,12 +623,16 @@ export function PredictionCommentInput({
   }
 
   function handleDirectionClick(nextDirection: VoteDirection) {
+    if (busy || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
+
     if (voteLocked) {
       handleLockedVoteClick();
       return;
     }
 
-    if (controlsDisabled || submittingRef.current) return;
+    if (controlsDisabled) return;
 
     stopPointsHold();
     setCommentOnly(false);
@@ -567,7 +640,13 @@ export function PredictionCommentInput({
   }
 
   function handleCommentOnlyChange(checked: boolean) {
-    if (isEditing || busy || submittingRef.current || isChatRestricted) {
+    if (
+      isEditing ||
+      busy ||
+      submittingRef.current ||
+      imageUploadingRef.current ||
+      isChatRestricted
+    ) {
       return;
     }
 
@@ -585,6 +664,7 @@ export function PredictionCommentInput({
     if (
       chatDisabled ||
       submittingRef.current ||
+      imageUploadingRef.current ||
       !canWriteComment ||
       !hasContent
     ) {
@@ -595,7 +675,11 @@ export function PredictionCommentInput({
 
     startCommentTransition(async () => {
       try {
-        const content = buildCommentContent(comment, selectedGif);
+        const content = buildCommentContent(
+          comment,
+          selectedGif,
+          selectedImage,
+        );
 
         let createdComment: MarketPageComments[number] | undefined;
 
@@ -618,8 +702,7 @@ export function PredictionCommentInput({
           return;
         }
 
-        setComment("");
-        setSelectedGif(null);
+        clearDraft();
 
         toast.success(commentLabels.success);
 
@@ -639,7 +722,9 @@ export function PredictionCommentInput({
   function handleSubmit() {
     stopPointsHold();
 
-    if (busy || submittingRef.current) return;
+    if (busy || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     if ((isCommentOnly || isCombinedEdit) && isChatRestricted) {
       toast.error(commentLabels.restricted);
@@ -672,14 +757,13 @@ export function PredictionCommentInput({
       return;
     }
 
-    // A locked prediction still allows comment/GIF editing.
     if (isCombinedEdit && voteLocked) {
       if (buttonDisabled) {
         toast.error(validationLabels.unavailable);
         return;
       }
 
-      submitVote(comment, selectedGif);
+      submitVote(comment, selectedGif, selectedImage);
       return;
     }
 
@@ -707,6 +791,7 @@ export function PredictionCommentInput({
       submitVote(
         isCombinedEdit ? comment : "",
         isCombinedEdit ? selectedGif : null,
+        isCombinedEdit ? selectedImage : null,
       );
       return;
     }
@@ -714,6 +799,7 @@ export function PredictionCommentInput({
     submitVote(
       canWriteComment ? comment : "",
       canWriteComment ? selectedGif : null,
+      canWriteComment ? selectedImage : null,
     );
   }
 
@@ -838,8 +924,7 @@ export function PredictionCommentInput({
                     text-zinc-400 sm:block dark:text-zinc-500
                   "
                 >
-                  {availablePoints.toLocaleString(language)}
-                  pts.
+                  {availablePoints.toLocaleString(language)} pts.
                 </span>
               )}
 
@@ -902,7 +987,12 @@ export function PredictionCommentInput({
               textareaRef={textareaRef}
               value={comment}
               onValueChange={(value) => {
-                if (!canWriteComment || busy || submittingRef.current) {
+                if (
+                  !canWriteComment ||
+                  busy ||
+                  submittingRef.current ||
+                  imageUploadingRef.current
+                ) {
                   return;
                 }
 
@@ -924,8 +1014,17 @@ export function PredictionCommentInput({
               src={selectedGif.src}
               preview={selectedGif.preview}
               title={selectedGif.title}
-              disabled={!isLoggedIn || chatDisabled}
+              disabled={!canWriteComment || chatDisabled}
               onRemove={handleGifRemove}
+            />
+          )}
+
+          {showCommentEditor && isLoggedIn && selectedImage && (
+            <ImagePreview
+              image={selectedImage}
+              removeLabel={imageLabels.remove}
+              disabled={!canWriteComment || chatDisabled}
+              onRemove={handleImageRemove}
             />
           )}
 
@@ -938,14 +1037,17 @@ export function PredictionCommentInput({
           >
             <div className="flex shrink-0 items-center gap-1">
               {showCommentEditor && (
-                <GifButton
+                <MediaButtons
                   isLoggedIn={isLoggedIn}
                   isChatRestricted={isChatRestricted}
-                  busy={busy}
-                  loginMessage={commentLabels.login_gif}
+                  busy={savePending}
+                  imageLabels={imageLabels}
+                  gifLoginMessage={commentLabels.login_gif}
                   restrictedMessage={commentLabels.restricted}
                   isSubmitting={() => submittingRef.current}
-                  onSelect={handleGifSelect}
+                  onImageSelect={handleImageSelect}
+                  onGifSelect={handleGifSelect}
+                  onUploadingChange={handleImageUploadingChange}
                 />
               )}
             </div>
@@ -985,16 +1087,16 @@ export function PredictionCommentInput({
                   disabled={busy || saveUnchanged}
                   onClick={handleSubmit}
                   className="
-  h-full shrink-0
-  cursor-pointer border-none
-  bg-transparent text-zinc-800 shadow-none
-  transition-colors hover:bg-transparent
-  dark:bg-transparent dark:text-zinc-100
-  dark:hover:bg-transparent
-  disabled:cursor-not-allowed
-  disabled:bg-transparent disabled:opacity-50
-  dark:disabled:bg-transparent
-"
+                    h-full shrink-0
+                    cursor-pointer border-none
+                    bg-transparent text-zinc-800 shadow-none
+                    transition-colors hover:bg-transparent
+                    dark:bg-transparent dark:text-zinc-100
+                    dark:hover:bg-transparent
+                    disabled:cursor-not-allowed
+                    disabled:bg-transparent disabled:opacity-50
+                    dark:disabled:bg-transparent
+                  "
                 >
                   {!isCommentOnly && (
                     <Flag
@@ -1010,7 +1112,7 @@ export function PredictionCommentInput({
                     />
                   )}
 
-                  {submitLabel}
+                  {imageUploading ? imageLabels.uploading : submitLabel}
                 </Button>
 
                 {saveUnchanged && !busy && (

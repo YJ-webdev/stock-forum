@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { Check, LockKeyhole, X } from "lucide-react";
 import { PiArrowFatLinesUpFill } from "react-icons/pi";
 import { toast } from "sonner";
+import type { CommentImage } from "@/lib/types/comment-image";
 
 import {
   getMarketVote,
@@ -163,6 +164,7 @@ export function MarketVoteButton({
   const [draft, setDraft] = useState<CommentDraft>({
     text: "",
     gif: null,
+    image: null,
   });
 
   const draftOwnerRef = useRef(JSON.stringify([userId, symbol]));
@@ -254,7 +256,11 @@ export function MarketVoteButton({
       return;
     }
 
-    setDraft({ text: "", gif: null });
+    setDraft({
+      text: "",
+      gif: null,
+      image: null,
+    });
     setEditor(null);
     setEditableComment(null);
 
@@ -336,7 +342,11 @@ export function MarketVoteButton({
     setEditor({ lookupKey, mode });
   }
 
-  async function submitVote(comment: string, gif: GifResult | null) {
+  async function submitVote(
+    comment: string,
+    gif: GifResult | null,
+    image: CommentImage | null = null,
+  ) {
     if (
       submittingRef.current ||
       combinedSavingRef.current ||
@@ -348,7 +358,7 @@ export function MarketVoteButton({
 
     const mode = editor.mode;
 
-    // Member edits are handled by PredictionCommentEditInput.
+    // Member edits use PredictionCommentEditInput.
     if (mode === "edit" && userId) return;
 
     if (!canUsePrediction(mode)) return;
@@ -359,10 +369,9 @@ export function MarketVoteButton({
     }
 
     const currentWindow = getVotingWindow(symbol, Date.now());
-
     const sessionDate = currentWindow.predictionFor;
 
-    if (!currentWindow.canVote || !sessionDate) {
+    if (currentWindow.isMarketOpen || !currentWindow.canVote || !sessionDate) {
       toast.error(
         currentWindow.isMarketOpen
           ? toastLabels.market_open
@@ -402,6 +411,8 @@ export function MarketVoteButton({
     setIsSubmitting(true);
     voteRevisionRef.current += 1;
 
+    let voteSaved = false;
+
     function isCurrentView() {
       return (
         mountedRef.current && activeLookupKeyRef.current === submittedLookupKey
@@ -422,6 +433,8 @@ export function MarketVoteButton({
           sessionDate,
         });
 
+        voteSaved = true;
+
         updatedPoints = result.points;
         savedDirection = result.direction;
         savedPointsBet = result.pointsBet;
@@ -429,13 +442,21 @@ export function MarketVoteButton({
       } else if (userId) {
         const submittedComment = canWriteComment ? comment.trim() : "";
 
-        const submittedGif = canWriteComment ? gif : null;
+        const submittedImage = canWriteComment ? image : null;
 
-        const hasContent = Boolean(submittedComment || submittedGif);
+        const submittedGif = canWriteComment && !submittedImage ? gif : null;
+
+        const hasContent = Boolean(
+          submittedComment || submittedGif || submittedImage,
+        );
 
         const result = await createComment({
           content: hasContent
-            ? buildCommentContent(submittedComment, submittedGif)
+            ? buildCommentContent(
+                submittedComment,
+                submittedGif,
+                submittedImage,
+              )
             : null,
           assetSymbols: [symbol],
           prediction: {
@@ -445,6 +466,7 @@ export function MarketVoteButton({
           },
         });
 
+        voteSaved = true;
         updatedPoints = result.points;
       } else {
         const result = await submitMarketVote({
@@ -453,6 +475,8 @@ export function MarketVoteButton({
           pointsBet: 0,
           sessionDate,
         });
+
+        voteSaved = true;
 
         savedDirection = result.direction;
         savedPointsBet = result.pointsBet;
@@ -477,7 +501,12 @@ export function MarketVoteButton({
       setCheckedLookupKey(submittedLookupKey);
       setVoteLookupFailed(false);
 
-      setDraft({ text: "", gif: null });
+      setDraft({
+        text: "",
+        gif: null,
+        image: null,
+      });
+
       setEditor(null);
       setEditableComment(null);
 
@@ -506,6 +535,18 @@ export function MarketVoteButton({
       });
     } catch (error) {
       voteRevisionRef.current += 1;
+
+      if (voteSaved) {
+        console.error("Prediction saved, but the UI update failed:", error);
+
+        if (isCurrentView()) {
+          setEditor(null);
+          setEditableComment(null);
+          retryVoteLookup();
+        }
+
+        return;
+      }
 
       if (isCurrentView()) {
         toast.error(
@@ -540,7 +581,11 @@ export function MarketVoteButton({
     draftOwnerRef.current = owner;
 
     if (ownerChanged) {
-      setDraft({ text: "", gif: null });
+      setDraft({
+        text: "",
+        gif: null,
+        image: null,
+      });
     }
 
     setEditor((previous) => {
@@ -770,7 +815,11 @@ export function MarketVoteButton({
         return;
       }
 
-      setDraft({ text: "", gif: null });
+      setDraft({
+        text: "",
+        gif: null,
+        image: null,
+      });
       setEditor(null);
       setEditableComment(null);
 
@@ -1036,6 +1085,7 @@ export function MarketVoteButton({
                       setDraft({
                         text: "",
                         gif: null,
+                        image: null,
                       });
 
                       setEditor(null);
@@ -1123,8 +1173,8 @@ export function MarketVoteButton({
                   isMarketOpen={votingWindow.isMarketOpen}
                   isPending={isSubmitting}
                   buttonDisabled={inputDisabled}
-                  submitVote={(comment, gif) => {
-                    void submitVote(comment, gif);
+                  submitVote={(comment, gif, image) => {
+                    void submitVote(comment, gif, image);
                   }}
                   targetMs={votingWindow.targetMs}
                   countdownType={votingWindow.countdownType}

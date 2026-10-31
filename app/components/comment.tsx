@@ -39,6 +39,7 @@ import { PredictionCommentInput } from "./prediction-comment-input";
 import { CommentItem } from "./comment-item";
 import type { GifResult } from "./gif-picker";
 import { LoadMoreButton } from "./load-more-button";
+import type { CommentImage } from "@/lib/types/comment-image";
 
 const TIME_REFRESH_INTERVAL_MS = 60_000;
 
@@ -113,6 +114,7 @@ interface MarketCommentsProps {
       comment: string,
       gif: GifResult | null,
       onSuccess?: (comment: MarketPageComments[number]) => void | Promise<void>,
+      image?: CommentImage | null,
     ) => void;
 
     handleUpdateVote: (
@@ -189,6 +191,7 @@ export function MarketComments({
   const [draft, setDraft] = useState<CommentDraft>({
     text: "",
     gif: null,
+    image: null,
   });
 
   const [direction, setDirection] = useState<PredictionDirection | null>(null);
@@ -257,7 +260,11 @@ export function MarketComments({
   }, [initialNowMs]);
 
   useEffect(() => {
-    setDraft({ text: "", gif: null });
+    setDraft({
+      text: "",
+      gif: null,
+      image: null,
+    });
   }, [assetSymbol, viewerId]);
 
   useEffect(() => {
@@ -473,7 +480,11 @@ export function MarketComments({
         return;
       }
 
-      setDraft({ text: "", gif: null });
+      setDraft({
+        text: "",
+        gif: null,
+        image: null,
+      });
       addComment(comment);
     },
     [commentContextKey, addComment],
@@ -525,7 +536,11 @@ export function MarketComments({
     prediction.canVote &&
     !prediction.isMarketOpen;
 
-  function submitVote(comment: string, gif: GifResult | null) {
+  function submitVote(
+    comment: string,
+    gif: GifResult | null,
+    image: CommentImage | null,
+  ) {
     if (!prediction || prediction.isPending || savingVoteRef.current) {
       return;
     }
@@ -572,6 +587,7 @@ export function MarketComments({
       canWriteComment ? comment : "",
       canWriteComment ? gif : null,
       isMember ? onCommentCreated : undefined,
+      canWriteComment ? image : null,
     );
   }
 

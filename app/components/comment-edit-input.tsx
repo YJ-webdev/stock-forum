@@ -11,17 +11,20 @@ import { resolveLanguage } from "@/lib/data/languages";
 import {
   COMMENT_LABELS,
   COMMENT_EDIT_LABELS,
+  COMMENT_IMAGE_LABELS,
   CONTENT_RESULT_LABELS,
 } from "@/lib/data/translations";
 
+import type { CommentImage } from "@/lib/types/comment-image";
 import { buildCommentContent } from "@/lib/utils/build-comment-content";
 import { getGifDimensions } from "@/lib/utils/gif-dimensions";
 
 import { Button } from "@/components/ui/button";
 
 import { CommentTextarea } from "./comment-textarea";
-import { GifButton } from "./gif-button";
 import { GifPreview } from "./gif-preview";
+import { ImagePreview } from "./image-preview";
+import { MediaButtons } from "./media-buttons";
 import type { GifResult } from "./gif-picker";
 
 interface CommentEditInputProps {
@@ -45,6 +48,12 @@ interface EditableGif {
   height: number | null;
 }
 
+interface EditableContent {
+  text: string;
+  gif: EditableGif | null;
+  image: CommentImage | null;
+}
+
 function getNodeText(node: JSONContent): string {
   if (node.type === "text") return node.text ?? "";
   if (node.type === "hardBreak") return "\n";
@@ -52,12 +61,17 @@ function getNodeText(node: JSONContent): string {
   return (node.content ?? []).map(getNodeText).join("");
 }
 
-function getInitialComment(content: JSONContent): {
-  text: string;
-  gif: EditableGif | null;
-} {
+function getPositiveDimension(value: unknown): number | null {
+  const number = Number(value);
+
+  return Number.isInteger(number) && number > 0 ? number : null;
+}
+
+function getInitialComment(content: JSONContent): EditableContent {
   const paragraphs: string[] = [];
+
   let gif: EditableGif | null = null;
+  let image: CommentImage | null = null;
 
   for (const node of content.content ?? []) {
     if (node.type === "paragraph") {
@@ -65,26 +79,56 @@ function getInitialComment(content: JSONContent): {
     }
 
     if (
-      node.type === "image" &&
-      typeof node.attrs?.src === "string" &&
-      node.attrs.src
+      node.type !== "image" ||
+      typeof node.attrs?.src !== "string" ||
+      !node.attrs.src.trim()
     ) {
+      continue;
+    }
+
+    const src = node.attrs.src;
+
+    // Existing comments without mediaType are legacy GIF comments.
+    if (node.attrs.mediaType === "image") {
+      image = {
+        src,
+        title: typeof node.attrs.alt === "string" ? node.attrs.alt : "Image",
+        width: getPositiveDimension(node.attrs.width) ?? 1,
+        height: getPositiveDimension(node.attrs.height) ?? 1,
+        mediaType: "image",
+      };
+
+      gif = null;
+    } else {
       const dimensions = getGifDimensions(node.attrs.width, node.attrs.height);
 
       gif = {
-        src: node.attrs.src,
-        preview: node.attrs.src,
+        src,
+        preview: src,
         title: typeof node.attrs.alt === "string" ? node.attrs.alt : "GIF",
         width: dimensions?.width ?? null,
         height: dimensions?.height ?? null,
       };
+
+      image = null;
     }
   }
 
   return {
     text: paragraphs.join("\n"),
     gif,
+    image,
   };
+}
+
+function getAttachmentKey(
+  gif: EditableGif | null,
+  image: CommentImage | null,
+): string | null {
+  if (image) return `image:${image.src}`;
+  if (gif) return `gif:${gif.src}`;
+
+  return null;
 }
 
 export function CommentEditInput({
@@ -98,49 +142,64 @@ export function CommentEditInput({
 
   const labels = COMMENT_EDIT_LABELS[language];
   const commentLabels = COMMENT_LABELS[language];
+  const imageLabels = COMMENT_IMAGE_LABELS[language];
   const resultLabels = CONTENT_RESULT_LABELS[language];
 
   const [initial] = useState(() => getInitialComment(initialContent));
 
   const [comment, setComment] = useState(initial.text);
-
   const [selectedGif, setSelectedGif] = useState<EditableGif | null>(
     initial.gif,
   );
+  const [selectedImage, setSelectedImage] = useState<CommentImage | null>(
+    initial.image,
+  );
 
   const [isPending, startTransition] = useTransition();
+  const [imageUploading, setImageUploading] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const submittingRef = useRef(false);
+  const imageUploadingRef = useRef(false);
 
   const isLoggedIn = Boolean(user);
 
   const isChatRestricted =
     user?.status === "BANNED" || user?.status === "MUTED";
 
+  const busy = isPending || imageUploading;
   const inputReadOnly = !isLoggedIn || isChatRestricted || isPending;
 
-  const hasContent = comment.trim().length > 0 || Boolean(selectedGif);
+  const hasContent =
+    comment.trim().length > 0 || Boolean(selectedGif) || Boolean(selectedImage);
 
   const hasChanges =
     comment.trim() !== initial.text.trim() ||
-    (selectedGif?.src ?? null) !== (initial.gif?.src ?? null);
+    getAttachmentKey(selectedGif, selectedImage) !==
+      getAttachmentKey(initial.gif, initial.image);
 
-  // Keep access feedback available for guests/restricted users.
   const saveDisabled =
-    isPending ||
-    (isLoggedIn && !isChatRestricted && (!hasContent || !hasChanges));
+    busy || (isLoggedIn && !isChatRestricted && (!hasContent || !hasChanges));
 
   const inputLabel = isLoggedIn ? labels.placeholder : commentLabels.login;
 
   function handleCommentChange(value: string) {
-    if (inputReadOnly || submittingRef.current) return;
+    if (inputReadOnly || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     setComment(value);
   }
 
+  function handleImageUploadingChange(uploading: boolean) {
+    imageUploadingRef.current = uploading;
+    setImageUploading(uploading);
+  }
+
   function handleGifSelect(gif: GifResult) {
-    if (inputReadOnly || submittingRef.current) return;
+    if (inputReadOnly || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     const dimensions = getGifDimensions(gif.width, gif.height);
 
@@ -151,22 +210,46 @@ export function CommentEditInput({
       width: dimensions?.width ?? null,
       height: dimensions?.height ?? null,
     });
+
+    setSelectedImage(null);
   }
 
   function handleGifRemove() {
-    if (inputReadOnly || submittingRef.current) return;
+    if (inputReadOnly || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     setSelectedGif(null);
   }
 
+  function handleImageSelect(image: CommentImage) {
+    // Upload completion runs before the uploading state is cleared.
+    if (inputReadOnly || submittingRef.current) return;
+
+    setSelectedImage(image);
+    setSelectedGif(null);
+  }
+
+  function handleImageRemove() {
+    if (inputReadOnly || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
+
+    setSelectedImage(null);
+  }
+
   function handleCancel() {
-    if (isPending || submittingRef.current) return;
+    if (isPending || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     onCancel();
   }
 
   function handleSave() {
-    if (isPending || submittingRef.current) return;
+    if (isPending || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     if (!isLoggedIn) {
       toast.error(commentLabels.login.replace(/\.{3}$/, ""));
@@ -180,7 +263,7 @@ export function CommentEditInput({
 
     if (!hasContent || !hasChanges) return;
 
-    const content = buildCommentContent(comment, selectedGif);
+    const content = buildCommentContent(comment, selectedGif, selectedImage);
 
     submittingRef.current = true;
 
@@ -222,7 +305,12 @@ export function CommentEditInput({
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (isPending || submittingRef.current || event.nativeEvent.isComposing) {
+    if (
+      isPending ||
+      submittingRef.current ||
+      imageUploadingRef.current ||
+      event.nativeEvent.isComposing
+    ) {
       return;
     }
 
@@ -247,7 +335,7 @@ export function CommentEditInput({
         placeholder={inputLabel}
         isLoggedIn={isLoggedIn}
         isChatRestricted={isChatRestricted}
-        busy={isPending}
+        busy={busy}
         loginMessage={commentLabels.login}
         restrictedMessage={commentLabels.restricted}
         onKeyDown={handleKeyDown}
@@ -258,20 +346,32 @@ export function CommentEditInput({
           src={selectedGif.src}
           preview={selectedGif.preview}
           title={selectedGif.title}
-          disabled={inputReadOnly}
+          disabled={inputReadOnly || busy}
           onRemove={handleGifRemove}
         />
       )}
 
+      {isLoggedIn && selectedImage && (
+        <ImagePreview
+          image={selectedImage}
+          removeLabel={imageLabels.remove}
+          disabled={inputReadOnly || busy}
+          onRemove={handleImageRemove}
+        />
+      )}
+
       <div className="flex items-center justify-between gap-2 pb-2">
-        <GifButton
+        <MediaButtons
           isLoggedIn={isLoggedIn}
           isChatRestricted={isChatRestricted}
           busy={isPending}
-          loginMessage={commentLabels.login_gif}
+          imageLabels={imageLabels}
+          gifLoginMessage={commentLabels.login_gif}
           restrictedMessage={commentLabels.restricted}
           isSubmitting={() => submittingRef.current}
-          onSelect={handleGifSelect}
+          onImageSelect={handleImageSelect}
+          onGifSelect={handleGifSelect}
+          onUploadingChange={handleImageUploadingChange}
         />
 
         <div className="flex items-center gap-2">
@@ -279,7 +379,7 @@ export function CommentEditInput({
             type="button"
             size="sm"
             variant="ghost"
-            disabled={isPending}
+            disabled={busy}
             onClick={handleCancel}
             className="cursor-pointer disabled:cursor-not-allowed"
           >
@@ -290,10 +390,15 @@ export function CommentEditInput({
             type="button"
             size="sm"
             disabled={saveDisabled}
+            aria-busy={busy}
             onClick={handleSave}
             className="cursor-pointer disabled:cursor-not-allowed"
           >
-            {isPending ? labels.saving : labels.save}
+            {imageUploading
+              ? imageLabels.uploading
+              : isPending
+                ? labels.saving
+                : labels.save}
           </Button>
         </div>
       </div>

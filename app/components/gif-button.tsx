@@ -80,18 +80,20 @@ export function GifButton({
       <button
         ref={triggerRef}
         type="button"
+        disabled={busy}
         aria-label="Select GIF"
         aria-expanded={showPicker}
         onClick={handleToggle}
         className="
-          cursor-pointer rounded-md px-2 py-1
-          text-sm font-normal text-zinc-800
-          transition-colors
-          hover:bg-zinc-200
-          focus-visible:outline-none
-          focus-visible:ring-2 focus-visible:ring-ring
-          dark:text-zinc-200 dark:hover:bg-zinc-700
-        "
+    cursor-pointer rounded-md px-2 py-1
+    text-sm font-normal text-zinc-800
+    transition-colors
+    enabled:hover:bg-zinc-200
+    focus-visible:outline-none
+    focus-visible:ring-2 focus-visible:ring-ring
+    disabled:cursor-wait disabled:opacity-50
+    dark:text-zinc-200 dark:enabled:hover:bg-zinc-700
+  "
       >
         GIF
       </button>

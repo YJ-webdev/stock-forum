@@ -11,10 +11,12 @@ import { useCommentDraft } from "@/app/hooks/use-comment-draft";
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { resolveLanguage } from "@/lib/data/languages";
 import {
+  COMMENT_IMAGE_LABELS,
   COMMENT_LABELS,
   HOME_COMMUNITY_LABELS,
   HOME_COMPOSER_LABELS,
 } from "@/lib/data/translations";
+import type { CommentImage } from "@/lib/types/comment-image";
 import { buildCommentContent } from "@/lib/utils/build-comment-content";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,8 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { GifButton } from "./gif-button";
 import { GifPreview } from "./gif-preview";
+import { ImagePreview } from "./image-preview";
+import { MediaButtons } from "./media-buttons";
 import type { GifResult } from "./gif-picker";
 
 interface HomeCommentComposerProps {
@@ -60,23 +63,28 @@ export function HomeCommentComposer({
   const labels = HOME_COMMUNITY_LABELS[language];
   const copy = HOME_COMPOSER_LABELS[language];
   const commentLabels = COMMENT_LABELS[language];
+  const imageLabels = COMMENT_IMAGE_LABELS[language];
 
   const {
     comment: text,
     setComment: setText,
     selectedGif,
     setSelectedGif,
+    selectedImage,
+    setSelectedImage,
   } = useCommentDraft("", null);
 
   const [expanded, setExpanded] = useState(false);
   const [symbol, setSymbol] = useState(defaultSymbol ?? "");
   const [submitting, setSubmitting] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const editorId = useId();
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
+  const imageUploadingRef = useRef(false);
   const mountedRef = useRef(false);
 
   const viewerId = user?.id ?? null;
@@ -88,15 +96,16 @@ export function HomeCommentComposer({
   const isChatRestricted =
     user?.status === "BANNED" || user?.status === "MUTED";
 
-  const editorDisabled = submitting || isChatRestricted || !isLoggedIn;
-
+  const busy = submitting || imageUploading;
+  const editorDisabled = busy || isChatRestricted || !isLoggedIn;
   const editorOpen = expanded && isLoggedIn;
 
   const selectedMarket = ALL_MARKET_SYMBOLS.find(
     (market) => market.symbol === symbol,
   );
 
-  const hasContent = text.trim().length > 0 || Boolean(selectedGif);
+  const hasContent =
+    text.trim().length > 0 || Boolean(selectedGif) || Boolean(selectedImage);
 
   const avatarInitial =
     Array.from(user?.name?.trim() ?? "")[0]?.toUpperCase() || "G";
@@ -112,9 +121,10 @@ export function HomeCommentComposer({
   useEffect(() => {
     setText("");
     setSelectedGif(null);
+    setSelectedImage(null);
     setSymbol("");
     setExpanded(false);
-  }, [viewerId, setText, setSelectedGif]);
+  }, [viewerId, setText, setSelectedGif, setSelectedImage]);
 
   useEffect(() => {
     if (!editorOpen || isChatRestricted) return;
@@ -180,7 +190,11 @@ export function HomeCommentComposer({
   function focusInputEnd() {
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
-        if (!mountedRef.current || submittingRef.current) {
+        if (
+          !mountedRef.current ||
+          submittingRef.current ||
+          imageUploadingRef.current
+        ) {
           return;
         }
 
@@ -218,7 +232,9 @@ export function HomeCommentComposer({
   }
 
   function openEditor() {
-    if (submittingRef.current || !canWrite()) return;
+    if (submittingRef.current || imageUploadingRef.current || !canWrite()) {
+      return;
+    }
 
     if (!symbol && !hasContent) {
       setSymbol(defaultSymbol ?? "");
@@ -228,7 +244,7 @@ export function HomeCommentComposer({
   }
 
   function collapseEditor() {
-    if (submittingRef.current) return;
+    if (submittingRef.current || imageUploadingRef.current) return;
 
     // Collapsing preserves the draft and selected market.
     setExpanded(false);
@@ -236,7 +252,9 @@ export function HomeCommentComposer({
   }
 
   function handleMarketChange(value: string | null) {
-    if (editorDisabled || submittingRef.current) return;
+    if (editorDisabled || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     setSymbol(value ?? "");
 
@@ -246,19 +264,55 @@ export function HomeCommentComposer({
   }
 
   function handleGifSelect(gif: GifResult) {
-    if (editorDisabled || submittingRef.current) return;
+    if (editorDisabled || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     setSelectedGif(gif);
   }
 
   function handleGifRemove() {
-    if (editorDisabled || submittingRef.current) return;
+    if (editorDisabled || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
 
     setSelectedGif(null);
   }
 
+  function handleImageUploadingChange(uploading: boolean) {
+    imageUploadingRef.current = uploading;
+
+    if (mountedRef.current) {
+      setImageUploading(uploading);
+    }
+  }
+
+  function handleImageSelect(image: CommentImage) {
+    // ImageButton calls this before clearing its uploading state.
+    if (
+      !isLoggedIn ||
+      isChatRestricted ||
+      submitting ||
+      submittingRef.current
+    ) {
+      return;
+    }
+
+    setSelectedImage(image);
+  }
+
+  function handleImageRemove() {
+    if (editorDisabled || submittingRef.current || imageUploadingRef.current) {
+      return;
+    }
+
+    setSelectedImage(null);
+  }
+
   async function publish() {
-    if (submittingRef.current || !canWrite()) return;
+    if (submittingRef.current || imageUploadingRef.current || !canWrite()) {
+      return;
+    }
 
     if (!selectedMarket) {
       toast.error(copy.select_market);
@@ -273,7 +327,11 @@ export function HomeCommentComposer({
 
     const submittedUserId = viewerId;
     const submittedSymbol = selectedMarket.symbol;
-    const submittedContent = buildCommentContent(text, selectedGif);
+    const submittedContent = buildCommentContent(
+      text,
+      selectedGif,
+      selectedImage,
+    );
 
     function isCurrentViewer() {
       return mountedRef.current && viewerIdRef.current === submittedUserId;
@@ -307,6 +365,7 @@ export function HomeCommentComposer({
 
     setText("");
     setSelectedGif(null);
+    setSelectedImage(null);
     setSymbol("");
     setExpanded(false);
 
@@ -350,7 +409,7 @@ export function HomeCommentComposer({
             ref={triggerRef}
             data-tour="composer"
             type="button"
-            disabled={submitting}
+            disabled={busy}
             aria-expanded={editorOpen}
             aria-controls={editorId}
             aria-hidden={editorOpen}
@@ -384,7 +443,11 @@ export function HomeCommentComposer({
           >
             <span className="truncate">
               {text.trim() ||
-                (selectedGif ? copy.gif_draft : labels.share_view)}
+                (selectedImage
+                  ? imageLabels.attach
+                  : selectedGif
+                    ? copy.gif_draft
+                    : labels.share_view)}
             </span>
 
             <SquarePen
@@ -411,7 +474,7 @@ export function HomeCommentComposer({
           >
             <div className="min-h-0 overflow-hidden">
               <div
-                aria-busy={submitting}
+                aria-busy={busy}
                 className={`
                   transition-transform duration-250 ease-out
                   motion-reduce:transition-none
@@ -460,7 +523,7 @@ export function HomeCommentComposer({
 
                 <div
                   onClick={() => {
-                    if (!submitting && isChatRestricted) {
+                    if (!busy && isChatRestricted) {
                       toast.error(commentLabels.restricted);
                     }
                   }}
@@ -469,7 +532,11 @@ export function HomeCommentComposer({
                     ref={inputRef}
                     value={text}
                     onChange={(event) => {
-                      if (editorDisabled || submittingRef.current) {
+                      if (
+                        editorDisabled ||
+                        submittingRef.current ||
+                        imageUploadingRef.current
+                      ) {
                         return;
                       }
 
@@ -481,14 +548,13 @@ export function HomeCommentComposer({
                     rows={4}
                     className={`
                       block min-h-28 w-full resize-none overflow-y-auto
-                      rounded-xl border border-zinc-100 bg-transparent
+                      rounded-xl border border-zinc-300 bg-transparent
                       px-3.5 py-3 text-base leading-6 text-zinc-900
-                      placeholder:text-zinc-400
-                      focus:border-zinc-300 focus:outline-none
+                      placeholder:text-zinc-400 focus:outline-none
                       disabled:cursor-not-allowed disabled:opacity-60
-                      dark:border-zinc-700 dark:text-zinc-100
+                      dark:border-zinc-600 dark:text-zinc-100
                       dark:placeholder:text-zinc-500
-                      dark:focus:border-zinc-500
+                      
                       md:text-[15px]
                       ${isChatRestricted ? "pointer-events-none" : ""}
                     `}
@@ -507,31 +573,41 @@ export function HomeCommentComposer({
                   </div>
                 )}
 
-                <div className="@container mt-3 flex items-center justify-between gap-2 pb-2">
-                  {editorOpen ? (
-                    <GifButton
-                      isLoggedIn={isLoggedIn}
-                      isChatRestricted={isChatRestricted}
-                      busy={submitting}
-                      loginMessage={commentLabels.login_gif}
-                      restrictedMessage={commentLabels.restricted}
-                      isSubmitting={() => submittingRef.current}
-                      onSelect={handleGifSelect}
+                {selectedImage && (
+                  <div className="mt-3">
+                    <ImagePreview
+                      image={selectedImage}
+                      removeLabel={imageLabels.remove}
+                      disabled={editorDisabled}
+                      onRemove={handleImageRemove}
                     />
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className="px-2 py-1 text-sm font-medium text-zinc-500 dark:text-zinc-400"
-                    >
-                      GIF
-                    </span>
-                  )}
+                  </div>
+                )}
+
+                <div className="@container mt-3 flex items-center justify-between gap-2 pb-2">
+                  <div className="flex min-h-8 shrink-0 items-center">
+                    {editorOpen && (
+                      <MediaButtons
+                        key={viewerId}
+                        isLoggedIn={isLoggedIn}
+                        isChatRestricted={isChatRestricted}
+                        busy={submitting}
+                        imageLabels={imageLabels}
+                        gifLoginMessage={commentLabels.login_gif}
+                        restrictedMessage={commentLabels.restricted}
+                        isSubmitting={() => submittingRef.current}
+                        onImageSelect={handleImageSelect}
+                        onGifSelect={handleGifSelect}
+                        onUploadingChange={handleImageUploadingChange}
+                      />
+                    )}
+                  </div>
 
                   <div className="flex min-w-0 items-center justify-end gap-2">
                     <Button
                       type="button"
                       size="sm"
-                      disabled={submitting}
+                      disabled={busy}
                       onClick={collapseEditor}
                       className={CANCEL_BUTTON_CLASS}
                     >
@@ -541,12 +617,16 @@ export function HomeCommentComposer({
                     <Button
                       type="button"
                       size="sm"
-                      disabled={submitting}
-                      aria-busy={submitting}
+                      disabled={busy}
+                      aria-busy={busy}
                       onClick={() => void publish()}
                       className="cursor-pointer disabled:cursor-not-allowed"
                     >
-                      {submitting ? copy.publishing : copy.publish}
+                      {imageUploading
+                        ? imageLabels.uploading
+                        : submitting
+                          ? copy.publishing
+                          : copy.publish}
                     </Button>
                   </div>
                 </div>

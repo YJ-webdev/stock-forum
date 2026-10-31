@@ -8,6 +8,7 @@ import { ChevronDown } from "lucide-react";
 import { RiHeartFill } from "react-icons/ri";
 import { toast } from "sonner";
 
+import { CommentImageViewer } from "./comment-image-viewer";
 import { getGifDimensions } from "@/lib/utils/gif-dimensions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -982,6 +983,7 @@ function CommentTextContent({
     alt: string;
     width?: number;
     height?: number;
+    isUploadedImage: boolean;
   }[] = [];
 
   for (const node of content.content ?? []) {
@@ -990,18 +992,44 @@ function CommentTextContent({
     }
 
     if (
-      node.type === "image" &&
-      typeof node.attrs?.src === "string" &&
-      node.attrs.src
+      node.type !== "image" ||
+      typeof node.attrs?.src !== "string" ||
+      !node.attrs.src.trim()
     ) {
-      const dimensions = getGifDimensions(node.attrs.width, node.attrs.height);
-
-      images.push({
-        src: node.attrs.src,
-        alt: typeof node.attrs.alt === "string" ? node.attrs.alt : "GIF",
-        ...(dimensions ?? {}),
-      });
+      continue;
     }
+
+    const src = node.attrs.src.trim();
+
+    // Only render HTTPS media URLs.
+    try {
+      if (new URL(src).protocol !== "https:") {
+        continue;
+      }
+    } catch {
+      continue;
+    }
+
+    const isUploadedImage = node.attrs.mediaType === "image";
+
+    const dimensions = isUploadedImage
+      ? {
+          width: getImageDimension(node.attrs.width),
+          height: getImageDimension(node.attrs.height),
+        }
+      : getGifDimensions(node.attrs.width, node.attrs.height);
+
+    images.push({
+      src,
+      alt:
+        typeof node.attrs.alt === "string"
+          ? node.attrs.alt
+          : isUploadedImage
+            ? "Image"
+            : "GIF",
+      ...(dimensions ?? {}),
+      isUploadedImage,
+    });
   }
 
   const text = paragraphs.join("\n").trimEnd();
@@ -1018,22 +1046,32 @@ function CommentTextContent({
         />
       )}
 
-      {images.map((image, index) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          key={`${image.src}-${index}`}
-          src={image.src}
-          alt={image.alt}
-          width={image.width}
-          height={image.height}
-          loading="lazy"
-          decoding="async"
-          className="
-            mt-3 block h-auto w-45 max-w-full
-            rounded-lg object-contain
-          "
-        />
-      ))}
+      {images.map((image, index) =>
+        image.isUploadedImage ? (
+          <CommentImageViewer
+            key={`${image.src}-${index}`}
+            src={image.src}
+            alt={image.alt}
+            width={image.width}
+            height={image.height}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={`${image.src}-${index}`}
+            src={image.src}
+            alt={image.alt}
+            width={image.width}
+            height={image.height}
+            loading="lazy"
+            decoding="async"
+            className="
+        mt-3 block h-auto w-45 max-w-full
+        rounded-lg object-contain
+      "
+          />
+        ),
+      )}
 
       {!text && editedLabel && (
         <span className="mt-1 block text-[12px] text-zinc-400">
