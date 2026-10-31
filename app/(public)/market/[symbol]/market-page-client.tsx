@@ -83,7 +83,7 @@ const DetailChart = dynamic(
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500"],
   display: "swap",
   preload: true,
   adjustFontFallback: true,
