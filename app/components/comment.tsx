@@ -259,23 +259,18 @@ export function MarketComments({
 
   activeVoteLookupKeyRef.current = prediction?.voteLookupKey ?? null;
 
-  // Match server time during hydration, then update client time.
   useEffect(() => {
-    const updateNow = () => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+
       setNowMs(Date.now());
-    };
-
-    updateNow();
-
-    const timer = window.setInterval(updateNow, TIME_REFRESH_INTERVAL_MS);
+    }, TIME_REFRESH_INTERVAL_MS);
 
     return () => {
       window.clearInterval(timer);
     };
   }, [initialNowMs]);
 
-  // Session changes preserve the draft.
-  // Changing the account or market starts a new draft.
   useEffect(() => {
     setDraft({ text: "", gif: null });
   }, [assetSymbol, viewerId]);
