@@ -87,7 +87,7 @@ export function LeaderBoard({ traders, user, onBanRequest }: LeaderBoardProps) {
             >
               {/* Rank */}
               <div className="jakarta ml-1.5 flex w-2 shrink-0 justify-center">
-                <span className="text-[13px] font-medium text-zinc-500">
+                <span className="text-[13px] font-medium text-zinc-500 dark:text-zinc-300">
                   {trader.rank}
                 </span>
               </div>
@@ -110,22 +110,7 @@ export function LeaderBoard({ traders, user, onBanRequest }: LeaderBoardProps) {
       focus-visible:ring-offset-2
     "
                 >
-                  <Avatar
-                    className={`
-        size-9
-        ${
-          isMe
-            ? "opacity-100 grayscale-0"
-            : `
-              lg:opacity-50 lg:grayscale
-              lg:group-hover:opacity-100
-              lg:group-hover:grayscale-0
-              lg:group-focus-within:opacity-100
-              lg:group-focus-within:grayscale-0
-            `
-        }
-      `}
-                  >
+                  <Avatar className="size-9">
                     <AvatarImage
                       src={trader.image ?? undefined}
                       alt=""
@@ -162,7 +147,7 @@ export function LeaderBoard({ traders, user, onBanRequest }: LeaderBoardProps) {
                       className="
         min-w-0 truncate text-[15px] font-normal
         text-zinc-800 hover:underline
-        dark:font-light dark:text-zinc-200
+        dark:font-light dark:text-zinc-100
       "
                     >
                       {trader.name}
