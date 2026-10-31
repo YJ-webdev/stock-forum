@@ -104,7 +104,7 @@ export default async function Home() {
         />
       </section>
 
-      <ScrollToTopButton threshold={600} />
+      <ScrollToTopButton />
     </main>
   );
 }

@@ -125,7 +125,7 @@ export default async function Page({ params }: PageProps) {
         initialMarketQuote={initialMarketQuote}
       />
 
-      <ScrollToTopButton threshold={600} />
+      <ScrollToTopButton />
     </>
   );
 }
