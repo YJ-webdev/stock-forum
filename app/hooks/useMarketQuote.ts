@@ -1,15 +1,13 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import {
   getMarketQuoteSnapshot,
   subscribeToMarketQuote,
 } from "./market-quote-store";
 
-// -----------------------------------------------------------------------------
-// TYPES
-// -----------------------------------------------------------------------------
+import type { InitialMarketQuote } from "@/lib/utils/build-market-quote";
 
 export type AssetType = "index" | "stock" | "crypto" | "currency" | "commodity";
 
@@ -91,10 +89,23 @@ export function useMarketQuote(
   pollingInterval = 60_000,
   chartInterval?: ChartInterval,
   enabled = true,
+  initialQuote?: InitialMarketQuote | null,
 ) {
+  const usableInitialQuote =
+    initialQuote?.data.id === symbol ? initialQuote : null;
+
+  // A stable snapshot shared by SSR and hydration.
+  const initialSnapshot = useMemo(
+    () => ({
+      data: usableInitialQuote?.data ?? null,
+      loading: false,
+      error: null,
+    }),
+    [usableInitialQuote],
+  );
+
   const subscribe = useCallback(
     (listener: () => void) => {
-      // Keep the hook mounted without starting a subscription or request.
       if (!enabled) {
         return () => {};
       }
@@ -108,6 +119,7 @@ export function useMarketQuote(
         pollingInterval,
         chartInterval,
         listener,
+        usableInitialQuote,
       );
     },
     [
@@ -119,13 +131,29 @@ export function useMarketQuote(
       pollingInterval,
       chartInterval,
       enabled,
+      usableInitialQuote,
     ],
   );
 
-  const getSnapshot = useCallback(
-    () => getMarketQuoteSnapshot(symbol, range, chartInterval),
-    [symbol, range, chartInterval],
+  const getSnapshot = useCallback(() => {
+    const snapshot = getMarketQuoteSnapshot(symbol, range, chartInterval);
+
+    // Display server data until the subscription seeds the browser store.
+    if (
+      snapshot.data === null &&
+      snapshot.error === null &&
+      usableInitialQuote
+    ) {
+      return initialSnapshot;
+    }
+
+    return snapshot;
+  }, [symbol, range, chartInterval, usableInitialQuote, initialSnapshot]);
+
+  const getServerSnapshot = useCallback(
+    () => initialSnapshot,
+    [initialSnapshot],
   );
 
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

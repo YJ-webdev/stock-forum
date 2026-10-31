@@ -3,10 +3,15 @@
 import type {
   AssetType,
   ChartInterval,
-  ChartPoint,
   ChartRange,
   MarketItem,
 } from "./useMarketQuote";
+
+import {
+  buildMarketQuote,
+  type InitialMarketQuote,
+  type MarketCandlesData,
+} from "@/lib/utils/build-market-quote";
 
 interface MarketQuoteSnapshot {
   data: MarketItem | null;
@@ -105,10 +110,6 @@ function publish(entry: StoreEntry) {
   }
 }
 
-function isValidPrice(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value > 0;
-}
-
 function isFresh(entry: StoreEntry) {
   return (
     entry.data !== null && Date.now() - entry.lastSuccessAt < CACHE_FRESH_MS
@@ -162,73 +163,18 @@ async function fetchQuote(
         throw new Error(`Failed to load market data (${response.status})`);
       }
 
-      const json = await response.json();
+      const candles = (await response.json()) as MarketCandlesData;
 
       window.clearTimeout(timeout);
 
-      const points: ChartPoint[] = Array.isArray(json?.points)
-        ? json.points.filter(
-            (point: ChartPoint) =>
-              point &&
-              isValidPrice(point.price) &&
-              Number.isFinite(point.timestampMs),
-          )
-        : [];
-
-      const lastPoint = points.at(-1);
-
-      const currentPrice = isValidPrice(json?.currentPrice)
-        ? json.currentPrice
-        : lastPoint?.price;
-
-      if (!isValidPrice(currentPrice)) {
-        throw new Error("No market data available");
-      }
-
-      const previousClose = isValidPrice(json?.previousClose)
-        ? json.previousClose
-        : undefined;
-
-      const basePrice =
-        range === "1D"
-          ? (previousClose ?? points[0]?.price ?? currentPrice)
-          : (points[0]?.price ?? previousClose ?? currentPrice);
-
-      const changeVal = currentPrice - basePrice;
-
-      const percentVal = (changeVal / basePrice) * 100;
-
-      const decimals = assetType === "currency" ? 4 : 2;
-
-      const formattedValue = currentPrice.toLocaleString("en-US", {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      });
-
-      entry.data = {
-        id: symbol,
+      entry.data = buildMarketQuote({
+        candles,
+        symbol,
         name,
         displaySymbol,
-
-        value: formattedValue,
-        change: `${changeVal >= 0 ? "+" : ""}${changeVal.toFixed(2)}`,
-        percent: `${percentVal >= 0 ? "+" : ""}${percentVal.toFixed(2)}%`,
-        isPositive: percentVal >= 0,
-
-        history: points,
-        rawPrice: currentPrice,
-        previousClose,
-
-        isClosed: json.isClosed ?? true,
-        marketOpenMs: json.marketOpenMs ?? null,
-        marketCloseMs: json.marketCloseMs ?? null,
-
-        updatedAt: json.updatedAt ?? lastPoint?.timestampMs ?? Date.now(),
-
-        exchangeTimezone: json.exchangeTimezone,
-        lunchStartMs: json.lunchStartMs ?? null,
-        lunchEndMs: json.lunchEndMs ?? null,
-      };
+        assetType,
+        range,
+      });
 
       entry.lastSuccessAt = Date.now();
       entry.error = null;
@@ -323,6 +269,38 @@ function configurePolling(
   }, nextPollingMs);
 }
 
+function seedMarketQuote(
+  symbol: string,
+  range: ChartRange,
+  chartInterval: ChartInterval | undefined,
+  initialQuote?: InitialMarketQuote | null,
+) {
+  if (
+    !initialQuote ||
+    initialQuote.data.id !== symbol ||
+    !Number.isFinite(initialQuote.fetchedAt)
+  ) {
+    return;
+  }
+
+  const entry = getEntry(symbol, range, chartInterval);
+
+  // Preserve newer browser data and avoid interfering with an active request.
+  if (
+    entry.fetchPromise ||
+    (entry.data !== null && entry.lastSuccessAt >= initialQuote.fetchedAt)
+  ) {
+    return;
+  }
+
+  entry.data = initialQuote.data;
+  entry.lastSuccessAt = initialQuote.fetchedAt;
+  entry.loading = false;
+  entry.error = null;
+
+  publish(entry);
+}
+
 export function subscribeToMarketQuote(
   symbol: string,
   name: string,
@@ -332,7 +310,10 @@ export function subscribeToMarketQuote(
   pollingInterval: number,
   chartInterval: ChartInterval | undefined,
   listener: () => void,
+  initialQuote?: InitialMarketQuote | null,
 ) {
+  seedMarketQuote(symbol, range, chartInterval, initialQuote);
+
   const entry = getEntry(symbol, range, chartInterval);
 
   const subscription: Subscription = {

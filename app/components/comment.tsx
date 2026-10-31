@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 import {
   getMarketComments,
-  MarketCommentsPage,
+  type MarketCommentsPage,
   type MarketPageComments,
 } from "@/app/actions/post";
 import type {
@@ -52,9 +52,7 @@ const LOAD_MORE_LABELS = {
   hi: "और लोड करें",
 } as const;
 
-type CommentCursor = NonNullable<
-  Awaited<ReturnType<typeof getMarketComments>>["nextCursor"]
->;
+type CommentCursor = NonNullable<MarketCommentsPage["nextCursor"]>;
 
 type VoteStatus = NonNullable<
   Awaited<ReturnType<typeof getMarketVote>>
@@ -132,6 +130,14 @@ interface MarketCommentsProps {
   ) => void;
 }
 
+function getCommentContextKey(
+  assetSymbol: string,
+  viewerId: string | null,
+  currentSessionStartMs: number | null,
+) {
+  return JSON.stringify([assetSymbol, viewerId, currentSessionStartMs]);
+}
+
 export function MarketComments({
   assetSymbol,
   prediction,
@@ -156,18 +162,28 @@ export function MarketComments({
 
   const viewerId = user?.id ?? null;
 
+  const commentContextKey = getCommentContextKey(
+    assetSymbol,
+    viewerId,
+    currentSessionStartMs,
+  );
+
+  // Keep the initial server snapshot tied to its original context.
   const initialCommentsRef = useRef({
-    contextKey: JSON.stringify([
+    contextKey: getCommentContextKey(
       assetSymbol,
       initialCommentsViewerId,
       initialCommentsSessionStartMs,
-    ]),
+    ),
     page: initialCommentsPage,
   });
 
+  // Once the context changes, returning to the original context
+  // must fetch fresh comments instead of skipping the request.
+  const canReuseInitialCommentsRef = useRef(true);
+
   const matchesInitialComments =
-    initialCommentsRef.current.contextKey ===
-    JSON.stringify([assetSymbol, viewerId, currentSessionStartMs]);
+    initialCommentsRef.current.contextKey === commentContextKey;
 
   const [draft, setDraft] = useState<CommentDraft>({
     text: "",
@@ -208,6 +224,7 @@ export function MarketComments({
   const mountedRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const requestVersionRef = useRef(0);
+
   const knownCommentIdsRef = useRef(
     new Set<string>(
       matchesInitialComments
@@ -218,12 +235,6 @@ export function MarketComments({
 
   const errorFallbackRef = useRef(labels.action_failed);
   errorFallbackRef.current = labels.action_failed;
-
-  const commentContextKey = JSON.stringify([
-    assetSymbol,
-    viewerId,
-    currentSessionStartMs,
-  ]);
 
   const activeCommentContextRef = useRef(commentContextKey);
 
@@ -265,11 +276,17 @@ export function MarketComments({
 
     const initialSnapshot = initialCommentsRef.current;
 
-    if (
-      commentsRefreshVersion === 0 &&
+    const matchesInitialContext =
       initialSnapshot.contextKey ===
-        JSON.stringify([assetSymbol, viewerId, currentSessionStartMs])
-    ) {
+      getCommentContextKey(assetSymbol, viewerId, currentSessionStartMs);
+
+    if (!matchesInitialContext || commentsRefreshVersion !== 0) {
+      canReuseInitialCommentsRef.current = false;
+    }
+
+    // The first matching render already has server-provided comments.
+    // Keep local changes and skip the duplicate initial request.
+    if (canReuseInitialCommentsRef.current && matchesInitialContext) {
       setCommentsLoading(false);
       setIsLoadingMore(false);
 
@@ -317,6 +334,7 @@ export function MarketComments({
           knownCommentIdsRef.current.add(id);
         }
 
+        // Preserve comments submitted while the request was running.
         setComments((current) => [
           ...current.filter((comment) => !resultIds.has(comment.id)),
           ...result.comments,
@@ -742,9 +760,9 @@ export function MarketComments({
                   <div
                     aria-hidden="true"
                     className="
-                mb-4 border-t border-dashed
-                border-zinc-200 dark:border-zinc-800
-              "
+                      mb-4 border-t border-dashed
+                      border-zinc-200 dark:border-zinc-800
+                    "
                   />
                 )}
 

@@ -9,6 +9,7 @@ import { isMarketInWatchlist } from "@/app/actions/watchlist";
 
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
+import { getInitialMarketQuote } from "@/lib/server/initial-market-quote";
 
 import MarketPageClient from "./market-page-client";
 import { ScrollToTopButton } from "@/app/components/scroll-to-top-button";
@@ -82,20 +83,28 @@ export default async function Page({ params }: PageProps) {
   const votingWindow = canPredict ? getVotingWindow(symbol, Date.now()) : null;
 
   const sessionDate = votingWindow?.predictionFor ?? null;
+
   const currentSessionStartMs = votingWindow?.currentSessionStartMs ?? null;
 
-  const [initialIsWatchlist, initialVoteStats, initialCommentsPage, session] =
-    await Promise.all([
-      isMarketInWatchlist(symbol),
+  const [
+    initialIsWatchlist,
+    initialVoteStats,
+    initialCommentsPage,
+    session,
+    initialMarketQuote,
+  ] = await Promise.all([
+    isMarketInWatchlist(symbol),
 
-      sessionDate
-        ? getMarketVoteStats({ symbol, sessionDate })
-        : Promise.resolve(null),
+    sessionDate
+      ? getMarketVoteStats({ symbol, sessionDate })
+      : Promise.resolve(null),
 
-      getMarketComments(symbol, null, currentSessionStartMs),
+    getMarketComments(symbol, null, currentSessionStartMs),
 
-      auth(),
-    ]);
+    auth(),
+
+    getInitialMarketQuote(symbol),
+  ]);
 
   return (
     <>
@@ -108,6 +117,7 @@ export default async function Page({ params }: PageProps) {
         initialCommentsPage={initialCommentsPage}
         initialCommentsViewerId={session?.user?.id ?? null}
         initialCommentsSessionStartMs={currentSessionStartMs}
+        initialMarketQuote={initialMarketQuote}
       />
 
       <ScrollToTopButton threshold={600} />

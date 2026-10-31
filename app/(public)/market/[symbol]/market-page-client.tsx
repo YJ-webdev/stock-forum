@@ -36,6 +36,7 @@ import {
   type MarketPageComments,
 } from "@/app/actions/post";
 
+import type { InitialMarketQuote } from "@/lib/utils/build-market-quote";
 import type { GifResult } from "@/app/components/gif-picker";
 import { buildCommentContent } from "@/lib/utils/build-comment-content";
 
@@ -94,6 +95,7 @@ interface MarketPageClientProps {
   initialCommentsPage: MarketCommentsPage;
   initialCommentsViewerId: string | null;
   initialCommentsSessionStartMs: number | null;
+  initialMarketQuote: InitialMarketQuote | null;
 }
 
 function getChartSession(
@@ -251,6 +253,7 @@ export default function MarketPageClient({
   initialCommentsPage,
   initialCommentsViewerId,
   initialCommentsSessionStartMs,
+  initialMarketQuote,
 }: MarketPageClientProps) {
   const user = useCurrentUser();
   const userLanguage = resolveLanguage(user?.language);
@@ -326,6 +329,8 @@ export default function MarketPageClient({
     selectedAssetType as AssetType,
     0,
     chartInterval,
+    true,
+    activeRange === "1D" && chartInterval === "1m" ? initialMarketQuote : null,
   );
 
   const { sessionStartMs, sessionEndMs } = useMemo(
