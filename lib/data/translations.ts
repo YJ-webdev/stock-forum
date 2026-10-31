@@ -7285,3 +7285,138 @@ export const LOAD_MORE_BUTTON_LABELS: Record<
   ar: { loading: "جارٍ التحميل...", load_more: "عرض المزيد" },
   hi: { loading: "लोड हो रहा है...", load_more: "और देखें" },
 };
+
+export const MARKET_PREDICTION_LABELS: Record<
+  Language,
+  {
+    prediction: string;
+    predict: string;
+    change: string;
+    open: string;
+    closed: string;
+    unavailable: string;
+    notVoted: string;
+    loading: string;
+  }
+> = {
+  en: {
+    prediction: "Prediction",
+    predict: "Predict",
+    change: "Change prediction",
+    open: "Voting is open",
+    closed: "Voting is closed",
+    unavailable: "Statistics unavailable",
+    notVoted: "Not voted",
+    loading: "Loading predictions",
+  },
+  ko: {
+    prediction: "예측",
+    predict: "예측하기",
+    change: "예측 수정",
+    open: "투표 가능",
+    closed: "투표 마감",
+    unavailable: "통계를 불러오지 못했습니다",
+    notVoted: "미참여",
+    loading: "예측 불러오는 중",
+  },
+  ja: {
+    prediction: "予測",
+    predict: "予測する",
+    change: "予測を変更",
+    open: "投票受付中",
+    closed: "投票終了",
+    unavailable: "統計を取得できません",
+    notVoted: "未投票",
+    loading: "予測を読み込み中",
+  },
+  zh: {
+    prediction: "预测",
+    predict: "参与预测",
+    change: "更改预测",
+    open: "投票开放中",
+    closed: "投票已结束",
+    unavailable: "统计暂不可用",
+    notVoted: "未投票",
+    loading: "正在加载预测",
+  },
+  de: {
+    prediction: "Prognose",
+    predict: "Abstimmen",
+    change: "Prognose ändern",
+    open: "Abstimmung geöffnet",
+    closed: "Abstimmung geschlossen",
+    unavailable: "Statistik nicht verfügbar",
+    notVoted: "Nicht abgestimmt",
+    loading: "Prognosen werden geladen",
+  },
+  fr: {
+    prediction: "Prévision",
+    predict: "Voter",
+    change: "Changer la prévision",
+    open: "Vote ouvert",
+    closed: "Vote clos",
+    unavailable: "Statistiques indisponibles",
+    notVoted: "Pas de vote",
+    loading: "Chargement des prévisions",
+  },
+  es: {
+    prediction: "Predicción",
+    predict: "Predecir",
+    change: "Cambiar predicción",
+    open: "Votación abierta",
+    closed: "Votación cerrada",
+    unavailable: "Estadísticas no disponibles",
+    notVoted: "Sin votar",
+    loading: "Cargando predicciones",
+  },
+  pt: {
+    prediction: "Previsão",
+    predict: "Prever",
+    change: "Alterar previsão",
+    open: "Votação aberta",
+    closed: "Votação encerrada",
+    unavailable: "Estatísticas indisponíveis",
+    notVoted: "Sem voto",
+    loading: "Carregando previsões",
+  },
+  it: {
+    prediction: "Previsione",
+    predict: "Vota",
+    change: "Cambia previsione",
+    open: "Votazione aperta",
+    closed: "Votazione chiusa",
+    unavailable: "Statistiche non disponibili",
+    notVoted: "Non votato",
+    loading: "Caricamento delle previsioni",
+  },
+  ru: {
+    prediction: "Прогноз",
+    predict: "Голосовать",
+    change: "Изменить прогноз",
+    open: "Голосование открыто",
+    closed: "Голосование закрыто",
+    unavailable: "Статистика недоступна",
+    notVoted: "Нет голоса",
+    loading: "Загрузка прогнозов",
+  },
+  ar: {
+    prediction: "التوقع",
+    predict: "توقّع",
+    change: "تغيير التوقع",
+    open: "التصويت مفتوح",
+    closed: "التصويت مغلق",
+    unavailable: "الإحصاءات غير متاحة",
+    notVoted: "لم تصوّت",
+    loading: "جارٍ تحميل التوقعات",
+  },
+  hi: {
+    prediction: "पूर्वानुमान",
+    predict: "वोट दें",
+    change: "पूर्वानुमान बदलें",
+    open: "मतदान खुला है",
+    closed: "मतदान बंद है",
+    unavailable: "आँकड़े उपलब्ध नहीं हैं",
+    notVoted: "वोट नहीं दिया",
+    loading: "पूर्वानुमान लोड हो रहे हैं",
+  },
+};

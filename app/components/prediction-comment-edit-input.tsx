@@ -37,6 +37,7 @@ const POINT_STEP = 50;
 const MAX_PREDICTION_POINTS = 500;
 
 interface PredictionCommentEditInputProps {
+  refreshOnSaved?: boolean;
   commentId: string;
   initialContent: JSONContent;
 
@@ -123,6 +124,7 @@ function hasSameVotingState(previous: VotingWindow, next: VotingWindow) {
 // -----------------------------------------------------------------------------
 
 export function PredictionCommentEditInput({
+  refreshOnSaved = true,
   commentId,
   initialContent,
   prediction,
@@ -338,7 +340,7 @@ export function PredictionCommentEditInput({
 
           toast.info(labels.saved_refreshing);
         } finally {
-          router.refresh();
+          if (refreshOnSaved) router.refresh();
         }
       } finally {
         submittingRef.current = false;

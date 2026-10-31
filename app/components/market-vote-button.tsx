@@ -38,7 +38,7 @@ import type { GifResult } from "./gif-picker";
 
 function EditorLoading() {
   return (
-    <div role="status" className="flex min-h-40 items-center justify-center">
+    <div role="status" className="flex min-h-36 items-center justify-center">
       <span
         aria-hidden="true"
         className="
