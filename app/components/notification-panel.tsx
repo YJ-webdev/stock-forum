@@ -734,8 +734,6 @@ function NotificationPanelContent({
           <div className="px-4 py-3">
             <LoadMoreButton
               loading={false}
-              loadingLabel={labels.loading}
-              label={historyLabels.load_more}
               onClick={() =>
                 setVisibleCount((current) => current + NOTIFICATION_PAGE_SIZE)
               }

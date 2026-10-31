@@ -5917,7 +5917,7 @@ interface HistoryLabels {
   load_failed: string;
   load_more_failed: string;
   retry: string;
-  load_more: string;
+
   user: string;
   market: string;
   bull: string;
@@ -5955,7 +5955,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     load_failed: "Failed to load history.",
     load_more_failed: "Failed to load more history.",
     retry: "Try again",
-    load_more: "Load more",
+
     user: "User",
     market: "Market",
     bull: "Bull",
@@ -5992,7 +5992,6 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     load_failed: "활동 기록을 불러오지 못했습니다.",
     load_more_failed: "추가 활동 기록을 불러오지 못했습니다.",
     retry: "다시 시도",
-    load_more: "더 보기",
     user: "사용자",
     market: "시장",
     bull: "상승",
@@ -6029,7 +6028,6 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     load_failed: "履歴を読み込めませんでした。",
     load_more_failed: "追加の履歴を読み込めませんでした。",
     retry: "再試行",
-    load_more: "もっと見る",
     user: "ユーザー",
     market: "市場",
     bull: "上昇",
@@ -6066,7 +6064,6 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     load_failed: "无法加载活动记录。",
     load_more_failed: "无法加载更多活动记录。",
     retry: "重试",
-    load_more: "加载更多",
     user: "用户",
     market: "市场",
     bull: "看涨",
@@ -6103,7 +6100,6 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     load_failed: "Der Verlauf konnte nicht geladen werden.",
     load_more_failed: "Weitere Aktivitäten konnten nicht geladen werden.",
     retry: "Erneut versuchen",
-    load_more: "Mehr laden",
     user: "Nutzer",
     market: "Markt",
     bull: "Steigend",
@@ -6140,7 +6136,6 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     load_failed: "Impossible de charger l’historique.",
     load_more_failed: "Impossible de charger la suite de l’historique.",
     retry: "Réessayer",
-    load_more: "Afficher plus",
     user: "Utilisateur",
     market: "Marché",
     bull: "Hausse",
@@ -6177,7 +6172,6 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     load_failed: "No se pudo cargar el historial.",
     load_more_failed: "No se pudo cargar más historial.",
     retry: "Reintentar",
-    load_more: "Cargar más",
     user: "Usuario",
     market: "Mercado",
     bull: "Alza",
@@ -6214,7 +6208,6 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     load_failed: "Não foi possível carregar o histórico.",
     load_more_failed: "Não foi possível carregar mais atividades.",
     retry: "Tentar novamente",
-    load_more: "Carregar mais",
     user: "Usuário",
     market: "Mercado",
     bull: "Alta",
@@ -6251,7 +6244,6 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     load_failed: "Impossibile caricare la cronologia.",
     load_more_failed: "Impossibile caricare altre attività.",
     retry: "Riprova",
-    load_more: "Carica altro",
     user: "Utente",
     market: "Mercato",
     bull: "Rialzo",
@@ -6288,7 +6280,6 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     load_failed: "Не удалось загрузить историю.",
     load_more_failed: "Не удалось загрузить следующие записи.",
     retry: "Повторить",
-    load_more: "Загрузить ещё",
     user: "Пользователь",
     market: "Рынок",
     bull: "Рост",
@@ -6325,7 +6316,6 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     load_failed: "تعذّر تحميل سجل النشاط.",
     load_more_failed: "تعذّر تحميل المزيد من السجل.",
     retry: "إعادة المحاولة",
-    load_more: "تحميل المزيد",
     user: "مستخدم",
     market: "سوق",
     bull: "صعود",
@@ -6362,7 +6352,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
     load_failed: "इतिहास लोड नहीं हो सका।",
     load_more_failed: "और गतिविधियाँ लोड नहीं हो सकीं।",
     retry: "फिर से कोशिश करें",
-    load_more: "और देखें",
+
     user: "उपयोगकर्ता",
     market: "बाज़ार",
     bull: "तेज़ी",

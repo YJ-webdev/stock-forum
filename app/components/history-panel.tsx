@@ -1003,8 +1003,6 @@ function HistoryPanelContent({
           <div className="px-4 py-3">
             <LoadMoreButton
               loading={loadingMore}
-              loadingLabel={labels.loading}
-              label={labels.load_more}
               onClick={() => void loadMore()}
             />
           </div>
