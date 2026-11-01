@@ -1,7 +1,12 @@
 "use server";
 
 import { unstable_cache } from "next/cache";
+
 import { prisma } from "@/lib/prisma";
+
+// -----------------------------------------------------------------------------
+// Types
+// -----------------------------------------------------------------------------
 
 interface MarketauxEntity {
   symbol?: string;
@@ -27,13 +32,6 @@ interface MarketauxArticle {
 }
 
 interface MarketauxResponse {
-  meta?: {
-    found?: number;
-    returned?: number;
-    limit?: number;
-    page?: number;
-  };
-
   data?: MarketauxArticle[];
 }
 
@@ -52,55 +50,183 @@ export interface MarketNewsItem {
   publishedAt: Date;
 }
 
+export interface GlobalMarketNewsItem extends MarketNewsItem {
+  market: {
+    symbol: string;
+    displaySymbol: string | null;
+    name: string;
+    category: string;
+  };
+}
+
+export interface HomeMarketHeadline {
+  id: string;
+  title: string;
+  summary: string;
+  source: string;
+  url: string;
+  publishedAt: string;
+}
+
 type NewsAssetType = "index" | "crypto" | "currency" | "commodity";
 
 interface NewsContext {
   assetType: NewsAssetType;
-
   primaryQuery: string;
 
   searchTerms: string[];
-
   macroTerms: string[];
+
+  directTerms?: string[];
+  topicTerms?: string[];
 }
 
+interface IndexNewsProfile {
+  aliases: string[];
+  topics: string[];
+  queries: string[];
+}
+
+// -----------------------------------------------------------------------------
+// Settings
+// -----------------------------------------------------------------------------
+
 const MARKETAUX_URL = "https://api.marketaux.com/v1/news/all";
-const NEWS_CACHE_TIME_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+const NEWS_CACHE_TIME_MS = 24 * 60 * 60 * 1000;
 const NEWS_HISTORY_DAYS = 7;
+
 const MARKET_PAGE_NEWS_LIMIT = 3;
 const NEWS_PAGE_LIMIT = 21;
 
-/**
- * Keep this conservative for the free API.
- *
- * Our broader search query should already give us more candidates than before,
- * so we don't need to increase the API result count yet.
- */
 const MARKETAUX_CANDIDATE_LIMIT = 10;
 
 // -----------------------------------------------------------------------------
-// INDEX / COUNTRY MACRO CONTEXT
+// Index-specific profiles
 // -----------------------------------------------------------------------------
 
-/**
- * Used mainly for regional stock indices.
- *
- * This allows:
- *
- * Nikkei 225
- *   -> Nikkei-specific news
- *   -> Japan economy
- *   -> Bank of Japan
- *   -> yen
- *   -> inflation
- *
- * without requiring another Prisma field.
- */
-const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
-  // ---------------------------------------------------------------------------
-  // United States
-  // ---------------------------------------------------------------------------
+const INDEX_NEWS_PROFILES: Record<string, IndexNewsProfile> = {
+  "^NDX": {
+    aliases: ["Nasdaq 100", "Nasdaq-100", "NDX"],
 
+    topics: [
+      "technology stocks",
+      "tech stocks",
+      "tech shares",
+      "semiconductor",
+      "semiconductors",
+      "chip stocks",
+      "chipmakers",
+      "big tech",
+      "megacap",
+      "mega cap",
+      "growth stocks",
+      "artificial intelligence",
+    ],
+
+    queries: [
+      "Nasdaq 100",
+      "Nasdaq-100",
+      "tech stocks",
+      "semiconductor",
+      "big tech",
+    ],
+  },
+
+  "^GSPC": {
+    aliases: ["S&P 500", "S&P500", "SPX", "Standard & Poor's 500"],
+
+    topics: [
+      "US stocks",
+      "U.S. stocks",
+      "US equities",
+      "Wall Street",
+      "corporate earnings",
+      "earnings season",
+      "company earnings",
+      "earnings growth",
+    ],
+
+    queries: [
+      "S&P 500",
+      "SPX",
+      "US stocks",
+      "corporate earnings",
+      "Wall Street",
+    ],
+  },
+
+  "^DJI": {
+    aliases: ["Dow Jones", "Dow Jones Industrial Average", "DJIA", "the Dow"],
+
+    topics: [
+      "blue chip",
+      "blue chips",
+      "industrial stocks",
+      "industrial shares",
+      "industrials",
+      "manufacturing",
+      "industrial production",
+      "capital spending",
+    ],
+
+    queries: [
+      "Dow Jones",
+      "DJIA",
+      "blue chip",
+      "industrial stocks",
+      "manufacturing",
+    ],
+  },
+
+  "^RUT": {
+    aliases: ["Russell 2000", "Russell2000", "RUT"],
+
+    topics: [
+      "small cap",
+      "small caps",
+      "smallcap",
+      "smallcaps",
+      "small companies",
+      "small businesses",
+      "regional banks",
+      "lending standards",
+      "credit conditions",
+      "borrowing costs",
+      "loan demand",
+      "domestic demand",
+      "US consumer spending",
+    ],
+
+    queries: [
+      "Russell 2000",
+      "small cap",
+      "regional banks",
+      "lending standards",
+      "domestic demand",
+    ],
+  },
+};
+
+const INDEX_PROFILE_ALIASES: Record<string, string> = {
+  NDX: "^NDX",
+  SPX: "^GSPC",
+  DJI: "^DJI",
+  DJIA: "^DJI",
+  RUT: "^RUT",
+};
+
+function indexProfile(symbol: string): IndexNewsProfile | undefined {
+  const resolvedSymbol = INDEX_PROFILE_ALIASES[symbol] ?? symbol;
+
+  return INDEX_NEWS_PROFILES[resolvedSymbol];
+}
+
+// -----------------------------------------------------------------------------
+// Country macro context
+// -----------------------------------------------------------------------------
+
+const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
   "America/New_York": [
     "US economy",
     "Federal Reserve",
@@ -109,20 +235,12 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
     "Wall Street",
   ],
 
-  // ---------------------------------------------------------------------------
-  // Canada
-  // ---------------------------------------------------------------------------
-
   "America/Toronto": [
     "Canada economy",
     "Bank of Canada",
     "Canada inflation",
     "Canadian dollar",
   ],
-
-  // ---------------------------------------------------------------------------
-  // Brazil
-  // ---------------------------------------------------------------------------
 
   "America/Sao_Paulo": [
     "Brazil economy",
@@ -131,20 +249,12 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
     "Brazilian real",
   ],
 
-  // ---------------------------------------------------------------------------
-  // Mexico
-  // ---------------------------------------------------------------------------
-
   "America/Mexico_City": [
     "Mexico economy",
     "Bank of Mexico",
     "Mexico inflation",
     "Mexican peso",
   ],
-
-  // ---------------------------------------------------------------------------
-  // Japan
-  // ---------------------------------------------------------------------------
 
   "Asia/Tokyo": [
     "Japan economy",
@@ -154,10 +264,6 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
     "Japan stocks",
   ],
 
-  // ---------------------------------------------------------------------------
-  // South Korea
-  // ---------------------------------------------------------------------------
-
   "Asia/Seoul": [
     "South Korea economy",
     "Bank of Korea",
@@ -165,10 +271,6 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
     "South Korea exports",
     "Korean stocks",
   ],
-
-  // ---------------------------------------------------------------------------
-  // China
-  // ---------------------------------------------------------------------------
 
   "Asia/Shanghai": [
     "China economy",
@@ -178,10 +280,6 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
     "China stocks",
   ],
 
-  // ---------------------------------------------------------------------------
-  // Hong Kong
-  // ---------------------------------------------------------------------------
-
   "Asia/Hong_Kong": [
     "Hong Kong economy",
     "Hong Kong stocks",
@@ -189,20 +287,12 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
     "Chinese yuan",
   ],
 
-  // ---------------------------------------------------------------------------
-  // Taiwan
-  // ---------------------------------------------------------------------------
-
   "Asia/Taipei": [
     "Taiwan economy",
     "Taiwan exports",
     "Taiwan semiconductor",
     "Taiwan stocks",
   ],
-
-  // ---------------------------------------------------------------------------
-  // India
-  // ---------------------------------------------------------------------------
 
   "Asia/Kolkata": [
     "India economy",
@@ -212,20 +302,12 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
     "India stocks",
   ],
 
-  // ---------------------------------------------------------------------------
-  // Singapore
-  // ---------------------------------------------------------------------------
-
   "Asia/Singapore": [
     "Singapore economy",
     "Monetary Authority of Singapore",
     "Singapore dollar",
     "Singapore stocks",
   ],
-
-  // ---------------------------------------------------------------------------
-  // Australia
-  // ---------------------------------------------------------------------------
 
   "Australia/Sydney": [
     "Australia economy",
@@ -235,10 +317,6 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
     "Australia stocks",
   ],
 
-  // ---------------------------------------------------------------------------
-  // United Kingdom
-  // ---------------------------------------------------------------------------
-
   "Europe/London": [
     "UK economy",
     "Bank of England",
@@ -246,10 +324,6 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
     "UK inflation",
     "UK stocks",
   ],
-
-  // ---------------------------------------------------------------------------
-  // Germany
-  // ---------------------------------------------------------------------------
 
   "Europe/Berlin": [
     "Germany economy",
@@ -259,20 +333,12 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
     "European stocks",
   ],
 
-  // ---------------------------------------------------------------------------
-  // France
-  // ---------------------------------------------------------------------------
-
   "Europe/Paris": [
     "France economy",
     "European Central Bank",
     "Eurozone economy",
     "euro",
   ],
-
-  // ---------------------------------------------------------------------------
-  // Spain
-  // ---------------------------------------------------------------------------
 
   "Europe/Madrid": [
     "Spain economy",
@@ -281,20 +347,12 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
     "euro",
   ],
 
-  // ---------------------------------------------------------------------------
-  // Netherlands
-  // ---------------------------------------------------------------------------
-
   "Europe/Amsterdam": [
     "Netherlands economy",
     "European Central Bank",
     "Eurozone economy",
     "euro",
   ],
-
-  // ---------------------------------------------------------------------------
-  // Switzerland
-  // ---------------------------------------------------------------------------
 
   "Europe/Zurich": [
     "Switzerland economy",
@@ -303,20 +361,12 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
     "Switzerland stocks",
   ],
 
-  // ---------------------------------------------------------------------------
-  // Sweden
-  // ---------------------------------------------------------------------------
-
   "Europe/Stockholm": [
     "Sweden economy",
     "Riksbank",
     "Swedish krona",
     "Sweden stocks",
   ],
-
-  // ---------------------------------------------------------------------------
-  // South Africa
-  // ---------------------------------------------------------------------------
 
   "Africa/Johannesburg": [
     "South Africa economy",
@@ -327,7 +377,7 @@ const TIMEZONE_MACRO_TERMS: Record<string, string[]> = {
 };
 
 // -----------------------------------------------------------------------------
-// CRYPTO CONTEXT
+// Crypto context
 // -----------------------------------------------------------------------------
 
 const CRYPTO_NEWS_TERMS: Record<string, string[]> = {
@@ -342,22 +392,17 @@ const CRYPTO_NEWS_TERMS: Record<string, string[]> = {
   "BNB-USD": ["BNB", "Binance", "crypto market", "cryptocurrency regulation"],
 
   "DOGE-USD": ["Dogecoin", "DOGE", "crypto market"],
-
   "ADA-USD": ["Cardano", "ADA", "crypto market"],
-
   "AVAX-USD": ["Avalanche", "AVAX", "crypto market"],
-
   "DOT-USD": ["Polkadot", "DOT", "crypto market"],
-
   "LINK-USD": ["Chainlink", "LINK", "crypto market"],
 };
 
 // -----------------------------------------------------------------------------
-// COMMODITY CONTEXT
+// Commodity context
 // -----------------------------------------------------------------------------
 
 const COMMODITY_NEWS_TERMS: Record<string, string[]> = {
-  // Gold
   "GC=F": [
     "gold",
     "gold prices",
@@ -367,7 +412,6 @@ const COMMODITY_NEWS_TERMS: Record<string, string[]> = {
     "interest rates",
   ],
 
-  // Silver
   "SI=F": [
     "silver",
     "silver prices",
@@ -376,7 +420,6 @@ const COMMODITY_NEWS_TERMS: Record<string, string[]> = {
     "interest rates",
   ],
 
-  // WTI
   "CL=F": [
     "crude oil",
     "WTI",
@@ -386,33 +429,22 @@ const COMMODITY_NEWS_TERMS: Record<string, string[]> = {
     "oil demand",
   ],
 
-  // Brent
   "BZ=F": ["Brent crude", "oil prices", "OPEC", "oil supply", "oil demand"],
 
-  // Natural Gas
   "NG=F": ["natural gas", "natural gas prices", "gas supply", "gas demand"],
 
-  // Copper
   "HG=F": ["copper", "copper prices", "China demand", "industrial metals"],
 
-  // Platinum
   "PL=F": ["platinum", "platinum prices", "precious metals"],
-
-  // Palladium
   "PA=F": ["palladium", "palladium prices", "precious metals"],
 
-  // Corn
   "ZC=F": ["corn", "corn prices", "grain market", "crop supply"],
-
-  // Wheat
   "ZW=F": ["wheat", "wheat prices", "grain market", "crop supply"],
-
-  // Soybeans
   "ZS=F": ["soybeans", "soybean prices", "grain market", "crop supply"],
 };
 
 // -----------------------------------------------------------------------------
-// CURRENCY CONTEXT
+// Currency context
 // -----------------------------------------------------------------------------
 
 const CURRENCY_CONTEXT: Record<
@@ -424,7 +456,6 @@ const CURRENCY_CONTEXT: Record<
 > = {
   USD: {
     name: "US dollar",
-
     terms: [
       "Federal Reserve",
       "US economy",
@@ -435,37 +466,31 @@ const CURRENCY_CONTEXT: Record<
 
   EUR: {
     name: "euro",
-
     terms: ["European Central Bank", "Eurozone economy", "Eurozone inflation"],
   },
 
   GBP: {
     name: "British pound",
-
     terms: ["Bank of England", "UK economy", "UK inflation"],
   },
 
   JPY: {
     name: "Japanese yen",
-
     terms: ["Bank of Japan", "Japan economy", "Japan inflation"],
   },
 
   KRW: {
     name: "Korean won",
-
     terms: ["Bank of Korea", "South Korea economy", "South Korea exports"],
   },
 
   CNY: {
     name: "Chinese yuan",
-
     terms: ["People's Bank of China", "China economy", "China trade"],
   },
 
   AUD: {
     name: "Australian dollar",
-
     terms: [
       "Reserve Bank of Australia",
       "Australia economy",
@@ -475,107 +500,54 @@ const CURRENCY_CONTEXT: Record<
 
   CAD: {
     name: "Canadian dollar",
-
     terms: ["Bank of Canada", "Canada economy", "Canada inflation"],
   },
 
   CHF: {
     name: "Swiss franc",
-
     terms: ["Swiss National Bank", "Switzerland economy"],
   },
 
   NZD: {
     name: "New Zealand dollar",
-
     terms: ["Reserve Bank of New Zealand", "New Zealand economy"],
   },
 
   SGD: {
     name: "Singapore dollar",
-
     terms: ["Monetary Authority of Singapore", "Singapore economy"],
   },
 
   HKD: {
     name: "Hong Kong dollar",
-
     terms: ["Hong Kong Monetary Authority", "Hong Kong economy"],
   },
 
   MXN: {
     name: "Mexican peso",
-
     terms: ["Bank of Mexico", "Mexico economy", "Mexico inflation"],
   },
 
   BRL: {
     name: "Brazilian real",
-
     terms: ["Brazil central bank", "Brazil economy", "Brazil inflation"],
   },
 
   INR: {
     name: "Indian rupee",
-
     terms: ["Reserve Bank of India", "India economy", "India inflation"],
   },
 
   ZAR: {
     name: "South African rand",
-
     terms: ["South African Reserve Bank", "South Africa economy"],
   },
 };
 
 // -----------------------------------------------------------------------------
-// HELPERS
+// Text / date / publisher helpers
 // -----------------------------------------------------------------------------
 
-function getPublisherDomain(url: string): string | null {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
-}
-
-function getSourceIcon(url: string): string | null {
-  const domain = getPublisherDomain(url);
-
-  if (!domain) {
-    return null;
-  }
-
-  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(
-    domain,
-  )}&sz=64`;
-}
-
-function cleanSummary(article: MarketauxArticle): string | null {
-  const summary = article.description?.trim() || article.snippet?.trim();
-
-  if (!summary) {
-    return null;
-  }
-
-  return summary.slice(0, 700);
-}
-
-function sevenDaysAgo(): Date {
-  const date = new Date();
-
-  date.setDate(date.getDate() - NEWS_HISTORY_DAYS);
-
-  return date;
-}
-
-/**
- * Normalize text so comparisons are less sensitive to punctuation,
- * capitalization and spacing.
- *
- * "S&P 500" -> "s p 500"
- */
 function normalizeText(value: string): string {
   return value
     .normalize("NFKD")
@@ -589,28 +561,119 @@ function containsMarketQuery(
   text: string | null | undefined,
   query: string,
 ): boolean {
-  if (!text) {
-    return false;
-  }
+  if (!text) return false;
 
   const normalizedText = normalizeText(text);
   const normalizedQuery = normalizeText(query);
 
-  if (!normalizedText || !normalizedQuery) {
-    return false;
-  }
+  if (!normalizedText || !normalizedQuery) return false;
 
   return normalizedText.includes(normalizedQuery);
 }
 
+function matchesPhrase(
+  text: string | null | undefined,
+  phrase: string,
+): boolean {
+  if (!text) return false;
+
+  const term = normalizeText(phrase);
+
+  if (!term) return false;
+
+  return ` ${normalizeText(text)} `.includes(` ${term} `);
+}
+
+function sevenDaysAgo(): Date {
+  const date = new Date();
+
+  date.setDate(date.getDate() - NEWS_HISTORY_DAYS);
+
+  return date;
+}
+
+function getPublisherDomain(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function getSourceIcon(url: string): string | null {
+  const domain = getPublisherDomain(url);
+
+  if (!domain) return null;
+
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(
+    domain,
+  )}&sz=64`;
+}
+
+function cleanSummary(article: MarketauxArticle): string | null {
+  const summary = article.description?.trim() || article.snippet?.trim();
+
+  return summary ? summary.slice(0, 700) : null;
+}
+
+function clampNewsLimit(limit: number, fallback: number): number {
+  return Number.isFinite(limit)
+    ? Math.max(1, Math.min(100, Math.floor(limit)))
+    : fallback;
+}
+
 // -----------------------------------------------------------------------------
-// INVESTMENT PRODUCT FILTER
+// Duplicate detection
 // -----------------------------------------------------------------------------
 
-/**
- * Prevent ETF / fund articles from taking over an underlying
- * index or commodity news feed.
- */
+function articleUrlKey(value: string): string {
+  try {
+    const url = new URL(value);
+
+    url.hash = "";
+
+    for (const key of [...url.searchParams.keys()]) {
+      if (/^utm_/i.test(key) || /^(fbclid|gclid|msclkid)$/i.test(key)) {
+        url.searchParams.delete(key);
+      }
+    }
+
+    url.searchParams.sort();
+
+    return url.toString();
+  } catch {
+    return value.trim();
+  }
+}
+
+function deduplicateNews<T extends { url: string; title: string }>(
+  items: T[],
+): T[] {
+  const urls = new Set<string>();
+  const titles = new Set<string>();
+
+  return items.filter((item) => {
+    const url = articleUrlKey(item.url);
+    const title = normalizeText(item.title);
+
+    if (urls.has(url) || (title && titles.has(title))) {
+      return false;
+    }
+
+    urls.add(url);
+
+    if (title) {
+      titles.add(title);
+    }
+
+    return true;
+  });
+}
+
+// -----------------------------------------------------------------------------
+// Investment product filter
+// -----------------------------------------------------------------------------
+
 const INVESTMENT_PRODUCT_TERMS = [
   "etf",
   "fund",
@@ -637,22 +700,13 @@ function looksLikeInvestmentProductArticle(title: string): boolean {
 }
 
 // -----------------------------------------------------------------------------
-// CURRENCY HELPERS
+// Currency helpers
 // -----------------------------------------------------------------------------
 
 function getCurrencyPair(symbol: string): [string, string] | null {
-  /**
-   * Yahoo Finance format:
-   *
-   * EURUSD=X
-   * USDJPY=X
-   * GBPUSD=X
-   */
   const match = symbol.match(/^([A-Z]{3})([A-Z]{3})=X$/);
 
-  if (!match) {
-    return null;
-  }
+  if (!match) return null;
 
   return [match[1], match[2]];
 }
@@ -660,9 +714,7 @@ function getCurrencyPair(symbol: string): [string, string] | null {
 function getCurrencyNewsTerms(symbol: string): string[] {
   const pair = getCurrencyPair(symbol);
 
-  if (!pair) {
-    return [];
-  }
+  if (!pair) return [];
 
   const [base, quote] = pair;
 
@@ -685,7 +737,7 @@ function getCurrencyNewsTerms(symbol: string): string[] {
 }
 
 // -----------------------------------------------------------------------------
-// ASSET TYPE
+// Build market context
 // -----------------------------------------------------------------------------
 
 function normalizeNewsAssetType(assetType: string): NewsAssetType {
@@ -699,16 +751,12 @@ function normalizeNewsAssetType(assetType: string): NewsAssetType {
     return "currency";
   }
 
-  if (normalized.includes("commodity") || normalized.includes("commodity")) {
+  if (normalized.includes("commodity") || normalized.includes("commodities")) {
     return "commodity";
   }
 
   return "index";
 }
-
-// -----------------------------------------------------------------------------
-// BUILD NEWS CONTEXT
-// -----------------------------------------------------------------------------
 
 function buildNewsContext({
   symbol,
@@ -722,14 +770,9 @@ function buildNewsContext({
   timezone: string | null;
 }): NewsContext {
   const normalizedAssetType = normalizeNewsAssetType(assetType);
-
   const primaryQuery = name.trim();
 
   switch (normalizedAssetType) {
-    // -------------------------------------------------------------------------
-    // CRYPTO
-    // -------------------------------------------------------------------------
-
     case "crypto": {
       const terms = CRYPTO_NEWS_TERMS[symbol] ?? [
         primaryQuery,
@@ -740,11 +783,8 @@ function buildNewsContext({
 
       return {
         assetType: "crypto",
-
         primaryQuery,
-
         searchTerms: [...new Set([primaryQuery, ...terms])],
-
         macroTerms: [
           "crypto market",
           "cryptocurrency regulation",
@@ -753,27 +793,16 @@ function buildNewsContext({
       };
     }
 
-    // -------------------------------------------------------------------------
-    // CURRENCY
-    // -------------------------------------------------------------------------
-
     case "currency": {
       const terms = getCurrencyNewsTerms(symbol);
 
       return {
         assetType: "currency",
-
         primaryQuery,
-
         searchTerms: [...new Set([primaryQuery, ...terms])],
-
         macroTerms: terms,
       };
     }
-
-    // -------------------------------------------------------------------------
-    // COMMODITY
-    // -------------------------------------------------------------------------
 
     case "commodity": {
       const terms = COMMODITY_NEWS_TERMS[symbol] ?? [
@@ -784,60 +813,95 @@ function buildNewsContext({
 
       return {
         assetType: "commodity",
-
         primaryQuery,
-
         searchTerms: [...new Set([primaryQuery, ...terms])],
-
         macroTerms: terms,
       };
     }
 
-    // -------------------------------------------------------------------------
-    // INDEX
-    // -------------------------------------------------------------------------
-
     default: {
       const macroTerms = timezone ? (TIMEZONE_MACRO_TERMS[timezone] ?? []) : [];
 
+      const profile = indexProfile(symbol);
+
       return {
         assetType: "index",
-
         primaryQuery,
 
-        searchTerms: [...new Set([primaryQuery, ...macroTerms])],
+        searchTerms: profile
+          ? [...profile.queries, macroTerms[1] ?? macroTerms[0] ?? primaryQuery]
+          : [...new Set([primaryQuery, ...macroTerms])],
 
         macroTerms,
+
+        directTerms: profile
+          ? [...new Set([primaryQuery, ...profile.aliases])]
+          : [primaryQuery],
+
+        topicTerms: profile?.topics ?? [],
       };
     }
   }
 }
 
 // -----------------------------------------------------------------------------
-// RELEVANCE
+// Relevance scoring
 // -----------------------------------------------------------------------------
 
 function calculateArticleRelevance(
   article: MarketauxArticle,
   context: NewsContext,
 ): number {
-  if (!article.title) {
+  if (!article.title || looksLikeInvestmentProductArticle(article.title)) {
     return 0;
   }
-
-  if (looksLikeInvestmentProductArticle(article.title)) {
-    return 0;
-  }
-
-  let score = 0;
 
   const title = article.title;
-
   const description = article.description ?? article.snippet ?? "";
 
-  // ---------------------------------------------------------------------------
-  // 1. Direct asset mention
-  // ---------------------------------------------------------------------------
+  if (context.assetType === "index") {
+    const aliases = context.directTerms ?? [context.primaryQuery];
+
+    let score = 0;
+
+    // Direct index mention has the highest priority.
+    if (aliases.some((term) => matchesPhrase(title, term))) {
+      score += 200;
+    } else if (aliases.some((term) => matchesPhrase(description, term))) {
+      score += 100;
+    }
+
+    const titleTopics = (context.topicTerms ?? []).filter((term) =>
+      matchesPhrase(title, term),
+    );
+
+    const bodyTopics = (context.topicTerms ?? []).filter((term) =>
+      matchesPhrase(description, term),
+    );
+
+    // Cap topic matches so repeated keywords cannot dominate.
+    score += Math.min(titleTopics.length, 2) * 30;
+    score += Math.min(bodyTopics.length, 2) * 10;
+
+    const macroTitle = context.macroTerms.some((term) =>
+      matchesPhrase(title, term),
+    );
+
+    const macroBody = context.macroTerms.some((term) =>
+      matchesPhrase(description, term),
+    );
+
+    if (macroTitle) {
+      score += 10;
+    } else if (macroBody) {
+      score += 5;
+    }
+
+    return score;
+  }
+
+  // Preserve the existing scoring for non-index assets.
+  let score = 0;
 
   if (containsMarketQuery(title, context.primaryQuery)) {
     score += 100;
@@ -845,17 +909,10 @@ function calculateArticleRelevance(
     score += 25;
   }
 
-  // ---------------------------------------------------------------------------
-  // 2. Marketaux entity
-  // ---------------------------------------------------------------------------
-
   for (const entity of article.entities ?? []) {
-    if (!entity.name) {
-      continue;
-    }
+    if (!entity.name) continue;
 
     const normalizedEntity = normalizeText(entity.name);
-
     const normalizedPrimary = normalizeText(context.primaryQuery);
 
     const namesMatch =
@@ -863,16 +920,10 @@ function calculateArticleRelevance(
       normalizedEntity.includes(normalizedPrimary) ||
       normalizedPrimary.includes(normalizedEntity);
 
-    if (!namesMatch) {
-      continue;
-    }
+    if (!namesMatch) continue;
 
     score += Math.min(entity.match_score ?? 0, 50);
   }
-
-  // ---------------------------------------------------------------------------
-  // 3. Related search terms
-  // ---------------------------------------------------------------------------
 
   for (const term of context.searchTerms) {
     if (normalizeText(term) === normalizeText(context.primaryQuery)) {
@@ -881,7 +932,6 @@ function calculateArticleRelevance(
 
     if (containsMarketQuery(title, term)) {
       score += 20;
-
       continue;
     }
 
@@ -889,10 +939,6 @@ function calculateArticleRelevance(
       score += 5;
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // 4. Macro terms
-  // ---------------------------------------------------------------------------
 
   for (const term of context.macroTerms) {
     if (containsMarketQuery(title, term)) {
@@ -907,11 +953,7 @@ function isRelevantMarketArticle(
   article: MarketauxArticle,
   context: NewsContext,
 ): boolean {
-  if (!article.title) {
-    return false;
-  }
-
-  if (looksLikeInvestmentProductArticle(article.title)) {
+  if (!article.title || looksLikeInvestmentProductArticle(article.title)) {
     return false;
   }
 
@@ -919,24 +961,17 @@ function isRelevantMarketArticle(
 
   switch (context.assetType) {
     case "index":
-      return score >= 10;
-
     case "currency":
       return score >= 10;
 
     case "crypto":
-      return score >= 15;
-
     case "commodity":
-      return score >= 15;
-
-    default:
       return score >= 15;
   }
 }
 
 // -----------------------------------------------------------------------------
-// FETCH RELEVANT MARKET NEWS
+// Fetch candidates
 // -----------------------------------------------------------------------------
 
 async function fetchRelevantMarketNews(
@@ -946,46 +981,22 @@ async function fetchRelevantMarketNews(
 
   if (!apiKey) {
     console.error("MARKETAUX_API_KEY is missing.");
-
     return [];
   }
 
-  const publishedAfter = sevenDaysAgo().toISOString().slice(0, 19);
-
-  /**
-   * Limit how many terms we send.
-   *
-   * The first term is always the actual asset.
-   * Remaining terms provide broader context.
-   */
-  const searchTerms = context.searchTerms.slice(0, 6);
-
-  /**
-   * Marketaux OR search.
-   *
-   * Example:
-   *
-   * Nikkei 225 | Japan economy | Bank of Japan | Japanese yen
-   */
-  const searchQuery = searchTerms.join(" | ");
-
   const params = new URLSearchParams({
     api_token: apiKey,
-
-    search: searchQuery,
-
+    search: context.searchTerms.slice(0, 6).join(" | "),
     language: "en",
-
-    published_after: publishedAfter,
-
+    published_after: sevenDaysAgo().toISOString().slice(0, 19),
     limit: String(MARKETAUX_CANDIDATE_LIMIT),
-
     group_similar: "true",
   });
 
   try {
     const response = await fetch(`${MARKETAUX_URL}?${params.toString()}`, {
       cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
     });
 
     if (!response.ok) {
@@ -993,8 +1004,6 @@ async function fetchRelevantMarketNews(
 
       if (response.status === 402 || response.status === 429) {
         console.warn(`Marketaux unavailable (${response.status}):`, errorText);
-
-        return [];
       }
 
       return [];
@@ -1002,26 +1011,18 @@ async function fetchRelevantMarketNews(
 
     const json = (await response.json()) as MarketauxResponse;
 
-    const candidates = json.data ?? [];
-
-    const relevantArticles = candidates
+    return (json.data ?? [])
       .filter((article) => isRelevantMarketArticle(article, context))
       .sort((a, b) => {
         const scoreA = calculateArticleRelevance(a, context);
-
         const scoreB = calculateArticleRelevance(b, context);
 
-        if (scoreB !== scoreA) {
-          return scoreB - scoreA;
-        }
-
         return (
+          scoreB - scoreA ||
           new Date(b.published_at).getTime() -
-          new Date(a.published_at).getTime()
+            new Date(a.published_at).getTime()
         );
       });
-
-    return relevantArticles;
   } catch (error) {
     console.error(
       `Failed to fetch Marketaux news for "${context.primaryQuery}":`,
@@ -1033,52 +1034,32 @@ async function fetchRelevantMarketNews(
 }
 
 // -----------------------------------------------------------------------------
-// SYNC MARKET NEWS
+// Sync market news
 // -----------------------------------------------------------------------------
 
 export async function syncMarketNews(
   symbol: string,
   limit = MARKET_PAGE_NEWS_LIMIT,
 ): Promise<MarketNewsItem[]> {
+  // Keep the existing function signature.
+  // Collection size is independent of the requested display size.
+  void limit;
+
   const market = await prisma.marketAsset.findUnique({
-    where: {
-      symbol,
-    },
+    where: { symbol },
 
     select: {
       symbol: true,
       name: true,
-
       assetType: true,
       timezone: true,
-
       newsLastFetchedAt: true,
     },
   });
 
-  if (!market) {
+  if (!market || !market.name.trim()) {
     return [];
   }
-
-  const newsQuery = market.name.trim();
-
-  if (!newsQuery) {
-    return [];
-  }
-
-  const newsContext = buildNewsContext({
-    symbol: market.symbol,
-
-    name: market.name,
-
-    assetType: market.assetType,
-
-    timezone: market.timezone,
-  });
-
-  // ---------------------------------------------------------------------------
-  // CACHE
-  // ---------------------------------------------------------------------------
 
   if (market.newsLastFetchedAt) {
     const elapsed = Date.now() - new Date(market.newsLastFetchedAt).getTime();
@@ -1088,26 +1069,18 @@ export async function syncMarketNews(
     }
   }
 
+  const context = buildNewsContext(market);
+
   let articles: MarketauxArticle[] = [];
 
   try {
-    articles = await fetchRelevantMarketNews(newsContext);
+    articles = await fetchRelevantMarketNews(context);
   } finally {
-    /**
-     * Record the attempt even when:
-     *
-     * - Marketaux returns zero results
-     * - relevance filtering removes everything
-     * - Marketaux fails
-     *
-     * Otherwise every page refresh could consume
-     * another API request.
-     */
+    // Preserve the existing policy: failed/empty attempts also
+    // count toward the 24-hour collection interval.
     try {
       await prisma.marketAsset.update({
-        where: {
-          symbol,
-        },
+        where: { symbol },
 
         data: {
           newsLastFetchedAt: new Date(),
@@ -1118,27 +1091,10 @@ export async function syncMarketNews(
     }
   }
 
-  if (articles.length === 0) {
-    return [];
-  }
-
-  // ---------------------------------------------------------------------------
-  // SAVE
-  // ---------------------------------------------------------------------------
-
   const savedNews: MarketNewsItem[] = [];
 
-  /**
-   * We don't need to save an unlimited amount from one sync.
-   *
-   * News page requests may ask for more than the market page.
-   */
-  const articlesToSave = articles.slice(
-    0,
-    Math.max(limit, MARKET_PAGE_NEWS_LIMIT),
-  );
-
-  for (const article of articlesToSave) {
+  // Save all valid candidates even when the ticker requested only 3.
+  for (const article of deduplicateNews(articles)) {
     if (!article.title || !article.url || !article.published_at) {
       continue;
     }
@@ -1149,46 +1105,30 @@ export async function syncMarketNews(
       continue;
     }
 
+    const data = {
+      title: article.title,
+      summary: cleanSummary(article),
+      imageUrl: article.image_url ?? null,
+      source: article.source || "Market News",
+      sourceIcon: getSourceIcon(article.url),
+      publishedAt,
+    };
+
     try {
       const news = await prisma.marketNews.upsert({
         where: {
           marketSymbol_url: {
             marketSymbol: symbol,
-
             url: article.url,
           },
         },
 
-        update: {
-          title: article.title,
-
-          summary: cleanSummary(article),
-
-          imageUrl: article.image_url ?? null,
-
-          source: article.source || "Market News",
-
-          sourceIcon: getSourceIcon(article.url),
-
-          publishedAt,
-        },
+        update: data,
 
         create: {
           marketSymbol: symbol,
-
-          title: article.title,
-
-          summary: cleanSummary(article),
-
-          imageUrl: article.image_url ?? null,
-
-          source: article.source || "Market News",
-
-          sourceIcon: getSourceIcon(article.url),
-
           url: article.url,
-
-          publishedAt,
+          ...data,
         },
       });
 
@@ -1202,168 +1142,199 @@ export async function syncMarketNews(
 }
 
 // -----------------------------------------------------------------------------
-// MARKET PAGE NEWS
-//
-// Used on:
-//
-// /[symbol]
-//
-// Only the newest few articles are needed.
+// Read and rank persisted market news
 // -----------------------------------------------------------------------------
 
-const getCachedLatestMarketNews = unstable_cache(
-  async (symbol: string): Promise<MarketNewsItem[]> => {
-    await syncMarketNews(symbol, MARKET_PAGE_NEWS_LIMIT);
+async function readRankedMarketNews(
+  symbol: string,
+  limit: number,
+): Promise<MarketNewsItem[]> {
+  const market = await prisma.marketAsset.findUnique({
+    where: { symbol },
 
-    return prisma.marketNews.findMany({
-      where: {
-        marketSymbol: symbol,
+    select: {
+      symbol: true,
+      name: true,
+      assetType: true,
+      timezone: true,
+    },
+  });
 
-        publishedAt: {
-          gte: sevenDaysAgo(),
-        },
+  if (!market) return [];
+
+  await syncMarketNews(symbol);
+
+  const context = buildNewsContext(market);
+
+  const items = await prisma.marketNews.findMany({
+    where: {
+      marketSymbol: symbol,
+      publishedAt: {
+        gte: sevenDaysAgo(),
       },
+    },
 
-      orderBy: {
-        publishedAt: "desc",
-      },
+    orderBy: [{ publishedAt: "desc" }, { id: "asc" }],
+  });
 
-      take: MARKET_PAGE_NEWS_LIMIT,
-    });
-  },
-  ["latest-market-news"],
+  // Apply relevance again when reading stored news.
+  // A publishedAt-only DB sort would discard the relevance order.
+  const ranked = items
+    .map((item) => {
+      const article: MarketauxArticle = {
+        uuid: item.id,
+        title: item.title,
+        description: item.summary,
+        url: item.url,
+        published_at: item.publishedAt.toISOString(),
+      };
+
+      return {
+        item,
+        article,
+        score: calculateArticleRelevance(article, context),
+      };
+    })
+    .filter((entry) => isRelevantMarketArticle(entry.article, context))
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        b.item.publishedAt.getTime() - a.item.publishedAt.getTime(),
+    );
+
+  return deduplicateNews(ranked.map((entry) => entry.item)).slice(0, limit);
+}
+
+const getCachedMarketNews = unstable_cache(
+  readRankedMarketNews,
+  ["market-news-relevance-v2"],
   {
-    revalidate: 60 * 60, // 1 hour
+    revalidate: 60 * 60,
   },
 );
+
+// -----------------------------------------------------------------------------
+// Market ticker
+// -----------------------------------------------------------------------------
 
 export async function getLatestMarketNews(
   symbol: string,
 ): Promise<MarketNewsItem[]> {
-  return getCachedLatestMarketNews(symbol);
+  return getCachedMarketNews(symbol, MARKET_PAGE_NEWS_LIMIT);
 }
 
 // -----------------------------------------------------------------------------
-// MARKET NEWS PAGE
-//
-// Used on:
-//
-// /[symbol]/news
+// Market news page
 // -----------------------------------------------------------------------------
 
 export async function getMarketNews(
   symbol: string,
   limit = NEWS_PAGE_LIMIT,
 ): Promise<MarketNewsItem[]> {
-  await syncMarketNews(symbol, limit);
-
-  return prisma.marketNews.findMany({
-    where: {
-      marketSymbol: symbol,
-
-      publishedAt: {
-        gte: sevenDaysAgo(),
-      },
-    },
-
-    orderBy: {
-      publishedAt: "desc",
-    },
-
-    take: limit,
-  });
+  return getCachedMarketNews(symbol, clampNewsLimit(limit, NEWS_PAGE_LIMIT));
 }
 
 // -----------------------------------------------------------------------------
-// GLOBAL MARKET NEWS
-//
-// Used on:
-//
-// /news
-//
-// IMPORTANT:
-//
-// This does NOT call Marketaux.
-//
-// It only reads news already cached in our database.
+// Global news page
 // -----------------------------------------------------------------------------
-
-export interface GlobalMarketNewsItem extends MarketNewsItem {
-  market: {
-    symbol: string;
-    displaySymbol: string | null;
-    name: string;
-    category: string;
-  };
-}
 
 export async function getGlobalMarketNews(
   limit = 30,
 ): Promise<GlobalMarketNewsItem[]> {
-  return prisma.marketNews.findMany({
-    where: {
-      publishedAt: {
-        gte: sevenDaysAgo(),
-      },
+  const target = clampNewsLimit(limit, 30);
 
-      /**
-       * Keep the existing global market feed limited
-       * to regional market categories.
-       *
-       * Crypto / Currency / commodity can still have
-       * their own /[symbol]/news pages.
-       *
-       * Remove this market.category filter later if you
-       * want /news to mix every asset class together.
-       */
-      market: {
-        category: {
-          in: ["America", "Asia", "Europe"],
+  const result: GlobalMarketNewsItem[] = [];
+
+  const urls = new Set<string>();
+  const titles = new Set<string>();
+
+  const publishedAfter = sevenDaysAgo();
+
+  let cursor: string | undefined;
+
+  // Read further batches until enough unique articles are found
+  // or the stored results are exhausted.
+  while (result.length < target) {
+    const batch: GlobalMarketNewsItem[] = await prisma.marketNews.findMany({
+      where: {
+        publishedAt: {
+          gte: publishedAfter,
+        },
+
+        market: {
+          category: {
+            in: ["America", "Asia", "Middle_East", "Europe"],
+          },
         },
       },
-    },
 
-    select: {
-      id: true,
-      marketSymbol: true,
+      select: {
+        id: true,
+        marketSymbol: true,
 
-      title: true,
-      summary: true,
-      imageUrl: true,
+        title: true,
+        summary: true,
+        imageUrl: true,
 
-      source: true,
-      sourceIcon: true,
+        source: true,
+        sourceIcon: true,
 
-      url: true,
-      publishedAt: true,
+        url: true,
+        publishedAt: true,
 
-      market: {
-        select: {
-          symbol: true,
-          displaySymbol: true,
-          name: true,
-          category: true,
+        market: {
+          select: {
+            symbol: true,
+            displaySymbol: true,
+            name: true,
+            category: true,
+          },
         },
       },
-    },
 
-    orderBy: {
-      publishedAt: "desc",
-    },
+      orderBy: [{ publishedAt: "desc" }, { id: "asc" }],
 
-    take: limit,
-  });
-}
+      take: 100,
 
-// -----------------------------------------------------------------------------
-// HOME MARKET HEADLINES
-// -----------------------------------------------------------------------------
+      ...(cursor
+        ? {
+            cursor: { id: cursor },
+            skip: 1,
+          }
+        : {}),
+    });
 
-export interface HomeMarketHeadline {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  url: string;
-  publishedAt: string;
+    if (batch.length === 0) {
+      break;
+    }
+
+    for (const item of batch) {
+      const url = articleUrlKey(item.url);
+      const title = normalizeText(item.title);
+
+      if (urls.has(url) || (title && titles.has(title))) {
+        continue;
+      }
+
+      urls.add(url);
+
+      if (title) {
+        titles.add(title);
+      }
+
+      result.push(item);
+
+      if (result.length === target) {
+        break;
+      }
+    }
+
+    cursor = batch[batch.length - 1].id;
+
+    if (batch.length < 100) {
+      break;
+    }
+  }
+
+  return result;
 }

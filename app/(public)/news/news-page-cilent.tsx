@@ -7,13 +7,20 @@ import { ArrowUpRight } from "lucide-react";
 
 import type { GlobalMarketNewsItem } from "@/app/actions/news";
 
-type Region = "All" | "America" | "Asia" | "Europe" | "Middle_East" | "Africa";
+type Region = "All" | "America" | "Asia" | "Middle_East" | "Europe" | "Africa";
 
 interface NewsPageClientProps {
   initialNews: GlobalMarketNewsItem[];
 }
 
-const REGIONS: Region[] = ["All", "America", "Asia", "Middle_East", "Europe"];
+const REGIONS: { value: Region; label: string }[] = [
+  { value: "All", label: "All" },
+  { value: "America", label: "America" },
+  { value: "Asia", label: "Asia" },
+  { value: "Middle_East", label: "Middle East" },
+  { value: "Europe", label: "Europe" },
+  { value: "Africa", label: "Africa" },
+];
 
 export default function NewsPageClient({ initialNews }: NewsPageClientProps) {
   const [region, setRegion] = useState<Region>("All");
@@ -27,31 +34,36 @@ export default function NewsPageClient({ initialNews }: NewsPageClientProps) {
   }, [initialNews, region]);
 
   return (
-    <main className="mx-auto w-full mt-10 max-w-5xl px-4 py-8 sm:px-6">
-      {/* Header */}
-      {/* <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-          Market News
-        </h1>
-
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Latest headlines from global markets
-        </p>
-      </div> */}
+    <main className="mx-auto mt-10 w-full max-w-5xl px-4 py-8 sm:px-6">
+      <h1 className="sr-only">Global Market News</h1>
 
       {/* Region filters */}
-      <div className="mb-6 flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
-        {REGIONS.map((item) => {
-          const active = region === item;
+      <div
+        role="group"
+        aria-label="Filter news by region"
+        className="
+          mb-6 flex items-center gap-1 overflow-x-auto
+          border-b border-zinc-200
+          dark:border-zinc-800
+        "
+      >
+        {REGIONS.map(({ value, label }) => {
+          const active = region === value;
 
           return (
             <button
-              key={item}
+              key={value}
               type="button"
-              onClick={() => setRegion(item)}
+              onClick={() => setRegion(value)}
+              aria-pressed={active}
               className={`
-                relative px-3 pb-3 text-sm
+                relative shrink-0 cursor-pointer
+                whitespace-nowrap px-3 pb-3 text-sm
                 transition-colors
+                focus-visible:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-inset
+                focus-visible:ring-zinc-400
                 ${
                   active
                     ? "font-medium text-zinc-950 dark:text-zinc-50"
@@ -59,10 +71,11 @@ export default function NewsPageClient({ initialNews }: NewsPageClientProps) {
                 }
               `}
             >
-              {item}
+              {label}
 
               {active && (
                 <span
+                  aria-hidden="true"
                   className="
                     absolute right-2 bottom-0 left-2
                     h-0.5 rounded-full
@@ -78,7 +91,9 @@ export default function NewsPageClient({ initialNews }: NewsPageClientProps) {
       {/* News */}
       {news.length === 0 ? (
         <div className="flex min-h-80 items-center justify-center">
-          <p className="text-sm text-zinc-500">No recent news available.</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            No recent news available.
+          </p>
         </div>
       ) : (
         <div>
@@ -92,102 +107,112 @@ export default function NewsPageClient({ initialNews }: NewsPageClientProps) {
 }
 
 function NewsRow({ item }: { item: GlobalMarketNewsItem }) {
+  const publishedAt = new Date(item.publishedAt);
+  const validDate = Number.isFinite(publishedAt.getTime());
+
   return (
     <article
       className="
-        group
-        border-b border-zinc-100
-        py-5
+        group border-b border-zinc-100 py-5
         dark:border-zinc-800/70
       "
     >
       <div className="flex gap-5">
-        {/* Content */}
         <div className="min-w-0 flex-1">
           {/* Meta */}
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <Link
               href={`/market/${encodeURIComponent(item.market.symbol)}`}
               className="
-                rounded-md
-                bg-zinc-100
-                px-2 py-0.5
-                text-xs font-medium
-                text-zinc-600
+                rounded-md bg-zinc-100 px-2 py-0.5
+                text-xs font-medium text-zinc-600
                 transition-colors
-                hover:bg-zinc-200
-                hover:text-zinc-900
-                dark:bg-zinc-800
-                dark:text-zinc-100
+                hover:bg-zinc-200 hover:text-zinc-900
+                dark:bg-zinc-800 dark:text-zinc-100
                 dark:hover:bg-zinc-700
-                dark:hover:text-zinc-100
               "
             >
               {item.market.displaySymbol ?? item.market.symbol}
             </Link>
 
-            <span className="text-xs text-zinc-100 dark:text-zinc-700">•</span>
+            <span
+              aria-hidden="true"
+              className="text-xs text-zinc-200 dark:text-zinc-700"
+            >
+              •
+            </span>
 
             <div className="flex min-w-0 items-center gap-1.5">
               {item.sourceIcon && (
                 <img
                   src={item.sourceIcon}
                   alt=""
-                  className="size-4 rounded-sm"
+                  width={16}
+                  height={16}
+                  loading="lazy"
+                  decoding="async"
+                  className="size-4 shrink-0 rounded-sm"
                 />
               )}
 
-              <span className="truncate text-xs text-zinc-500">
+              <span className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                 {item.source}
               </span>
             </div>
 
-            <span className="text-xs text-zinc-100 dark:text-zinc-700">•</span>
+            {validDate && (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="text-xs text-zinc-200 dark:text-zinc-700"
+                >
+                  •
+                </span>
 
-            <time
-              dateTime={item.publishedAt.toISOString()}
-              className="text-xs text-zinc-400"
-            >
-              {formatRelativeTime(item.publishedAt)}
-            </time>
+                <time
+                  dateTime={publishedAt.toISOString()}
+                  title={publishedAt.toUTCString()}
+                  className="text-xs text-zinc-400"
+                >
+                  {formatRelativeTime(publishedAt)}
+                </time>
+              </>
+            )}
           </div>
 
           {/* Headline */}
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="
-              inline
-              text-[16px] font-semibold leading-6
-              text-zinc-900
-              transition-colors
-              group-hover:text-zinc-600
-              dark:text-zinc-100
-              dark:group-hover:text-zinc-100
-            "
-          >
-            {item.title}
-
-            <ArrowUpRight
+          <h2 className="text-base font-semibold leading-6">
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
               className="
-                ml-1 inline size-3.5
-                -translate-y-px
-                text-zinc-400
+                text-zinc-900 transition-colors
+                hover:underline
+                group-hover:text-zinc-600
+                dark:text-zinc-100
+                dark:group-hover:text-zinc-100
               "
-            />
-          </a>
+            >
+              {item.title}
+
+              <ArrowUpRight
+                aria-hidden="true"
+                className="
+                  ml-1 inline size-3.5
+                  -translate-y-px text-zinc-400
+                "
+              />
+            </a>
+          </h2>
 
           {/* Summary */}
           {item.summary && (
             <p
               className="
-                mt-2
-                line-clamp-2
-                max-w-3xl
+                mt-2 line-clamp-2 max-w-3xl
                 text-sm leading-5
-                text-zinc-500
-                dark:text-zinc-400
+                text-zinc-500 dark:text-zinc-400
               "
             >
               {item.summary}
@@ -201,14 +226,11 @@ function NewsRow({ item }: { item: GlobalMarketNewsItem }) {
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={item.title}
             className="
-              relative hidden
-              h-22.5 w-35
-              shrink-0 overflow-hidden
-              rounded-lg
-              bg-zinc-100
-              sm:block
-              dark:bg-zinc-800
+              relative hidden h-22.5 w-35
+              shrink-0 overflow-hidden rounded-lg
+              bg-zinc-100 sm:block dark:bg-zinc-800
             "
           >
             <Image
@@ -221,6 +243,7 @@ function NewsRow({ item }: { item: GlobalMarketNewsItem }) {
                 object-cover
                 transition-transform duration-300
                 group-hover:scale-[1.02]
+                motion-reduce:transition-none
               "
             />
           </a>
@@ -230,27 +253,16 @@ function NewsRow({ item }: { item: GlobalMarketNewsItem }) {
   );
 }
 
-function formatRelativeTime(date: Date) {
-  const now = Date.now();
-  const time = new Date(date).getTime();
-
-  const diff = Math.max(0, now - time);
+function formatRelativeTime(date: Date): string {
+  const diff = Math.max(0, Date.now() - date.getTime());
 
   const minutes = Math.floor(diff / 60_000);
   const hours = Math.floor(diff / 3_600_000);
   const days = Math.floor(diff / 86_400_000);
 
-  if (minutes < 1) {
-    return "Just now";
-  }
-
-  if (minutes < 60) {
-    return `${minutes}m ago`;
-  }
-
-  if (hours < 24) {
-    return `${hours}h ago`;
-  }
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
 
   return `${days}d ago`;
 }

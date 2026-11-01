@@ -30,19 +30,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  const staticPaths = [
-    "/help",
-    "/feedback",
-    "/disclaimer",
-    "/privacy-terms",
-  ] as const;
-
-  const publicPages: MetadataRoute.Sitemap = staticPaths.map((path) => ({
-    url: new URL(path, SITE_URL).href,
-    lastModified: new Date(),
-    changeFrequency: "monthly",
-    priority: 0.3,
-  }));
-
-  return [...marketPages, ...homePage, ...publicPages];
+  return [...marketPages, ...homePage];
 }
