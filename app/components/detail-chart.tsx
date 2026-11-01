@@ -68,6 +68,7 @@ function formatTooltipDate(
   timestampMs: number,
   range: string,
   exchangeTimezone?: string,
+  language = "en",
 ) {
   const date = new Date(timestampMs);
 
@@ -76,7 +77,7 @@ function formatTooltipDate(
     : {};
 
   if (range === "5Y" || range === "MAX") {
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat(language, {
       ...options,
       month: "short",
       year: "numeric",
@@ -84,7 +85,7 @@ function formatTooltipDate(
   }
 
   if (range === "1Y" || range === "1M" || range === "3M") {
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat(language, {
       ...options,
       month: "short",
       day: "numeric",
@@ -93,7 +94,7 @@ function formatTooltipDate(
   }
 
   if (range === "5D") {
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat(language, {
       ...options,
       month: "short",
       day: "numeric",
@@ -103,7 +104,7 @@ function formatTooltipDate(
     }).format(date);
   }
 
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat(language, {
     ...options,
     hour: "2-digit",
     minute: "2-digit",
@@ -134,10 +135,63 @@ export function DetailChart({
   const marketLabels = MARKET_LABELS[language];
 
   const [chartType, setChartType] = useState<ChartType>("area");
-  // Optional overlays are exclusive to Candle mode. Off by default for clarity.
+  // Moving averages are available in all three chart modes.
   const [showMA5, setShowMA5] = useState(false);
   const [showMA20, setShowMA20] = useState(false);
   const [showMA60, setShowMA60] = useState(false);
+  // Restore preferences after mount without changing server-rendered markup.
+  const preferencesLoaded = useRef(false);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(
+        "bbv-detail-chart-preferences-v1",
+      );
+      if (raw) {
+        const saved: unknown = JSON.parse(raw);
+        if (saved && typeof saved === "object") {
+          const prefs = saved as Record<string, unknown>;
+          if (
+            prefs.chartType === "line" ||
+            prefs.chartType === "area" ||
+            prefs.chartType === "candle"
+          ) {
+            setChartType(prefs.chartType);
+          }
+          if (typeof prefs.ma5 === "boolean") setShowMA5(prefs.ma5);
+          if (typeof prefs.ma20 === "boolean") setShowMA20(prefs.ma20);
+          if (typeof prefs.ma60 === "boolean") setShowMA60(prefs.ma60);
+        }
+      }
+    } catch {
+      /* Storage may be unavailable. */
+    }
+    preferencesLoaded.current = true;
+  }, []);
+  useEffect(() => {
+    if (!preferencesLoaded.current) return;
+    try {
+      window.localStorage.setItem(
+        "bbv-detail-chart-preferences-v1",
+        JSON.stringify({
+          chartType,
+          ma5: showMA5,
+          ma20: showMA20,
+          ma60: showMA60,
+        }),
+      );
+    } catch {
+      /* Storage may be unavailable. */
+    }
+  }, [chartType, showMA5, showMA20, showMA60]);
+
+  const touchHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const touchInspecting = useRef(false);
+  const clearTouchHold = () => {
+    if (touchHoldTimer.current) clearTimeout(touchHoldTimer.current);
+    touchHoldTimer.current = null;
+  };
+  useEffect(() => () => clearTimeout(touchHoldTimer.current ?? undefined), []);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const repeatTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const stopHolding = useCallback(() => {
@@ -262,6 +316,7 @@ export function DetailChart({
     price: number;
     percentChange: number;
     timeStr: string;
+    index: number;
   } | null>(null);
 
   const data = (history ?? [])
@@ -493,30 +548,44 @@ export function DetailChart({
       highY: getY(high),
       lowY: getY(low),
       isRising: close >= open,
+      open,
+      high,
+      low,
+      close,
+      index,
     };
   });
 
   // Moving averages use real candle closes, not interpolated prices.
   // The initial candles are omitted until a full window is available.
-  function movingAveragePath(period: number): string {
-    if (data.length < period) return "";
+  function movingAverageValues(period: number): (number | null)[] {
     let sum = 0;
-    const parts: string[] = [];
-    for (let i = 0; i < data.length; i++) {
-      const current = data[i].close ?? data[i].price;
-      sum += current;
+    return data.map((point, i) => {
+      sum += point.close ?? point.price;
       if (i >= period) sum -= data[i - period].close ?? data[i - period].price;
-      if (i < period - 1) continue;
-      const x = coords[i].x;
-      const y = getY(sum / period);
-      parts.push(`${parts.length === 0 ? "M" : "L"} ${x},${y}`);
+      return i >= period - 1 ? sum / period : null;
+    });
+  }
+  const ma5Values = showMA5 ? movingAverageValues(5) : [];
+  const ma20Values = showMA20 ? movingAverageValues(20) : [];
+  const ma60Values = showMA60 ? movingAverageValues(60) : [];
+
+  function movingAveragePath(values: (number | null)[]): string {
+    if (!values.length) return "";
+    const parts: string[] = [];
+    for (let i = 0; i < values.length; i++) {
+      const value = values[i];
+      if (value === null) continue;
+      parts.push(
+        `${parts.length === 0 ? "M" : "L"} ${coords[i].x},${getY(value)}`,
+      );
     }
     return parts.join(" ");
   }
 
-  const ma5Path = showMA5 ? movingAveragePath(5) : "";
-  const ma20Path = showMA20 ? movingAveragePath(20) : "";
-  const ma60Path = showMA60 ? movingAveragePath(60) : "";
+  const ma5Path = showMA5 ? movingAveragePath(ma5Values) : "";
+  const ma20Path = showMA20 ? movingAveragePath(ma20Values) : "";
+  const ma60Path = showMA60 ? movingAveragePath(ma60Values) : "";
 
   const firstPoint = coords[0];
   const lastPoint = coords[coords.length - 1];
@@ -876,13 +945,7 @@ export function DetailChart({
   // HOVER
   // --------------------------------------------------
 
-  function handleMouseMove(event: React.MouseEvent<SVGSVGElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
-
-    const mouseX = ((event.clientX - rect.left) / rect.width) * width;
-
-    const mouseY = ((event.clientY - rect.top) / rect.height) * height;
-
+  function handleHoverAt(mouseX: number, mouseY: number) {
     // Future time has no data, so it has no tooltip.
     if (
       mouseX < paddingLeft ||
@@ -930,8 +993,19 @@ export function DetailChart({
       y: closest.y,
       price: closest.price,
       percentChange,
-      timeStr: formatTooltipDate(closest.timestampMs, range, exchangeTimezone),
+      index: closest.index,
+      timeStr: formatTooltipDate(
+        closest.timestampMs,
+        range,
+        exchangeTimezone,
+        language,
+      ),
     });
+  }
+
+  function handleMouseMove(event: React.MouseEvent<SVGSVGElement>) {
+    const position = getSvgPosition(event.clientX, event.clientY);
+    if (position) handleHoverAt(position.x, position.y);
   }
 
   function handlePointerDown(event: React.PointerEvent<SVGSVGElement>) {
@@ -939,6 +1013,16 @@ export function DetailChart({
     const position = getSvgPosition(event.clientX, event.clientY);
     if (!position || position.x < paddingLeft || position.x > chartRight)
       return;
+    if (event.pointerType === "touch" && pointers.current.size === 0) {
+      clearTouchHold();
+      touchInspecting.current = false;
+      touchStart.current = position;
+      touchHoldTimer.current = setTimeout(() => {
+        touchInspecting.current = true;
+        gesture.current = null;
+        handleHoverAt(position.x, position.y);
+      }, 450);
+    }
     pointers.current.set(event.pointerId, position);
     event.currentTarget.setPointerCapture(event.pointerId);
     const values = [...pointers.current.values()];
@@ -972,8 +1056,18 @@ export function DetailChart({
     }
     const position = getSvgPosition(event.clientX, event.clientY);
     if (!position) return;
+    if (event.pointerType === "touch") {
+      const start = touchStart.current;
+      if (start && Math.hypot(position.x - start.x, position.y - start.y) > 8)
+        clearTouchHold();
+      if (touchInspecting.current) {
+        handleHoverAt(position.x, position.y);
+        return;
+      }
+    }
     pointers.current.set(event.pointerId, position);
     const values = [...pointers.current.values()];
+    if (values.length >= 2) clearTouchHold();
     const initial = gesture.current;
     if (!initial) return;
     if (values.length >= 2 && initial.mode === "pinch") {
@@ -1002,6 +1096,12 @@ export function DetailChart({
   }
 
   function handlePointerUp(event: React.PointerEvent<SVGSVGElement>) {
+    clearTouchHold();
+    touchStart.current = null;
+    if (touchInspecting.current) {
+      touchInspecting.current = false;
+      setHoveredPoint(null);
+    }
     pointers.current.delete(event.pointerId);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -1089,31 +1189,108 @@ export function DetailChart({
         </button>
       </div>
 
-      {/* HOVER PRICE BADGE */}
-
+      {/* HOVER DETAILS — one badge for every chart type */}
       {hoveredPoint && (
-        <div className="jakarta absolute left-1/2 top-14 z-10 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-sm border border-zinc-200 bg-white px-2.5 py-1 text-xs font-normal shadow-xs dark:border-zinc-700 dark:bg-zinc-800">
-          <span className="text-zinc-600 dark:text-zinc-400">
-            {marketLabels.price}:
-          </span>
-
-          <span className="text-zinc-900 dark:text-zinc-100">
-            {hoveredPoint.price.toLocaleString("en-US", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </span>
-
-          <span
-            className={
-              hoveredPoint.percentChange >= 0
-                ? "text-emerald-700 dark:text-emerald-400"
-                : "text-[#cf0000] dark:text-[#ff4f4f]"
-            }
-          >
-            ({hoveredPoint.percentChange >= 0 ? "+" : ""}
-            {hoveredPoint.percentChange.toFixed(2)}%)
-          </span>
+        <div className="jakarta absolute left-1/2 top-14 z-10 flex max-w-[calc(100%-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-sm border border-zinc-200 bg-white px-2.5 py-1 text-xs font-normal shadow-xs dark:border-zinc-700 dark:bg-zinc-800">
+          {chartType === "candle" ? (
+            (
+              [
+                ["O", coords[hoveredPoint.index]?.open],
+                ["H", coords[hoveredPoint.index]?.high],
+                ["L", coords[hoveredPoint.index]?.low],
+                ["C", coords[hoveredPoint.index]?.close],
+              ] as const
+            ).map(([label, value]) => (
+              <span key={label} className="whitespace-nowrap tabular-nums">
+                <span className="text-zinc-600 dark:text-zinc-400">
+                  {label}:{" "}
+                </span>
+                <span className="text-zinc-900 dark:text-zinc-100">
+                  {typeof value === "number"
+                    ? value.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    : "—"}
+                </span>
+              </span>
+            ))
+          ) : (
+            <>
+              <span className="text-zinc-600 dark:text-zinc-400">
+                {marketLabels.price}:
+              </span>
+              <span className="whitespace-nowrap text-zinc-900 dark:text-zinc-100">
+                {hoveredPoint.price.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+              <span
+                className={
+                  hoveredPoint.percentChange >= 0
+                    ? "whitespace-nowrap text-emerald-700 dark:text-emerald-400"
+                    : "whitespace-nowrap text-[#cf0000] dark:text-[#ff4f4f]"
+                }
+              >
+                ({hoveredPoint.percentChange >= 0 ? "+" : ""}
+                {hoveredPoint.percentChange.toFixed(2)}%)
+              </span>
+            </>
+          )}
+          {(showMA5 || showMA20 || showMA60) && (
+            <div className="flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t border-zinc-100 pt-1.5 dark:border-zinc-700">
+              {(
+                [
+                  {
+                    label: "MA 5",
+                    enabled: showMA5,
+                    value: ma5Values[hoveredPoint.index],
+                    color: "#2563eb",
+                  },
+                  {
+                    label: "MA 20",
+                    enabled: showMA20,
+                    value: ma20Values[hoveredPoint.index],
+                    color: "#d97706",
+                  },
+                  {
+                    label: "MA 60",
+                    enabled: showMA60,
+                    value: ma60Values[hoveredPoint.index],
+                    color: "#9333ea",
+                  },
+                ] as const
+              )
+                .filter(
+                  (item) =>
+                    item.enabled &&
+                    typeof item.value === "number" &&
+                    Number.isFinite(item.value),
+                )
+                .map((item) => (
+                  <span
+                    key={item.label}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap tabular-nums"
+                  >
+                    <span
+                      className="h-0.5 w-3 shrink-0 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                      aria-hidden="true"
+                    />
+                    <span className="text-zinc-600 dark:text-zinc-400">
+                      {item.label}
+                    </span>
+                    <span className="text-zinc-900 dark:text-zinc-100">
+                      {item.value?.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </span>
+                  </span>
+                ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1163,9 +1340,6 @@ export function DetailChart({
             {indicator.label}
           </button>
         ))}
-        <span className="text-zinc-400 dark:text-zinc-500">
-          MA = moving average of candle closes
-        </span>
       </div>
 
       {/* MAIN SVG */}
@@ -1461,9 +1635,9 @@ export function DetailChart({
 
               <text
                 x="60"
-                y="16"
+                y="16.5"
                 textAnchor="middle"
-                className="fill-zinc-700 text-[10.5px] font-medium dark:fill-zinc-200"
+                className="fill-zinc-700 text-[12px] font-medium dark:fill-zinc-200"
               >
                 {hoveredPoint.timeStr}
               </text>
