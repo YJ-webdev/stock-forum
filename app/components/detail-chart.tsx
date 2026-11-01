@@ -5,7 +5,6 @@ import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   AreaChart,
   CandlestickChart,
-  BarChart3,
   ChartLine,
   Minimize2,
   Plus,
@@ -16,7 +15,7 @@ import { resolveLanguage } from "@/lib/data/languages";
 import { MARKET_LABELS } from "@/lib/data/translations";
 import type { SelectedRange } from "@/app/hooks/useMarketQuote";
 
-export type ChartType = "line" | "area" | "candle" | "bar";
+export type ChartType = "line" | "area" | "candle";
 export type ChartRangeOption = SelectedRange;
 
 export interface DetailChartProps {
@@ -50,6 +49,8 @@ export interface DetailChartProps {
   sessionStartMs?: number | null;
   sessionEndMs?: number | null;
 
+  /** Optional effective API interval, e.g. "1m" or "15m". */
+  chartInterval?: string;
   onClick?: () => void;
 }
 
@@ -61,8 +62,54 @@ const chartTypeOptions: {
   { id: "line", label: "Line", icon: ChartLine },
   { id: "area", label: "Area", icon: AreaChart },
   { id: "candle", label: "Candle", icon: CandlestickChart },
-  { id: "bar", label: "Bar", icon: BarChart3 },
 ];
+
+function formatTooltipDate(
+  timestampMs: number,
+  range: string,
+  exchangeTimezone?: string,
+) {
+  const date = new Date(timestampMs);
+
+  const options: Intl.DateTimeFormatOptions = exchangeTimezone
+    ? { timeZone: exchangeTimezone }
+    : {};
+
+  if (range === "5Y" || range === "MAX") {
+    return new Intl.DateTimeFormat("en-US", {
+      ...options,
+      month: "short",
+      year: "numeric",
+    }).format(date);
+  }
+
+  if (range === "1Y" || range === "1M" || range === "3M") {
+    return new Intl.DateTimeFormat("en-US", {
+      ...options,
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(date);
+  }
+
+  if (range === "5D") {
+    return new Intl.DateTimeFormat("en-US", {
+      ...options,
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).format(date);
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    ...options,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+}
 
 export function DetailChart({
   history,
@@ -87,6 +134,10 @@ export function DetailChart({
   const marketLabels = MARKET_LABELS[language];
 
   const [chartType, setChartType] = useState<ChartType>("area");
+  // Optional overlays are exclusive to Candle mode. Off by default for clarity.
+  const [showMA5, setShowMA5] = useState(false);
+  const [showMA20, setShowMA20] = useState(false);
+  const [showMA60, setShowMA60] = useState(false);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const repeatTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const stopHolding = useCallback(() => {
@@ -97,8 +148,30 @@ export function DetailChart({
   }, []);
   useEffect(() => stopHolding, [stopHolding]);
   // Viewport is expressed in normalized coordinates of the original plot.
+  // Keep roughly 24 or more real observations visible at maximum zoom.
+  // This prevents exaggerated gaps between candles without inventing data.
+  const observationCount = (history ?? []).filter(
+    (point) =>
+      Number.isFinite(point.timestampMs) && Number.isFinite(point.price),
+  ).length;
+  const minZoomSpan = Math.min(
+    1,
+    Math.max(0.025, 24 / Math.max(observationCount, 1)),
+  );
   const [viewport, setViewport] = useState({ start: 0, end: 1 });
   const svgRef = useRef<SVGSVGElement>(null);
+  const [svgPixelWidth, setSvgPixelWidth] = useState(800);
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const update = () =>
+      setSvgPixelWidth(svg.getBoundingClientRect().width || 800);
+    update();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(update);
+    observer.observe(svg);
+    return () => observer.disconnect();
+  }, []);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef<{
     start: number;
@@ -117,25 +190,28 @@ export function DetailChart({
     gesture.current = null;
   }, [range]);
 
-  const updateViewport = useCallback((start: number, end: number) => {
-    const span = Math.max(0.025, Math.min(1, end - start));
-    const left = Math.max(0, Math.min(1 - span, start));
-    setViewport({ start: left, end: left + span });
-    setHoveredPoint(null);
-  }, []);
+  const updateViewport = useCallback(
+    (start: number, end: number) => {
+      const span = Math.max(minZoomSpan, Math.min(1, end - start));
+      const left = Math.max(0, Math.min(1 - span, start));
+      setViewport({ start: left, end: left + span });
+      setHoveredPoint(null);
+    },
+    [minZoomSpan],
+  );
 
   const zoom = useCallback(
     (factor: number, anchor = 0.5) => {
       const current = viewportRef.current;
       const span = current.end - current.start;
-      const nextSpan = Math.max(0.025, Math.min(1, span * factor));
+      const nextSpan = Math.max(minZoomSpan, Math.min(1, span * factor));
       const worldAnchor = current.start + span * anchor;
       updateViewport(
         worldAnchor - nextSpan * anchor,
         worldAnchor - nextSpan * anchor + nextSpan,
       );
     },
-    [updateViewport],
+    [minZoomSpan, updateViewport],
   );
 
   const resetZoom = useCallback(() => updateViewport(0, 1), [updateViewport]);
@@ -420,6 +496,28 @@ export function DetailChart({
     };
   });
 
+  // Moving averages use real candle closes, not interpolated prices.
+  // The initial candles are omitted until a full window is available.
+  function movingAveragePath(period: number): string {
+    if (data.length < period) return "";
+    let sum = 0;
+    const parts: string[] = [];
+    for (let i = 0; i < data.length; i++) {
+      const current = data[i].close ?? data[i].price;
+      sum += current;
+      if (i >= period) sum -= data[i - period].close ?? data[i - period].price;
+      if (i < period - 1) continue;
+      const x = coords[i].x;
+      const y = getY(sum / period);
+      parts.push(`${parts.length === 0 ? "M" : "L"} ${x},${y}`);
+    }
+    return parts.join(" ");
+  }
+
+  const ma5Path = showMA5 ? movingAveragePath(5) : "";
+  const ma20Path = showMA20 ? movingAveragePath(20) : "";
+  const ma60Path = showMA60 ? movingAveragePath(60) : "";
+
   const firstPoint = coords[0];
   const lastPoint = coords[coords.length - 1];
 
@@ -688,14 +786,6 @@ export function DetailChart({
     }),
   );
   const fiveDayOverview = range === "5D" && visibleDayKeys.size > 1;
-  const targetSpacingMs = visibleDurationMs / 4;
-  let selectedStep =
-    candidateSteps.find(({ approximateMs }) => approximateMs >= targetSpacingMs)
-      ?.step ?? candidateSteps[candidateSteps.length - 1].step;
-
-  if (fiveDayOverview) {
-    selectedStep = { unit: "day", every: 1 };
-  }
 
   function tickLabel(ms: number, unit: TickUnit) {
     if (unit === "minute" || unit === "hour") {
@@ -711,9 +801,15 @@ export function DetailChart({
     return formatDateLabel(ms);
   }
 
-  // Select the first *real* observation in each local calendar bucket.
-  // In the 5D view this uses the same index-based projection as candles.
-  // On other ranges, use actual timestamps for both the data and ticks.
+  // Grid and labels have independent spacing. The grid becomes denser
+  // when zooming in, while labels remain readable on narrow screens.
+  // Work in SVG units, converted from actual CSS pixels.
+  const plotPixelWidth = Math.max(1, svgPixelWidth * (chartWidth / width));
+  const gridSpacing = (40 / plotPixelWidth) * chartWidth;
+  const labelSpacing = (85 / plotPixelWidth) * chartWidth;
+
+  // Every tick is anchored to an actual observation, so 5D's compressed
+  // overnight gaps do not produce fictional timestamps.
   function buildTicks(step: TickStep): XTick[] {
     const ticks: XTick[] = [];
     let previousBucket: string | null = null;
@@ -722,23 +818,45 @@ export function DetailChart({
       if (bucket === previousBucket) continue;
       previousBucket = bucket;
       const x = getX(point.timestampMs);
-      if (x < paddingLeft + 14 || x > chartRight - 14) continue;
+      if (x < paddingLeft + 10 || x > chartRight - 10) continue;
       ticks.push({ x, label: tickLabel(point.timestampMs, step.unit) });
     }
     return ticks;
   }
 
-  let xTicks = buildTicks(selectedStep);
+  // Select the finest calendar step that keeps the *grid* readable.
+  // On a 5D overview, show trading-day boundaries instead of arbitrary
+  // hour labels; within a single day, use the same adaptive logic as 1D.
+  let selectedStep: TickStep = candidateSteps[candidateSteps.length - 1].step;
+  if (fiveDayOverview) {
+    selectedStep = { unit: "day", every: 1 };
+  } else {
+    for (const candidate of candidateSteps) {
+      const ticks = buildTicks(candidate.step);
+      if (ticks.length < 2) {
+        selectedStep = candidate.step;
+        continue;
+      }
+      let minimumDistance = Infinity;
+      for (let i = 1; i < ticks.length; i++) {
+        minimumDistance = Math.min(
+          minimumDistance,
+          ticks[i].x - ticks[i - 1].x,
+        );
+      }
+      selectedStep = candidate.step;
+      if (minimumDistance >= gridSpacing) break;
+    }
+  }
 
-  // Do not display too many labels. Prefer preserving true calendar
-  // boundaries over forcing evenly spaced but misleading timestamps.
-  const minimumTickDistance = 105;
-  let lastAcceptedX = -Infinity;
-  xTicks = xTicks.filter((tick) => {
-    if (tick.x - lastAcceptedX < minimumTickDistance) return false;
-    lastAcceptedX = tick.x;
-    return true;
-  });
+  const xGridTicks = buildTicks(selectedStep);
+  const xLabelTicks: XTick[] = [];
+  let lastLabelX = -Infinity;
+  for (const tick of xGridTicks) {
+    if (tick.x - lastLabelX < labelSpacing) continue;
+    xLabelTicks.push(tick);
+    lastLabelX = tick.x;
+  }
 
   // --------------------------------------------------
   // PREVIOUS CLOSE / COLOR
@@ -812,9 +930,7 @@ export function DetailChart({
       y: closest.y,
       price: closest.price,
       percentChange,
-      timeStr:
-        `${formatDateLabel(closest.timestampMs)}, ` +
-        formatTimeLabel(closest.timestampMs),
+      timeStr: formatTooltipDate(closest.timestampMs, range, exchangeTimezone),
     });
   }
 
@@ -864,7 +980,7 @@ export function DetailChart({
       const distance = Math.max(1, Math.abs(values[0].x - values[1].x));
       const center = (values[0].x + values[1].x) / 2;
       const span = Math.max(
-        0.025,
+        minZoomSpan,
         Math.min(
           1,
           ((initial.end - initial.start) * initial.distance) / distance,
@@ -906,7 +1022,7 @@ export function DetailChart({
   }
 
   // --------------------------------------------------
-  // CANDLE / BAR WIDTH
+  // CANDLE WIDTH
   // --------------------------------------------------
 
   let minimumPointSpacing = chartWidth / Math.max(visibleData.length, 1);
@@ -919,9 +1035,12 @@ export function DetailChart({
     }
   }
 
-  const candleWidth = Math.max(Math.min(minimumPointSpacing * 0.7, 12), 1);
-
-  const barWidth = Math.max(Math.min(minimumPointSpacing * 0.75, 14), 1);
+  // Leave a visible gap between adjacent candle bodies (at least 1 SVG unit).
+  // Width stays proportional to spacing and never overlaps neighboring candles.
+  const candleWidth = Math.max(
+    0.5,
+    Math.min(minimumPointSpacing * 0.82, minimumPointSpacing - 1, 14),
+  );
 
   const hoverLabelX = hoveredPoint
     ? Math.max(paddingLeft, Math.min(chartRight - 120, hoveredPoint.x - 60))
@@ -998,6 +1117,57 @@ export function DetailChart({
         </div>
       )}
 
+      <div
+        className="mb-2 mt-3 flex flex-wrap items-center gap-2 text-xs"
+        aria-label="Moving average indicators"
+      >
+        {(
+          [
+            {
+              label: "MA 5",
+              checked: showMA5,
+              toggle: () => setShowMA5((v) => !v),
+              color: "#2563eb",
+              title: "Average closing price over 5 candles",
+            },
+            {
+              label: "MA 20",
+              checked: showMA20,
+              toggle: () => setShowMA20((v) => !v),
+              color: "#d97706",
+              title: "Average closing price over 20 candles",
+            },
+            {
+              label: "MA 60",
+              checked: showMA60,
+              toggle: () => setShowMA60((v) => !v),
+              color: "#9333ea",
+              title: "Average closing price over 60 candles",
+            },
+          ] as const
+        ).map((indicator) => (
+          <button
+            key={indicator.label}
+            type="button"
+            title={indicator.title}
+            aria-label={`${indicator.label}: ${indicator.title}`}
+            aria-pressed={indicator.checked}
+            onClick={indicator.toggle}
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${indicator.checked ? "border-zinc-400 bg-zinc-200/70 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-700 dark:text-zinc-100" : "border-zinc-200 text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700/50"}`}
+          >
+            <span
+              className="h-0.5 w-3 rounded-full"
+              style={{ backgroundColor: indicator.color }}
+              aria-hidden="true"
+            />
+            {indicator.label}
+          </button>
+        ))}
+        <span className="text-zinc-400 dark:text-zinc-500">
+          MA = moving average of candle closes
+        </span>
+      </div>
+
       {/* MAIN SVG */}
 
       <svg
@@ -1058,29 +1228,31 @@ export function DetailChart({
           />
         ))}
 
-        {/* X GRID / LABELS */}
+        {/* X GRID: more frequent than the text labels */}
+        {xGridTicks.map((tick, index) => (
+          <line
+            key={`grid-${index}`}
+            x1={tick.x}
+            y1={paddingTop}
+            x2={tick.x}
+            y2={chartBottom}
+            stroke="#e2e8f0"
+            strokeWidth="1"
+            className="dark:stroke-zinc-600/50"
+          />
+        ))}
 
-        {xTicks.map((tick, index) => (
-          <g key={index}>
-            <line
-              x1={tick.x}
-              y1={paddingTop}
-              x2={tick.x}
-              y2={chartBottom}
-              stroke="#e2e8f0"
-              strokeWidth="1"
-              className="dark:stroke-zinc-600/50"
-            />
-
-            <text
-              x={tick.x}
-              y={chartBottom + 20}
-              textAnchor="middle"
-              className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-100 dark:font-light"
-            >
-              {tick.label}
-            </text>
-          </g>
+        {/* X LABELS: independently spaced for legibility */}
+        {xLabelTicks.map((tick, index) => (
+          <text
+            key={`label-${index}`}
+            x={tick.x}
+            y={chartBottom + 20}
+            textAnchor="middle"
+            className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-100 dark:font-light"
+          >
+            {tick.label}
+          </text>
         ))}
 
         {/* PREVIOUS CLOSE */}
@@ -1205,26 +1377,39 @@ export function DetailChart({
             </g>
           )}
 
-          {/* BAR */}
-
-          {chartType === "bar" && (
-            <g>
-              {coords.map((point, index) => (
-                <rect
-                  key={index}
-                  x={point.x - barWidth / 2}
-                  y={point.y}
-                  width={barWidth}
-                  height={chartBottom - point.y}
-                  fill={point.isRising ? "#008549" : "var(--chart-down)"}
-                  fillOpacity={0.45}
-                  stroke={point.isRising ? "#008549" : "var(--chart-down)"}
-                  strokeWidth="0.5"
-                  rx="1"
-                />
-              ))}
-            </g>
-          )}
+          {/* OPTIONAL MOVING AVERAGES — available in every chart mode */}
+          <g pointerEvents="none">
+            {showMA5 && ma5Path && (
+              <path
+                d={ma5Path}
+                fill="none"
+                stroke="#2563eb"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            )}
+            {showMA20 && ma20Path && (
+              <path
+                d={ma20Path}
+                fill="none"
+                stroke="#d97706"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            )}
+            {showMA60 && ma60Path && (
+              <path
+                d={ma60Path}
+                fill="none"
+                stroke="#9333ea"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            )}
+          </g>
 
           {/* LATEST DATA POINT */}
 
@@ -1353,7 +1538,7 @@ export function DetailChart({
             type="button"
             aria-label="Zoom in"
             title="Zoom in"
-            disabled={visibleSpan <= 0.0251}
+            disabled={visibleSpan <= minZoomSpan + 0.0001}
             onPointerDown={(event) => {
               if (event.button === 0) startHolding(1 / 1.12);
             }}

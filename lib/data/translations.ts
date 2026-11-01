@@ -213,6 +213,13 @@ export const MARKET_LABELS: Record<
     prev_close: string;
     lunch_break: string;
     price: string;
+    interval: {
+      intraday: string;
+      minute: string;
+      daily: string;
+      weekly: string;
+      monthly: string;
+    };
   }
 > = {
   en: {
@@ -221,6 +228,13 @@ export const MARKET_LABELS: Record<
     prev_close: "Previous close",
     lunch_break: "Lunch break",
     price: "Price",
+    interval: {
+      intraday: "Intraday",
+      minute: "Min",
+      daily: "Daily",
+      weekly: "Weekly",
+      monthly: "Monthly",
+    },
   },
   ko: {
     data_delayed: "지연 {minutes}분",
@@ -228,6 +242,13 @@ export const MARKET_LABELS: Record<
     prev_close: "전일 종가",
     lunch_break: "점심 휴장",
     price: "가격",
+    interval: {
+      intraday: "장중",
+      minute: "분",
+      daily: "일봉",
+      weekly: "주봉",
+      monthly: "월봉",
+    },
   },
   ja: {
     data_delayed: "{minutes}分遅延",
@@ -235,6 +256,13 @@ export const MARKET_LABELS: Record<
     prev_close: "前日終値",
     lunch_break: "昼休み",
     price: "価格",
+    interval: {
+      intraday: "日中",
+      minute: "分",
+      daily: "日足",
+      weekly: "週足",
+      monthly: "月足",
+    },
   },
   zh: {
     data_delayed: "延迟{minutes}分钟",
@@ -242,6 +270,13 @@ export const MARKET_LABELS: Record<
     prev_close: "前收盘价",
     lunch_break: "午间休市",
     price: "价格",
+    interval: {
+      intraday: "日内",
+      minute: "分钟",
+      daily: "日线",
+      weekly: "周线",
+      monthly: "月线",
+    },
   },
   de: {
     data_delayed: "{minutes} Min. verzögert",
@@ -249,6 +284,13 @@ export const MARKET_LABELS: Record<
     prev_close: "Vorheriger Schlusskurs",
     lunch_break: "Mittagspause",
     price: "Preis",
+    interval: {
+      intraday: "Intraday",
+      minute: "Min.",
+      daily: "Täglich",
+      weekly: "Wöchentlich",
+      monthly: "Monatlich",
+    },
   },
   fr: {
     data_delayed: "Retard de {minutes} min",
@@ -256,6 +298,13 @@ export const MARKET_LABELS: Record<
     prev_close: "Clôture précédente",
     lunch_break: "Pause déjeuner",
     price: "Prix",
+    interval: {
+      intraday: "Intrajournalier",
+      minute: "min",
+      daily: "Journalier",
+      weekly: "Hebdomadaire",
+      monthly: "Mensuel",
+    },
   },
   es: {
     data_delayed: "Retraso de {minutes} min",
@@ -263,6 +312,13 @@ export const MARKET_LABELS: Record<
     prev_close: "Cierre anterior",
     lunch_break: "Pausa de almuerzo",
     price: "Precio",
+    interval: {
+      intraday: "Intradía",
+      minute: "min",
+      daily: "Diario",
+      weekly: "Semanal",
+      monthly: "Mensual",
+    },
   },
   pt: {
     data_delayed: "Atraso de {minutes} min",
@@ -270,6 +326,13 @@ export const MARKET_LABELS: Record<
     prev_close: "Fechamento anterior",
     lunch_break: "Intervalo de almoço",
     price: "Preço",
+    interval: {
+      intraday: "Intradiário",
+      minute: "min",
+      daily: "Diário",
+      weekly: "Semanal",
+      monthly: "Mensal",
+    },
   },
   it: {
     data_delayed: "Ritardo di {minutes} min",
@@ -277,6 +340,13 @@ export const MARKET_LABELS: Record<
     prev_close: "Chiusura precedente",
     lunch_break: "Pausa pranzo",
     price: "Prezzo",
+    interval: {
+      intraday: "Intraday",
+      minute: "min",
+      daily: "Giornaliero",
+      weekly: "Settimanale",
+      monthly: "Mensile",
+    },
   },
   ru: {
     data_delayed: "Задержка {minutes} мин",
@@ -284,6 +354,13 @@ export const MARKET_LABELS: Record<
     prev_close: "Предыдущее закрытие",
     lunch_break: "Обеденный перерыв",
     price: "Цена",
+    interval: {
+      intraday: "Внутридневной",
+      minute: "мин",
+      daily: "Дневной",
+      weekly: "Недельный",
+      monthly: "Месячный",
+    },
   },
   ar: {
     data_delayed: "تأخير {minutes} دقيقة",
@@ -291,6 +368,13 @@ export const MARKET_LABELS: Record<
     prev_close: "الإغلاق السابق",
     lunch_break: "استراحة الغداء",
     price: "السعر",
+    interval: {
+      intraday: "خلال اليوم",
+      minute: "دقيقة",
+      daily: "يومي",
+      weekly: "أسبوعي",
+      monthly: "شهري",
+    },
   },
   hi: {
     data_delayed: "{minutes} मिनट की देरी",
@@ -298,6 +382,13 @@ export const MARKET_LABELS: Record<
     prev_close: "पिछला बंद भाव",
     lunch_break: "दोपहर का अवकाश",
     price: "मूल्य",
+    interval: {
+      intraday: "इंट्राडे",
+      minute: "मिनट",
+      daily: "दैनिक",
+      weekly: "साप्ताहिक",
+      monthly: "मासिक",
+    },
   },
 };
 

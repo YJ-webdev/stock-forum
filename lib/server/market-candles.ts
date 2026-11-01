@@ -55,7 +55,16 @@ async function fetchChart(symbol: string, query: ChartQuery) {
   return fetchValidatedChart(symbol, query);
 }
 
-type YahooInterval = "1m" | "2m" | "5m" | "15m" | "30m" | "60m" | "1d" | "1wk";
+type YahooInterval =
+  | "1m"
+  | "2m"
+  | "5m"
+  | "15m"
+  | "30m"
+  | "60m"
+  | "1d"
+  | "1wk"
+  | "1mo";
 
 interface MarketSession {
   isClosed: boolean;
@@ -78,9 +87,9 @@ const INTERVALS: Record<string, YahooInterval> = {
   "3M": "1d",
   "6M": "1d",
   YTD: "1d",
-  "1Y": "1d",
-  "5Y": "1wk",
-  MAX: "1wk",
+  "1Y": "1wk",
+  "5Y": "1mo",
+  MAX: "1mo",
 };
 
 const INTERVAL_MS: Record<YahooInterval, number> = {
@@ -92,6 +101,7 @@ const INTERVAL_MS: Record<YahooInterval, number> = {
   "60m": 60 * 60_000,
   "1d": DAY_MS,
   "1wk": 7 * DAY_MS,
+  "1mo": 30 * DAY_MS,
 };
 
 const ALLOWED_INTERVALS = new Set<YahooInterval>([
@@ -103,6 +113,7 @@ const ALLOWED_INTERVALS = new Set<YahooInterval>([
   "60m",
   "1d",
   "1wk",
+  "1mo",
 ]);
 
 function isValidPrice(value: unknown): value is number {
@@ -518,7 +529,12 @@ function detectTradingBreak(
   lunchStartMs: number | null;
   lunchEndMs: number | null;
 } {
-  if (interval === "1d" || interval === "1wk" || quotes.length < 2) {
+  if (
+    interval === "1d" ||
+    interval === "1wk" ||
+    interval === "1mo" ||
+    quotes.length < 2
+  ) {
     return {
       lunchStartMs: null,
       lunchEndMs: null,
@@ -754,11 +770,19 @@ export async function getMarketCandles(
 ) {
   const symbol = PROVIDER_SYMBOLS[rawSymbol] || rawSymbol;
 
+  // Long-range charts use consistent candle periods even if a caller
+  // supplies a different interval.
+  const fixedLongRangeInterval =
+    range === "1Y" || range === "5Y" || range === "MAX"
+      ? INTERVALS[range]
+      : null;
+
   const interval: YahooInterval =
-    requestedInterval &&
+    fixedLongRangeInterval ??
+    (requestedInterval &&
     ALLOWED_INTERVALS.has(requestedInterval as YahooInterval)
       ? (requestedInterval as YahooInterval)
-      : INTERVALS[range] || "5m";
+      : INTERVALS[range] || "5m");
 
   try {
     const [chartResult, quote] = await Promise.all([
