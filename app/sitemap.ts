@@ -1,38 +1,48 @@
 // app/sitemap.ts
 
 import type { MetadataRoute } from "next";
-
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
 
 const SITE_URL = "https://bullbearvote.com";
 
-const PUBLIC_PATHS = [
-  "/",
-  "/news",
-  "/help",
-  "/feedback",
-  "/disclaimer",
-  "/privacy-terms",
-] as const;
-
 export default function sitemap(): MetadataRoute.Sitemap {
-  const publicPages: MetadataRoute.Sitemap = PUBLIC_PATHS.map((path) => ({
-    url: new URL(path, SITE_URL).href,
-  }));
-
   const symbols = [
     ...new Set(ALL_MARKET_SYMBOLS.map((market) => market.symbol)),
   ];
 
-  const marketPages: MetadataRoute.Sitemap = symbols.flatMap((symbol) => {
+  const marketPages: MetadataRoute.Sitemap = symbols.map((symbol) => {
     const marketPath = `/market/${encodeURIComponent(symbol)}`;
 
-    return [
-      {
-        url: `${SITE_URL}${marketPath}`,
-      },
-    ];
+    return {
+      url: `${SITE_URL}${marketPath}`,
+      lastModified: new Date(),
+      changeFrequency: "hourly",
+      priority: 1.0,
+    };
   });
 
-  return [...publicPages, ...marketPages];
+  const homePage: MetadataRoute.Sitemap = [
+    {
+      url: `${SITE_URL}/`,
+      lastModified: new Date(),
+      changeFrequency: "always",
+      priority: 0.9,
+    },
+  ];
+
+  const staticPaths = [
+    "/help",
+    "/feedback",
+    "/disclaimer",
+    "/privacy-terms",
+  ] as const;
+
+  const publicPages: MetadataRoute.Sitemap = staticPaths.map((path) => ({
+    url: new URL(path, SITE_URL).href,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.3,
+  }));
+
+  return [...marketPages, ...homePage, ...publicPages];
 }
