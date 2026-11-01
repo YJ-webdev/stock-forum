@@ -338,7 +338,7 @@ function ProfileCardContent({
             className="object-cover"
           />
 
-          <AvatarFallback className="bg-olive-500 text-xl font-normal text-white">
+          <AvatarFallback className="bg-olive-500 text-[28px] font-normal text-white">
             {Array.from(displayName)[0]?.toUpperCase() ?? "?"}
           </AvatarFallback>
         </Avatar>

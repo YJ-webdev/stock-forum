@@ -1078,8 +1078,8 @@ export default function MarketPageClient({
                               focus-visible:ring-ring
                               ${
                                 isActive
-                                  ? "bg-zinc-100/50 text-zinc-600 dark:bg-zinc-600/50 dark:text-zinc-400"
-                                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-600/50"
+                                  ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-600/50 dark:text-zinc-100"
+                                  : "bg-zinc-100 text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-600/50"
                               }
                             `}
                           >

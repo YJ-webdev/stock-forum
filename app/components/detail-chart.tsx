@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useId, useState } from "react";
+import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import {
   AreaChart,
@@ -8,14 +8,23 @@ import {
   BarChart3,
   ChartLine,
   Minimize2,
+  Plus,
+  Minus,
+  RotateCcw,
 } from "lucide-react";
 import { resolveLanguage } from "@/lib/data/languages";
 import { MARKET_LABELS } from "@/lib/data/translations";
+import type { SelectedRange } from "@/app/hooks/useMarketQuote";
 
 export type ChartType = "line" | "area" | "candle" | "bar";
+export type ChartRangeOption = SelectedRange;
 
 export interface DetailChartProps {
   userLanguage?: string | null;
+  ranges?: readonly ChartRangeOption[];
+  rangeLabels?: Partial<Record<ChartRangeOption, string>>;
+  onRangeChange?: (range: ChartRangeOption) => void | Promise<void>;
+  rangeLoading?: boolean;
 
   history: {
     timestampMs: number;
@@ -67,6 +76,10 @@ export function DetailChart({
   sessionStartMs,
   sessionEndMs,
   userLanguage,
+  ranges,
+  rangeLabels,
+  onRangeChange,
+  rangeLoading = false,
   onClick,
 }: DetailChartProps) {
   const chartId = useId().replace(/:/g, "");
@@ -74,6 +87,98 @@ export function DetailChart({
   const marketLabels = MARKET_LABELS[language];
 
   const [chartType, setChartType] = useState<ChartType>("area");
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const repeatTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stopHolding = useCallback(() => {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    if (repeatTimer.current) clearInterval(repeatTimer.current);
+    holdTimer.current = null;
+    repeatTimer.current = null;
+  }, []);
+  useEffect(() => stopHolding, [stopHolding]);
+  // Viewport is expressed in normalized coordinates of the original plot.
+  const [viewport, setViewport] = useState({ start: 0, end: 1 });
+  const svgRef = useRef<SVGSVGElement>(null);
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const gesture = useRef<{
+    start: number;
+    end: number;
+    center: number;
+    distance: number;
+    anchor: number;
+    mode: "pan" | "pinch";
+  } | null>(null);
+  const viewportRef = useRef(viewport);
+  viewportRef.current = viewport;
+
+  useEffect(() => {
+    setViewport({ start: 0, end: 1 });
+    pointers.current.clear();
+    gesture.current = null;
+  }, [range]);
+
+  const updateViewport = useCallback((start: number, end: number) => {
+    const span = Math.max(0.025, Math.min(1, end - start));
+    const left = Math.max(0, Math.min(1 - span, start));
+    setViewport({ start: left, end: left + span });
+    setHoveredPoint(null);
+  }, []);
+
+  const zoom = useCallback(
+    (factor: number, anchor = 0.5) => {
+      const current = viewportRef.current;
+      const span = current.end - current.start;
+      const nextSpan = Math.max(0.025, Math.min(1, span * factor));
+      const worldAnchor = current.start + span * anchor;
+      updateViewport(
+        worldAnchor - nextSpan * anchor,
+        worldAnchor - nextSpan * anchor + nextSpan,
+      );
+    },
+    [updateViewport],
+  );
+
+  const resetZoom = useCallback(() => updateViewport(0, 1), [updateViewport]);
+
+  const startHolding = useCallback(
+    (factor: number) => {
+      stopHolding();
+      zoom(factor);
+      holdTimer.current = setTimeout(() => {
+        repeatTimer.current = setInterval(() => zoom(factor), 75);
+      }, 320);
+    },
+    [zoom, stopHolding],
+  );
+
+  const getSvgPosition = useCallback((clientX: number, clientY: number) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect || !rect.width || !rect.height) return null;
+    return {
+      x: ((clientX - rect.left) / rect.width) * 800,
+      y: ((clientY - rect.top) / rect.height) * 320,
+    };
+  }, []);
+
+  const getAnchor = useCallback(
+    (x: number) => Math.max(0, Math.min(1, (x - 65) / 715)),
+    [],
+  );
+
+  useEffect(() => {
+    const element = svgRef.current;
+    if (!element) return;
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      const rect = element.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 800;
+      if (x < 65 || x > 780) return;
+      event.preventDefault();
+      zoom(Math.exp(event.deltaY * 0.002), getAnchor(x));
+    };
+    element.addEventListener("wheel", onWheel, { passive: false });
+    return () => element.removeEventListener("wheel", onWheel);
+  }, [zoom, getAnchor]);
 
   const [hoveredPoint, setHoveredPoint] = useState<{
     x: number;
@@ -146,7 +251,7 @@ export function DetailChart({
 
   const fullTimeRange = Math.max(axisEndMs - axisStartMs, 1);
 
-  function getX(timestampMs: number) {
+  function getOriginalX(timestampMs: number) {
     if (range === "5D") {
       if (data.length === 1) {
         return paddingLeft + chartWidth / 2;
@@ -192,6 +297,16 @@ export function DetailChart({
     return paddingLeft + Math.max(0, Math.min(1, ratio)) * chartWidth;
   }
 
+  // Reproject the original X coordinate into the visible viewport.
+  const visibleSpan = viewport.end - viewport.start;
+  const viewportLeft = paddingLeft + viewport.start * chartWidth;
+  const viewportRight = paddingLeft + viewport.end * chartWidth;
+  function getX(timestampMs: number) {
+    return (
+      paddingLeft + (getOriginalX(timestampMs) - viewportLeft) / visibleSpan
+    );
+  }
+
   // --------------------------------------------------
   // PRICE RANGE
   // --------------------------------------------------
@@ -201,7 +316,12 @@ export function DetailChart({
       ? previousClose
       : undefined;
 
-  const priceValues = data.flatMap((point) => {
+  const visibleData = data.filter((point) => {
+    const x = getOriginalX(point.timestampMs);
+    return x >= viewportLeft && x <= viewportRight;
+  });
+  const priceSource = visibleData.length ? visibleData : data;
+  const priceValues = priceSource.flatMap((point) => {
     const values = [point.price];
 
     if (chartType === "candle") {
@@ -214,10 +334,6 @@ export function DetailChart({
 
     return values;
   });
-
-  if (validPreviousClose !== undefined) {
-    priceValues.push(validPreviousClose);
-  }
 
   const rawMin = Math.min(...priceValues);
   const rawMax = Math.max(...priceValues);
@@ -388,7 +504,7 @@ export function DetailChart({
   // Y GRID / LABELS
   // --------------------------------------------------
 
-  const tickCount = Math.round((max - min) / tickStep);
+  const tickCount = Math.min(30, Math.round((max - min) / tickStep));
 
   const yTicks = Array.from({ length: tickCount + 1 }, (_, index) => {
     const price = Number((min + index * tickStep).toPrecision(12));
@@ -442,84 +558,187 @@ export function DetailChart({
     return dateFormatter.format(new Date(timestampMs));
   }
 
-  function getLocalTimeParts(timestampMs: number) {
-    const parts = timeFormatter.formatToParts(new Date(timestampMs));
+  // --------------------------------------------------
+  // ADAPTIVE X AXIS
+  // Tick locations are derived from actual observations, not arbitrary
+  // fractional timestamps. This avoids misleading labels on closed days,
+  // weekends and the compressed overnight gaps of the 5D view.
+  // --------------------------------------------------
 
+  type XTick = { label: string; x: number };
+  type TickUnit =
+    | "minute"
+    | "hour"
+    | "day"
+    | "week"
+    | "month"
+    | "quarter"
+    | "year";
+  type TickStep = { unit: TickUnit; every: number };
+
+  const DAY_MS = 86_400_000;
+  const visibleStartMs =
+    range === "5D"
+      ? (visibleData[0]?.timestampMs ?? firstTimestamp)
+      : axisStartMs + fullTimeRange * viewport.start;
+  const visibleEndMs =
+    range === "5D"
+      ? (visibleData[visibleData.length - 1]?.timestampMs ?? lastTimestamp)
+      : axisStartMs + fullTimeRange * viewport.end;
+  const visibleDurationMs = Math.max(1, visibleEndMs - visibleStartMs);
+
+  // Use exchange-local calendar parts so date changes, DST, and market
+  // sessions are interpreted in the exchange's timezone.
+  const calendarFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: exchangeTimezone || "UTC",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+  const yearFormatter = new Intl.DateTimeFormat(language, {
+    year: "numeric",
+    ...timezoneOptions,
+  });
+  const monthFormatter = new Intl.DateTimeFormat(language, {
+    month: "short",
+    year: "numeric",
+    ...timezoneOptions,
+  });
+  const monthDayYearFormatter = new Intl.DateTimeFormat(language, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    ...timezoneOptions,
+  });
+
+  function localParts(ms: number) {
+    const parts = calendarFormatter.formatToParts(new Date(ms));
+    const numberPart = (name: Intl.DateTimeFormatPartTypes) =>
+      Number(parts.find((part) => part.type === name)?.value ?? 0);
     return {
-      hour: Number(parts.find((part) => part.type === "hour")?.value ?? 0) % 24,
-      minute: Number(parts.find((part) => part.type === "minute")?.value ?? 0),
+      year: numberPart("year"),
+      month: numberPart("month"),
+      day: numberPart("day"),
+      hour: numberPart("hour") % 24,
+      minute: numberPart("minute"),
     };
   }
 
-  // --------------------------------------------------
-  // X GRID
-  // --------------------------------------------------
-
-  let xTicks: {
-    label: string;
-    x: number;
-  }[] = [];
-
-  if (range === "5D") {
-    const count = Math.min(5, data.length);
-
-    xTicks = Array.from({ length: count }, (_, index) => {
-      const pointIndex =
-        count === 1 ? 0 : Math.round((index / (count - 1)) * (data.length - 1));
-
-      const point = data[pointIndex];
-
-      return {
-        label:
-          `${formatDateLabel(point.timestampMs)} ` +
-          formatTimeLabel(point.timestampMs),
-        x: getX(point.timestampMs),
-      };
-    });
-  } else if (is1D) {
-    const ONE_MINUTE = 60_000;
-    const ONE_HOUR = 60 * ONE_MINUTE;
-    const EDGE_MARGIN = 15 * ONE_MINUTE;
-
-    const totalHours = fullTimeRange / ONE_HOUR;
-    const tickEveryHours = totalHours >= 20 ? 4 : totalHours >= 6 ? 2 : 1;
-
-    const scanStart = Math.ceil(axisStartMs / ONE_MINUTE) * ONE_MINUTE;
-
-    for (
-      let timestampMs = scanStart;
-      timestampMs < axisEndMs;
-      timestampMs += ONE_MINUTE
-    ) {
-      const { hour, minute } = getLocalTimeParts(timestampMs);
-
-      if (minute !== 0 || hour % tickEveryHours !== 0) {
-        continue;
-      }
-
-      if (
-        timestampMs - axisStartMs > EDGE_MARGIN &&
-        axisEndMs - timestampMs > EDGE_MARGIN
-      ) {
-        xTicks.push({
-          label: formatTimeLabel(timestampMs),
-          x: getX(timestampMs),
-        });
-      }
+  function bucketFor(ms: number, step: TickStep) {
+    const p = localParts(ms);
+    const dateOrdinal = Math.floor(
+      Date.UTC(p.year, p.month - 1, p.day) / DAY_MS,
+    );
+    switch (step.unit) {
+      case "minute":
+        return `${dateOrdinal}-${Math.floor((p.hour * 60 + p.minute) / step.every)}`;
+      case "hour":
+        return `${dateOrdinal}-${Math.floor(p.hour / step.every)}`;
+      case "day":
+        return String(Math.floor(dateOrdinal / step.every));
+      case "week":
+        // Monday-aligned weeks; UTC day ordinal 0 is Thursday.
+        return String(Math.floor((dateOrdinal + 3) / (7 * step.every)));
+      case "month":
+        return String(Math.floor((p.year * 12 + p.month - 1) / step.every));
+      case "quarter":
+        return String(
+          Math.floor((p.year * 4 + Math.floor((p.month - 1) / 3)) / step.every),
+        );
+      case "year":
+        return String(Math.floor(p.year / step.every));
     }
-  } else {
-    const count = Math.min(4, data.length);
-
-    xTicks = Array.from({ length: count }, (_, index) => {
-      const ratio = count === 1 ? 0 : index / (count - 1);
-      const timestampMs = axisStartMs + fullTimeRange * ratio;
-
-      return {
-        label: formatDateLabel(timestampMs),
-        x: getX(timestampMs),
-      };
-    });
   }
+
+  // Pick a calendar unit based on the *visible* duration, not the
+  // original selected range. Thus zooming in naturally reveals details.
+  const candidateSteps: { step: TickStep; approximateMs: number }[] = [
+    { step: { unit: "minute", every: 1 }, approximateMs: 60_000 },
+    { step: { unit: "minute", every: 2 }, approximateMs: 120_000 },
+    { step: { unit: "minute", every: 5 }, approximateMs: 300_000 },
+    { step: { unit: "minute", every: 10 }, approximateMs: 600_000 },
+    { step: { unit: "minute", every: 15 }, approximateMs: 900_000 },
+    { step: { unit: "minute", every: 30 }, approximateMs: 1_800_000 },
+    { step: { unit: "hour", every: 1 }, approximateMs: 3_600_000 },
+    { step: { unit: "hour", every: 2 }, approximateMs: 7_200_000 },
+    { step: { unit: "hour", every: 4 }, approximateMs: 14_400_000 },
+    { step: { unit: "hour", every: 6 }, approximateMs: 21_600_000 },
+    { step: { unit: "day", every: 1 }, approximateMs: DAY_MS },
+    { step: { unit: "day", every: 2 }, approximateMs: 2 * DAY_MS },
+    { step: { unit: "week", every: 1 }, approximateMs: 7 * DAY_MS },
+    { step: { unit: "week", every: 2 }, approximateMs: 14 * DAY_MS },
+    { step: { unit: "month", every: 1 }, approximateMs: 30 * DAY_MS },
+    { step: { unit: "quarter", every: 1 }, approximateMs: 91 * DAY_MS },
+    { step: { unit: "month", every: 6 }, approximateMs: 183 * DAY_MS },
+    { step: { unit: "year", every: 1 }, approximateMs: 365 * DAY_MS },
+    { step: { unit: "year", every: 2 }, approximateMs: 730 * DAY_MS },
+    { step: { unit: "year", every: 5 }, approximateMs: 1826 * DAY_MS },
+    { step: { unit: "year", every: 10 }, approximateMs: 3652 * DAY_MS },
+  ];
+
+  // For 5D, the default overview should always use trading-day dates.
+  // Once zoomed to a single trading day, switch to intraday clock times.
+  const visibleDayKeys = new Set(
+    (range === "5D" ? visibleData : []).map((point) => {
+      const p = localParts(point.timestampMs);
+      return `${p.year}-${p.month}-${p.day}`;
+    }),
+  );
+  const fiveDayOverview = range === "5D" && visibleDayKeys.size > 1;
+  const targetSpacingMs = visibleDurationMs / 4;
+  let selectedStep =
+    candidateSteps.find(({ approximateMs }) => approximateMs >= targetSpacingMs)
+      ?.step ?? candidateSteps[candidateSteps.length - 1].step;
+
+  if (fiveDayOverview) {
+    selectedStep = { unit: "day", every: 1 };
+  }
+
+  function tickLabel(ms: number, unit: TickUnit) {
+    if (unit === "minute" || unit === "hour") {
+      return formatTimeLabel(ms);
+    }
+    if (unit === "year") return yearFormatter.format(new Date(ms));
+    if (unit === "month" || unit === "quarter") {
+      return monthFormatter.format(new Date(ms));
+    }
+    if (visibleDurationMs >= 365 * DAY_MS) {
+      return monthDayYearFormatter.format(new Date(ms));
+    }
+    return formatDateLabel(ms);
+  }
+
+  // Select the first *real* observation in each local calendar bucket.
+  // In the 5D view this uses the same index-based projection as candles.
+  // On other ranges, use actual timestamps for both the data and ticks.
+  function buildTicks(step: TickStep): XTick[] {
+    const ticks: XTick[] = [];
+    let previousBucket: string | null = null;
+    for (const point of visibleData) {
+      const bucket = bucketFor(point.timestampMs, step);
+      if (bucket === previousBucket) continue;
+      previousBucket = bucket;
+      const x = getX(point.timestampMs);
+      if (x < paddingLeft + 14 || x > chartRight - 14) continue;
+      ticks.push({ x, label: tickLabel(point.timestampMs, step.unit) });
+    }
+    return ticks;
+  }
+
+  let xTicks = buildTicks(selectedStep);
+
+  // Do not display too many labels. Prefer preserving true calendar
+  // boundaries over forcing evenly spaced but misleading timestamps.
+  const minimumTickDistance = 105;
+  let lastAcceptedX = -Infinity;
+  xTicks = xTicks.filter((tick) => {
+    if (tick.x - lastAcceptedX < minimumTickDistance) return false;
+    lastAcceptedX = tick.x;
+    return true;
+  });
 
   // --------------------------------------------------
   // PREVIOUS CLOSE / COLOR
@@ -527,6 +746,10 @@ export function DetailChart({
 
   const previousCloseY =
     validPreviousClose !== undefined ? getY(validPreviousClose) : null;
+  const showPreviousClose =
+    previousCloseY !== null &&
+    previousCloseY >= paddingTop &&
+    previousCloseY <= chartBottom;
 
   const strokeColor = isPositive ? "#008549" : "var(--chart-down)";
   const gradientId = `detail-area-gradient-${chartId}`;
@@ -548,8 +771,8 @@ export function DetailChart({
       mouseX > chartRight ||
       mouseY < paddingTop ||
       mouseY > chartBottom ||
-      mouseX < firstPoint.x - 6 ||
-      mouseX > lastPoint.x + 6
+      mouseX < Math.max(paddingLeft, firstPoint.x - 6) ||
+      mouseX > Math.min(chartRight, lastPoint.x + 6)
     ) {
       setHoveredPoint(null);
       return;
@@ -595,11 +818,98 @@ export function DetailChart({
     });
   }
 
+  function handlePointerDown(event: React.PointerEvent<SVGSVGElement>) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    const position = getSvgPosition(event.clientX, event.clientY);
+    if (!position || position.x < paddingLeft || position.x > chartRight)
+      return;
+    pointers.current.set(event.pointerId, position);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const values = [...pointers.current.values()];
+    const current = viewportRef.current;
+    if (values.length >= 2) {
+      const center = (values[0].x + values[1].x) / 2;
+      gesture.current = {
+        start: current.start,
+        end: current.end,
+        center,
+        distance: Math.max(1, Math.abs(values[0].x - values[1].x)),
+        anchor: getAnchor(center),
+        mode: "pinch",
+      };
+    } else {
+      gesture.current = {
+        start: current.start,
+        end: current.end,
+        center: position.x,
+        distance: 1,
+        anchor: getAnchor(position.x),
+        mode: "pan",
+      };
+    }
+  }
+
+  function handlePointerMove(event: React.PointerEvent<SVGSVGElement>) {
+    if (!pointers.current.has(event.pointerId)) {
+      if (event.pointerType === "mouse") handleMouseMove(event);
+      return;
+    }
+    const position = getSvgPosition(event.clientX, event.clientY);
+    if (!position) return;
+    pointers.current.set(event.pointerId, position);
+    const values = [...pointers.current.values()];
+    const initial = gesture.current;
+    if (!initial) return;
+    if (values.length >= 2 && initial.mode === "pinch") {
+      const distance = Math.max(1, Math.abs(values[0].x - values[1].x));
+      const center = (values[0].x + values[1].x) / 2;
+      const span = Math.max(
+        0.025,
+        Math.min(
+          1,
+          ((initial.end - initial.start) * initial.distance) / distance,
+        ),
+      );
+      const worldAnchor =
+        initial.start + (initial.end - initial.start) * initial.anchor;
+      const screenAnchor = getAnchor(center);
+      updateViewport(
+        worldAnchor - span * screenAnchor,
+        worldAnchor + span * (1 - screenAnchor),
+      );
+    } else if (values.length === 1 && initial.mode === "pan") {
+      const delta =
+        ((position.x - initial.center) / chartWidth) *
+        (initial.end - initial.start);
+      updateViewport(initial.start - delta, initial.end - delta);
+    }
+  }
+
+  function handlePointerUp(event: React.PointerEvent<SVGSVGElement>) {
+    pointers.current.delete(event.pointerId);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    gesture.current = null;
+    const remaining = [...pointers.current.values()];
+    if (remaining.length === 1) {
+      const current = viewportRef.current;
+      gesture.current = {
+        start: current.start,
+        end: current.end,
+        center: remaining[0].x,
+        distance: 1,
+        anchor: getAnchor(remaining[0].x),
+        mode: "pan",
+      };
+    }
+  }
+
   // --------------------------------------------------
   // CANDLE / BAR WIDTH
   // --------------------------------------------------
 
-  let minimumPointSpacing = chartWidth / Math.max(coords.length, 1);
+  let minimumPointSpacing = chartWidth / Math.max(visibleData.length, 1);
 
   for (let index = 1; index < coords.length; index++) {
     const spacing = coords[index].x - coords[index - 1].x;
@@ -609,9 +919,9 @@ export function DetailChart({
     }
   }
 
-  const candleWidth = Math.max(Math.min(minimumPointSpacing * 0.7, 6), 1);
+  const candleWidth = Math.max(Math.min(minimumPointSpacing * 0.7, 12), 1);
 
-  const barWidth = Math.max(Math.min(minimumPointSpacing * 0.75, 7), 1);
+  const barWidth = Math.max(Math.min(minimumPointSpacing * 0.75, 14), 1);
 
   const hoverLabelX = hoveredPoint
     ? Math.max(paddingLeft, Math.min(chartRight - 120, hoveredPoint.x - 60))
@@ -624,13 +934,11 @@ export function DetailChart({
   return (
     <div className="relative w-full select-none bg-zinc-50 p-4 md:rounded-2xl md:border md:border-zinc-200 dark:bg-zinc-800/50 dark:md:border-zinc-800">
       {/* TOP CONTROL BAR */}
-
       <div className="relative z-5 flex items-center justify-between gap-6 dark:text-zinc-100">
         <div className="flex items-center">
           {chartTypeOptions.map((option) => {
             const Icon = option.icon;
             const isSelected = chartType === option.id;
-
             return (
               <button
                 key={option.id}
@@ -652,7 +960,6 @@ export function DetailChart({
             );
           })}
         </div>
-
         <button
           type="button"
           onClick={onClick}
@@ -694,9 +1001,13 @@ export function DetailChart({
       {/* MAIN SVG */}
 
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${width} ${height}`}
-        className="h-auto w-full cursor-crosshair overflow-visible [--chart-down:#cf0000] dark:[--chart-down:#ff4545]"
-        onMouseMove={handleMouseMove}
+        className="h-auto w-full cursor-crosshair overflow-visible [touch-action:pan-y] [--chart-down:#cf0000] dark:[--chart-down:#ff4545]"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         onMouseLeave={() => setHoveredPoint(null)}
       >
         <defs>
@@ -705,6 +1016,14 @@ export function DetailChart({
 
             <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
           </linearGradient>
+          <clipPath id={`plot-clip-${chartId}`}>
+            <rect
+              x={paddingLeft}
+              y={paddingTop}
+              width={chartWidth}
+              height={chartHeight}
+            />
+          </clipPath>
         </defs>
 
         {/* Y AXIS LABELS */}
@@ -766,7 +1085,7 @@ export function DetailChart({
 
         {/* PREVIOUS CLOSE */}
 
-        {validPreviousClose !== undefined && previousCloseY !== null && (
+        {validPreviousClose !== undefined && showPreviousClose && (
           <g>
             <line
               x1={paddingLeft}
@@ -780,142 +1099,147 @@ export function DetailChart({
           </g>
         )}
 
-        {/* AREA / LINE CHART */}
+        <g clipPath={`url(#plot-clip-${chartId})`}>
+          {/* AREA / LINE CHART */}
 
-        {(chartType === "area" || chartType === "line") &&
-          segments.map((points, index) => {
-            const path = buildPath(points);
-            const area = buildArea(points);
-
-            return (
-              <g key={index}>
-                {chartType === "area" && area && (
-                  <path d={area} fill={`url(#${gradientId})`} />
-                )}
-
-                {points.length >= 2 && (
-                  <path
-                    d={path}
-                    fill="none"
-                    stroke={strokeColor}
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                )}
-
-                {points.length === 1 && points[0] !== lastPoint && (
-                  <circle
-                    cx={points[0].x}
-                    cy={points[0].y}
-                    r="2.5"
-                    fill={strokeColor}
-                  />
-                )}
-              </g>
-            );
-          })}
-
-        {/* LUNCH BREAK */}
-
-        {hasLunch &&
-          lunchStartPoint &&
-          lunchEndPoint &&
-          (chartType === "line" || chartType === "area") && (
-            <g>
-              <line
-                x1={lunchStartPoint.x}
-                y1={lunchStartPoint.y}
-                x2={lunchEndPoint.x}
-                y2={lunchStartPoint.y}
-                stroke={strokeColor}
-                strokeDasharray="2 3.5"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                opacity="0.6"
-              />
-
-              <text
-                x={(lunchStartPoint.x + lunchEndPoint.x) / 2}
-                y={(lunchStartPoint.y + lunchEndPoint.y) / 2 - 10}
-                textAnchor="middle"
-                className="outfit fill-zinc-400 text-[15px] font-medium dark:fill-zinc-400"
-              >
-                {marketLabels.lunch_break}
-              </text>
-            </g>
-          )}
-
-        {/* CANDLESTICK */}
-
-        {chartType === "candle" && (
-          <g>
-            {coords.map((point, index) => {
-              const color = point.isRising ? "#008549" : "var(--chart-down)";
-
-              const candleTop = Math.min(point.openY, point.closeY);
-
-              const candleHeight = Math.max(
-                Math.abs(point.closeY - point.openY),
-                1.5,
-              );
+          {(chartType === "area" || chartType === "line") &&
+            segments.map((points, index) => {
+              const path = buildPath(points);
+              const area = buildArea(points);
 
               return (
                 <g key={index}>
-                  <line
-                    x1={point.x}
-                    y1={point.highY}
-                    x2={point.x}
-                    y2={point.lowY}
-                    stroke={color}
-                    strokeWidth="1.25"
-                  />
+                  {chartType === "area" && area && (
+                    <path d={area} fill={`url(#${gradientId})`} />
+                  )}
 
-                  <rect
-                    x={point.x - candleWidth / 2}
-                    y={candleTop}
-                    width={candleWidth}
-                    height={candleHeight}
-                    fill={color}
-                    rx="0.5"
-                  />
+                  {points.length >= 2 && (
+                    <path
+                      d={path}
+                      fill="none"
+                      stroke={strokeColor}
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  )}
+
+                  {points.length === 1 && points[0] !== lastPoint && (
+                    <circle
+                      cx={points[0].x}
+                      cy={points[0].y}
+                      r="2.5"
+                      fill={strokeColor}
+                    />
+                  )}
                 </g>
               );
             })}
-          </g>
-        )}
 
-        {/* BAR */}
+          {/* LUNCH BREAK */}
 
-        {chartType === "bar" && (
-          <g>
-            {coords.map((point, index) => (
-              <rect
-                key={index}
-                x={point.x - barWidth / 2}
-                y={point.y}
-                width={barWidth}
-                height={chartBottom - point.y}
-                fill={point.isRising ? "#008549" : "var(--chart-down)"}
-                fillOpacity={0.45}
-                stroke={point.isRising ? "#008549" : "var(--chart-down)"}
-                strokeWidth="0.5"
-                rx="1"
+          {hasLunch &&
+            lunchStartPoint &&
+            lunchEndPoint &&
+            (chartType === "line" || chartType === "area") && (
+              <g>
+                <line
+                  x1={lunchStartPoint.x}
+                  y1={lunchStartPoint.y}
+                  x2={lunchEndPoint.x}
+                  y2={lunchStartPoint.y}
+                  stroke={strokeColor}
+                  strokeDasharray="2 3.5"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  opacity="0.6"
+                />
+
+                <text
+                  x={(lunchStartPoint.x + lunchEndPoint.x) / 2}
+                  y={(lunchStartPoint.y + lunchEndPoint.y) / 2 - 10}
+                  textAnchor="middle"
+                  className="outfit fill-zinc-400 text-[15px] font-medium dark:fill-zinc-400"
+                >
+                  {marketLabels.lunch_break}
+                </text>
+              </g>
+            )}
+
+          {/* CANDLESTICK */}
+
+          {chartType === "candle" && (
+            <g>
+              {coords.map((point, index) => {
+                const color = point.isRising ? "#008549" : "var(--chart-down)";
+
+                const candleTop = Math.min(point.openY, point.closeY);
+
+                const candleHeight = Math.max(
+                  Math.abs(point.closeY - point.openY),
+                  1.5,
+                );
+
+                return (
+                  <g key={index}>
+                    <line
+                      x1={point.x}
+                      y1={point.highY}
+                      x2={point.x}
+                      y2={point.lowY}
+                      stroke={color}
+                      strokeWidth="1.25"
+                    />
+
+                    <rect
+                      x={point.x - candleWidth / 2}
+                      y={candleTop}
+                      width={candleWidth}
+                      height={candleHeight}
+                      fill={color}
+                      rx="0.5"
+                    />
+                  </g>
+                );
+              })}
+            </g>
+          )}
+
+          {/* BAR */}
+
+          {chartType === "bar" && (
+            <g>
+              {coords.map((point, index) => (
+                <rect
+                  key={index}
+                  x={point.x - barWidth / 2}
+                  y={point.y}
+                  width={barWidth}
+                  height={chartBottom - point.y}
+                  fill={point.isRising ? "#008549" : "var(--chart-down)"}
+                  fillOpacity={0.45}
+                  stroke={point.isRising ? "#008549" : "var(--chart-down)"}
+                  strokeWidth="0.5"
+                  rx="1"
+                />
+              ))}
+            </g>
+          )}
+
+          {/* LATEST DATA POINT */}
+
+          {!hoveredPoint &&
+            lastPoint.x >= paddingLeft &&
+            lastPoint.x <= chartRight &&
+            (chartType === "line" || chartType === "area") && (
+              <circle
+                cx={lastPoint.x}
+                cy={lastPoint.y}
+                r="4.5"
+                fill={strokeColor}
               />
-            ))}
-          </g>
-        )}
-
-        {/* LATEST DATA POINT */}
-
-        {!hoveredPoint && (chartType === "line" || chartType === "area") && (
-          <circle
-            cx={lastPoint.x}
-            cy={lastPoint.y}
-            r="4.5"
-            fill={strokeColor}
-          />
-        )}
+            )}
+        </g>
 
         {/* HOVER CROSSHAIR */}
 
@@ -966,7 +1290,8 @@ export function DetailChart({
         {typeof validPreviousClose === "number" &&
           Number.isFinite(validPreviousClose) &&
           typeof previousCloseY === "number" &&
-          Number.isFinite(previousCloseY) && (
+          Number.isFinite(previousCloseY) &&
+          showPreviousClose && (
             <text
               x={chartRight - 10}
               y={previousCloseY - 15}
@@ -984,6 +1309,76 @@ export function DetailChart({
             </text>
           )}
       </svg>
+
+      {/* RANGE (left) + ZOOM (right) */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-1 sm:gap-2">
+          {ranges?.map((option) => (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={range === option}
+              disabled={rangeLoading}
+              onClick={() => void onRangeChange?.(option)}
+              className={`cursor-pointer rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-50 ${
+                range === option
+                  ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-600 dark:text-white"
+                  : "text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-700/50"
+              }`}
+            >
+              {rangeLabels?.[option] ?? option}
+            </button>
+          ))}
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-1 dark:text-zinc-100">
+          <button
+            type="button"
+            aria-label="Zoom out"
+            title="Zoom out"
+            disabled={visibleSpan >= 0.999}
+            onPointerDown={(event) => {
+              if (event.button === 0) startHolding(1.12);
+            }}
+            onPointerUp={stopHolding}
+            onPointerCancel={stopHolding}
+            onPointerLeave={stopHolding}
+            onClick={(event) => {
+              if (event.detail === 0) zoom(1.12);
+            }}
+            className="flex size-8 cursor-pointer touch-none items-center justify-center rounded-md text-zinc-600 hover:bg-zinc-200/60 disabled:cursor-not-allowed disabled:opacity-30 dark:text-zinc-300 dark:hover:bg-zinc-700/50"
+          >
+            <Minus className="size-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="Zoom in"
+            title="Zoom in"
+            disabled={visibleSpan <= 0.0251}
+            onPointerDown={(event) => {
+              if (event.button === 0) startHolding(1 / 1.12);
+            }}
+            onPointerUp={stopHolding}
+            onPointerCancel={stopHolding}
+            onPointerLeave={stopHolding}
+            onClick={(event) => {
+              if (event.detail === 0) zoom(1 / 1.12);
+            }}
+            className="flex size-8 cursor-pointer touch-none items-center justify-center rounded-md text-zinc-600 hover:bg-zinc-200/60 disabled:cursor-not-allowed disabled:opacity-30 dark:text-zinc-300 dark:hover:bg-zinc-700/50"
+          >
+            <Plus className="size-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="Reset zoom"
+            title="Reset zoom"
+            disabled={visibleSpan >= 0.999}
+            onClick={resetZoom}
+            className="flex size-8 cursor-pointer items-center justify-center rounded-md text-zinc-600 hover:bg-zinc-200/60 disabled:cursor-not-allowed disabled:opacity-30 dark:text-zinc-300 dark:hover:bg-zinc-700/50"
+          >
+            <RotateCcw className="size-3.5" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
