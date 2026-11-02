@@ -30,8 +30,7 @@ import { getGifDimensions } from "@/lib/utils/gif-dimensions";
 import { CommentImageViewer } from "./comment-image-viewer";
 import { ContentActionsMenu } from "./content-actions-menu";
 import { UserProfileTrigger, type ProfileUser } from "./profile-card";
-
-import type { MarketReply } from "./comment";
+import { MarketReply } from "@/types/market-reply";
 
 const ReplyEditor = dynamic(() =>
   import("./reply-editor").then((module) => module.ReplyEditor),
@@ -96,6 +95,7 @@ export function ReplyItem({
   const username = reply.author.name ?? labels.guest;
   const isAuthor = currentUser?.id === reply.author.id;
   const isAdmin = currentUser?.role === "ADMIN";
+  const isWithdrawn = Boolean(reply.withdrawnAt);
 
   const profileTarget: ProfileUser = {
     id: reply.author.id,
@@ -367,10 +367,13 @@ export function ReplyItem({
               isAdmin={isAdmin}
               isAuthor={isAuthor}
               isModerated={Boolean(reply.moderatedAt)}
+              isWithdrawn={Boolean(reply.withdrawnAt)}
               isDeleting={isDeleting}
               isModerating={isModerating}
               isReporting={isReporting}
-              onEdit={() => setIsEditing(true)}
+              onEdit={() => {
+                if (!isWithdrawn) setIsEditing(true);
+              }}
               onDelete={handleDelete}
               onHide={() => handleModeration("hide")}
               onRestore={() => handleModeration("restore")}
@@ -384,6 +387,10 @@ export function ReplyItem({
           {reply.moderatedAt ? (
             <p className="mt-1 text-[15px] italic text-zinc-400">
               {labels.hidden_reply}
+            </p>
+          ) : isWithdrawn ? (
+            <p className="mt-1 text-[15px] italic text-zinc-400">
+              Reply deleted by user
             </p>
           ) : isEditing ? (
             <ReplyEditor
@@ -447,34 +454,36 @@ export function ReplyItem({
 
           {!reply.moderatedAt && !isEditing && (
             <div className="mt-2 flex items-center gap-4">
-              <button
-                type="button"
-                onClick={handleReplyLike}
-                disabled={isLikePending}
-                aria-label={likedByMe ? labels.unlike : labels.like}
-                title={likedByMe ? labels.unlike : labels.like}
-                aria-pressed={likedByMe}
-                className="
+              {!isWithdrawn && (
+                <button
+                  type="button"
+                  onClick={handleReplyLike}
+                  disabled={isLikePending}
+                  aria-label={likedByMe ? labels.unlike : labels.like}
+                  title={likedByMe ? labels.unlike : labels.like}
+                  aria-pressed={likedByMe}
+                  className="
                   flex cursor-pointer items-center gap-1.5
                   text-sm text-zinc-400 transition-colors
                   hover:text-zinc-900
                   disabled:cursor-default
                   dark:text-zinc-500 dark:hover:text-zinc-100
                 "
-              >
-                <RiHeartFill
-                  aria-hidden="true"
-                  className={`size-4 ${
-                    likedByMe
-                      ? "fill-current text-zinc-900 dark:text-zinc-100"
-                      : ""
-                  }`}
-                />
+                >
+                  <RiHeartFill
+                    aria-hidden="true"
+                    className={`size-4 ${
+                      likedByMe
+                        ? "fill-current text-zinc-900 dark:text-zinc-100"
+                        : ""
+                    }`}
+                  />
 
-                {likeCount > 0 && (
-                  <span>{likeCount.toLocaleString(language)}</span>
-                )}
-              </button>
+                  {likeCount > 0 && (
+                    <span>{likeCount.toLocaleString(language)}</span>
+                  )}
+                </button>
+              )}
 
               <button
                 type="button"

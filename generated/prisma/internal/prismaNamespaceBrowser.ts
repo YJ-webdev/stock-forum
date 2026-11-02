@@ -221,6 +221,7 @@ export type CommentAssetScalarFieldEnum = (typeof CommentAssetScalarFieldEnum)[k
 
 export const ReplyScalarFieldEnum = {
   id: 'id',
+  withdrawnAt: 'withdrawnAt',
   content: 'content',
   gifUrl: 'gifUrl',
   gifWidth: 'gifWidth',

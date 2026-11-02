@@ -60,6 +60,7 @@ const REPLY_SELECT = {
   updatedAt: true,
   editedAt: true,
   moderatedAt: true,
+  withdrawnAt: true,
 
   author: {
     select: AUTHOR_SELECT,
@@ -1324,18 +1325,13 @@ export type MarketPageComments = MarketCommentsPage["comments"];
 
 export async function deleteComment(commentId: string) {
   const session = await auth();
-
   const labels =
     COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
-  if (!session?.user?.id) {
-    throw new Error(labels.login_required);
-  }
-
+  if (!session?.user?.id) throw new Error(labels.login_required);
   const userId = session.user.id;
 
   return prisma.$transaction(async (tx) => {
-    // Use the same lock as editComment.
     await tx.$queryRaw`
       SELECT 1 AS locked
       FROM pg_advisory_xact_lock(
@@ -1344,83 +1340,51 @@ export async function deleteComment(commentId: string) {
     `;
 
     const comment = await tx.comment.findUnique({
-      where: {
-        id: commentId,
-      },
-
+      where: { id: commentId },
       select: {
         authorId: true,
         predictionId: true,
-        content: true,
-
-        assets: {
-          take: 1,
-          select: {
-            assetSymbol: true,
-          },
-        },
+        withdrawnAt: true,
+        assets: { take: 1, select: { assetSymbol: true } },
+        _count: { select: { replies: true } },
       },
     });
 
-    if (!comment) {
-      throw new Error(labels.comment_not_found);
-    }
+    if (!comment) throw new Error(labels.comment_not_found);
+    if (comment.authorId !== userId) throw new Error(labels.permission_denied);
 
-    if (comment.authorId !== userId) {
-      throw new Error(labels.permission_denied);
-    }
-
-    // Capture the symbol before deleting the comment's asset relations.
     const marketSymbol = comment.assets[0]?.assetSymbol ?? null;
+    const preserve =
+      Boolean(comment.predictionId) || comment._count.replies > 0;
 
-    // -------------------------------------------------------------------------
-    // PREDICTION COMMENT: REMOVE CONTENT
-    // -------------------------------------------------------------------------
-
-    if (comment.predictionId) {
+    if (preserve) {
       const deletedContent: JSONContent = {
         type: "doc",
         content: [
           {
             type: "paragraph",
-            content: [
-              {
-                type: "text",
-                text: DELETED_COMMENT_TEXT,
-              },
-            ],
+            content: [{ type: "text", text: DELETED_COMMENT_TEXT }],
           },
         ],
       };
 
-      const currentContent = comment.content as JSONContent;
-
-      const currentText =
-        currentContent.content
-          ?.flatMap((node) => node.content ?? [])
-          .map((node) => node.text ?? "")
-          .join("")
-          .trim() ?? "";
-
-      if (currentText === DELETED_COMMENT_TEXT) {
+      if (comment.withdrawnAt) {
         return {
           success: true,
           action: "ALREADY_CONTENT_REMOVED" as const,
           content: deletedContent,
+          withdrawnAt: comment.withdrawnAt,
         };
       }
 
+      const withdrawnAt = new Date();
       await tx.comment.update({
-        where: {
-          id: commentId,
-        },
-
+        where: { id: commentId },
         data: {
-          content: JSON.parse(
-            JSON.stringify(deletedContent),
-          ) as Prisma.InputJsonValue,
+          content: deletedContent as Prisma.InputJsonValue,
           hasContent: false,
           editedAt: null,
+          withdrawnAt,
         },
       });
 
@@ -1436,30 +1400,18 @@ export async function deleteComment(commentId: string) {
         success: true,
         action: "CONTENT_REMOVED" as const,
         content: deletedContent,
+        withdrawnAt,
       };
     }
 
-    // -------------------------------------------------------------------------
-    // REGULAR COMMENT: DELETE
-    // -------------------------------------------------------------------------
-
-    await tx.comment.delete({
-      where: {
-        id: commentId,
-      },
-    });
-
+    await tx.comment.delete({ where: { id: commentId } });
     await recordUserActivity(tx, {
       userId,
       type: "COMMENT_DELETED",
       marketSymbol,
       commentId,
     });
-
-    return {
-      success: true,
-      action: "DELETED" as const,
-    };
+    return { success: true, action: "DELETED" as const };
   });
 }
 
@@ -1700,7 +1652,7 @@ export async function createReply({
       throw new Error(labels.comment_not_found);
     }
 
-    if (comment.withdrawnAt || comment.moderatedAt) {
+    if (comment.moderatedAt) {
       throw new Error(labels.cannot_reply);
     }
 
@@ -1854,6 +1806,13 @@ export async function editReply({
       throw new Error("You cannot edit replies while chat is restricted.");
     }
 
+    await tx.$queryRaw`
+      SELECT 1 AS locked
+      FROM pg_advisory_xact_lock(
+        hashtext(${`reply-edit-delete:${replyId}`})::bigint
+      )
+    `;
+
     const reply = await tx.reply.findUnique({
       where: { id: replyId },
       select: {
@@ -1870,6 +1829,7 @@ export async function editReply({
         gifHeight: true,
 
         moderatedAt: true,
+        withdrawnAt: true,
         visibility: true,
 
         comment: {
@@ -1893,7 +1853,7 @@ export async function editReply({
       throw new Error(labels.permission_denied);
     }
 
-    if (reply.moderatedAt) {
+    if (reply.moderatedAt || reply.withdrawnAt) {
       throw new Error(labels.reply_not_editable);
     }
 
@@ -1991,40 +1951,57 @@ export async function deleteReply(replyId: string) {
   const labels =
     COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
 
-  if (!session?.user?.id) {
-    throw new Error(labels.login_required);
-  }
-
+  if (!session?.user?.id) throw new Error(labels.login_required);
   const userId = session.user.id;
 
   return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT 1 AS locked
+      FROM pg_advisory_xact_lock(
+        hashtext(${`reply-edit-delete:${replyId}`})::bigint
+      )
+    `;
+
     const reply = await tx.reply.findUnique({
       where: { id: replyId },
       select: {
         authorId: true,
         commentId: true,
+        withdrawnAt: true,
+        _count: { select: { replies: true } },
         comment: {
           select: {
-            assets: {
-              take: 1,
-              select: { assetSymbol: true },
-            },
+            assets: { take: 1, select: { assetSymbol: true } },
           },
         },
       },
     });
 
-    if (!reply) {
-      throw new Error(labels.reply_not_found);
-    }
+    if (!reply) throw new Error(labels.reply_not_found);
+    if (reply.authorId !== userId) throw new Error(labels.permission_denied);
 
-    if (reply.authorId !== userId) {
-      throw new Error(labels.permission_denied);
-    }
+    if (reply._count.replies > 0) {
+      if (reply.withdrawnAt) {
+        return { success: true, action: "ALREADY_CONTENT_REMOVED" as const };
+      }
 
-    await tx.reply.delete({
-      where: { id: replyId },
-    });
+      await tx.reply.update({
+        where: { id: replyId },
+        data: {
+          content: "",
+          gifUrl: null,
+          gifWidth: null,
+          gifHeight: null,
+          imageUrl: null,
+          imageWidth: null,
+          imageHeight: null,
+          editedAt: null,
+          withdrawnAt: new Date(),
+        },
+      });
+    } else {
+      await tx.reply.delete({ where: { id: replyId } });
+    }
 
     await recordUserActivity(tx, {
       userId,
@@ -2036,6 +2013,10 @@ export async function deleteReply(replyId: string) {
 
     return {
       success: true,
+      action:
+        reply._count.replies > 0
+          ? ("CONTENT_REMOVED" as const)
+          : ("DELETED" as const),
     };
   });
 }

@@ -24,7 +24,6 @@ import { getGifDimensions } from "@/lib/utils/gif-dimensions";
 
 import type { CommentImage } from "@/lib/types/comment-image";
 import type { GifResult } from "./gif-picker";
-import type { MarketReply } from "./comment";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,6 +32,7 @@ import { CommentTextarea } from "./comment-textarea";
 import { MediaButtons, type MediaButtonsHandle } from "./media-buttons";
 import { GifPreview } from "./gif-preview";
 import { ImagePreview } from "./image-preview";
+import { MarketReply } from "@/types/market-reply";
 
 // -----------------------------------------------------------------------------
 // Types

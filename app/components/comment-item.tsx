@@ -37,8 +37,7 @@ import { getErrorMessage } from "@/lib/utils/get-error-message";
 import { ContentActionsMenu } from "./content-actions-menu";
 import { UserProfileTrigger, type ProfileUser } from "./profile-card";
 import { ReplyItem, ReplyTextContent } from "./reply-item";
-
-import type { MarketReply } from "./comment";
+import { MarketReply } from "@/types/market-reply";
 
 const CommentEditor = dynamic(() =>
   import("./comment-editor").then((module) => module.CommentEditor),
@@ -148,7 +147,7 @@ export function CommentItem({
     highlightTargetComment && targetCommentId === comment.id;
 
   const isDeletedPredictionComment =
-    Boolean(comment.prediction) && isDeletedPredictionContent(comment.content);
+    Boolean(comment.withdrawnAt) || isDeletedPredictionContent(comment.content);
 
   const initialEditContent: JSONContent = isDeletedPredictionComment
     ? {
@@ -415,11 +414,12 @@ export function CommentItem({
           ...current,
           content: result.content,
           editedAt: null,
+          withdrawnAt: result.withdrawnAt,
         }));
 
-        const options = {
-          description: labels.prediction_remains,
-        };
+        const options = comment.prediction
+          ? { description: labels.prediction_remains }
+          : undefined;
 
         if (result.action === "ALREADY_CONTENT_REMOVED") {
           toast.info(resultLabels.deleted, options);
@@ -748,6 +748,7 @@ export function CommentItem({
                   isDeleting={isDeleting}
                   isReporting={isReporting}
                   isModerating={isModerating}
+                  isWithdrawn={Boolean(comment.withdrawnAt)}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onHide={handleHideComment}

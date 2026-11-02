@@ -42,6 +42,7 @@ export type ReplySumAggregateOutputType = {
 
 export type ReplyMinAggregateOutputType = {
   id: string | null
+  withdrawnAt: Date | null
   content: string | null
   gifUrl: string | null
   gifWidth: number | null
@@ -61,6 +62,7 @@ export type ReplyMinAggregateOutputType = {
 
 export type ReplyMaxAggregateOutputType = {
   id: string | null
+  withdrawnAt: Date | null
   content: string | null
   gifUrl: string | null
   gifWidth: number | null
@@ -80,6 +82,7 @@ export type ReplyMaxAggregateOutputType = {
 
 export type ReplyCountAggregateOutputType = {
   id: number
+  withdrawnAt: number
   content: number
   gifUrl: number
   gifWidth: number
@@ -115,6 +118,7 @@ export type ReplySumAggregateInputType = {
 
 export type ReplyMinAggregateInputType = {
   id?: true
+  withdrawnAt?: true
   content?: true
   gifUrl?: true
   gifWidth?: true
@@ -134,6 +138,7 @@ export type ReplyMinAggregateInputType = {
 
 export type ReplyMaxAggregateInputType = {
   id?: true
+  withdrawnAt?: true
   content?: true
   gifUrl?: true
   gifWidth?: true
@@ -153,6 +158,7 @@ export type ReplyMaxAggregateInputType = {
 
 export type ReplyCountAggregateInputType = {
   id?: true
+  withdrawnAt?: true
   content?: true
   gifUrl?: true
   gifWidth?: true
@@ -259,6 +265,7 @@ export type ReplyGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
 
 export type ReplyGroupByOutputType = {
   id: string
+  withdrawnAt: Date | null
   content: string
   gifUrl: string | null
   gifWidth: number | null
@@ -301,6 +308,7 @@ export type ReplyWhereInput = {
   OR?: Prisma.ReplyWhereInput[]
   NOT?: Prisma.ReplyWhereInput | Prisma.ReplyWhereInput[]
   id?: Prisma.StringFilter<"Reply"> | string
+  withdrawnAt?: Prisma.DateTimeNullableFilter<"Reply"> | Date | string | null
   content?: Prisma.StringFilter<"Reply"> | string
   gifUrl?: Prisma.StringNullableFilter<"Reply"> | string | null
   gifWidth?: Prisma.IntNullableFilter<"Reply"> | number | null
@@ -326,6 +334,7 @@ export type ReplyWhereInput = {
 
 export type ReplyOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  withdrawnAt?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
   gifUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   gifWidth?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -354,6 +363,7 @@ export type ReplyWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.ReplyWhereInput | Prisma.ReplyWhereInput[]
   OR?: Prisma.ReplyWhereInput[]
   NOT?: Prisma.ReplyWhereInput | Prisma.ReplyWhereInput[]
+  withdrawnAt?: Prisma.DateTimeNullableFilter<"Reply"> | Date | string | null
   content?: Prisma.StringFilter<"Reply"> | string
   gifUrl?: Prisma.StringNullableFilter<"Reply"> | string | null
   gifWidth?: Prisma.IntNullableFilter<"Reply"> | number | null
@@ -379,6 +389,7 @@ export type ReplyWhereUniqueInput = Prisma.AtLeast<{
 
 export type ReplyOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  withdrawnAt?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
   gifUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   gifWidth?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -406,6 +417,7 @@ export type ReplyScalarWhereWithAggregatesInput = {
   OR?: Prisma.ReplyScalarWhereWithAggregatesInput[]
   NOT?: Prisma.ReplyScalarWhereWithAggregatesInput | Prisma.ReplyScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Reply"> | string
+  withdrawnAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Reply"> | Date | string | null
   content?: Prisma.StringWithAggregatesFilter<"Reply"> | string
   gifUrl?: Prisma.StringNullableWithAggregatesFilter<"Reply"> | string | null
   gifWidth?: Prisma.IntNullableWithAggregatesFilter<"Reply"> | number | null
@@ -425,6 +437,7 @@ export type ReplyScalarWhereWithAggregatesInput = {
 
 export type ReplyCreateInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -447,6 +460,7 @@ export type ReplyCreateInput = {
 
 export type ReplyUncheckedCreateInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -469,6 +483,7 @@ export type ReplyUncheckedCreateInput = {
 
 export type ReplyUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -491,6 +506,7 @@ export type ReplyUpdateInput = {
 
 export type ReplyUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -513,6 +529,7 @@ export type ReplyUncheckedUpdateInput = {
 
 export type ReplyCreateManyInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -532,6 +549,7 @@ export type ReplyCreateManyInput = {
 
 export type ReplyUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -548,6 +566,7 @@ export type ReplyUpdateManyMutationInput = {
 
 export type ReplyUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -582,6 +601,7 @@ export type ReplyNullableScalarRelationFilter = {
 
 export type ReplyCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  withdrawnAt?: Prisma.SortOrder
   content?: Prisma.SortOrder
   gifUrl?: Prisma.SortOrder
   gifWidth?: Prisma.SortOrder
@@ -608,6 +628,7 @@ export type ReplyAvgOrderByAggregateInput = {
 
 export type ReplyMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  withdrawnAt?: Prisma.SortOrder
   content?: Prisma.SortOrder
   gifUrl?: Prisma.SortOrder
   gifWidth?: Prisma.SortOrder
@@ -627,6 +648,7 @@ export type ReplyMaxOrderByAggregateInput = {
 
 export type ReplyMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  withdrawnAt?: Prisma.SortOrder
   content?: Prisma.SortOrder
   gifUrl?: Prisma.SortOrder
   gifWidth?: Prisma.SortOrder
@@ -830,6 +852,7 @@ export type ReplyUpdateOneWithoutNotificationsNestedInput = {
 
 export type ReplyCreateWithoutAuthorInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -851,6 +874,7 @@ export type ReplyCreateWithoutAuthorInput = {
 
 export type ReplyUncheckedCreateWithoutAuthorInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -901,6 +925,7 @@ export type ReplyScalarWhereInput = {
   OR?: Prisma.ReplyScalarWhereInput[]
   NOT?: Prisma.ReplyScalarWhereInput | Prisma.ReplyScalarWhereInput[]
   id?: Prisma.StringFilter<"Reply"> | string
+  withdrawnAt?: Prisma.DateTimeNullableFilter<"Reply"> | Date | string | null
   content?: Prisma.StringFilter<"Reply"> | string
   gifUrl?: Prisma.StringNullableFilter<"Reply"> | string | null
   gifWidth?: Prisma.IntNullableFilter<"Reply"> | number | null
@@ -920,6 +945,7 @@ export type ReplyScalarWhereInput = {
 
 export type ReplyCreateWithoutCommentInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -941,6 +967,7 @@ export type ReplyCreateWithoutCommentInput = {
 
 export type ReplyUncheckedCreateWithoutCommentInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -988,6 +1015,7 @@ export type ReplyUpdateManyWithWhereWithoutCommentInput = {
 
 export type ReplyCreateWithoutRepliesInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -1009,6 +1037,7 @@ export type ReplyCreateWithoutRepliesInput = {
 
 export type ReplyUncheckedCreateWithoutRepliesInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -1035,6 +1064,7 @@ export type ReplyCreateOrConnectWithoutRepliesInput = {
 
 export type ReplyCreateWithoutParentInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -1056,6 +1086,7 @@ export type ReplyCreateWithoutParentInput = {
 
 export type ReplyUncheckedCreateWithoutParentInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -1098,6 +1129,7 @@ export type ReplyUpdateToOneWithWhereWithoutRepliesInput = {
 
 export type ReplyUpdateWithoutRepliesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1119,6 +1151,7 @@ export type ReplyUpdateWithoutRepliesInput = {
 
 export type ReplyUncheckedUpdateWithoutRepliesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1156,6 +1189,7 @@ export type ReplyUpdateManyWithWhereWithoutParentInput = {
 
 export type ReplyCreateWithoutLikesInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -1177,6 +1211,7 @@ export type ReplyCreateWithoutLikesInput = {
 
 export type ReplyUncheckedCreateWithoutLikesInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -1214,6 +1249,7 @@ export type ReplyUpdateToOneWithWhereWithoutLikesInput = {
 
 export type ReplyUpdateWithoutLikesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1235,6 +1271,7 @@ export type ReplyUpdateWithoutLikesInput = {
 
 export type ReplyUncheckedUpdateWithoutLikesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1256,6 +1293,7 @@ export type ReplyUncheckedUpdateWithoutLikesInput = {
 
 export type ReplyCreateWithoutNotificationsInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -1277,6 +1315,7 @@ export type ReplyCreateWithoutNotificationsInput = {
 
 export type ReplyUncheckedCreateWithoutNotificationsInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -1314,6 +1353,7 @@ export type ReplyUpdateToOneWithWhereWithoutNotificationsInput = {
 
 export type ReplyUpdateWithoutNotificationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1335,6 +1375,7 @@ export type ReplyUpdateWithoutNotificationsInput = {
 
 export type ReplyUncheckedUpdateWithoutNotificationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1356,6 +1397,7 @@ export type ReplyUncheckedUpdateWithoutNotificationsInput = {
 
 export type ReplyCreateManyAuthorInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -1374,6 +1416,7 @@ export type ReplyCreateManyAuthorInput = {
 
 export type ReplyUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1395,6 +1438,7 @@ export type ReplyUpdateWithoutAuthorInput = {
 
 export type ReplyUncheckedUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1416,6 +1460,7 @@ export type ReplyUncheckedUpdateWithoutAuthorInput = {
 
 export type ReplyUncheckedUpdateManyWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1434,6 +1479,7 @@ export type ReplyUncheckedUpdateManyWithoutAuthorInput = {
 
 export type ReplyCreateManyCommentInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -1452,6 +1498,7 @@ export type ReplyCreateManyCommentInput = {
 
 export type ReplyUpdateWithoutCommentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1473,6 +1520,7 @@ export type ReplyUpdateWithoutCommentInput = {
 
 export type ReplyUncheckedUpdateWithoutCommentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1494,6 +1542,7 @@ export type ReplyUncheckedUpdateWithoutCommentInput = {
 
 export type ReplyUncheckedUpdateManyWithoutCommentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1512,6 +1561,7 @@ export type ReplyUncheckedUpdateManyWithoutCommentInput = {
 
 export type ReplyCreateManyParentInput = {
   id?: string
+  withdrawnAt?: Date | string | null
   content: string
   gifUrl?: string | null
   gifWidth?: number | null
@@ -1530,6 +1580,7 @@ export type ReplyCreateManyParentInput = {
 
 export type ReplyUpdateWithoutParentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1551,6 +1602,7 @@ export type ReplyUpdateWithoutParentInput = {
 
 export type ReplyUncheckedUpdateWithoutParentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1572,6 +1624,7 @@ export type ReplyUncheckedUpdateWithoutParentInput = {
 
 export type ReplyUncheckedUpdateManyWithoutParentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  withdrawnAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1639,6 +1692,7 @@ export type ReplyCountOutputTypeCountLikesArgs<ExtArgs extends runtime.Types.Ext
 
 export type ReplySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  withdrawnAt?: boolean
   content?: boolean
   gifUrl?: boolean
   gifWidth?: boolean
@@ -1665,6 +1719,7 @@ export type ReplySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 
 export type ReplySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  withdrawnAt?: boolean
   content?: boolean
   gifUrl?: boolean
   gifWidth?: boolean
@@ -1687,6 +1742,7 @@ export type ReplySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 
 export type ReplySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  withdrawnAt?: boolean
   content?: boolean
   gifUrl?: boolean
   gifWidth?: boolean
@@ -1709,6 +1765,7 @@ export type ReplySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 
 export type ReplySelectScalar = {
   id?: boolean
+  withdrawnAt?: boolean
   content?: boolean
   gifUrl?: boolean
   gifWidth?: boolean
@@ -1726,7 +1783,7 @@ export type ReplySelectScalar = {
   updatedAt?: boolean
 }
 
-export type ReplyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "gifUrl" | "gifWidth" | "gifHeight" | "imageUrl" | "imageWidth" | "imageHeight" | "visibility" | "commentId" | "authorId" | "parentId" | "editedAt" | "moderatedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["reply"]>
+export type ReplyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "withdrawnAt" | "content" | "gifUrl" | "gifWidth" | "gifHeight" | "imageUrl" | "imageWidth" | "imageHeight" | "visibility" | "commentId" | "authorId" | "parentId" | "editedAt" | "moderatedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["reply"]>
 export type ReplyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   comment?: boolean | Prisma.CommentDefaultArgs<ExtArgs>
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -1759,6 +1816,7 @@ export type $ReplyPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    withdrawnAt: Date | null
     content: string
     gifUrl: string | null
     gifWidth: number | null
@@ -2204,6 +2262,7 @@ export interface Prisma__ReplyClient<T, Null = never, ExtArgs extends runtime.Ty
  */
 export interface ReplyFieldRefs {
   readonly id: Prisma.FieldRef<"Reply", 'String'>
+  readonly withdrawnAt: Prisma.FieldRef<"Reply", 'DateTime'>
   readonly content: Prisma.FieldRef<"Reply", 'String'>
   readonly gifUrl: Prisma.FieldRef<"Reply", 'String'>
   readonly gifWidth: Prisma.FieldRef<"Reply", 'Int'>

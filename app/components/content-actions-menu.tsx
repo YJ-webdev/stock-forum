@@ -25,6 +25,7 @@ interface ContentActionsMenuProps {
   isAuthor?: boolean;
   isAdmin?: boolean;
   isModerated?: boolean;
+  isWithdrawn?: boolean;
 
   isDeleting?: boolean;
   isModerating?: boolean;
@@ -44,6 +45,7 @@ export function ContentActionsMenu({
   isAuthor = false,
   isAdmin = false,
   isModerated = false,
+  isWithdrawn = false,
 
   isDeleting = false,
   isModerating = false,
@@ -58,17 +60,28 @@ export function ContentActionsMenu({
 }: ContentActionsMenuProps) {
   const labels = CONTENT_ACTION_LABELS[resolveLanguage(language)];
 
+  const canEdit = isAuthor && !isWithdrawn && !!onEdit;
+  const canDelete = isAuthor && !isWithdrawn && !!onDelete;
+  const canReport = !isAuthor && !isWithdrawn && !!onReport;
+
+  const canHide = isAdmin && !isModerated && !!onHide;
+  const canRestore = isAdmin && isModerated && !!onRestore;
+
+  const hasActions = canEdit || canDelete || canReport || canHide || canRestore;
+
+  if (!hasActions) return null;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={labels.actions}
         className={`
-          ml-auto rounded-full p-1.5
-          xl:opacity-0
+          ml-auto cursor-pointer rounded-full p-1.5
           hover:bg-zinc-100
-          lg:dark:hover:bg-zinc-800
-          cursor-pointer
-
+          dark:hover:bg-zinc-800
+          xl:opacity-0
+          focus-visible:opacity-100
+          data-[state=open]:opacity-100
           ${
             hoverGroup === "comment"
               ? "xl:group-hover/comment:opacity-100"
@@ -80,40 +93,36 @@ export function ContentActionsMenu({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end">
-        {isAuthor ? (
-          <>
-            <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
-              <Pencil className="mr-2 size-4" />
-              {labels.edit}
-            </DropdownMenuItem>
+        {canEdit && (
+          <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
+            <Pencil className="mr-2 size-4" />
+            {labels.edit}
+          </DropdownMenuItem>
+        )}
 
-            <DropdownMenuItem
-              disabled={isDeleting}
-              onClick={onDelete}
-              className="cursor-pointer"
-            >
-              <Trash2
-                className="mr-2 size-4"
-                style={{ color: "inherit", stroke: "currentColor" }}
-              />
-              {isDeleting ? labels.deleting : labels.delete}
-            </DropdownMenuItem>
-          </>
-        ) : (
+        {canDelete && (
+          <DropdownMenuItem
+            disabled={isDeleting}
+            onClick={onDelete}
+            className="cursor-pointer"
+          >
+            <Trash2 className="mr-2 size-4" />
+            {isDeleting ? labels.deleting : labels.delete}
+          </DropdownMenuItem>
+        )}
+
+        {canReport && (
           <DropdownMenuItem
             disabled={isReporting}
             onClick={onReport}
             className="cursor-pointer"
           >
-            <Flag
-              className="mr-2 size-4 "
-              style={{ color: "inherit", stroke: "currentColor" }}
-            />
+            <Flag className="mr-2 size-4" />
             {isReporting ? labels.reporting : labels.report}
           </DropdownMenuItem>
         )}
 
-        {isAdmin && !isModerated && onHide && (
+        {canHide && (
           <DropdownMenuItem
             disabled={isModerating}
             onClick={onHide}
@@ -124,7 +133,7 @@ export function ContentActionsMenu({
           </DropdownMenuItem>
         )}
 
-        {isAdmin && isModerated && onRestore && (
+        {canRestore && (
           <DropdownMenuItem
             disabled={isModerating}
             onClick={onRestore}

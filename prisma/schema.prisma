@@ -257,6 +257,8 @@ model CommentAsset {
 
 model Reply {
   id String @id @default(cuid())
+  
+withdrawnAt DateTime?
 
   content     String
   gifUrl      String?
@@ -292,6 +294,7 @@ model Reply {
   @@index([parentId, createdAt])
   @@index([authorId, createdAt])
   @@index([moderatedAt])
+  @@index([withdrawnAt])
 }
 
 model CommentLike {
