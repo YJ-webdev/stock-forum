@@ -108,7 +108,7 @@ const VOTE_BUTTON_CLASS = `
   inline-flex h-8.5 min-w-0 flex-1 cursor-pointer
   items-center justify-center gap-1.5
   rounded-full px-3 text-[14px] font-normal
-  text-white dark:text-white transition-colors
+  text-white transition-colors
   focus-visible:outline-none
   focus-visible:ring-2 focus-visible:ring-zinc-400
   focus-visible:ring-offset-2 focus-visible:ring-offset-white
@@ -856,7 +856,7 @@ export function MarketVoteButton({
               : null;
 
   return (
-    <div className="flex min-h-7.5 w-full justify-end">
+    <div className="flex min-h-7.5 w-full items-center justify-end">
       {votingWindow.isMarketOpen ? (
         <span className={VOTE_STATUS_CLASS}>
           <LockKeyhole

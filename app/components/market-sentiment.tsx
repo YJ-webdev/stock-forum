@@ -174,12 +174,18 @@ export function MarketSentiment({
       : labels.no_vote_yet
     : undefined;
 
+  const tooltipTitle = stats
+    ? hasVotes
+      ? `Bull: ${bullPercent}%\nBear: ${bearPercent}%\n${labels.votes}: ${stats.totalVotes.toLocaleString(language)}`
+      : labels.no_vote_yet
+    : "";
   return (
     <div className="w-full">
       <div
         role={stats ? "img" : undefined}
         aria-label={ariaLabel}
         aria-hidden={stats ? undefined : true}
+        title={tooltipTitle}
         className={`relative flex h-7 w-full items-center overflow-hidden bg-white dark:bg-zinc-900 ${DOT_PATTERN}`}
       >
         <div

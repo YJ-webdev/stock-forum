@@ -23,6 +23,8 @@ export type ChartRangeOption = SelectedRange;
 
 export interface DetailChartProps {
   userLanguage?: string | null;
+  marketName?: string;
+  marketSymbol?: string;
   ranges?: readonly ChartRangeOption[];
   rangeLabels?: Partial<Record<ChartRangeOption, string>>;
   onRangeChange?: (range: ChartRangeOption) => void | Promise<void>;
@@ -116,6 +118,8 @@ function formatTooltipDate(
 }
 
 export function DetailChart({
+  marketName,
+  marketSymbol,
   history,
   isPositive,
   isClosed,
@@ -433,6 +437,7 @@ export function DetailChart({
         URL.revokeObjectURL(svgUrl);
       }
 
+      // Preserve the exact original chart dimensions and layout.
       const result = document.createElement("canvas");
       result.width = source.width;
       result.height = source.height;
@@ -445,6 +450,62 @@ export function DetailChart({
       context.roundRect(0, 0, result.width, result.height, r);
       context.clip();
       context.drawImage(source, 0, 0);
+
+      // Export-only branding in the unused space at the top right,
+      // centered on the actual MA button row (no extra padding or header).
+      const font = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+      const brandName = "BullBearVote";
+      const brandUrl = "bullbearvote.com";
+      const brandRight = result.width - 16 * scale;
+      const iconSize = 19 * scale;
+      const iconGap = 6 * scale;
+      const maButton = element.querySelector<HTMLButtonElement>(
+        '[aria-label^="MA 5"]',
+      );
+      const maRect = maButton?.getBoundingClientRect();
+      const centerY = maRect
+        ? (maRect.top + maRect.height / 2 - elementRect.top) * scale
+        : 32 * scale;
+
+      context.save();
+      context.font = `500 ${11 * scale}px ${font}`;
+      const nameWidth = context.measureText(brandName).width;
+      context.font = `400 ${9 * scale}px ${font}`;
+      const urlWidth = context.measureText(brandUrl).width;
+      const textX = brandRight - Math.max(nameWidth, urlWidth);
+      const iconX = textX - iconGap - iconSize;
+      const iconY = centerY - iconSize / 2;
+
+      // Lucide ChartNoAxesCombined: original 24x24 path with 1.5 stroke.
+      context.save();
+      context.translate(iconX, iconY);
+      context.scale(iconSize / 24, iconSize / 24);
+      context.strokeStyle = dark ? "#d4d4d8" : "#52525b";
+      context.lineWidth = 1.5;
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      for (const path of [
+        "M12 16v5",
+        "M16 14.639V21",
+        "M20 10.656V21",
+        "m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15",
+        "M4 18.463V21",
+        "M8 14.656V21",
+      ]) {
+        context.stroke(new Path2D(path));
+      }
+      context.restore();
+
+      context.textAlign = "left";
+      context.textBaseline = "middle";
+      context.fillStyle = dark ? "#e4e4e7" : "#52525b";
+      context.font = `500 ${11 * scale}px ${font}`;
+      context.fillText(brandName, textX, centerY - 6 * scale);
+      context.fillStyle = dark ? "#a1a1aa" : "#71717a";
+      context.font = `400 ${9 * scale}px ${font}`;
+      context.fillText(brandUrl, textX, centerY + 7 * scale);
+      context.restore();
+
       context.drawImage(
         chartImage,
         (svgRect.left - elementRect.left) * scale,
@@ -475,6 +536,8 @@ export function DetailChart({
     }
   }, [
     capturing,
+    marketName,
+    marketSymbol,
     marketLabels.chart_image_copied,
     marketLabels.chart_image_copy_failed,
   ]);
@@ -1318,7 +1381,7 @@ export function DetailChart({
     <div className="relative w-full select-none bg-zinc-50 md:rounded-2xl md:border md:border-zinc-200 dark:bg-zinc-800/50 dark:md:border-zinc-800">
       {/* TOP CONTROL BAR */}
       <div className="relative z-5 px-4 pt-4 flex items-center justify-between gap-6 dark:text-zinc-100">
-        <div className="flex items-center">
+        <div className="flex items-center gap-1">
           {chartTypeOptions.map((option) => {
             const Icon = option.icon;
             const isSelected = chartType === option.id;
@@ -1333,18 +1396,18 @@ export function DetailChart({
                   setChartType(option.id);
                   setHoveredPoint(null);
                 }}
-                className={`flex cursor-pointer items-center justify-center rounded-sm px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+                className={`flex size-8 cursor-pointer items-center justify-center rounded-sm text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${
                   isSelected
-                    ? "text-zinc-900 dark:text-white"
-                    : "text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-700/50"
+                    ? "text-zinc-400 dark:text-zinc-500"
+                    : "text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-700/50"
                 }`}
               >
-                <Icon className="size-3 md:size-4" />
+                <Icon className="size-4" />
               </button>
             );
           })}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={() => void captureChart()}
