@@ -107,6 +107,9 @@ export function CommentItem({
   const statusLabels = CONTENT_STATUS_LABELS[language];
 
   const commentRef = useRef<HTMLDivElement>(null);
+  const expandedThreadRef = useRef<HTMLDivElement>(null);
+  const replyListRef = useRef<HTMLDivElement>(null);
+  const [mobileRailHeight, setMobileRailHeight] = useState<number | null>(null);
 
   const [likedByMe, setLikedByMe] = useState(comment.likedByMe);
   const [likeCount, setLikeCount] = useState(comment.likeCount);
@@ -234,6 +237,77 @@ export function CommentItem({
       void loadReplies();
     }
   }
+
+  // End the mobile thread curve at the center of the last visible reply avatar.
+  // This includes nested replies because mobile displays the entire tree.
+  useEffect(() => {
+    if (
+      !showReplies ||
+      repliesLoading ||
+      !repliesLoaded ||
+      replies.length === 0
+    ) {
+      setMobileRailHeight(null);
+      return;
+    }
+
+    const container = expandedThreadRef.current;
+    const list = replyListRef.current;
+    if (!container || !list) return;
+
+    let frame = 0;
+    let lastAvatar: Element | null = null;
+    const observer = new ResizeObserver(() => scheduleMeasure());
+
+    function measure() {
+      frame = 0;
+      if (!container || !list) return;
+
+      const replyElements = Array.from(
+        list.querySelectorAll<HTMLElement>('[id^="reply-"]'),
+      );
+
+      // The last visible DOM reply is the final item in the flattened mobile tree.
+      const lastVisible = replyElements
+        .reverse()
+        .find((element) => element.getClientRects().length > 0);
+      const avatar = lastVisible?.querySelector('[data-slot="avatar"]');
+      if (!avatar) {
+        setMobileRailHeight(null);
+        return;
+      }
+
+      if (lastAvatar !== avatar) {
+        if (lastAvatar) observer.unobserve(lastAvatar);
+        observer.observe(avatar);
+        lastAvatar = avatar;
+      }
+
+      const containerTop = container.getBoundingClientRect().top;
+      const avatarRect = avatar.getBoundingClientRect();
+      // The rail button starts 24px above the expanded thread container.
+      const height = avatarRect.top + avatarRect.height / 2 - containerTop + 24;
+      setMobileRailHeight(Math.max(16, height));
+    }
+
+    function scheduleMeasure() {
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    }
+
+    observer.observe(list);
+    const mutations = new MutationObserver(scheduleMeasure);
+    mutations.observe(list, { childList: true, subtree: true });
+    window.addEventListener("resize", scheduleMeasure);
+    scheduleMeasure();
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      observer.disconnect();
+      mutations.disconnect();
+      window.removeEventListener("resize", scheduleMeasure);
+    };
+  }, [showReplies, repliesLoading, repliesLoaded, replies]);
 
   const threadEvents = {
     onMouseEnter: () => setThreadHovered(true),
@@ -847,8 +921,29 @@ export function CommentItem({
             )}
 
             {showReplies && repliesLoading && (
-              <div className="py-3 text-sm text-zinc-400">
-                {labels.loading_replies}
+              <div className="relative mt-5" role="status" aria-live="polite">
+                <span
+                  aria-hidden="true"
+                  className={`
+                    pointer-events-none absolute -left-9.5 -top-3
+                    h-6 w-10
+                  `}
+                >
+                  <span
+                    className={`
+                      absolute left-2 top-0 h-6 w-8
+                      rounded-bl-xl border-b border-l transition-colors
+                      ${
+                        threadHovered
+                          ? "border-zinc-400 dark:border-zinc-500"
+                          : "border-zinc-200 dark:border-zinc-700"
+                      }
+                    `}
+                  />
+                </span>
+                <span className="block -translate-x-2 px-2 text-sm font-medium text-zinc-400 dark:text-zinc-500">
+                  {labels.loading_replies}
+                </span>
               </div>
             )}
 
@@ -868,7 +963,7 @@ export function CommentItem({
             )}
 
             {showReplies && !repliesLoading && replies.length > 0 && (
-              <div className="relative mt-4 pb-3">
+              <div ref={expandedThreadRef} className="relative mt-4 pb-3">
                 <button
                   type="button"
                   aria-label={labels.collapse_replies}
@@ -879,7 +974,38 @@ export function CommentItem({
                     "
                 />
 
-                <div className="space-y-6 py-3 pl-0">
+                {/* Mobile: one continuous collapsible rail for the entire thread. */}
+                <button
+                  type="button"
+                  aria-label={labels.collapse_replies}
+                  aria-expanded={true}
+                  {...threadEvents}
+                  className="absolute -left-9.5 -top-6 z-10 w-10 cursor-pointer md:hidden"
+                  style={{
+                    height: mobileRailHeight ?? 0,
+                    visibility:
+                      mobileRailHeight === null ? "hidden" : "visible",
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute left-2 top-0 bottom-4 w-px transition-colors ${
+                      threadHovered
+                        ? "bg-zinc-400 dark:bg-zinc-500"
+                        : "bg-zinc-200 dark:bg-zinc-700"
+                    }`}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute bottom-0 left-2 h-4 w-8 rounded-bl-xl border-b border-l transition-colors ${
+                      threadHovered
+                        ? "border-zinc-400 dark:border-zinc-500"
+                        : "border-zinc-200 dark:border-zinc-700"
+                    }`}
+                  />
+                </button>
+
+                <div ref={replyListRef} className="space-y-6 py-3 pl-0">
                   {replies
                     .filter((reply) => reply.parentId === null)
                     .map((reply, index, rootReplies) => {
@@ -893,7 +1019,7 @@ export function CommentItem({
                             {...threadEvents}
                             className={`
                                 absolute -left-9.5 -top-6 z-0
-                                w-5 cursor-pointer
+                                hidden w-5 cursor-pointer md:block
                                 ${isLastReply ? "h-7" : "-bottom-1"}
                               `}
                           >
@@ -917,7 +1043,7 @@ export function CommentItem({
                             {...threadEvents}
                             className="
                                 absolute -left-9.5 top-0 z-0
-                                h-4 w-10 cursor-pointer
+                                hidden h-4 w-10 cursor-pointer md:block
                               "
                           >
                             <span

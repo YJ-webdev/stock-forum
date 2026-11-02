@@ -82,7 +82,6 @@ export function ReplyItem({
   const [showReplyInput, setShowReplyInput] = useState(false);
 
   const [childrenCollapsed, setChildrenCollapsed] = useState(true);
-
   const [threadHovered, setThreadHovered] = useState(false);
 
   const [openProfile, setOpenProfile] = useState<"avatar" | "name" | null>(
@@ -109,6 +108,11 @@ export function ReplyItem({
   const childReplies = replies.filter((child) => child.parentId === reply.id);
 
   const hasChild = childReplies.length > 0;
+  const parentReply = reply.parentId
+    ? replies.find((item) => item.id === reply.parentId)
+    : null;
+  const replyingTo =
+    parentReply?.author.name?.trim() || (parentReply ? labels.guest : null);
 
   const childReplyCountLabel = labels.reply_count.replace(
     "{count}",
@@ -307,8 +311,7 @@ export function ReplyItem({
         </div>
 
         <div className="relative min-w-0 flex-1">
-          {/* Thread rail */}
-
+          {/* Desktop thread rail: connects this reply to its children. */}
           {hasChild && (
             <button
               type="button"
@@ -321,22 +324,14 @@ export function ReplyItem({
               {...(childrenCollapsed
                 ? expandThreadEvents
                 : collapseThreadEvents)}
-              className="
-                absolute -left-9 top-8 bottom-0 z-1
-                w-5 cursor-pointer
-              "
+              className="absolute -left-9 top-8 bottom-0 z-1 hidden w-5 cursor-pointer md:block"
             >
               <span
-                className={`
-                  pointer-events-none absolute
-                  left-2 top-0 -bottom-6 w-px
-                  transition-colors
-                  ${railColor}
-                `}
+                aria-hidden="true"
+                className={`pointer-events-none absolute left-2 top-0 -bottom-6 w-px transition-colors ${railColor}`}
               />
             </button>
           )}
-
           {/* Header */}
 
           <div className="flex min-w-0 items-center gap-1.5">
@@ -402,15 +397,20 @@ export function ReplyItem({
             />
           ) : (
             <>
-              {reply.content && (
+              {reply.content ? (
                 <ReplyTextContent
                   key={reply.content}
                   content={reply.content}
                   editedLabel={reply.editedAt ? labels.edited : undefined}
+                  replyingTo={replyingTo ?? undefined}
                   readMoreLabel={labels.read_more}
                   readLessLabel={labels.read_less}
                 />
-              )}
+              ) : replyingTo ? (
+                <span className="text-[14px] font-medium text-zinc-500 dark:text-zinc-400 md:hidden">
+                  @{replyingTo}
+                </span>
+              ) : null}
 
               {reply.imageUrl && (
                 <CommentImageViewer
@@ -525,82 +525,59 @@ export function ReplyItem({
         </div>
       </div>
 
-      {/* Child replies */}
-
-      {hasChild &&
-        (childrenCollapsed ? (
-          <button
-            type="button"
-            aria-label={labels.show_replies}
-            aria-expanded={false}
-            {...expandThreadEvents}
-            className="relative ml-2 mt-6 block h-7 cursor-pointer"
-          >
-            <span
-              className={`
-                pointer-events-none absolute left-2 top-0
-                h-4 w-8 rounded-bl-xl border-b border-l
-                transition-colors
-                ${curveColor}
-              `}
-            />
-
-            <span
-              className="
-                ml-11 flex h-4 items-end whitespace-nowrap
-                text-sm font-medium text-zinc-500
-                dark:text-zinc-400
-              "
+      {/* Mobile: all descendants are always visible when CommentItem is open.
+          Desktop: each reply retains its own collapse/expand control. */}
+      {hasChild && (
+        <div className="relative mt-6">
+          {childrenCollapsed && (
+            <button
+              type="button"
+              aria-label={labels.show_replies}
+              aria-expanded={false}
+              {...expandThreadEvents}
+              className="relative ml-2 hidden h-7 cursor-pointer md:block"
             >
-              {childReplyCountLabel}
-            </span>
-          </button>
-        ) : (
-          <div className="relative mt-6">
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none absolute left-2 top-0 h-4 w-8 rounded-bl-xl border-b border-l transition-colors ${curveColor}`}
+              />
+              <span className="ml-11 flex h-4 items-end whitespace-nowrap text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                {childReplyCountLabel}
+              </span>
+            </button>
+          )}
+
+          <div
+            className={`relative space-y-5 ${childrenCollapsed ? "md:hidden" : ""}`}
+          >
             {childReplies.map((childReply, index) => {
               const isLastChild = index === childReplies.length - 1;
 
               return (
-                <div key={childReply.id} className="relative pl-12">
-                  {/* Vertical rail */}
-
+                <div key={childReply.id} className="relative md:pl-12">
+                  {/* Desktop vertical rail */}
                   <button
                     type="button"
                     aria-label={labels.collapse_replies}
                     {...collapseThreadEvents}
-                    className={`
-                      absolute left-2 -top-6 z-0 w-5 cursor-pointer
-                      ${isLastChild ? "h-7" : "-bottom-1"}
-                    `}
+                    className={`absolute left-2 -top-6 z-0 hidden w-5 cursor-pointer md:block ${isLastChild ? "h-7" : "-bottom-1"}`}
                   >
                     <span
-                      className={`
-                        pointer-events-none absolute
-                        left-2 -top-2 bottom-0 w-px
-                        transition-colors
-                        ${railColor}
-                      `}
+                      aria-hidden="true"
+                      className={`pointer-events-none absolute left-2 -top-2 bottom-0 w-px transition-colors ${railColor}`}
                     />
                   </button>
 
-                  {/* Curve */}
-
+                  {/* Desktop curved connector */}
                   <button
                     type="button"
                     aria-label={labels.collapse_replies}
                     {...collapseThreadEvents}
-                    className="
-                      absolute left-2 top-0 z-0
-                      h-4 w-10 cursor-pointer
-                    "
+                    className="absolute left-2 top-0 z-0 hidden h-4 w-10 cursor-pointer md:block"
                   >
                     <span
-                      className={`
-                        pointer-events-none absolute left-2 top-0
-                        h-4 w-8 rounded-bl-xl border-b border-l
-                        transition-colors
-                        ${curveColor}
-                      `}
+                      aria-hidden="true"
+                      className={`pointer-events-none absolute left-2 top-0 h-4 w-8 rounded-bl-xl border-b border-l transition-colors ${curveColor}`}
                     />
                   </button>
 
@@ -618,7 +595,8 @@ export function ReplyItem({
               );
             })}
           </div>
-        ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -630,6 +608,7 @@ export function ReplyItem({
 interface ReplyTextContentProps {
   content: string;
   editedLabel?: string;
+  replyingTo?: string;
   readMoreLabel: string;
   readLessLabel: string;
 }
@@ -640,6 +619,7 @@ const MAX_EXPANDED_HEIGHT = 480;
 export function ReplyTextContent({
   content,
   editedLabel,
+  replyingTo,
   readMoreLabel,
   readLessLabel,
 }: ReplyTextContentProps) {
@@ -768,6 +748,11 @@ export function ReplyTextContent({
               wordBreak: "normal",
             }}
           >
+            {replyingTo && (
+              <span className="font-medium text-zinc-500 dark:text-zinc-400 md:hidden">
+                @{replyingTo}{" "}
+              </span>
+            )}
             {displayContent}
 
             {editedLabel && (
