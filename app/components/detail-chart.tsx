@@ -10,8 +10,8 @@ import {
   Plus,
   Minus,
   RotateCcw,
-  Camera,
   LoaderCircle,
+  SquareDashedMousePointer,
 } from "lucide-react";
 import { toast } from "sonner";
 import { resolveLanguage } from "@/lib/data/languages";
@@ -140,11 +140,11 @@ export function DetailChart({
   const marketLabels = MARKET_LABELS[language];
 
   const [chartType, setChartType] = useState<ChartType>("area");
-  // Moving averages are available in all three chart modes.
+
   const [showMA5, setShowMA5] = useState(false);
   const [showMA20, setShowMA20] = useState(false);
   const [showMA60, setShowMA60] = useState(false);
-  // Restore preferences after mount without changing server-rendered markup.
+
   const preferencesLoaded = useRef(false);
   useEffect(() => {
     try {
@@ -1326,7 +1326,8 @@ export function DetailChart({
               <button
                 key={option.id}
                 type="button"
-                aria-label={`${option.label} chart`}
+                aria-label={marketLabels[option.id]}
+                title={marketLabels[option.id]}
                 aria-pressed={isSelected}
                 onClick={() => {
                   setChartType(option.id);
@@ -1346,7 +1347,6 @@ export function DetailChart({
         <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
-            data-capture-exclude="true"
             onClick={() => void captureChart()}
             disabled={capturing}
             aria-label={marketLabels.copy_chart_image}
@@ -1356,16 +1356,17 @@ export function DetailChart({
             {capturing ? (
               <LoaderCircle className="size-4 animate-spin" />
             ) : (
-              <Camera className="size-4" strokeWidth={2} />
+              <SquareDashedMousePointer className="size-4" strokeWidth={2} />
             )}
           </button>
           <button
             type="button"
             onClick={onClick}
-            aria-label="Close chart"
-            className="mr-2 flex size-7 cursor-pointer items-center justify-center rounded-sm text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-100 dark:hover:text-white"
+            aria-label={marketLabels.minimize}
+            title={marketLabels.minimize}
+            className="flex size-8 cursor-pointer items-center justify-center rounded-sm text-zinc-600 transition-colors hover:bg-zinc-200/60 hover:text-zinc-900 disabled:cursor-wait disabled:opacity-50 dark:text-zinc-300 dark:hover:bg-zinc-700/50 dark:hover:text-white"
           >
-            <Minimize2 className="size-5" strokeWidth={1.5} />
+            <Minimize2 className="size-4" strokeWidth={2} />
           </button>
         </div>
       </div>
@@ -1488,21 +1489,21 @@ export function DetailChart({
                 checked: showMA5,
                 toggle: () => setShowMA5((v) => !v),
                 color: "#2563eb",
-                title: "Average closing price over 5 candles",
+                title: marketLabels.ma_5,
               },
               {
                 label: "MA 20",
                 checked: showMA20,
                 toggle: () => setShowMA20((v) => !v),
                 color: "#d97706",
-                title: "Average closing price over 20 candles",
+                title: marketLabels.ma_20,
               },
               {
                 label: "MA 60",
                 checked: showMA60,
                 toggle: () => setShowMA60((v) => !v),
                 color: "#9333ea",
-                title: "Average closing price over 60 candles",
+                title: marketLabels.ma_60,
               },
             ] as const
           ).map((indicator) => (
@@ -1885,8 +1886,8 @@ export function DetailChart({
         <div className="ml-auto flex shrink-0 items-center gap-1 dark:text-zinc-100">
           <button
             type="button"
-            aria-label="Zoom out"
-            title="Zoom out"
+            aria-label={marketLabels.zoom_out}
+            title={marketLabels.zoom_out}
             disabled={visibleSpan >= 0.999}
             onPointerDown={(event) => {
               if (event.button === 0) startHolding(1.12);
@@ -1903,8 +1904,8 @@ export function DetailChart({
           </button>
           <button
             type="button"
-            aria-label="Zoom in"
-            title="Zoom in"
+            aria-label={marketLabels.zoom_in}
+            title={marketLabels.zoom_in}
             disabled={visibleSpan <= minZoomSpan + 0.0001}
             onPointerDown={(event) => {
               if (event.button === 0) startHolding(1 / 1.12);
@@ -1921,8 +1922,8 @@ export function DetailChart({
           </button>
           <button
             type="button"
-            aria-label="Reset zoom"
-            title="Reset zoom"
+            aria-label={marketLabels.reset}
+            title={marketLabels.reset}
             disabled={visibleSpan >= 0.999}
             onClick={resetZoom}
             className="flex size-8 cursor-pointer items-center justify-center rounded-md text-zinc-600 hover:bg-zinc-200/60 disabled:cursor-not-allowed disabled:opacity-30 dark:text-zinc-300 dark:hover:bg-zinc-700/50"
