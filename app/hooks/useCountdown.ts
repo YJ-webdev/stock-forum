@@ -19,7 +19,7 @@ const INITIAL_STATE: CountdownState = {
 export function useCountdown(
   targetDate: Date | string | number | null,
   onExpire?: () => void,
-) {
+): CountdownState {
   const [timeLeft, setTimeLeft] = useState<CountdownState>(INITIAL_STATE);
 
   const onExpireRef = useRef(onExpire);
@@ -30,7 +30,9 @@ export function useCountdown(
       ? null
       : targetDate instanceof Date
         ? targetDate.getTime()
-        : new Date(targetDate).getTime();
+        : typeof targetDate === "number"
+          ? targetDate
+          : new Date(targetDate).getTime();
 
   useEffect(() => {
     onExpireRef.current = onExpire;
@@ -46,9 +48,12 @@ export function useCountdown(
     let timer: number | null = null;
 
     function updateCountdown() {
-      const difference = targetMs! - Date.now();
+      if (targetMs === null) return;
+
+      const difference = targetMs - Date.now();
       const isExpired = difference <= 0;
-      const totalSeconds = Math.max(0, Math.floor(difference / 1000));
+
+      const totalSeconds = Math.max(0, Math.ceil(difference / 1000));
 
       const next: CountdownState = {
         hours: String(Math.floor(totalSeconds / 3600)).padStart(2, "0"),
@@ -74,10 +79,12 @@ export function useCountdown(
           expiredTargetRef.current = targetMs;
           onExpireRef.current?.();
         }
+
         return;
       }
 
       expiredTargetRef.current = null;
+
       timer = window.setTimeout(updateCountdown, 1000);
     }
 

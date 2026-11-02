@@ -213,6 +213,9 @@ export const MARKET_LABELS: Record<
     prev_close: string;
     lunch_break: string;
     price: string;
+    copy_chart_image: string;
+    chart_image_copied: string;
+    chart_image_copy_failed: string;
     interval: {
       intraday: string;
       minute: string;
@@ -228,6 +231,9 @@ export const MARKET_LABELS: Record<
     prev_close: "Previous close",
     lunch_break: "Lunch break",
     price: "Price",
+    copy_chart_image: "Copy chart image",
+    chart_image_copied: "Chart image copied to clipboard.",
+    chart_image_copy_failed: "Failed to copy chart image.",
     interval: {
       intraday: "Intraday",
       minute: "Min",
@@ -242,6 +248,9 @@ export const MARKET_LABELS: Record<
     prev_close: "전일 종가",
     lunch_break: "점심 휴장",
     price: "가격",
+    copy_chart_image: "차트 이미지 복사",
+    chart_image_copied: "차트 이미지가 클립보드에 복사되었습니다.",
+    chart_image_copy_failed: "차트 이미지 복사에 실패했습니다.",
     interval: {
       intraday: "장중",
       minute: "분",
@@ -256,6 +265,9 @@ export const MARKET_LABELS: Record<
     prev_close: "前日終値",
     lunch_break: "昼休み",
     price: "価格",
+    copy_chart_image: "チャート画像をコピー",
+    chart_image_copied: "チャート画像がクリップボードにコピーされました。",
+    chart_image_copy_failed: "チャート画像のコピーに失敗しました。",
     interval: {
       intraday: "日中",
       minute: "分",
@@ -270,6 +282,9 @@ export const MARKET_LABELS: Record<
     prev_close: "前收盘价",
     lunch_break: "午间休市",
     price: "价格",
+    copy_chart_image: "复制图表图像",
+    chart_image_copied: "图表图像已复制到剪贴板。",
+    chart_image_copy_failed: "图表图像复制失败。",
     interval: {
       intraday: "日内",
       minute: "分钟",
@@ -284,6 +299,9 @@ export const MARKET_LABELS: Record<
     prev_close: "Vorheriger Schlusskurs",
     lunch_break: "Mittagspause",
     price: "Preis",
+    copy_chart_image: "Diagrammbild kopieren",
+    chart_image_copied: "Diagrammbild in die Zwischenablage kopiert.",
+    chart_image_copy_failed: "Fehler beim Kopieren des Diagrammbildes.",
     interval: {
       intraday: "Intraday",
       minute: "Min.",
@@ -305,6 +323,9 @@ export const MARKET_LABELS: Record<
       weekly: "Hebdomadaire",
       monthly: "Mensuel",
     },
+    copy_chart_image: "",
+    chart_image_copied: "",
+    chart_image_copy_failed: "",
   },
   es: {
     data_delayed: "Retraso de {minutes} min",
@@ -319,6 +340,9 @@ export const MARKET_LABELS: Record<
       weekly: "Semanal",
       monthly: "Mensual",
     },
+    copy_chart_image: "",
+    chart_image_copied: "",
+    chart_image_copy_failed: "",
   },
   pt: {
     data_delayed: "Atraso de {minutes} min",
@@ -333,6 +357,9 @@ export const MARKET_LABELS: Record<
       weekly: "Semanal",
       monthly: "Mensal",
     },
+    copy_chart_image: "",
+    chart_image_copied: "",
+    chart_image_copy_failed: "",
   },
   it: {
     data_delayed: "Ritardo di {minutes} min",
@@ -347,6 +374,9 @@ export const MARKET_LABELS: Record<
       weekly: "Settimanale",
       monthly: "Mensile",
     },
+    copy_chart_image: "",
+    chart_image_copied: "",
+    chart_image_copy_failed: "",
   },
   ru: {
     data_delayed: "Задержка {minutes} мин",
@@ -361,6 +391,9 @@ export const MARKET_LABELS: Record<
       weekly: "Недельный",
       monthly: "Месячный",
     },
+    copy_chart_image: "",
+    chart_image_copied: "",
+    chart_image_copy_failed: "",
   },
   ar: {
     data_delayed: "تأخير {minutes} دقيقة",
@@ -375,6 +408,9 @@ export const MARKET_LABELS: Record<
       weekly: "أسبوعي",
       monthly: "شهري",
     },
+    copy_chart_image: "",
+    chart_image_copied: "",
+    chart_image_copy_failed: "",
   },
   hi: {
     data_delayed: "{minutes} मिनट की देरी",
@@ -389,6 +425,9 @@ export const MARKET_LABELS: Record<
       weekly: "साप्ताहिक",
       monthly: "मासिक",
     },
+    copy_chart_image: "",
+    chart_image_copied: "",
+    chart_image_copy_failed: "",
   },
 };
 
@@ -5459,6 +5498,154 @@ export const REPLY_EDIT_LABELS: Record<
   },
 };
 
+export const IMAGE_BUTTON_LABELS: Record<
+  Language,
+  {
+    attach: string;
+    uploading: string;
+    login: string;
+    restricted: string;
+    tooLarge: string;
+    unsupported: string;
+    invalid: string;
+    failed: string;
+    remove: string;
+  }
+> = {
+  en: {
+    attach: "Attach image",
+    uploading: "Uploading image...",
+    login: "Log in to attach images.",
+    restricted: "You cannot attach images to comments.",
+    tooLarge: "Image must be 4 MB or smaller.",
+    unsupported: "Only JPEG, PNG, and WebP images are supported.",
+    invalid: "Invalid image. Please try another.",
+    failed: "Failed to upload image.",
+    remove: "Remove image",
+  },
+  ko: {
+    attach: "이미지 첨부",
+    uploading: "이미지 업로드 중...",
+    login: "이미지를 첨부하려면 로그인하세요.",
+    restricted: "이미지를 첨부할 수 없는 계정입니다.",
+    tooLarge: "이미지는 4MB 이하여야 합니다.",
+    unsupported: "JPEG, PNG, WebP 이미지만 지원합니다.",
+    invalid: "올바르지 않은 이미지입니다. 다른 이미지를 선택해 주세요.",
+    failed: "이미지를 업로드하지 못했습니다.",
+    remove: "이미지 제거",
+  },
+  ja: {
+    attach: "画像を添付",
+    uploading: "画像をアップロード中...",
+    login: "画像を添付するにはログインしてください。",
+    restricted: "このアカウントでは画像を添付できません。",
+    tooLarge: "画像は4MB以下にしてください。",
+    unsupported: "JPEG、PNG、WebP形式のみ対応しています。",
+    invalid: "無効な画像です。別の画像を選択してください。",
+    failed: "画像のアップロードに失敗しました。",
+    remove: "画像を削除",
+  },
+  zh: {
+    attach: "添加图片",
+    uploading: "正在上传图片...",
+    login: "请登录后添加图片。",
+    restricted: "此账号无法添加图片。",
+    tooLarge: "图片大小不能超过 4 MB。",
+    unsupported: "仅支持 JPEG、PNG 和 WebP 格式。",
+    invalid: "图片无效，请选择其他图片。",
+    failed: "图片上传失败。",
+    remove: "移除图片",
+  },
+  de: {
+    attach: "Bild anhängen",
+    uploading: "Bild wird hochgeladen...",
+    login: "Melde dich an, um Bilder anzuhängen.",
+    restricted: "Du kannst keine Bilder anhängen.",
+    tooLarge: "Das Bild darf höchstens 4 MB groß sein.",
+    unsupported: "Nur JPEG-, PNG- und WebP-Bilder werden unterstützt.",
+    invalid: "Ungültiges Bild. Bitte wähle ein anderes.",
+    failed: "Bild konnte nicht hochgeladen werden.",
+    remove: "Bild entfernen",
+  },
+  fr: {
+    attach: "Joindre une image",
+    uploading: "Envoi de l'image...",
+    login: "Connectez-vous pour joindre des images.",
+    restricted: "Vous ne pouvez pas joindre d'images.",
+    tooLarge: "L'image ne doit pas dépasser 4 Mo.",
+    unsupported: "Seuls les formats JPEG, PNG et WebP sont acceptés.",
+    invalid: "Image invalide. Veuillez en choisir une autre.",
+    failed: "Échec de l'envoi de l'image.",
+    remove: "Supprimer l'image",
+  },
+  es: {
+    attach: "Adjuntar imagen",
+    uploading: "Subiendo imagen...",
+    login: "Inicia sesión para adjuntar imágenes.",
+    restricted: "No puedes adjuntar imágenes.",
+    tooLarge: "La imagen debe tener un tamaño máximo de 4 MB.",
+    unsupported: "Solo se admiten imágenes JPEG, PNG y WebP.",
+    invalid: "Imagen no válida. Selecciona otra.",
+    failed: "No se pudo subir la imagen.",
+    remove: "Eliminar imagen",
+  },
+  pt: {
+    attach: "Anexar imagem",
+    uploading: "Enviando imagem...",
+    login: "Entre na sua conta para anexar imagens.",
+    restricted: "Você não pode anexar imagens.",
+    tooLarge: "A imagem deve ter no máximo 4 MB.",
+    unsupported: "Apenas imagens JPEG, PNG e WebP são aceitas.",
+    invalid: "Imagem inválida. Selecione outra.",
+    failed: "Não foi possível enviar a imagem.",
+    remove: "Remover imagem",
+  },
+  it: {
+    attach: "Allega immagine",
+    uploading: "Caricamento immagine...",
+    login: "Accedi per allegare immagini.",
+    restricted: "Non puoi allegare immagini.",
+    tooLarge: "L'immagine non deve superare i 4 MB.",
+    unsupported: "Sono supportati solo i formati JPEG, PNG e WebP.",
+    invalid: "Immagine non valida. Selezionane un'altra.",
+    failed: "Impossibile caricare l'immagine.",
+    remove: "Rimuovi immagine",
+  },
+  ru: {
+    attach: "Прикрепить изображение",
+    uploading: "Загрузка изображения...",
+    login: "Войдите, чтобы прикреплять изображения.",
+    restricted: "Вы не можете прикреплять изображения.",
+    tooLarge: "Размер изображения не должен превышать 4 МБ.",
+    unsupported: "Поддерживаются только JPEG, PNG и WebP.",
+    invalid: "Недопустимое изображение. Выберите другое.",
+    failed: "Не удалось загрузить изображение.",
+    remove: "Удалить изображение",
+  },
+  ar: {
+    attach: "إرفاق صورة",
+    uploading: "جارٍ رفع الصورة...",
+    login: "سجّل الدخول لإرفاق الصور.",
+    restricted: "لا يمكنك إرفاق الصور.",
+    tooLarge: "يجب ألا يتجاوز حجم الصورة 4 ميغابايت.",
+    unsupported: "يُسمح فقط بصور JPEG وPNG وWebP.",
+    invalid: "الصورة غير صالحة. يُرجى اختيار صورة أخرى.",
+    failed: "تعذّر رفع الصورة.",
+    remove: "إزالة الصورة",
+  },
+  hi: {
+    attach: "इमेज अटैच करें",
+    uploading: "इमेज अपलोड हो रही है...",
+    login: "इमेज अटैच करने के लिए लॉग इन करें।",
+    restricted: "आप इमेज अटैच नहीं कर सकते।",
+    tooLarge: "इमेज का साइज़ 4 MB या उससे कम होना चाहिए।",
+    unsupported: "केवल JPEG, PNG और WebP इमेज समर्थित हैं।",
+    invalid: "अमान्य इमेज। कृपया दूसरी इमेज चुनें।",
+    failed: "इमेज अपलोड नहीं हो सकी।",
+    remove: "इमेज हटाएँ",
+  },
+};
+
 export const MARKET_ACTION_LABELS: Record<
   Language,
   {
@@ -7020,75 +7207,75 @@ export const EDIT_VOTE_LABELS: Record<
   }
 > = {
   en: {
-    save: "Save changes",
+    save: "Save",
     saving: "Saving...",
     cancel: "Cancel",
     locked: "Voting has already closed.",
   },
   ko: {
-    save: "수정 저장",
+    save: "저장",
     saving: "저장 중...",
     cancel: "취소",
     locked: "이미 마감된 투표입니다.",
   },
   ja: {
-    save: "変更を保存",
+    save: "保存",
     saving: "保存中...",
-    cancel: "キャンセル",
+    cancel: "取消",
     locked: "投票はすでに締め切られています。",
   },
   zh: {
-    save: "保存修改",
+    save: "保存",
     saving: "保存中...",
     cancel: "取消",
     locked: "投票已截止。",
   },
   de: {
-    save: "Änderungen speichern",
-    saving: "Speichern...",
+    save: "Speichern",
+    saving: "Speichert...",
     cancel: "Abbrechen",
     locked: "Die Abstimmung ist bereits geschlossen.",
   },
   fr: {
     save: "Enregistrer",
-    saving: "Enregistrement...",
+    saving: "En cours...",
     cancel: "Annuler",
     locked: "Le vote est déjà clos.",
   },
   es: {
-    save: "Guardar cambios",
+    save: "Guardar",
     saving: "Guardando...",
     cancel: "Cancelar",
     locked: "La votación ya ha finalizado.",
   },
   pt: {
-    save: "Salvar alterações",
+    save: "Salvar",
     saving: "Salvando...",
     cancel: "Cancelar",
     locked: "A votação já foi encerrada.",
   },
   it: {
-    save: "Salva modifiche",
+    save: "Salva",
     saving: "Salvataggio...",
     cancel: "Annulla",
     locked: "Le votazioni sono già chiuse.",
   },
   ru: {
-    save: "Сохранить изменения",
+    save: "Сохранить",
     saving: "Сохранение...",
     cancel: "Отмена",
     locked: "Голосование уже завершено.",
   },
   ar: {
-    save: "حفظ التغييرات",
+    save: "حفظ",
     saving: "جارٍ الحفظ...",
     cancel: "إلغاء",
     locked: "لقد أُغلق التصويت بالفعل.",
   },
   hi: {
-    save: "बदलाव सहेजें",
+    save: "सहेजें",
     saving: "सहेजा जा रहा है...",
-    cancel: "रद्द करें",
+    cancel: "रद्द",
     locked: "मतदान पहले ही समाप्त हो चुका है।",
   },
 };

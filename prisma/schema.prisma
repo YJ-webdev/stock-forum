@@ -258,26 +258,27 @@ model CommentAsset {
 model Reply {
   id String @id @default(cuid())
 
-  content    String
-  gifUrl     String?
-  gifWidth   Int?
-  gifHeight  Int?
+  content     String
+  gifUrl      String?
+  gifWidth    Int?
+  gifHeight   Int?
+
+  imageUrl    String?
+  imageWidth  Int?
+  imageHeight Int?
+
   visibility ContentVisibility @default(PUBLIC)
 
-  // Comment this reply belongs to
   commentId String
   comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
-  // Author
   authorId String
   author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  // Parent reply
   parentId String?
   parent   Reply? @relation("ReplyThread", fields: [parentId], references: [id], onDelete: Cascade)
 
-  // Child replies
-  replies       Reply[]        @relation("ReplyThread")
+  replies       Reply[]       @relation("ReplyThread")
   notifications Notification[]
   likes         ReplyLike[]
 

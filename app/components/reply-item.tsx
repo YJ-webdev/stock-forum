@@ -27,17 +27,14 @@ import { formatTimeAgo } from "@/lib/utils/format-time-ago";
 import { getErrorMessage } from "@/lib/utils/get-error-message";
 import { getGifDimensions } from "@/lib/utils/gif-dimensions";
 
+import { CommentImageViewer } from "./comment-image-viewer";
 import { ContentActionsMenu } from "./content-actions-menu";
 import { UserProfileTrigger, type ProfileUser } from "./profile-card";
 
 import type { MarketReply } from "./comment";
 
-const ReplyEditInput = dynamic(() =>
-  import("./reply-edit-input").then((module) => module.ReplyEditInput),
-);
-
-const ReplyInput = dynamic(() =>
-  import("./reply-input").then((module) => module.ReplyInput),
+const ReplyEditor = dynamic(() =>
+  import("./reply-editor").then((module) => module.ReplyEditor),
 );
 
 interface ReplyItemProps {
@@ -394,12 +391,9 @@ export function ReplyItem({
               {labels.hidden_reply}
             </p>
           ) : isEditing ? (
-            <ReplyEditInput
-              replyId={reply.id}
-              initialContent={reply.content}
-              initialGifUrl={reply.gifUrl}
-              initialGifWidth={reply.gifWidth}
-              initialGifHeight={reply.gifHeight}
+            <ReplyEditor
+              mode="edit"
+              reply={reply}
               onCancel={() => setIsEditing(false)}
               onSaved={async () => {
                 setIsEditing(false);
@@ -418,6 +412,15 @@ export function ReplyItem({
                 />
               )}
 
+              {reply.imageUrl && (
+                <CommentImageViewer
+                  src={reply.imageUrl}
+                  alt="Image"
+                  width={reply.imageWidth ?? undefined}
+                  height={reply.imageHeight ?? undefined}
+                />
+              )}
+
               {reply.gifUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -433,10 +436,14 @@ export function ReplyItem({
                   "
                 />
               )}
+
+              {!reply.content && reply.editedAt && (
+                <span className="mt-1 block text-[12px] text-zinc-400">
+                  {labels.edited}
+                </span>
+              )}
             </>
           )}
-
-          {/* Actions */}
 
           {!reply.moderatedAt && !isEditing && (
             <div className="mt-2 flex items-center gap-4">
@@ -490,10 +497,9 @@ export function ReplyItem({
             </div>
           )}
 
-          {/* Reply input */}
-
           {!reply.moderatedAt && showReplyInput && (
-            <ReplyInput
+            <ReplyEditor
+              mode="create"
               commentId={reply.commentId}
               parentId={reply.id}
               username={username}

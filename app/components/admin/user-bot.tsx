@@ -28,16 +28,16 @@ import {
 } from "@/components/ui/select";
 
 import { CommentItem } from "@/app/components/comment-item";
-import { CommentOnlyInput } from "@/app/components/comment-only-input";
 import { PredictionCommentInput } from "@/app/components/prediction-comment-input";
 import type { GifResult } from "@/app/components/gif-picker";
 
 import { CreateBotUser } from "./create-bot-user";
 import { EditBotUser } from "./edit-bot-user";
+import dynamic from "next/dynamic";
 
-// -----------------------------------------------------------------------------
-// Types and constants
-// -----------------------------------------------------------------------------
+const CommentEditor = dynamic(() =>
+  import("../comment-editor").then((module) => module.CommentEditor),
+);
 
 type BotProfile = Awaited<ReturnType<typeof getBotUsers>>[number];
 type BotMarketState = Awaited<ReturnType<typeof getBotMarketState>>;
@@ -805,7 +805,8 @@ export function UserBot({ bots: initialBots, currentUser }: UserBotProps) {
 
               <fieldset disabled={isBusy} className="min-w-0 border-0 p-0">
                 {mode === "comment" ? (
-                  <CommentOnlyInput
+                  <CommentEditor
+                    mode="create"
                     key={composerKey}
                     assetSymbol={selectedMarket.symbol}
                     currentUser={selectedBot}

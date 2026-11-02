@@ -43,7 +43,7 @@ import { GifPreview } from "./gif-preview";
 import { ImagePreview } from "./image-preview";
 import { VotingCountdown } from "./voting-countdown";
 import type { GifResult } from "./gif-picker";
-import { MediaButtons } from "./media-buttons";
+import { MediaButtons, type MediaButtonsHandle } from "./media-buttons";
 
 type VoteDirection = "BULL" | "BEAR";
 
@@ -296,6 +296,35 @@ export function PredictionCommentInput({
 
   const [commentPending, startCommentTransition] = useTransition();
   const [imageUploading, setImageUploading] = useState(false);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+  const localPreviewRef = useRef<string | null>(null);
+  const uploadedImageRef = useRef<CommentImage | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (localPreviewRef.current) URL.revokeObjectURL(localPreviewRef.current);
+    };
+  }, []);
+
+  function clearLocalPreview() {
+    const url = localPreviewRef.current;
+    localPreviewRef.current = null;
+    setLocalPreviewUrl(null);
+    if (url) URL.revokeObjectURL(url);
+  }
+
+  function handleImagePreview(url: string, _file: File) {
+    clearLocalPreview();
+    localPreviewRef.current = url;
+    setLocalPreviewUrl(url);
+    uploadedImageRef.current = null;
+    setSelectedImage(null);
+    setSelectedGif(null);
+  }
+
+  function handleImageUploadError() {
+    clearLocalPreview();
+  }
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const submittingRef = useRef(false);
@@ -338,7 +367,7 @@ export function PredictionCommentInput({
 
   const canWriteComment = showCommentEditor && isLoggedIn && !isChatRestricted;
 
-  const chatDisabled = busy || isChatRestricted || !showCommentEditor;
+  const chatDisabled = savePending || isChatRestricted || !showCommentEditor;
 
   const controlsDisabled = buttonDisabled || busy || isMarketOpen || voteLocked;
 
@@ -362,6 +391,7 @@ export function PredictionCommentInput({
 
   const hasChanges = commentChanged || voteChanged;
   const saveUnchanged = isEditing && !hasChanges;
+  const mediaButtonsRef = useRef<MediaButtonsHandle>(null);
 
   const availablePoints = Number.isFinite(userPoints)
     ? Math.max(0, userPoints)
@@ -384,9 +414,6 @@ export function PredictionCommentInput({
 
   const showMax = pointsLimit > 0 && betAmount >= pointsLimit;
   const lockedVoteLabel = editLabels.locked;
-
-  const showClosingCountdown =
-    !voteLocked && showCountdown && countdownType === "VOTING_CLOSES";
 
   const holdStateRef = useRef({
     pointsDisabled,
@@ -567,6 +594,9 @@ export function PredictionCommentInput({
     }
 
     setSelectedGif(gif);
+    uploadedImageRef.current = null;
+    setSelectedImage(null);
+    clearLocalPreview();
   }
 
   function handleGifRemove() {
@@ -583,12 +613,14 @@ export function PredictionCommentInput({
   }
 
   function handleImageSelect(image: CommentImage) {
-    // ImageButton calls this before clearing its uploading state.
     if (!canWriteComment || savePending || submittingRef.current) {
       return;
     }
 
+    uploadedImageRef.current = image;
     setSelectedImage(image);
+    setSelectedGif(null);
+    clearLocalPreview();
   }
 
   function handleImageRemove() {
@@ -601,7 +633,10 @@ export function PredictionCommentInput({
       return;
     }
 
+    mediaButtonsRef.current?.cancelUpload();
+    uploadedImageRef.current = null;
     setSelectedImage(null);
+    clearLocalPreview();
   }
 
   function handleCancel() {
@@ -664,9 +699,8 @@ export function PredictionCommentInput({
     if (
       chatDisabled ||
       submittingRef.current ||
-      imageUploadingRef.current ||
       !canWriteComment ||
-      !hasContent
+      (!hasContent && !localPreviewUrl)
     ) {
       return;
     }
@@ -675,10 +709,16 @@ export function PredictionCommentInput({
 
     startCommentTransition(async () => {
       try {
+        let imageToSubmit = uploadedImageRef.current ?? selectedImage;
+        if (imageUploadingRef.current) {
+          const uploaded = await mediaButtonsRef.current?.waitForUpload();
+          if (!uploaded) return;
+          imageToSubmit = uploaded;
+        }
         const content = buildCommentContent(
           comment,
           selectedGif,
-          selectedImage,
+          imageToSubmit,
         );
 
         let createdComment: MarketPageComments[number] | undefined;
@@ -703,6 +743,8 @@ export function PredictionCommentInput({
         }
 
         clearDraft();
+        uploadedImageRef.current = null;
+        clearLocalPreview();
 
         toast.success(commentLabels.success);
 
@@ -719,10 +761,10 @@ export function PredictionCommentInput({
     });
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     stopPointsHold();
 
-    if (busy || submittingRef.current || imageUploadingRef.current) {
+    if (savePending || submittingRef.current) {
       return;
     }
 
@@ -731,7 +773,7 @@ export function PredictionCommentInput({
       return;
     }
 
-    if (saveUnchanged) {
+    if (saveUnchanged && !localPreviewUrl) {
       handleUnchangedSave();
       return;
     }
@@ -747,7 +789,7 @@ export function PredictionCommentInput({
         return;
       }
 
-      if (!hasContent) {
+      if (!hasContent && !localPreviewUrl) {
         toast.error(validationLabels.content);
         textareaRef.current?.focus({ preventScroll: true });
         return;
@@ -757,17 +799,24 @@ export function PredictionCommentInput({
       return;
     }
 
+    let imageToSubmit = uploadedImageRef.current ?? selectedImage;
+    if (imageUploadingRef.current) {
+      const uploaded = await mediaButtonsRef.current?.waitForUpload();
+      if (!uploaded) return;
+      imageToSubmit = uploaded;
+    }
+
     if (isCombinedEdit && voteLocked) {
       if (buttonDisabled) {
         toast.error(validationLabels.unavailable);
         return;
       }
 
-      submitVote(comment, selectedGif, selectedImage);
+      submitVote(comment, selectedGif, imageToSubmit);
       return;
     }
 
-    if (controlsDisabled) {
+    if (buttonDisabled || savePending || isMarketOpen || voteLocked) {
       if (voteLocked) {
         handleLockedVoteClick();
       } else {
@@ -791,7 +840,7 @@ export function PredictionCommentInput({
       submitVote(
         isCombinedEdit ? comment : "",
         isCombinedEdit ? selectedGif : null,
-        isCombinedEdit ? selectedImage : null,
+        isCombinedEdit ? imageToSubmit : null,
       );
       return;
     }
@@ -799,7 +848,7 @@ export function PredictionCommentInput({
     submitVote(
       canWriteComment ? comment : "",
       canWriteComment ? selectedGif : null,
-      canWriteComment ? selectedImage : null,
+      canWriteComment ? imageToSubmit : null,
     );
   }
 
@@ -816,6 +865,10 @@ export function PredictionCommentInput({
         : voteLabels.vote;
 
   const removeBottomMargin = variant === "popup" || isCombinedEdit;
+
+  function handleImagePaste(file: File) {
+    void mediaButtonsRef.current?.uploadImage(file);
+  }
 
   return (
     <div
@@ -986,13 +1039,9 @@ export function PredictionCommentInput({
             <CommentTextarea
               textareaRef={textareaRef}
               value={comment}
+              onImagePaste={handleImagePaste}
               onValueChange={(value) => {
-                if (
-                  !canWriteComment ||
-                  busy ||
-                  submittingRef.current ||
-                  imageUploadingRef.current
-                ) {
+                if (!canWriteComment || savePending || submittingRef.current) {
                   return;
                 }
 
@@ -1003,7 +1052,7 @@ export function PredictionCommentInput({
               }
               isLoggedIn={isLoggedIn}
               isChatRestricted={isChatRestricted}
-              busy={busy}
+              busy={savePending}
               loginMessage={commentLabels.login}
               restrictedMessage={commentLabels.restricted}
             />
@@ -1019,118 +1068,135 @@ export function PredictionCommentInput({
             />
           )}
 
-          {showCommentEditor && isLoggedIn && selectedImage && (
-            <ImagePreview
-              image={selectedImage}
-              removeLabel={imageLabels.remove}
-              disabled={!canWriteComment || chatDisabled}
-              onRemove={handleImageRemove}
-            />
-          )}
+          {showCommentEditor &&
+            isLoggedIn &&
+            (selectedImage || localPreviewUrl) && (
+              <ImagePreview
+                image={selectedImage}
+                previewUrl={localPreviewUrl}
+                uploading={imageUploading}
+                removeLabel={imageLabels.remove}
+                disabled={!canWriteComment || chatDisabled}
+                onRemove={handleImageRemove}
+              />
+            )}
 
+          {/* Footer: keep actions visible and move countdown below on narrow widths */}
           <div
             className={`
-              @container flex items-center justify-between
-              gap-2 pb-2
+              @container pb-2
               ${isEditing && !showCommentEditor ? "pt-3" : ""}
             `}
           >
-            <div className="flex shrink-0 items-center gap-1">
-              {showCommentEditor && (
-                <MediaButtons
-                  isLoggedIn={isLoggedIn}
-                  isChatRestricted={isChatRestricted}
-                  busy={savePending}
-                  imageLabels={imageLabels}
-                  gifLoginMessage={commentLabels.login_gif}
-                  restrictedMessage={commentLabels.restricted}
-                  isSubmitting={() => submittingRef.current}
-                  onImageSelect={handleImageSelect}
-                  onGifSelect={handleGifSelect}
-                  onUploadingChange={handleImageUploadingChange}
-                />
-              )}
-            </div>
-
-            <div className="flex min-w-0 items-center justify-end gap-2">
-              {showClosingCountdown && (
-                <div className="hidden @[380px]:block">
-                  <VotingCountdown
-                    targetMs={targetMs}
-                    type="VOTING_CLOSES"
-                    showCountdown={showClosingCountdown}
-                    isMarketOpen={isMarketOpen}
-                    userLanguage={language}
-                  />
-                </div>
-              )}
-
-              {isEditing && onCancel && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={handleCancel}
-                  className="
-                    shrink-0 cursor-pointer rounded-md px-2 py-1
-                    text-sm text-zinc-800 dark:text-zinc-200
-                    disabled:cursor-default disabled:opacity-50
-                  "
-                >
-                  {editLabels.cancel}
-                </button>
-              )}
-
-              <span className="relative inline-flex h-9 shrink-0 rounded-md">
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={busy || saveUnchanged}
-                  onClick={handleSubmit}
-                  className="
-                    h-full shrink-0
-                    cursor-pointer border-none
-                    bg-transparent text-zinc-800 shadow-none
-                    transition-colors hover:bg-transparent
-                    dark:bg-transparent dark:text-zinc-100
-                    dark:hover:bg-transparent
-                    disabled:cursor-not-allowed
-                    disabled:bg-transparent disabled:opacity-50
-                    dark:disabled:bg-transparent
-                  "
-                >
-                  {!isCommentOnly && (
-                    <Flag
-                      size={18}
-                      aria-hidden="true"
-                      className={
-                        direction === "BULL"
-                          ? "fill-emerald-600/50 dark:fill-emerald-600"
-                          : direction === "BEAR"
-                            ? "fill-rose-700/50 dark:fill-rose-700"
-                            : ""
-                      }
-                    />
-                  )}
-
-                  {imageUploading ? imageLabels.uploading : submitLabel}
-                </Button>
-
-                {saveUnchanged && !busy && (
-                  <button
-                    type="button"
-                    aria-label={`${submitLabel}: ${unchangedLabel}`}
-                    onClick={handleUnchangedSave}
-                    className="
-                      absolute inset-0
-                      cursor-not-allowed rounded-md
-                      focus-visible:outline-none
-                      focus-visible:ring-2
-                      focus-visible:ring-zinc-400
-                    "
+            <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-1">
+              <div className="flex shrink-0 items-center gap-1">
+                {showCommentEditor && (
+                  <MediaButtons
+                    ref={mediaButtonsRef}
+                    isLoggedIn={isLoggedIn}
+                    isChatRestricted={isChatRestricted}
+                    busy={savePending}
+                    imageLabels={imageLabels}
+                    gifLoginMessage={commentLabels.login_gif}
+                    restrictedMessage={commentLabels.restricted}
+                    isSubmitting={() => submittingRef.current}
+                    onImagePreview={handleImagePreview}
+                    onImageUploadError={handleImageUploadError}
+                    onImageSelect={handleImageSelect}
+                    onGifSelect={handleGifSelect}
+                    onUploadingChange={handleImageUploadingChange}
                   />
                 )}
-              </span>
+              </div>
+
+              <div className="flex min-w-0 flex-1 items-center justify-end gap-1">
+                {showCountdown && (
+                  <div className="hidden shrink-0 whitespace-nowrap @[400px]:block">
+                    <VotingCountdown
+                      targetMs={targetMs}
+                      showCountdown={showCountdown}
+                      isMarketOpen={isMarketOpen}
+                      userLanguage={language}
+                    />
+                  </div>
+                )}
+
+                {isEditing && onCancel && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={handleCancel}
+                    className="
+                      shrink-0 cursor-pointer rounded-md px-1.5 py-1
+                      text-sm text-zinc-800 dark:text-zinc-200
+                      disabled:cursor-default disabled:opacity-50
+                    "
+                  >
+                    {editLabels.cancel}
+                  </button>
+                )}
+
+                <span className="relative inline-flex h-9 shrink-0 rounded-md">
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={
+                      savePending || (saveUnchanged && !localPreviewUrl)
+                    }
+                    onClick={handleSubmit}
+                    className="
+                      h-full shrink-0 cursor-pointer border-none
+                      bg-transparent px-2 text-zinc-800 shadow-none
+                      transition-colors hover:bg-transparent
+                      dark:bg-transparent dark:text-zinc-100
+                      dark:hover:bg-transparent
+                      disabled:cursor-not-allowed
+                      disabled:bg-transparent disabled:opacity-50
+                      dark:disabled:bg-transparent
+                    "
+                  >
+                    {!isCommentOnly && (
+                      <Flag
+                        size={18}
+                        aria-hidden="true"
+                        className={
+                          direction === "BULL"
+                            ? "fill-emerald-600/50 dark:fill-emerald-600"
+                            : direction === "BEAR"
+                              ? "fill-rose-700/50 dark:fill-rose-700"
+                              : ""
+                        }
+                      />
+                    )}
+                    {imageUploading ? imageLabels.uploading : submitLabel}
+                  </Button>
+
+                  {saveUnchanged && !busy && (
+                    <button
+                      type="button"
+                      aria-label={`${submitLabel}: ${unchangedLabel}`}
+                      onClick={handleUnchangedSave}
+                      className="
+                        absolute inset-0 cursor-not-allowed rounded-md
+                        focus-visible:outline-none focus-visible:ring-2
+                        focus-visible:ring-zinc-400
+                      "
+                    />
+                  )}
+                </span>
+              </div>
             </div>
+
+            {showCountdown && (
+              <div className="flex justify-end @[400px]:hidden">
+                <VotingCountdown
+                  targetMs={targetMs}
+                  showCountdown={showCountdown}
+                  isMarketOpen={isMarketOpen}
+                  userLanguage={language}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

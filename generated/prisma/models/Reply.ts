@@ -29,11 +29,15 @@ export type AggregateReply = {
 export type ReplyAvgAggregateOutputType = {
   gifWidth: number | null
   gifHeight: number | null
+  imageWidth: number | null
+  imageHeight: number | null
 }
 
 export type ReplySumAggregateOutputType = {
   gifWidth: number | null
   gifHeight: number | null
+  imageWidth: number | null
+  imageHeight: number | null
 }
 
 export type ReplyMinAggregateOutputType = {
@@ -42,6 +46,9 @@ export type ReplyMinAggregateOutputType = {
   gifUrl: string | null
   gifWidth: number | null
   gifHeight: number | null
+  imageUrl: string | null
+  imageWidth: number | null
+  imageHeight: number | null
   visibility: $Enums.ContentVisibility | null
   commentId: string | null
   authorId: string | null
@@ -58,6 +65,9 @@ export type ReplyMaxAggregateOutputType = {
   gifUrl: string | null
   gifWidth: number | null
   gifHeight: number | null
+  imageUrl: string | null
+  imageWidth: number | null
+  imageHeight: number | null
   visibility: $Enums.ContentVisibility | null
   commentId: string | null
   authorId: string | null
@@ -74,6 +84,9 @@ export type ReplyCountAggregateOutputType = {
   gifUrl: number
   gifWidth: number
   gifHeight: number
+  imageUrl: number
+  imageWidth: number
+  imageHeight: number
   visibility: number
   commentId: number
   authorId: number
@@ -89,11 +102,15 @@ export type ReplyCountAggregateOutputType = {
 export type ReplyAvgAggregateInputType = {
   gifWidth?: true
   gifHeight?: true
+  imageWidth?: true
+  imageHeight?: true
 }
 
 export type ReplySumAggregateInputType = {
   gifWidth?: true
   gifHeight?: true
+  imageWidth?: true
+  imageHeight?: true
 }
 
 export type ReplyMinAggregateInputType = {
@@ -102,6 +119,9 @@ export type ReplyMinAggregateInputType = {
   gifUrl?: true
   gifWidth?: true
   gifHeight?: true
+  imageUrl?: true
+  imageWidth?: true
+  imageHeight?: true
   visibility?: true
   commentId?: true
   authorId?: true
@@ -118,6 +138,9 @@ export type ReplyMaxAggregateInputType = {
   gifUrl?: true
   gifWidth?: true
   gifHeight?: true
+  imageUrl?: true
+  imageWidth?: true
+  imageHeight?: true
   visibility?: true
   commentId?: true
   authorId?: true
@@ -134,6 +157,9 @@ export type ReplyCountAggregateInputType = {
   gifUrl?: true
   gifWidth?: true
   gifHeight?: true
+  imageUrl?: true
+  imageWidth?: true
+  imageHeight?: true
   visibility?: true
   commentId?: true
   authorId?: true
@@ -237,6 +263,9 @@ export type ReplyGroupByOutputType = {
   gifUrl: string | null
   gifWidth: number | null
   gifHeight: number | null
+  imageUrl: string | null
+  imageWidth: number | null
+  imageHeight: number | null
   visibility: $Enums.ContentVisibility
   commentId: string
   authorId: string
@@ -276,6 +305,9 @@ export type ReplyWhereInput = {
   gifUrl?: Prisma.StringNullableFilter<"Reply"> | string | null
   gifWidth?: Prisma.IntNullableFilter<"Reply"> | number | null
   gifHeight?: Prisma.IntNullableFilter<"Reply"> | number | null
+  imageUrl?: Prisma.StringNullableFilter<"Reply"> | string | null
+  imageWidth?: Prisma.IntNullableFilter<"Reply"> | number | null
+  imageHeight?: Prisma.IntNullableFilter<"Reply"> | number | null
   visibility?: Prisma.EnumContentVisibilityFilter<"Reply"> | $Enums.ContentVisibility
   commentId?: Prisma.StringFilter<"Reply"> | string
   authorId?: Prisma.StringFilter<"Reply"> | string
@@ -298,6 +330,9 @@ export type ReplyOrderByWithRelationInput = {
   gifUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   gifWidth?: Prisma.SortOrderInput | Prisma.SortOrder
   gifHeight?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageWidth?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageHeight?: Prisma.SortOrderInput | Prisma.SortOrder
   visibility?: Prisma.SortOrder
   commentId?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
@@ -323,6 +358,9 @@ export type ReplyWhereUniqueInput = Prisma.AtLeast<{
   gifUrl?: Prisma.StringNullableFilter<"Reply"> | string | null
   gifWidth?: Prisma.IntNullableFilter<"Reply"> | number | null
   gifHeight?: Prisma.IntNullableFilter<"Reply"> | number | null
+  imageUrl?: Prisma.StringNullableFilter<"Reply"> | string | null
+  imageWidth?: Prisma.IntNullableFilter<"Reply"> | number | null
+  imageHeight?: Prisma.IntNullableFilter<"Reply"> | number | null
   visibility?: Prisma.EnumContentVisibilityFilter<"Reply"> | $Enums.ContentVisibility
   commentId?: Prisma.StringFilter<"Reply"> | string
   authorId?: Prisma.StringFilter<"Reply"> | string
@@ -345,6 +383,9 @@ export type ReplyOrderByWithAggregationInput = {
   gifUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   gifWidth?: Prisma.SortOrderInput | Prisma.SortOrder
   gifHeight?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageWidth?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageHeight?: Prisma.SortOrderInput | Prisma.SortOrder
   visibility?: Prisma.SortOrder
   commentId?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
@@ -369,6 +410,9 @@ export type ReplyScalarWhereWithAggregatesInput = {
   gifUrl?: Prisma.StringNullableWithAggregatesFilter<"Reply"> | string | null
   gifWidth?: Prisma.IntNullableWithAggregatesFilter<"Reply"> | number | null
   gifHeight?: Prisma.IntNullableWithAggregatesFilter<"Reply"> | number | null
+  imageUrl?: Prisma.StringNullableWithAggregatesFilter<"Reply"> | string | null
+  imageWidth?: Prisma.IntNullableWithAggregatesFilter<"Reply"> | number | null
+  imageHeight?: Prisma.IntNullableWithAggregatesFilter<"Reply"> | number | null
   visibility?: Prisma.EnumContentVisibilityWithAggregatesFilter<"Reply"> | $Enums.ContentVisibility
   commentId?: Prisma.StringWithAggregatesFilter<"Reply"> | string
   authorId?: Prisma.StringWithAggregatesFilter<"Reply"> | string
@@ -385,6 +429,9 @@ export type ReplyCreateInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   editedAt?: Date | string | null
   moderatedAt?: Date | string | null
@@ -404,6 +451,9 @@ export type ReplyUncheckedCreateInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   commentId: string
   authorId: string
@@ -423,6 +473,9 @@ export type ReplyUpdateInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -442,6 +495,9 @@ export type ReplyUncheckedUpdateInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -461,6 +517,9 @@ export type ReplyCreateManyInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   commentId: string
   authorId: string
@@ -477,6 +536,9 @@ export type ReplyUpdateManyMutationInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -490,6 +552,9 @@ export type ReplyUncheckedUpdateManyInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -521,6 +586,9 @@ export type ReplyCountOrderByAggregateInput = {
   gifUrl?: Prisma.SortOrder
   gifWidth?: Prisma.SortOrder
   gifHeight?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
+  imageWidth?: Prisma.SortOrder
+  imageHeight?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
   commentId?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
@@ -534,6 +602,8 @@ export type ReplyCountOrderByAggregateInput = {
 export type ReplyAvgOrderByAggregateInput = {
   gifWidth?: Prisma.SortOrder
   gifHeight?: Prisma.SortOrder
+  imageWidth?: Prisma.SortOrder
+  imageHeight?: Prisma.SortOrder
 }
 
 export type ReplyMaxOrderByAggregateInput = {
@@ -542,6 +612,9 @@ export type ReplyMaxOrderByAggregateInput = {
   gifUrl?: Prisma.SortOrder
   gifWidth?: Prisma.SortOrder
   gifHeight?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
+  imageWidth?: Prisma.SortOrder
+  imageHeight?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
   commentId?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
@@ -558,6 +631,9 @@ export type ReplyMinOrderByAggregateInput = {
   gifUrl?: Prisma.SortOrder
   gifWidth?: Prisma.SortOrder
   gifHeight?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
+  imageWidth?: Prisma.SortOrder
+  imageHeight?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
   commentId?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
@@ -571,6 +647,8 @@ export type ReplyMinOrderByAggregateInput = {
 export type ReplySumOrderByAggregateInput = {
   gifWidth?: Prisma.SortOrder
   gifHeight?: Prisma.SortOrder
+  imageWidth?: Prisma.SortOrder
+  imageHeight?: Prisma.SortOrder
 }
 
 export type ReplyScalarRelationFilter = {
@@ -756,6 +834,9 @@ export type ReplyCreateWithoutAuthorInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   editedAt?: Date | string | null
   moderatedAt?: Date | string | null
@@ -774,6 +855,9 @@ export type ReplyUncheckedCreateWithoutAuthorInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   commentId: string
   parentId?: string | null
@@ -821,6 +905,9 @@ export type ReplyScalarWhereInput = {
   gifUrl?: Prisma.StringNullableFilter<"Reply"> | string | null
   gifWidth?: Prisma.IntNullableFilter<"Reply"> | number | null
   gifHeight?: Prisma.IntNullableFilter<"Reply"> | number | null
+  imageUrl?: Prisma.StringNullableFilter<"Reply"> | string | null
+  imageWidth?: Prisma.IntNullableFilter<"Reply"> | number | null
+  imageHeight?: Prisma.IntNullableFilter<"Reply"> | number | null
   visibility?: Prisma.EnumContentVisibilityFilter<"Reply"> | $Enums.ContentVisibility
   commentId?: Prisma.StringFilter<"Reply"> | string
   authorId?: Prisma.StringFilter<"Reply"> | string
@@ -837,6 +924,9 @@ export type ReplyCreateWithoutCommentInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   editedAt?: Date | string | null
   moderatedAt?: Date | string | null
@@ -855,6 +945,9 @@ export type ReplyUncheckedCreateWithoutCommentInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   authorId: string
   parentId?: string | null
@@ -899,6 +992,9 @@ export type ReplyCreateWithoutRepliesInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   editedAt?: Date | string | null
   moderatedAt?: Date | string | null
@@ -917,6 +1013,9 @@ export type ReplyUncheckedCreateWithoutRepliesInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   commentId: string
   authorId: string
@@ -940,6 +1039,9 @@ export type ReplyCreateWithoutParentInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   editedAt?: Date | string | null
   moderatedAt?: Date | string | null
@@ -958,6 +1060,9 @@ export type ReplyUncheckedCreateWithoutParentInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   commentId: string
   authorId: string
@@ -997,6 +1102,9 @@ export type ReplyUpdateWithoutRepliesInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1015,6 +1123,9 @@ export type ReplyUncheckedUpdateWithoutRepliesInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1049,6 +1160,9 @@ export type ReplyCreateWithoutLikesInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   editedAt?: Date | string | null
   moderatedAt?: Date | string | null
@@ -1067,6 +1181,9 @@ export type ReplyUncheckedCreateWithoutLikesInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   commentId: string
   authorId: string
@@ -1101,6 +1218,9 @@ export type ReplyUpdateWithoutLikesInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1119,6 +1239,9 @@ export type ReplyUncheckedUpdateWithoutLikesInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1137,6 +1260,9 @@ export type ReplyCreateWithoutNotificationsInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   editedAt?: Date | string | null
   moderatedAt?: Date | string | null
@@ -1155,6 +1281,9 @@ export type ReplyUncheckedCreateWithoutNotificationsInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   commentId: string
   authorId: string
@@ -1189,6 +1318,9 @@ export type ReplyUpdateWithoutNotificationsInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1207,6 +1339,9 @@ export type ReplyUncheckedUpdateWithoutNotificationsInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1225,6 +1360,9 @@ export type ReplyCreateManyAuthorInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   commentId: string
   parentId?: string | null
@@ -1240,6 +1378,9 @@ export type ReplyUpdateWithoutAuthorInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1258,6 +1399,9 @@ export type ReplyUncheckedUpdateWithoutAuthorInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
   parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1276,6 +1420,9 @@ export type ReplyUncheckedUpdateManyWithoutAuthorInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
   parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1291,6 +1438,9 @@ export type ReplyCreateManyCommentInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   authorId: string
   parentId?: string | null
@@ -1306,6 +1456,9 @@ export type ReplyUpdateWithoutCommentInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1324,6 +1477,9 @@ export type ReplyUncheckedUpdateWithoutCommentInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1342,6 +1498,9 @@ export type ReplyUncheckedUpdateManyWithoutCommentInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1357,6 +1516,9 @@ export type ReplyCreateManyParentInput = {
   gifUrl?: string | null
   gifWidth?: number | null
   gifHeight?: number | null
+  imageUrl?: string | null
+  imageWidth?: number | null
+  imageHeight?: number | null
   visibility?: $Enums.ContentVisibility
   commentId: string
   authorId: string
@@ -1372,6 +1534,9 @@ export type ReplyUpdateWithoutParentInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   editedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   moderatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1390,6 +1555,9 @@ export type ReplyUncheckedUpdateWithoutParentInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1408,6 +1576,9 @@ export type ReplyUncheckedUpdateManyWithoutParentInput = {
   gifUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gifWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gifHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageWidth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  imageHeight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   visibility?: Prisma.EnumContentVisibilityFieldUpdateOperationsInput | $Enums.ContentVisibility
   commentId?: Prisma.StringFieldUpdateOperationsInput | string
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1472,6 +1643,9 @@ export type ReplySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   gifUrl?: boolean
   gifWidth?: boolean
   gifHeight?: boolean
+  imageUrl?: boolean
+  imageWidth?: boolean
+  imageHeight?: boolean
   visibility?: boolean
   commentId?: boolean
   authorId?: boolean
@@ -1495,6 +1669,9 @@ export type ReplySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   gifUrl?: boolean
   gifWidth?: boolean
   gifHeight?: boolean
+  imageUrl?: boolean
+  imageWidth?: boolean
+  imageHeight?: boolean
   visibility?: boolean
   commentId?: boolean
   authorId?: boolean
@@ -1514,6 +1691,9 @@ export type ReplySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   gifUrl?: boolean
   gifWidth?: boolean
   gifHeight?: boolean
+  imageUrl?: boolean
+  imageWidth?: boolean
+  imageHeight?: boolean
   visibility?: boolean
   commentId?: boolean
   authorId?: boolean
@@ -1533,6 +1713,9 @@ export type ReplySelectScalar = {
   gifUrl?: boolean
   gifWidth?: boolean
   gifHeight?: boolean
+  imageUrl?: boolean
+  imageWidth?: boolean
+  imageHeight?: boolean
   visibility?: boolean
   commentId?: boolean
   authorId?: boolean
@@ -1543,7 +1726,7 @@ export type ReplySelectScalar = {
   updatedAt?: boolean
 }
 
-export type ReplyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "gifUrl" | "gifWidth" | "gifHeight" | "visibility" | "commentId" | "authorId" | "parentId" | "editedAt" | "moderatedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["reply"]>
+export type ReplyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "gifUrl" | "gifWidth" | "gifHeight" | "imageUrl" | "imageWidth" | "imageHeight" | "visibility" | "commentId" | "authorId" | "parentId" | "editedAt" | "moderatedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["reply"]>
 export type ReplyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   comment?: boolean | Prisma.CommentDefaultArgs<ExtArgs>
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -1580,6 +1763,9 @@ export type $ReplyPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     gifUrl: string | null
     gifWidth: number | null
     gifHeight: number | null
+    imageUrl: string | null
+    imageWidth: number | null
+    imageHeight: number | null
     visibility: $Enums.ContentVisibility
     commentId: string
     authorId: string
@@ -2022,6 +2208,9 @@ export interface ReplyFieldRefs {
   readonly gifUrl: Prisma.FieldRef<"Reply", 'String'>
   readonly gifWidth: Prisma.FieldRef<"Reply", 'Int'>
   readonly gifHeight: Prisma.FieldRef<"Reply", 'Int'>
+  readonly imageUrl: Prisma.FieldRef<"Reply", 'String'>
+  readonly imageWidth: Prisma.FieldRef<"Reply", 'Int'>
+  readonly imageHeight: Prisma.FieldRef<"Reply", 'Int'>
   readonly visibility: Prisma.FieldRef<"Reply", 'ContentVisibility'>
   readonly commentId: Prisma.FieldRef<"Reply", 'String'>
   readonly authorId: Prisma.FieldRef<"Reply", 'String'>

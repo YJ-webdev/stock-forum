@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
 const MAX_REQUEST_BYTES = MAX_FILE_BYTES + 128 * 1024;
 const MAX_INPUT_PIXELS = 25_000_000;
-const MAX_IMAGE_SIZE = 1600;
+const MAX_IMAGE_SIZE = 2560;
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -125,18 +125,19 @@ export async function POST(request: Request) {
       return json({ error: "ANIMATED_IMAGE_NOT_SUPPORTED" }, 415);
     }
 
-    const { data, info } = await image
-      .rotate()
-      .resize({
-        width: MAX_IMAGE_SIZE,
-        height: MAX_IMAGE_SIZE,
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .webp({
-        quality: 85,
-        effort: 4,
-      })
+    const pipeline = image.rotate().resize({
+      width: MAX_IMAGE_SIZE,
+      height: MAX_IMAGE_SIZE,
+      fit: "inside",
+      withoutEnlargement: true,
+    });
+
+    const { data, info } = await pipeline
+      .webp(
+        metadata.format === "png"
+          ? { lossless: true, effort: 4 }
+          : { quality: 90, effort: 4 },
+      )
       .toBuffer({ resolveWithObject: true });
 
     processed = {

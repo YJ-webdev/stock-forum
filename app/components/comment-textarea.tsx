@@ -3,6 +3,7 @@
 import {
   useCallback,
   useLayoutEffect,
+  type ClipboardEvent,
   type KeyboardEventHandler,
   type RefObject,
 } from "react";
@@ -16,6 +17,8 @@ interface CommentTextareaProps {
   value: string;
   onValueChange: (value: string) => void;
   onKeyDown?: KeyboardEventHandler<HTMLTextAreaElement>;
+
+  onImagePaste?: (file: File) => void;
 
   placeholder: string;
 
@@ -32,6 +35,7 @@ export function CommentTextarea({
   value,
   onValueChange,
   onKeyDown,
+  onImagePaste,
   placeholder,
   isLoggedIn,
   isChatRestricted,
@@ -56,6 +60,25 @@ export function CommentTextarea({
     textarea.style.overflowY =
       contentHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden";
   }, [textareaRef]);
+
+  function handlePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
+    if (readOnly) {
+      event.preventDefault();
+      return;
+    }
+
+    if (!onImagePaste) return;
+
+    const imageFile = Array.from(event.clipboardData.items)
+      .find((item) => item.kind === "file" && item.type.startsWith("image/"))
+      ?.getAsFile();
+
+    if (!imageFile) return;
+
+    event.preventDefault();
+
+    onImagePaste(imageFile);
+  }
 
   useLayoutEffect(() => {
     resizeTextarea();
@@ -117,13 +140,15 @@ export function CommentTextarea({
       }}
       onKeyDown={onKeyDown}
       onClick={handleClick}
+      onPaste={handlePaste}
       style={{ overflowX: "hidden" }}
       className={`
         content-scrollbar block min-h-11 w-full
         resize-none overflow-hidden bg-transparent
         px-1.5 py-4 text-[15px] leading-6 outline-none
         placeholder:truncate
-        placeholder:text-zinc-800 dark:placeholder:text-zinc-300
+        placeholder:text-zinc-800
+        dark:placeholder:text-zinc-300
         ${
           isChatRestricted
             ? "cursor-not-allowed caret-transparent opacity-60"

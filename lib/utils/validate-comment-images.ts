@@ -3,7 +3,7 @@ import "server-only";
 import { head } from "@vercel/blob";
 import type { JSONContent } from "@tiptap/react";
 
-const MAX_IMAGE_DIMENSION = 1600;
+const MAX_IMAGE_DIMENSION = 2560;
 const MAX_NODES = 2000;
 const MAX_DEPTH = 20;
 

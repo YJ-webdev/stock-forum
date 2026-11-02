@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ClipboardEvent } from "react";
 import { SquarePen } from "lucide-react";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ import {
   HOME_COMMUNITY_LABELS,
   HOME_COMPOSER_LABELS,
 } from "@/lib/data/translations";
+
 import type { CommentImage } from "@/lib/types/comment-image";
 import { buildCommentContent } from "@/lib/utils/build-comment-content";
 
@@ -31,7 +32,7 @@ import {
 
 import { GifPreview } from "./gif-preview";
 import { ImagePreview } from "./image-preview";
-import { MediaButtons } from "./media-buttons";
+import { MediaButtons, type MediaButtonsHandle } from "./media-buttons";
 import type { GifResult } from "./gif-picker";
 
 interface HomeCommentComposerProps {
@@ -78,14 +79,20 @@ export function HomeCommentComposer({
   const [symbol, setSymbol] = useState(defaultSymbol ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
 
   const editorId = useId();
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const mediaButtonsRef = useRef<MediaButtonsHandle>(null);
+
   const submittingRef = useRef(false);
   const imageUploadingRef = useRef(false);
   const mountedRef = useRef(false);
+
+  const localPreviewRef = useRef<string | null>(null);
+  const selectedImageRef = useRef<CommentImage | null>(selectedImage);
 
   const viewerId = user?.id ?? null;
   const viewerIdRef = useRef(viewerId);
@@ -96,7 +103,8 @@ export function HomeCommentComposer({
   const isChatRestricted =
     user?.status === "BANNED" || user?.status === "MUTED";
 
-  const busy = submitting || imageUploading;
+  // Uploading does not block text editing.
+  const busy = submitting;
   const editorDisabled = busy || isChatRestricted || !isLoggedIn;
   const editorOpen = expanded && isLoggedIn;
 
@@ -105,16 +113,29 @@ export function HomeCommentComposer({
   );
 
   const hasContent =
-    text.trim().length > 0 || Boolean(selectedGif) || Boolean(selectedImage);
+    text.trim().length > 0 ||
+    Boolean(selectedGif) ||
+    Boolean(selectedImage) ||
+    Boolean(localPreviewUrl);
 
   const avatarInitial =
     Array.from(user?.name?.trim() ?? "")[0]?.toUpperCase() || "G";
+
+  useEffect(() => {
+    selectedImageRef.current = selectedImage;
+  }, [selectedImage]);
 
   useEffect(() => {
     mountedRef.current = true;
 
     return () => {
       mountedRef.current = false;
+      mediaButtonsRef.current?.cancelUpload();
+
+      if (localPreviewRef.current) {
+        URL.revokeObjectURL(localPreviewRef.current);
+        localPreviewRef.current = null;
+      }
     };
   }, []);
 
@@ -122,8 +143,19 @@ export function HomeCommentComposer({
     setText("");
     setSelectedGif(null);
     setSelectedImage(null);
+    selectedImageRef.current = null;
+
     setSymbol("");
     setExpanded(false);
+
+    mediaButtonsRef.current?.cancelUpload();
+
+    if (localPreviewRef.current) {
+      URL.revokeObjectURL(localPreviewRef.current);
+      localPreviewRef.current = null;
+    }
+
+    setLocalPreviewUrl(null);
   }, [viewerId, setText, setSelectedGif, setSelectedImage]);
 
   useEffect(() => {
@@ -179,6 +211,17 @@ export function HomeCommentComposer({
     return () => observer.disconnect();
   }, [text, editorOpen]);
 
+  function clearLocalPreview() {
+    const previousUrl = localPreviewRef.current;
+
+    localPreviewRef.current = null;
+    setLocalPreviewUrl(null);
+
+    if (previousUrl) {
+      URL.revokeObjectURL(previousUrl);
+    }
+  }
+
   function restoreTriggerFocus() {
     window.requestAnimationFrame(() => {
       if (!mountedRef.current) return;
@@ -190,11 +233,7 @@ export function HomeCommentComposer({
   function focusInputEnd() {
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
-        if (
-          !mountedRef.current ||
-          submittingRef.current ||
-          imageUploadingRef.current
-        ) {
+        if (!mountedRef.current || submittingRef.current) {
           return;
         }
 
@@ -232,7 +271,7 @@ export function HomeCommentComposer({
   }
 
   function openEditor() {
-    if (submittingRef.current || imageUploadingRef.current || !canWrite()) {
+    if (submittingRef.current || !canWrite()) {
       return;
     }
 
@@ -244,7 +283,7 @@ export function HomeCommentComposer({
   }
 
   function collapseEditor() {
-    if (submittingRef.current || imageUploadingRef.current) return;
+    if (submittingRef.current) return;
 
     // Collapsing preserves the draft and selected market.
     setExpanded(false);
@@ -252,9 +291,7 @@ export function HomeCommentComposer({
   }
 
   function handleMarketChange(value: string | null) {
-    if (editorDisabled || submittingRef.current || imageUploadingRef.current) {
-      return;
-    }
+    if (editorDisabled || submittingRef.current) return;
 
     setSymbol(value ?? "");
 
@@ -269,12 +306,13 @@ export function HomeCommentComposer({
     }
 
     setSelectedGif(gif);
+    setSelectedImage(null);
+    selectedImageRef.current = null;
+    clearLocalPreview();
   }
 
   function handleGifRemove() {
-    if (editorDisabled || submittingRef.current || imageUploadingRef.current) {
-      return;
-    }
+    if (editorDisabled || submittingRef.current) return;
 
     setSelectedGif(null);
   }
@@ -287,32 +325,76 @@ export function HomeCommentComposer({
     }
   }
 
-  function handleImageSelect(image: CommentImage) {
-    // ImageButton calls this before clearing its uploading state.
-    if (
-      !isLoggedIn ||
-      isChatRestricted ||
-      submitting ||
-      submittingRef.current
-    ) {
+  function handleImagePreview(url: string, _file: File) {
+    if (!mountedRef.current) {
+      URL.revokeObjectURL(url);
       return;
     }
 
+    clearLocalPreview();
+
+    localPreviewRef.current = url;
+    setLocalPreviewUrl(url);
+
+    setSelectedImage(null);
+    selectedImageRef.current = null;
+    setSelectedGif(null);
+  }
+
+  function handleImageSelect(image: CommentImage) {
+    if (!mountedRef.current || !isLoggedIn || isChatRestricted) {
+      return;
+    }
+
+    selectedImageRef.current = image;
     setSelectedImage(image);
+    setSelectedGif(null);
+
+    clearLocalPreview();
+  }
+
+  function handleImageUploadError() {
+    if (!mountedRef.current) return;
+
+    clearLocalPreview();
   }
 
   function handleImageRemove() {
-    if (editorDisabled || submittingRef.current || imageUploadingRef.current) {
+    if (submittingRef.current) return;
+
+    mediaButtonsRef.current?.cancelUpload();
+
+    selectedImageRef.current = null;
+    setSelectedImage(null);
+
+    clearLocalPreview();
+  }
+
+  function handleImagePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
+    if (!editorOpen || editorDisabled || submittingRef.current) {
       return;
     }
 
-    setSelectedImage(null);
+    const imageFile = Array.from(event.clipboardData.items)
+      .find((item) => item.kind === "file" && item.type.startsWith("image/"))
+      ?.getAsFile();
+
+    if (!imageFile) return;
+
+    event.preventDefault();
+
+    const mediaButtons = mediaButtonsRef.current;
+
+    if (!mediaButtons) {
+      console.error("MediaButtons ref is not available.");
+      return;
+    }
+
+    void mediaButtons.uploadImage(imageFile);
   }
 
   async function publish() {
-    if (submittingRef.current || imageUploadingRef.current || !canWrite()) {
-      return;
-    }
+    if (submittingRef.current || !canWrite()) return;
 
     if (!selectedMarket) {
       toast.error(copy.select_market);
@@ -327,58 +409,76 @@ export function HomeCommentComposer({
 
     const submittedUserId = viewerId;
     const submittedSymbol = selectedMarket.symbol;
-    const submittedContent = buildCommentContent(
-      text,
-      selectedGif,
-      selectedImage,
-    );
-
-    function isCurrentViewer() {
-      return mountedRef.current && viewerIdRef.current === submittedUserId;
-    }
 
     submittingRef.current = true;
     setSubmitting(true);
 
     try {
+      let imageToSubmit = selectedImageRef.current;
+
+      if (imageUploadingRef.current) {
+        const uploadedImage = await mediaButtonsRef.current?.waitForUpload();
+
+        if (!uploadedImage) {
+          // Preserve text and other draft state.
+          return;
+        }
+
+        imageToSubmit = uploadedImage;
+      }
+
+      if (!mountedRef.current || viewerIdRef.current !== submittedUserId) {
+        return;
+      }
+
+      const submittedContent = buildCommentContent(
+        text,
+        selectedGif,
+        imageToSubmit,
+      );
+
       await createComment({
         content: submittedContent,
         assetSymbols: [submittedSymbol],
       });
+
+      if (!mountedRef.current || viewerIdRef.current !== submittedUserId) {
+        return;
+      }
+
+      setText("");
+      setSelectedGif(null);
+      setSelectedImage(null);
+      selectedImageRef.current = null;
+
+      clearLocalPreview();
+
+      setSymbol("");
+      setExpanded(false);
+
+      toast.success(copy.success);
+      restoreTriggerFocus();
+
+      try {
+        await onPublished(submittedSymbol);
+      } catch (error) {
+        console.error(
+          "Comment published, but the home list update failed:",
+          error,
+        );
+      }
     } catch (error) {
-      if (isCurrentViewer()) {
+      if (mountedRef.current) {
         toast.error(
           error instanceof Error && error.message ? error.message : copy.failed,
         );
       }
-
-      return;
     } finally {
       submittingRef.current = false;
 
       if (mountedRef.current) {
         setSubmitting(false);
       }
-    }
-
-    if (!isCurrentViewer()) return;
-
-    setText("");
-    setSelectedGif(null);
-    setSelectedImage(null);
-    setSymbol("");
-    setExpanded(false);
-
-    toast.success(copy.success);
-    restoreTriggerFocus();
-
-    try {
-      await onPublished(submittedSymbol);
-    } catch (error) {
-      console.error(
-        "Comment published, but the home list update failed:",
-        error,
-      );
     }
   }
 
@@ -409,7 +509,7 @@ export function HomeCommentComposer({
             ref={triggerRef}
             data-tour="composer"
             type="button"
-            disabled={busy}
+            disabled={submitting}
             aria-expanded={editorOpen}
             aria-controls={editorId}
             aria-hidden={editorOpen}
@@ -443,7 +543,7 @@ export function HomeCommentComposer({
           >
             <span className="truncate">
               {text.trim() ||
-                (selectedImage
+                (selectedImage || localPreviewUrl
                   ? imageLabels.attach
                   : selectedGif
                     ? copy.gif_draft
@@ -474,7 +574,7 @@ export function HomeCommentComposer({
           >
             <div className="min-h-0 overflow-hidden">
               <div
-                aria-busy={busy}
+                aria-busy={submitting}
                 className={`
                   transition-transform duration-250 ease-out
                   motion-reduce:transition-none
@@ -523,7 +623,7 @@ export function HomeCommentComposer({
 
                 <div
                   onClick={() => {
-                    if (!busy && isChatRestricted) {
+                    if (!submitting && isChatRestricted) {
                       toast.error(commentLabels.restricted);
                     }
                   }}
@@ -531,12 +631,9 @@ export function HomeCommentComposer({
                   <textarea
                     ref={inputRef}
                     value={text}
+                    onPaste={handleImagePaste}
                     onChange={(event) => {
-                      if (
-                        editorDisabled ||
-                        submittingRef.current ||
-                        imageUploadingRef.current
-                      ) {
+                      if (editorDisabled || submittingRef.current) {
                         return;
                       }
 
@@ -554,7 +651,6 @@ export function HomeCommentComposer({
                       disabled:cursor-not-allowed disabled:opacity-60
                       dark:border-zinc-600 dark:text-zinc-100
                       dark:placeholder:text-zinc-500
-                      
                       md:text-[15px]
                       ${isChatRestricted ? "pointer-events-none" : ""}
                     `}
@@ -573,12 +669,14 @@ export function HomeCommentComposer({
                   </div>
                 )}
 
-                {selectedImage && (
+                {(selectedImage || localPreviewUrl) && (
                   <div className="mt-3">
                     <ImagePreview
                       image={selectedImage}
+                      previewUrl={localPreviewUrl}
+                      uploading={imageUploading}
                       removeLabel={imageLabels.remove}
-                      disabled={editorDisabled}
+                      disabled={submitting}
                       onRemove={handleImageRemove}
                     />
                   </div>
@@ -586,28 +684,29 @@ export function HomeCommentComposer({
 
                 <div className="@container mt-3 flex items-center justify-between gap-2 pb-2">
                   <div className="flex min-h-8 shrink-0 items-center">
-                    {editorOpen && (
-                      <MediaButtons
-                        key={viewerId}
-                        isLoggedIn={isLoggedIn}
-                        isChatRestricted={isChatRestricted}
-                        busy={submitting}
-                        imageLabels={imageLabels}
-                        gifLoginMessage={commentLabels.login_gif}
-                        restrictedMessage={commentLabels.restricted}
-                        isSubmitting={() => submittingRef.current}
-                        onImageSelect={handleImageSelect}
-                        onGifSelect={handleGifSelect}
-                        onUploadingChange={handleImageUploadingChange}
-                      />
-                    )}
+                    <MediaButtons
+                      ref={mediaButtonsRef}
+                      key={viewerId}
+                      isLoggedIn={isLoggedIn}
+                      isChatRestricted={isChatRestricted}
+                      busy={submitting || imageUploading}
+                      imageLabels={imageLabels}
+                      gifLoginMessage={commentLabels.login_gif}
+                      restrictedMessage={commentLabels.restricted}
+                      isSubmitting={() => submittingRef.current}
+                      onImagePreview={handleImagePreview}
+                      onImageSelect={handleImageSelect}
+                      onImageUploadError={handleImageUploadError}
+                      onGifSelect={handleGifSelect}
+                      onUploadingChange={handleImageUploadingChange}
+                    />
                   </div>
 
                   <div className="flex min-w-0 items-center justify-end gap-2">
                     <Button
                       type="button"
                       size="sm"
-                      disabled={busy}
+                      disabled={submitting}
                       onClick={collapseEditor}
                       className={CANCEL_BUTTON_CLASS}
                     >
@@ -617,16 +716,12 @@ export function HomeCommentComposer({
                     <Button
                       type="button"
                       size="sm"
-                      disabled={busy}
-                      aria-busy={busy}
+                      disabled={submitting}
+                      aria-busy={submitting}
                       onClick={() => void publish()}
                       className="cursor-pointer disabled:cursor-not-allowed"
                     >
-                      {imageUploading
-                        ? imageLabels.uploading
-                        : submitting
-                          ? copy.publishing
-                          : copy.publish}
+                      {submitting ? copy.publishing : copy.publish}
                     </Button>
                   </div>
                 </div>

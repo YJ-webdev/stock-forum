@@ -10,7 +10,10 @@ import {
   Plus,
   Minus,
   RotateCcw,
+  Camera,
+  LoaderCircle,
 } from "lucide-react";
+import { toast } from "sonner";
 import { resolveLanguage } from "@/lib/data/languages";
 import { MARKET_LABELS } from "@/lib/data/translations";
 import type { SelectedRange } from "@/app/hooks/useMarketQuote";
@@ -131,6 +134,8 @@ export function DetailChart({
   onClick,
 }: DetailChartProps) {
   const chartId = useId().replace(/:/g, "");
+  const captureRef = useRef<HTMLDivElement>(null);
+  const [capturing, setCapturing] = useState(false);
   const language = resolveLanguage(userLanguage);
   const marketLabels = MARKET_LABELS[language];
 
@@ -301,6 +306,7 @@ export function DetailChart({
     const onWheel = (event: WheelEvent) => {
       if (!event.ctrlKey && !event.metaKey) return;
       const rect = element.getBoundingClientRect();
+      if (!rect.width) return;
       const x = ((event.clientX - rect.left) / rect.width) * 800;
       if (x < 65 || x > 780) return;
       event.preventDefault();
@@ -318,6 +324,160 @@ export function DetailChart({
     timeStr: string;
     index: number;
   } | null>(null);
+
+  const captureChart = useCallback(async () => {
+    const element = captureRef.current;
+    if (!element || capturing) return;
+
+    if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+      toast.error(marketLabels.chart_image_copy_failed);
+      return;
+    }
+
+    setCapturing(true);
+
+    // Start clipboard writing during the click's user activation. The PNG
+    // promise resolves after the chart has been rendered and masked.
+    const pngPromise = (async (): Promise<Blob> => {
+      const { toCanvas } = await import("html-to-image");
+      if (document.fonts?.ready) await document.fonts.ready;
+
+      const style = window.getComputedStyle(element);
+      // Capture at high resolution regardless of the monitor's devicePixelRatio.
+      // Keep the longest side within the upload API's 2560px limit to avoid
+      // a second resizing pass that can soften thin lines and chart labels.
+      const captureWidth = element.scrollWidth;
+      const captureHeight = element.scrollHeight;
+      const scale = Math.min(3, 2560 / Math.max(captureWidth, captureHeight));
+      const svg = svgRef.current;
+      if (!svg) throw new Error("Chart SVG not found");
+      const elementRect = element.getBoundingClientRect();
+      const svgRect = svg.getBoundingClientRect();
+      const dark = document.documentElement.classList.contains("dark");
+
+      // Capture HTML controls separately. html-to-image can lose SVG gradients,
+      // clip paths, and custom properties when cloning an embedded chart SVG.
+      const source = await toCanvas(element, {
+        pixelRatio: scale,
+        backgroundColor: dark ? "#27272a" : "#fafafa",
+        cacheBust: false,
+        filter: (node) => {
+          if (node instanceof SVGSVGElement && node === svg) return false;
+          if (
+            node instanceof HTMLElement &&
+            node.dataset.captureExclude === "true"
+          )
+            return false;
+          return true;
+        },
+      });
+
+      // Serialize the real chart SVG with resolved styles and colors, then
+      // rasterize it independently so lines, fills, gradients and labels survive.
+      const clonedSvg = svg.cloneNode(true) as SVGSVGElement;
+      clonedSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      clonedSvg.setAttribute("width", String(svgRect.width));
+      clonedSvg.setAttribute("height", String(svgRect.height));
+      clonedSvg.setAttribute("viewBox", "0 0 800 320");
+      clonedSvg.style.overflow = "visible";
+
+      const originalNodes = [svg, ...Array.from(svg.querySelectorAll("*"))];
+      const clonedNodes = [
+        clonedSvg,
+        ...Array.from(clonedSvg.querySelectorAll("*")),
+      ];
+      originalNodes.forEach((original, index) => {
+        const cloned = clonedNodes[index] as SVGElement | undefined;
+        if (!cloned) return;
+        const computed = getComputedStyle(original);
+        for (const property of [
+          "fill",
+          "stroke",
+          "stroke-width",
+          "stroke-dasharray",
+          "stroke-linecap",
+          "stroke-linejoin",
+          "opacity",
+          "font-family",
+          "font-size",
+          "font-weight",
+          "text-anchor",
+          "visibility",
+        ]) {
+          const value = computed.getPropertyValue(property);
+          if (value && !value.includes("var("))
+            cloned.style.setProperty(property, value);
+        }
+        for (const attribute of ["fill", "stroke", "stop-color"]) {
+          const value = cloned.getAttribute(attribute);
+          if (value?.includes("var(--chart-down)"))
+            cloned.setAttribute(attribute, dark ? "#ff4545" : "#cf0000");
+        }
+      });
+
+      // Exclude transient hover crosshair and date tooltip from the image.
+      clonedSvg
+        .querySelectorAll("[data-capture-hover]")
+        .forEach((node) => node.remove());
+
+      const svgMarkup = new XMLSerializer().serializeToString(clonedSvg);
+      const svgUrl = URL.createObjectURL(
+        new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" }),
+      );
+      let chartImage: HTMLImageElement;
+      try {
+        chartImage = new Image();
+        chartImage.src = svgUrl;
+        await chartImage.decode();
+      } finally {
+        URL.revokeObjectURL(svgUrl);
+      }
+
+      const result = document.createElement("canvas");
+      result.width = source.width;
+      result.height = source.height;
+      const context = result.getContext("2d");
+      if (!context) throw new Error("Canvas 2D is unavailable");
+
+      const radius = Math.max(0, parseFloat(style.borderTopLeftRadius) || 0);
+      const r = Math.min(radius * scale, result.width / 2, result.height / 2);
+      context.beginPath();
+      context.roundRect(0, 0, result.width, result.height, r);
+      context.clip();
+      context.drawImage(source, 0, 0);
+      context.drawImage(
+        chartImage,
+        (svgRect.left - elementRect.left) * scale,
+        (svgRect.top - elementRect.top) * scale,
+        svgRect.width * scale,
+        svgRect.height * scale,
+      );
+
+      return new Promise<Blob>((resolve, reject) => {
+        result.toBlob(
+          (value) =>
+            value ? resolve(value) : reject(new Error("PNG encoding failed")),
+          "image/png",
+        );
+      });
+    })();
+
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": pngPromise }),
+      ]);
+      toast.success(marketLabels.chart_image_copied);
+    } catch (error) {
+      console.error("Failed to copy chart:", error);
+      toast.error(marketLabels.chart_image_copy_failed);
+    } finally {
+      setCapturing(false);
+    }
+  }, [
+    capturing,
+    marketLabels.chart_image_copied,
+    marketLabels.chart_image_copy_failed,
+  ]);
 
   const data = (history ?? [])
     .filter(
@@ -938,7 +1098,11 @@ export function DetailChart({
     previousCloseY >= paddingTop &&
     previousCloseY <= chartBottom;
 
-  const strokeColor = isPositive ? "#008549" : "var(--chart-down)";
+  const darkMode =
+    typeof document !== "undefined" &&
+    document.documentElement.classList.contains("dark");
+  const downColor = darkMode ? "#ff4545" : "#cf0000";
+  const strokeColor = isPositive ? "#008549" : downColor;
   const gradientId = `detail-area-gradient-${chartId}`;
 
   // --------------------------------------------------
@@ -1151,9 +1315,9 @@ export function DetailChart({
   // --------------------------------------------------
 
   return (
-    <div className="relative w-full select-none bg-zinc-50 p-4 md:rounded-2xl md:border md:border-zinc-200 dark:bg-zinc-800/50 dark:md:border-zinc-800">
+    <div className="relative w-full select-none bg-zinc-50 md:rounded-2xl md:border md:border-zinc-200 dark:bg-zinc-800/50 dark:md:border-zinc-800">
       {/* TOP CONTROL BAR */}
-      <div className="relative z-5 flex items-center justify-between gap-6 dark:text-zinc-100">
+      <div className="relative z-5 px-4 pt-4 flex items-center justify-between gap-6 dark:text-zinc-100">
         <div className="flex items-center">
           {chartTypeOptions.map((option) => {
             const Icon = option.icon;
@@ -1179,14 +1343,31 @@ export function DetailChart({
             );
           })}
         </div>
-        <button
-          type="button"
-          onClick={onClick}
-          aria-label="Close chart"
-          className="mr-2 flex size-7 cursor-pointer items-center justify-center rounded-sm text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-100 dark:hover:text-white"
-        >
-          <Minimize2 className="size-5" strokeWidth={1.5} />
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            data-capture-exclude="true"
+            onClick={() => void captureChart()}
+            disabled={capturing}
+            aria-label={marketLabels.copy_chart_image}
+            title={marketLabels.copy_chart_image}
+            className="flex size-8 cursor-pointer items-center justify-center rounded-sm text-zinc-600 transition-colors hover:bg-zinc-200/60 hover:text-zinc-900 disabled:cursor-wait disabled:opacity-50 dark:text-zinc-300 dark:hover:bg-zinc-700/50 dark:hover:text-white"
+          >
+            {capturing ? (
+              <LoaderCircle className="size-4 animate-spin" />
+            ) : (
+              <Camera className="size-4" strokeWidth={2} />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={onClick}
+            aria-label="Close chart"
+            className="mr-2 flex size-7 cursor-pointer items-center justify-center rounded-sm text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-100 dark:hover:text-white"
+          >
+            <Minimize2 className="size-5" strokeWidth={1.5} />
+          </button>
+        </div>
       </div>
 
       {/* HOVER DETAILS — one badge for every chart type */}
@@ -1294,383 +1475,395 @@ export function DetailChart({
         </div>
       )}
 
-      <div
-        className="mb-2 mt-3 flex flex-wrap items-center gap-2 text-xs"
-        aria-label="Moving average indicators"
-      >
-        {(
-          [
-            {
-              label: "MA 5",
-              checked: showMA5,
-              toggle: () => setShowMA5((v) => !v),
-              color: "#2563eb",
-              title: "Average closing price over 5 candles",
-            },
-            {
-              label: "MA 20",
-              checked: showMA20,
-              toggle: () => setShowMA20((v) => !v),
-              color: "#d97706",
-              title: "Average closing price over 20 candles",
-            },
-            {
-              label: "MA 60",
-              checked: showMA60,
-              toggle: () => setShowMA60((v) => !v),
-              color: "#9333ea",
-              title: "Average closing price over 60 candles",
-            },
-          ] as const
-        ).map((indicator) => (
-          <button
-            key={indicator.label}
-            type="button"
-            title={indicator.title}
-            aria-label={`${indicator.label}: ${indicator.title}`}
-            aria-pressed={indicator.checked}
-            onClick={indicator.toggle}
-            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${indicator.checked ? "border-zinc-400 bg-zinc-200/70 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-700 dark:text-zinc-100" : "border-zinc-200 text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700/50"}`}
-          >
-            <span
-              className="h-0.5 w-3 rounded-full"
-              style={{ backgroundColor: indicator.color }}
-              aria-hidden="true"
-            />
-            {indicator.label}
-          </button>
-        ))}
-      </div>
+      {/* Only the indicators and the SVG are included in the copied image. */}
+      <div ref={captureRef} className="px-4 pt-4 bg-transparent">
+        <div
+          className="mb-2 flex flex-nowrap items-center gap-2 overflow-x-auto text-xs"
+          aria-label="Moving average indicators"
+        >
+          {(
+            [
+              {
+                label: "MA 5",
+                checked: showMA5,
+                toggle: () => setShowMA5((v) => !v),
+                color: "#2563eb",
+                title: "Average closing price over 5 candles",
+              },
+              {
+                label: "MA 20",
+                checked: showMA20,
+                toggle: () => setShowMA20((v) => !v),
+                color: "#d97706",
+                title: "Average closing price over 20 candles",
+              },
+              {
+                label: "MA 60",
+                checked: showMA60,
+                toggle: () => setShowMA60((v) => !v),
+                color: "#9333ea",
+                title: "Average closing price over 60 candles",
+              },
+            ] as const
+          ).map((indicator) => (
+            <button
+              key={indicator.label}
+              type="button"
+              title={indicator.title}
+              aria-label={`${indicator.label}: ${indicator.title}`}
+              aria-pressed={indicator.checked}
+              onClick={indicator.toggle}
+              style={{
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                width: "max-content",
+              }}
+              className={`inline-flex w-max shrink-0 flex-nowrap cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${indicator.checked ? "border-zinc-400 bg-zinc-200/70 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-700 dark:text-zinc-100" : "border-zinc-200 text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700/50"}`}
+            >
+              <span
+                className="h-0.5 w-3 shrink-0 rounded-full"
+                style={{ backgroundColor: indicator.color }}
+                aria-hidden="true"
+              />
+              <span
+                className="shrink-0 whitespace-nowrap"
+                style={{ whiteSpace: "nowrap", display: "inline-block" }}
+              >
+                {indicator.label}
+              </span>
+            </button>
+          ))}
+        </div>
 
-      {/* MAIN SVG */}
+        {/* MAIN SVG */}
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${width} ${height}`}
+          className="h-auto w-full cursor-crosshair overflow-visible [touch-action:pan-y] [--chart-down:#cf0000] dark:[--chart-down:#ff4545]"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onMouseLeave={() => setHoveredPoint(null)}
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={strokeColor} stopOpacity="0.25" />
 
-      <svg
-        ref={svgRef}
-        viewBox={`0 0 ${width} ${height}`}
-        className="h-auto w-full cursor-crosshair overflow-visible [touch-action:pan-y] [--chart-down:#cf0000] dark:[--chart-down:#ff4545]"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onMouseLeave={() => setHoveredPoint(null)}
-      >
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={strokeColor} stopOpacity="0.25" />
+              <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
+            </linearGradient>
+            <clipPath id={`plot-clip-${chartId}`}>
+              <rect
+                x={paddingLeft}
+                y={paddingTop}
+                width={chartWidth}
+                height={chartHeight}
+              />
+            </clipPath>
+          </defs>
 
-            <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
-          </linearGradient>
-          <clipPath id={`plot-clip-${chartId}`}>
-            <rect
-              x={paddingLeft}
-              y={paddingTop}
-              width={chartWidth}
-              height={chartHeight}
-            />
-          </clipPath>
-        </defs>
+          {/* Y AXIS LABELS */}
 
-        {/* Y AXIS LABELS */}
+          {yTicks.map((tick, index) => (
+            <text
+              key={index}
+              x={paddingLeft - 12}
+              y={tick.y + 4}
+              textAnchor="end"
+              className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-100 dark:font-light"
+            >
+              {tick.price.toLocaleString("en-US", {
+                minimumFractionDigits: yLabelDecimals,
+                maximumFractionDigits: yLabelDecimals,
+              })}
+            </text>
+          ))}
 
-        {yTicks.map((tick, index) => (
-          <text
-            key={index}
-            x={paddingLeft - 12}
-            y={tick.y + 4}
-            textAnchor="end"
-            className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-100 dark:font-light"
-          >
-            {tick.price.toLocaleString("en-US", {
-              minimumFractionDigits: yLabelDecimals,
-              maximumFractionDigits: yLabelDecimals,
-            })}
-          </text>
-        ))}
+          {/* GRID BOUNDARIES */}
 
-        {/* GRID BOUNDARIES */}
-
-        {[paddingLeft, chartRight].map((x) => (
-          <line
-            key={x}
-            x1={x}
-            y1={paddingTop}
-            x2={x}
-            y2={chartBottom}
-            stroke="#e2e8f0"
-            strokeWidth="1"
-            className="dark:stroke-zinc-600/50"
-          />
-        ))}
-
-        {/* X GRID: more frequent than the text labels */}
-        {xGridTicks.map((tick, index) => (
-          <line
-            key={`grid-${index}`}
-            x1={tick.x}
-            y1={paddingTop}
-            x2={tick.x}
-            y2={chartBottom}
-            stroke="#e2e8f0"
-            strokeWidth="1"
-            className="dark:stroke-zinc-600/50"
-          />
-        ))}
-
-        {/* X LABELS: independently spaced for legibility */}
-        {xLabelTicks.map((tick, index) => (
-          <text
-            key={`label-${index}`}
-            x={tick.x}
-            y={chartBottom + 20}
-            textAnchor="middle"
-            className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-100 dark:font-light"
-          >
-            {tick.label}
-          </text>
-        ))}
-
-        {/* PREVIOUS CLOSE */}
-
-        {validPreviousClose !== undefined && showPreviousClose && (
-          <g>
+          {[paddingLeft, chartRight].map((x) => (
             <line
-              x1={paddingLeft}
-              y1={previousCloseY}
-              x2={chartRight}
-              y2={previousCloseY}
-              stroke="#94a3b8"
-              strokeDasharray="2 3"
-              strokeWidth="1.5"
+              key={x}
+              x1={x}
+              y1={paddingTop}
+              x2={x}
+              y2={chartBottom}
+              stroke="#e2e8f0"
+              strokeWidth="1"
+              className="dark:stroke-zinc-600/50"
             />
-          </g>
-        )}
+          ))}
 
-        <g clipPath={`url(#plot-clip-${chartId})`}>
-          {/* AREA / LINE CHART */}
+          {/* X GRID: more frequent than the text labels */}
+          {xGridTicks.map((tick, index) => (
+            <line
+              key={`grid-${index}`}
+              x1={tick.x}
+              y1={paddingTop}
+              x2={tick.x}
+              y2={chartBottom}
+              stroke="#e2e8f0"
+              strokeWidth="1"
+              className="dark:stroke-zinc-600/50"
+            />
+          ))}
 
-          {(chartType === "area" || chartType === "line") &&
-            segments.map((points, index) => {
-              const path = buildPath(points);
-              const area = buildArea(points);
+          {/* X LABELS: independently spaced for legibility */}
+          {xLabelTicks.map((tick, index) => (
+            <text
+              key={`label-${index}`}
+              x={tick.x}
+              y={chartBottom + 20}
+              textAnchor="middle"
+              className="jakarta fill-zinc-800 text-[12px] font-normal dark:fill-zinc-100 dark:font-light"
+            >
+              {tick.label}
+            </text>
+          ))}
 
-              return (
-                <g key={index}>
-                  {chartType === "area" && area && (
-                    <path d={area} fill={`url(#${gradientId})`} />
-                  )}
+          {/* PREVIOUS CLOSE */}
 
-                  {points.length >= 2 && (
-                    <path
-                      d={path}
-                      fill="none"
-                      stroke={strokeColor}
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  )}
-
-                  {points.length === 1 && points[0] !== lastPoint && (
-                    <circle
-                      cx={points[0].x}
-                      cy={points[0].y}
-                      r="2.5"
-                      fill={strokeColor}
-                    />
-                  )}
-                </g>
-              );
-            })}
-
-          {/* LUNCH BREAK */}
-
-          {hasLunch &&
-            lunchStartPoint &&
-            lunchEndPoint &&
-            (chartType === "line" || chartType === "area") && (
-              <g>
-                <line
-                  x1={lunchStartPoint.x}
-                  y1={lunchStartPoint.y}
-                  x2={lunchEndPoint.x}
-                  y2={lunchStartPoint.y}
-                  stroke={strokeColor}
-                  strokeDasharray="2 3.5"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  opacity="0.6"
-                />
-
-                <text
-                  x={(lunchStartPoint.x + lunchEndPoint.x) / 2}
-                  y={(lunchStartPoint.y + lunchEndPoint.y) / 2 - 10}
-                  textAnchor="middle"
-                  className="outfit fill-zinc-400 text-[15px] font-medium dark:fill-zinc-400"
-                >
-                  {marketLabels.lunch_break}
-                </text>
-              </g>
-            )}
-
-          {/* CANDLESTICK */}
-
-          {chartType === "candle" && (
+          {validPreviousClose !== undefined && showPreviousClose && (
             <g>
-              {coords.map((point, index) => {
-                const color = point.isRising ? "#008549" : "var(--chart-down)";
+              <line
+                x1={paddingLeft}
+                y1={previousCloseY}
+                x2={chartRight}
+                y2={previousCloseY}
+                stroke="#94a3b8"
+                strokeDasharray="2 3"
+                strokeWidth="1.5"
+              />
+            </g>
+          )}
 
-                const candleTop = Math.min(point.openY, point.closeY);
+          <g clipPath={`url(#plot-clip-${chartId})`}>
+            {/* AREA / LINE CHART */}
 
-                const candleHeight = Math.max(
-                  Math.abs(point.closeY - point.openY),
-                  1.5,
-                );
+            {(chartType === "area" || chartType === "line") &&
+              segments.map((points, index) => {
+                const path = buildPath(points);
+                const area = buildArea(points);
 
                 return (
                   <g key={index}>
-                    <line
-                      x1={point.x}
-                      y1={point.highY}
-                      x2={point.x}
-                      y2={point.lowY}
-                      stroke={color}
-                      strokeWidth="1.25"
-                    />
+                    {chartType === "area" && area && (
+                      <path d={area} fill={`url(#${gradientId})`} />
+                    )}
 
-                    <rect
-                      x={point.x - candleWidth / 2}
-                      y={candleTop}
-                      width={candleWidth}
-                      height={candleHeight}
-                      fill={color}
-                      rx="0.5"
-                    />
+                    {points.length >= 2 && (
+                      <path
+                        d={path}
+                        fill="none"
+                        stroke={strokeColor}
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    )}
+
+                    {points.length === 1 && points[0] !== lastPoint && (
+                      <circle
+                        cx={points[0].x}
+                        cy={points[0].y}
+                        r="2.5"
+                        fill={strokeColor}
+                      />
+                    )}
                   </g>
                 );
               })}
-            </g>
-          )}
 
-          {/* OPTIONAL MOVING AVERAGES — available in every chart mode */}
-          <g pointerEvents="none">
-            {showMA5 && ma5Path && (
-              <path
-                d={ma5Path}
-                fill="none"
-                stroke="#2563eb"
-                strokeWidth="1.8"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            )}
-            {showMA20 && ma20Path && (
-              <path
-                d={ma20Path}
-                fill="none"
-                stroke="#d97706"
-                strokeWidth="1.8"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            )}
-            {showMA60 && ma60Path && (
-              <path
-                d={ma60Path}
-                fill="none"
-                stroke="#9333ea"
-                strokeWidth="1.8"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            )}
-          </g>
+            {/* LUNCH BREAK */}
 
-          {/* LATEST DATA POINT */}
+            {hasLunch &&
+              lunchStartPoint &&
+              lunchEndPoint &&
+              (chartType === "line" || chartType === "area") && (
+                <g>
+                  <line
+                    x1={lunchStartPoint.x}
+                    y1={lunchStartPoint.y}
+                    x2={lunchEndPoint.x}
+                    y2={lunchStartPoint.y}
+                    stroke={strokeColor}
+                    strokeDasharray="2 3.5"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    opacity="0.6"
+                  />
 
-          {!hoveredPoint &&
-            lastPoint.x >= paddingLeft &&
-            lastPoint.x <= chartRight &&
-            (chartType === "line" || chartType === "area") && (
-              <circle
-                cx={lastPoint.x}
-                cy={lastPoint.y}
-                r="4.5"
-                fill={strokeColor}
-              />
-            )}
-        </g>
+                  <text
+                    x={(lunchStartPoint.x + lunchEndPoint.x) / 2}
+                    y={(lunchStartPoint.y + lunchEndPoint.y) / 2 - 10}
+                    textAnchor="middle"
+                    className="outfit fill-zinc-400 text-[15px] font-medium dark:fill-zinc-400"
+                  >
+                    {marketLabels.lunch_break}
+                  </text>
+                </g>
+              )}
 
-        {/* HOVER CROSSHAIR */}
+            {/* CANDLESTICK */}
 
-        {hoveredPoint && (
-          <g>
-            <line
-              x1={hoveredPoint.x}
-              y1={paddingTop}
-              x2={hoveredPoint.x}
-              y2={chartBottom}
-              stroke="#94a3b8"
-              strokeDasharray="3 3"
-              strokeWidth="1.5"
-            />
+            {chartType === "candle" && (
+              <g>
+                {coords.map((point, index) => {
+                  const color = point.isRising ? "#008549" : downColor;
 
-            <circle
-              cx={hoveredPoint.x}
-              cy={hoveredPoint.y}
-              r="5"
-              fill={strokeColor}
-              strokeWidth="2"
-              className="stroke-white dark:stroke-zinc-200"
-            />
+                  const candleTop = Math.min(point.openY, point.closeY);
 
-            <g transform={`translate(${hoverLabelX}, ${chartBottom - 5})`}>
-              <rect
-                x="0"
-                y="0"
-                width="120"
-                height="24"
-                rx="6"
-                className="fill-white stroke-zinc-100 dark:fill-zinc-800 dark:stroke-zinc-700"
-              />
+                  const candleHeight = Math.max(
+                    Math.abs(point.closeY - point.openY),
+                    1.5,
+                  );
 
-              <text
-                x="60"
-                y="16.5"
-                textAnchor="middle"
-                className="fill-zinc-700 text-[12px] font-medium dark:fill-zinc-200"
-              >
-                {hoveredPoint.timeStr}
-              </text>
-            </g>
-          </g>
-        )}
+                  return (
+                    <g key={index}>
+                      <line
+                        x1={point.x}
+                        y1={point.highY}
+                        x2={point.x}
+                        y2={point.lowY}
+                        stroke={color}
+                        strokeWidth="1.25"
+                      />
 
-        {/* PREVIOUS CLOSE LABEL — above chart and crosshair */}
-        {typeof validPreviousClose === "number" &&
-          Number.isFinite(validPreviousClose) &&
-          typeof previousCloseY === "number" &&
-          Number.isFinite(previousCloseY) &&
-          showPreviousClose && (
-            <text
-              x={chartRight - 10}
-              y={previousCloseY - 15}
-              textAnchor="end"
-              pointerEvents="none"
-              className="jakarta fill-zinc-800 text-[12px] dark:fill-zinc-100 dark:font-light"
-            >
-              {marketLabels.prev_close}:{" "}
-              <tspan className="font-bold">
-                {validPreviousClose.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
+                      <rect
+                        x={point.x - candleWidth / 2}
+                        y={candleTop}
+                        width={candleWidth}
+                        height={candleHeight}
+                        fill={color}
+                        rx="0.5"
+                      />
+                    </g>
+                  );
                 })}
-              </tspan>
-            </text>
+              </g>
+            )}
+
+            {/* OPTIONAL MOVING AVERAGES — available in every chart mode */}
+            <g pointerEvents="none">
+              {showMA5 && ma5Path && (
+                <path
+                  d={ma5Path}
+                  fill="none"
+                  stroke="#2563eb"
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+              )}
+              {showMA20 && ma20Path && (
+                <path
+                  d={ma20Path}
+                  fill="none"
+                  stroke="#d97706"
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+              )}
+              {showMA60 && ma60Path && (
+                <path
+                  d={ma60Path}
+                  fill="none"
+                  stroke="#9333ea"
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+              )}
+            </g>
+
+            {/* LATEST DATA POINT */}
+
+            {!hoveredPoint &&
+              lastPoint.x >= paddingLeft &&
+              lastPoint.x <= chartRight &&
+              (chartType === "line" || chartType === "area") && (
+                <circle
+                  cx={lastPoint.x}
+                  cy={lastPoint.y}
+                  r="4.5"
+                  fill={strokeColor}
+                />
+              )}
+          </g>
+
+          {/* HOVER CROSSHAIR */}
+
+          {hoveredPoint && (
+            <g data-capture-hover="true">
+              <line
+                x1={hoveredPoint.x}
+                y1={paddingTop}
+                x2={hoveredPoint.x}
+                y2={chartBottom}
+                stroke="#94a3b8"
+                strokeDasharray="3 3"
+                strokeWidth="1.5"
+              />
+
+              <circle
+                cx={hoveredPoint.x}
+                cy={hoveredPoint.y}
+                r="5"
+                fill={strokeColor}
+                strokeWidth="2"
+                className="stroke-white dark:stroke-zinc-200"
+              />
+
+              <g transform={`translate(${hoverLabelX}, ${chartBottom - 5})`}>
+                <rect
+                  x="0"
+                  y="0"
+                  width="120"
+                  height="24"
+                  rx="6"
+                  className="fill-white stroke-zinc-100 dark:fill-zinc-800 dark:stroke-zinc-700"
+                />
+
+                <text
+                  x="60"
+                  y="16.5"
+                  textAnchor="middle"
+                  className="fill-zinc-700 text-[12px] font-medium dark:fill-zinc-200"
+                >
+                  {hoveredPoint.timeStr}
+                </text>
+              </g>
+            </g>
           )}
-      </svg>
+
+          {/* PREVIOUS CLOSE LABEL — above chart and crosshair */}
+          {typeof validPreviousClose === "number" &&
+            Number.isFinite(validPreviousClose) &&
+            typeof previousCloseY === "number" &&
+            Number.isFinite(previousCloseY) &&
+            showPreviousClose && (
+              <text
+                x={chartRight - 10}
+                y={previousCloseY - 15}
+                textAnchor="end"
+                pointerEvents="none"
+                className="jakarta fill-zinc-800 text-[12px] dark:fill-zinc-100 dark:font-light"
+              >
+                {marketLabels.prev_close}:{" "}
+                <tspan className="font-bold">
+                  {validPreviousClose.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </tspan>
+              </text>
+            )}
+        </svg>
+      </div>
 
       {/* RANGE (left) + ZOOM (right) */}
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+      <div className="px-4 pb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex min-w-0 flex-wrap items-center gap-1 sm:gap-2">
           {ranges?.map((option) => (
             <button

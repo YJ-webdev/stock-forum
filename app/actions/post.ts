@@ -48,6 +48,10 @@ const REPLY_SELECT = {
   parentId: true,
   content: true,
 
+  imageUrl: true,
+  imageWidth: true,
+  imageHeight: true,
+
   gifUrl: true,
   gifWidth: true,
   gifHeight: true,
@@ -1575,6 +1579,36 @@ export async function restoreComment(commentId: string, reason?: string) {
   };
 }
 
+import type { CommentImage } from "@/lib/types/comment-image";
+
+function validateReplyImage(image: CommentImage | null): CommentImage | null {
+  if (!image) return null;
+
+  if (
+    image.mediaType !== "image" ||
+    typeof image.src !== "string" ||
+    !Number.isInteger(image.width) ||
+    !Number.isInteger(image.height) ||
+    image.width <= 0 ||
+    image.height <= 0 ||
+    image.width > 1600 ||
+    image.height > 1600
+  ) {
+    throw new Error("Invalid reply image.");
+  }
+
+  const url = new URL(image.src);
+
+  if (
+    url.protocol !== "https:" ||
+    !url.pathname.startsWith("/comment-images/")
+  ) {
+    throw new Error("Invalid reply image URL.");
+  }
+
+  return image;
+}
+
 export async function createReply({
   commentId,
   parentId = null,
@@ -1582,6 +1616,7 @@ export async function createReply({
   gifUrl = null,
   gifWidth = null,
   gifHeight = null,
+  image = null,
 }: {
   commentId: string;
   parentId?: string | null;
@@ -1589,6 +1624,7 @@ export async function createReply({
   gifUrl?: string | null;
   gifWidth?: number | null;
   gifHeight?: number | null;
+  image?: CommentImage | null;
 }) {
   const session = await auth();
 
@@ -1602,7 +1638,13 @@ export async function createReply({
   const userId = session.user.id;
   const trimmedContent = content.trim();
 
-  if (!trimmedContent && !gifUrl) {
+  const validatedImage = validateReplyImage(image);
+
+  if (gifUrl && validatedImage) {
+    throw new Error("Attach either a GIF or an image.");
+  }
+
+  if (!trimmedContent && !gifUrl && !validatedImage) {
     throw new Error(labels.write_reply);
   }
 
@@ -1691,6 +1733,10 @@ export async function createReply({
       data: {
         content: trimmedContent,
 
+        imageUrl: validatedImage?.src ?? null,
+        imageWidth: validatedImage?.width ?? null,
+        imageHeight: validatedImage?.height ?? null,
+
         gifUrl,
         gifWidth: dimensions?.width ?? null,
         gifHeight: dimensions?.height ?? null,
@@ -1749,12 +1795,14 @@ export async function editReply({
   gifUrl = null,
   gifWidth = null,
   gifHeight = null,
+  image = null,
 }: {
   replyId: string;
   content: string;
   gifUrl?: string | null;
   gifWidth?: number | null;
   gifHeight?: number | null;
+  image?: CommentImage | null;
 }) {
   const session = await auth();
 
@@ -1768,7 +1816,13 @@ export async function editReply({
   const userId = session.user.id;
   const trimmedContent = content.trim();
 
-  if (!trimmedContent && !gifUrl) {
+  const validatedImage = validateReplyImage(image);
+
+  if (gifUrl && validatedImage) {
+    throw new Error("Attach either a GIF or an image.");
+  }
+
+  if (!trimmedContent && !gifUrl && !validatedImage) {
     throw new Error(labels.write_reply);
   }
 
@@ -1778,11 +1832,11 @@ export async function editReply({
 
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`
-      SELECT "id"
-      FROM "User"
-      WHERE "id" = ${userId}
-      FOR UPDATE
-    `;
+        SELECT "id"
+        FROM "User"
+        WHERE "id" = ${userId}
+        FOR UPDATE
+      `;
 
     const author = await tx.user.findUnique({
       where: { id: userId },
@@ -1806,6 +1860,10 @@ export async function editReply({
         authorId: true,
         commentId: true,
         content: true,
+
+        imageUrl: true,
+        imageWidth: true,
+        imageHeight: true,
 
         gifUrl: true,
         gifWidth: true,
@@ -1852,10 +1910,15 @@ export async function editReply({
     const nextGifHeight = dimensions?.height ?? null;
 
     const contentChanged =
-      reply.content !== trimmedContent || reply.gifUrl !== gifUrl;
+      reply.content !== trimmedContent ||
+      reply.gifUrl !== gifUrl ||
+      reply.imageUrl !== (validatedImage?.src ?? null);
 
     const dimensionsChanged =
-      reply.gifWidth !== nextGifWidth || reply.gifHeight !== nextGifHeight;
+      reply.gifWidth !== nextGifWidth ||
+      reply.gifHeight !== nextGifHeight ||
+      reply.imageWidth !== (validatedImage?.width ?? null) ||
+      reply.imageHeight !== (validatedImage?.height ?? null);
 
     if (!contentChanged) {
       // Metadata-only changes should not create an edited
@@ -1866,6 +1929,8 @@ export async function editReply({
             data: {
               gifWidth: nextGifWidth,
               gifHeight: nextGifHeight,
+              imageWidth: validatedImage?.width ?? null,
+              imageHeight: validatedImage?.height ?? null,
             },
             select: REPLY_SELECT,
           })
@@ -1895,6 +1960,10 @@ export async function editReply({
         gifUrl,
         gifWidth: nextGifWidth,
         gifHeight: nextGifHeight,
+
+        imageUrl: validatedImage?.src ?? null,
+        imageWidth: validatedImage?.width ?? null,
+        imageHeight: validatedImage?.height ?? null,
 
         visibility,
         editedAt: new Date(),

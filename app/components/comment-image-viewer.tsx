@@ -11,6 +11,9 @@ interface CommentImageViewerProps {
   height?: number;
 }
 
+const PREVIEW_WIDTH = 180;
+const FALLBACK_DIMENSION = 1600;
+
 export function CommentImageViewer({
   src,
   alt,
@@ -25,10 +28,14 @@ export function CommentImageViewer({
   const reduceMotion = useReducedMotion();
 
   const imageWidth =
-    width && Number.isFinite(width) && width > 0 ? width : 1600;
+    typeof width === "number" && Number.isFinite(width) && width > 0
+      ? width
+      : FALLBACK_DIMENSION;
 
   const imageHeight =
-    height && Number.isFinite(height) && height > 0 ? height : 1600;
+    typeof height === "number" && Number.isFinite(height) && height > 0
+      ? height
+      : FALLBACK_DIMENSION;
 
   const aspectRatio = imageWidth / imageHeight;
 
@@ -40,7 +47,11 @@ export function CommentImageViewer({
     const observer = new ResizeObserver(([entry]) => {
       if (!entry) return;
 
-      setContainerWidth(entry.contentRect.width);
+      const nextWidth = entry.contentRect.width;
+
+      setContainerWidth((previous) =>
+        Math.abs(previous - nextWidth) < 1 ? previous : nextWidth,
+      );
     });
 
     observer.observe(container);
@@ -48,9 +59,9 @@ export function CommentImageViewer({
     return () => observer.disconnect();
   }, []);
 
-  const availableWidth = containerWidth || 180;
+  const availableWidth = containerWidth || PREVIEW_WIDTH;
 
-  const collapsedWidth = Math.min(180, imageWidth, availableWidth);
+  const collapsedWidth = Math.min(PREVIEW_WIDTH, imageWidth, availableWidth);
 
   const expandedWidth = Math.min(imageWidth, availableWidth);
 
@@ -95,15 +106,26 @@ export function CommentImageViewer({
           ${expanded ? "cursor-zoom-out" : "cursor-zoom-in"}
         `}
       >
-        <Image
-          src={src}
-          alt={alt}
-          fill
-          quality={hasExpanded ? 85 : 50}
-          sizes={hasExpanded ? "(max-width: 768px) 100vw, 800px" : "180px"}
-          loading="lazy"
-          className="rounded-lg object-contain"
-        />
+        {hasExpanded ? (
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            unoptimized
+            sizes="100vw"
+            className="rounded-lg object-contain"
+          />
+        ) : (
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            quality={50}
+            sizes="180px"
+            loading="lazy"
+            className="rounded-lg object-contain"
+          />
+        )}
       </motion.button>
     </div>
   );

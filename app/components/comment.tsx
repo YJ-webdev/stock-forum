@@ -34,12 +34,16 @@ import {
 } from "@/lib/data/translations";
 import { getErrorMessage } from "@/lib/utils/get-error-message";
 
-import { CommentOnlyInput } from "./comment-only-input";
 import { PredictionCommentInput } from "./prediction-comment-input";
 import { CommentItem } from "./comment-item";
 import type { GifResult } from "./gif-picker";
 import { LoadMoreButton } from "./load-more-button";
 import type { CommentImage } from "@/lib/types/comment-image";
+import dynamic from "next/dynamic";
+
+const CommentEditor = dynamic(() =>
+  import("./comment-editor").then((module) => module.CommentEditor),
+);
 
 const TIME_REFRESH_INTERVAL_MS = 60_000;
 
@@ -61,6 +65,10 @@ export interface MarketReply {
   gifUrl: string | null;
   gifWidth: number | null;
   gifHeight: number | null;
+
+  imageUrl: string | null;
+  imageWidth: number | null;
+  imageHeight: number | null;
 
   createdAt: Date;
   updatedAt: Date;
@@ -741,7 +749,8 @@ export function MarketComments({
           showCountdown={prediction.showCountdown}
         />
       ) : (
-        <CommentOnlyInput
+        <CommentEditor
+          mode="create"
           key={commentContextKey}
           draft={draft}
           onDraftChange={setDraft}

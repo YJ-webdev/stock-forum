@@ -40,8 +40,8 @@ import { ReplyItem, ReplyTextContent } from "./reply-item";
 
 import type { MarketReply } from "./comment";
 
-const CommentEditInput = dynamic(() =>
-  import("./comment-edit-input").then((module) => module.CommentEditInput),
+const CommentEditor = dynamic(() =>
+  import("./comment-editor").then((module) => module.CommentEditor),
 );
 
 const PredictionCommentEditInput = dynamic(() =>
@@ -50,8 +50,8 @@ const PredictionCommentEditInput = dynamic(() =>
   ),
 );
 
-const ReplyInput = dynamic(() =>
-  import("./reply-input").then((module) => module.ReplyInput),
+const ReplyEditor = dynamic(() =>
+  import("./reply-editor").then((module) => module.ReplyEditor),
 );
 
 type Comment = MarketPageComments[number];
@@ -543,7 +543,8 @@ export function CommentItem({
             <div className="shrink-0">{avatar}</div>
 
             <div className="min-w-0 flex-1">
-              <CommentEditInput
+              <CommentEditor
+                mode="edit"
                 key={`comment-edit:${comment.id}`}
                 commentId={comment.id}
                 initialContent={initialEditContent}
@@ -755,7 +756,8 @@ export function CommentItem({
               )}
 
               {!comment.moderatedAt && replying && (
-                <ReplyInput
+                <ReplyEditor
+                  mode="create"
                   commentId={comment.id}
                   parentId={null}
                   username={username}

@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import {
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type Ref,
+} from "react";
 import { Image as ImageIcon, LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,7 +27,15 @@ export interface ImageButtonLabels {
   failed: string;
 }
 
+export interface MediaButtonsHandle {
+  uploadImage: (file: File) => Promise<CommentImage | null>;
+  cancelUpload: () => void;
+  waitForUpload: () => Promise<CommentImage | null>;
+}
+
 interface MediaButtonsProps {
+  ref?: Ref<MediaButtonsHandle>;
+
   isLoggedIn: boolean;
   isChatRestricted: boolean;
   busy: boolean;
@@ -32,6 +47,8 @@ interface MediaButtonsProps {
   isSubmitting?: () => boolean;
 
   onImageSelect: (image: CommentImage) => void;
+  onImagePreview?: (url: string, file: File) => void;
+  onImageUploadError?: () => void;
   onGifSelect: (gif: GifResult) => void;
   onUploadingChange?: (uploading: boolean) => void;
 }
@@ -106,6 +123,7 @@ function getUploadError(code: unknown, labels: ImageButtonLabels): string {
 }
 
 export function MediaButtons({
+  ref,
   isLoggedIn,
   isChatRestricted,
   busy,
@@ -114,6 +132,8 @@ export function MediaButtons({
   restrictedMessage,
   isSubmitting,
   onImageSelect,
+  onImagePreview,
+  onImageUploadError,
   onGifSelect,
   onUploadingChange,
 }: MediaButtonsProps) {
@@ -124,6 +144,8 @@ export function MediaButtons({
   const uploadingRef = useRef(false);
   const mountedRef = useRef(false);
 
+  const uploadPromiseRef = useRef<Promise<CommentImage | null> | null>(null);
+
   const latestRef = useRef({
     isLoggedIn,
     isChatRestricted,
@@ -131,31 +153,24 @@ export function MediaButtons({
     imageLabels,
     isSubmitting,
     onImageSelect,
+    onImagePreview,
+    onImageUploadError,
     onGifSelect,
     onUploadingChange,
   });
 
-  useEffect(() => {
-    latestRef.current = {
-      isLoggedIn,
-      isChatRestricted,
-      busy,
-      imageLabels,
-      isSubmitting,
-      onImageSelect,
-      onGifSelect,
-      onUploadingChange,
-    };
-  }, [
+  latestRef.current = {
     isLoggedIn,
     isChatRestricted,
     busy,
     imageLabels,
     isSubmitting,
     onImageSelect,
+    onImagePreview,
+    onImageUploadError,
     onGifSelect,
     onUploadingChange,
-  ]);
+  };
 
   useEffect(() => {
     mountedRef.current = true;
@@ -169,6 +184,14 @@ export function MediaButtons({
       }
     };
   }, []);
+
+  function cancelUpload() {
+    controllerRef.current?.abort();
+  }
+
+  function waitForUpload() {
+    return uploadPromiseRef.current ?? Promise.resolve(null);
+  }
 
   function isGifBlocked() {
     return uploadingRef.current || Boolean(latestRef.current.isSubmitting?.());
@@ -211,29 +234,26 @@ export function MediaButtons({
     inputRef.current?.click();
   }
 
-  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.currentTarget.files?.[0];
-
-    // Allow selecting the same file again.
-    event.currentTarget.value = "";
-
-    if (!file || !checkImageAccess()) return;
+  function uploadImage(file: File): Promise<CommentImage | null> {
+    if (!checkImageAccess()) {
+      return Promise.resolve(null);
+    }
 
     const labels = latestRef.current.imageLabels;
 
     if (!ALLOWED_TYPES.has(file.type)) {
       toast.error(labels.unsupported);
-      return;
+      return Promise.resolve(null);
     }
 
     if (file.size === 0) {
       toast.error(labels.invalid);
-      return;
+      return Promise.resolve(null);
     }
 
     if (file.size > MAX_FILE_BYTES) {
       toast.error(labels.tooLarge);
-      return;
+      return Promise.resolve(null);
     }
 
     const controller = new AbortController();
@@ -241,73 +261,117 @@ export function MediaButtons({
 
     uploadingRef.current = true;
     setUploading(true);
+
+    const previewUrl = URL.createObjectURL(file);
+
+    latestRef.current.onImagePreview?.(previewUrl, file);
     latestRef.current.onUploadingChange?.(true);
 
-    try {
-      const formData = new FormData();
-      formData.set("file", file);
+    const promise = (async (): Promise<CommentImage | null> => {
+      try {
+        const formData = new FormData();
+        formData.set("file", file);
 
-      const response = await fetch("/api/comment-image", {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
-      });
+        const response = await fetch("/api/comment-image", {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        });
 
-      const result: unknown = await response.json().catch(() => null);
+        const result: unknown = await response.json().catch(() => null);
 
-      if (!mountedRef.current || controller.signal.aborted) return;
+        if (!mountedRef.current || controller.signal.aborted) {
+          return null;
+        }
 
-      const current = latestRef.current;
+        const current = latestRef.current;
 
-      if (!response.ok) {
-        const code = isRecord(result) ? result.error : undefined;
+        if (!response.ok) {
+          const code = isRecord(result) ? result.error : undefined;
 
-        toast.error(
-          response.status === 413
-            ? current.imageLabels.tooLarge
-            : getUploadError(code, current.imageLabels),
-        );
-        return;
+          toast.error(
+            response.status === 413
+              ? current.imageLabels.tooLarge
+              : getUploadError(code, current.imageLabels),
+          );
+
+          current.onImageUploadError?.();
+          return null;
+        }
+
+        if (!isRecord(result) || !isCommentImage(result.image)) {
+          toast.error(current.imageLabels.failed);
+          current.onImageUploadError?.();
+          return null;
+        }
+
+        if (!current.isLoggedIn || current.isChatRestricted) {
+          return null;
+        }
+
+        current.onImageSelect(result.image);
+
+        return result.image;
+      } catch (error) {
+        if (!mountedRef.current || controller.signal.aborted) {
+          return null;
+        }
+
+        console.error("Failed to upload comment image:", error);
+        toast.error(latestRef.current.imageLabels.failed);
+
+        latestRef.current.onImageUploadError?.();
+
+        return null;
+      } finally {
+        if (controllerRef.current === controller) {
+          controllerRef.current = null;
+        }
+
+        uploadingRef.current = false;
+
+        if (mountedRef.current) {
+          setUploading(false);
+          latestRef.current.onUploadingChange?.(false);
+        }
+
+        if (!latestRef.current.onImagePreview) {
+          URL.revokeObjectURL(previewUrl);
+        }
       }
+    })();
 
-      if (!isRecord(result) || !isCommentImage(result.image)) {
-        toast.error(current.imageLabels.failed);
-        return;
+    uploadPromiseRef.current = promise;
+
+    void promise.finally(() => {
+      if (uploadPromiseRef.current === promise) {
+        uploadPromiseRef.current = null;
       }
+    });
 
-      // The parent may be busy because this upload is still active.
-      if (
-        !current.isLoggedIn ||
-        current.isChatRestricted ||
-        current.isSubmitting?.()
-      ) {
-        return;
-      }
+    return promise;
+  }
 
-      current.onImageSelect(result.image);
-    } catch (error) {
-      if (!mountedRef.current || controller.signal.aborted) return;
+  useImperativeHandle(ref, () => ({
+    uploadImage,
+    cancelUpload,
+    waitForUpload,
+  }));
 
-      console.error("Failed to upload comment image:", error);
-      toast.error(latestRef.current.imageLabels.failed);
-    } finally {
-      if (controllerRef.current === controller) {
-        controllerRef.current = null;
-      }
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
 
-      uploadingRef.current = false;
+    event.currentTarget.value = "";
 
-      if (mountedRef.current) {
-        setUploading(false);
-        latestRef.current.onUploadingChange?.(false);
-      }
-    }
+    if (!file) return;
+
+    void uploadImage(file);
   }
 
   const imageLabel = uploading ? imageLabels.uploading : imageLabels.attach;
 
   return (
-    <div className="flex shrink-0 items-center gap-1">
+    <div className="flex shrink-0 items-center">
       <GifButton
         isLoggedIn={isLoggedIn}
         isChatRestricted={isChatRestricted}
