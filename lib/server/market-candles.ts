@@ -14,10 +14,6 @@ const yahoo = new YahooFinance();
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const PROVIDER_SYMBOLS: Record<string, string> = {
-  TOPIX: "1306.T",
-};
-
 interface ChartQuery {
   period1: Date;
   period2?: Date;
@@ -768,7 +764,9 @@ export async function getMarketCandles(
   range = "1D",
   requestedInterval?: string | null,
 ) {
-  const symbol = PROVIDER_SYMBOLS[rawSymbol] || rawSymbol;
+  const market = ALL_MARKET_SYMBOLS.find((item) => item.symbol === rawSymbol);
+
+  const symbol = market?.providerSymbol ?? rawSymbol;
 
   // Long-range charts use consistent candle periods even if a caller
   // supplies a different interval.
@@ -812,13 +810,6 @@ export async function getMarketCandles(
       : [];
 
     const meta = chartResult.meta;
-
-    const market = ALL_MARKET_SYMBOLS.find(
-      (item) =>
-        item.symbol === rawSymbol ||
-        item.symbol === symbol ||
-        item.providerSymbol === symbol,
-    );
 
     const exchangeTimezone =
       market?.timezone ||

@@ -9,19 +9,20 @@ import { toast } from "sonner";
 import type { CommentImage } from "@/lib/types/comment-image";
 
 import {
-  getMarketVote,
-  submitMarketVote,
   updateMarketVote,
   type VoteDirection,
 } from "@/app/actions/market-vote";
-import { createComment, getPredictionCommentForEdit } from "@/app/actions/post";
+import { getPredictionCommentForEdit } from "@/app/actions/post";
+import {
+  createMarketPrediction,
+  editMarketPrediction,
+} from "@/app/lib/market-vote-mutations";
 
 import { useCurrentUser } from "@/app/context/user-context";
 import { usePointBalance } from "@/app/context/point-balance-context";
-import { getBatchedMarketVotes } from "@/app/hooks/batched-market-votes";
+import { useMarketVoteState } from "@/app/hooks/use-market-vote-state";
 import type { CommentDraft } from "@/app/hooks/use-comment-draft";
 
-import { buildCommentContent } from "@/lib/utils/build-comment-content";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
 import { useLiveVotingWindow } from "@/app/hooks/use-live-voting-window";
 import { resolveLanguage } from "@/lib/data/languages";
@@ -75,9 +76,7 @@ const PredictionCommentEditInput = dynamic(
   },
 );
 
-type VoteStatus = NonNullable<
-  Awaited<ReturnType<typeof getMarketVote>>
->["status"];
+type VoteStatus = Awaited<ReturnType<typeof updateMarketVote>>["status"];
 
 type EditablePredictionComment = Awaited<
   ReturnType<typeof getPredictionCommentForEdit>
@@ -99,13 +98,6 @@ interface MarketVoteButtonProps {
   initialVote?: VoteDirection | null;
   initialVoteSessionKey?: string | null;
   enabled?: boolean;
-}
-
-interface VoteState {
-  lookupKey: string | null;
-  direction: VoteDirection | null;
-  pointsBet: number;
-  status: VoteStatus | null;
 }
 
 interface EditorState {
@@ -166,7 +158,6 @@ export function MarketVoteButton({
 
   const submittingRef = useRef(false);
   const mountedRef = useRef(false);
-  const voteRevisionRef = useRef(0);
   const lastFocusRefreshRef = useRef(0);
 
   const [draft, setDraft] = useState<CommentDraft>(createEmptyDraft);
@@ -211,29 +202,28 @@ export function MarketVoteButton({
 
   const lookupKey = JSON.stringify([userId, symbol, sessionKey]);
 
-  const activeLookupKeyRef = useRef(lookupKey);
-  activeLookupKeyRef.current = lookupKey;
-
-  const [voteState, setVoteState] = useState<VoteState>(() => ({
-    lookupKey:
-      userId && initialVoteSessionKey
-        ? JSON.stringify([userId, symbol, initialVoteSessionKey])
-        : null,
-    direction: initialVote,
-    pointsBet: 0,
-    status: null,
-  }));
-
-  const [checkedLookupKey, setCheckedLookupKey] = useState<string | null>(null);
-
-  const [voteLookupFailed, setVoteLookupFailed] = useState(false);
-
-  const currentVote = voteState.lookupKey === lookupKey ? voteState : null;
+  const {
+    activeLookupKeyRef,
+    invalidateRequests,
+    setVoteState,
+    setCheckedLookupKey,
+    voteLookupFailed,
+    setVoteLookupFailed,
+    currentVote,
+    isVoteLoading,
+  } = useMarketVoteState({
+    symbol,
+    viewerId: userId,
+    sessionKey,
+    enabled: active,
+    mode: "batch",
+    refreshVersion,
+    initialVote,
+    initialVoteSessionKey,
+  });
 
   const direction = currentVote?.direction ?? null;
   const existingPointsBet = currentVote?.pointsBet ?? 0;
-
-  const isVoteLoading = Boolean(sessionKey) && checkedLookupKey !== lookupKey;
 
   const voteButtonDisabled = isVoteLoading || isSubmitting;
 
@@ -410,7 +400,7 @@ export function MarketVoteButton({
 
     submittingRef.current = true;
     setIsSubmitting(true);
-    voteRevisionRef.current += 1;
+    invalidateRequests();
 
     let voteSaved = false;
 
@@ -427,64 +417,37 @@ export function MarketVoteButton({
       let savedStatus: VoteStatus = "PENDING";
 
       if (mode === "edit") {
-        const result = await updateMarketVote({
+        const result = await editMarketPrediction({
           symbol,
           direction: submittedDirection,
           pointsBet: 0,
           sessionDate,
         });
-
         voteSaved = true;
-
         updatedPoints = result.points;
         savedDirection = result.direction;
         savedPointsBet = result.pointsBet;
         savedStatus = result.status;
-      } else if (userId) {
-        const submittedComment = canWriteComment ? comment.trim() : "";
-
-        const submittedImage = canWriteComment ? image : null;
-
-        const submittedGif = canWriteComment && !submittedImage ? gif : null;
-
-        const hasContent = Boolean(
-          submittedComment || submittedGif || submittedImage,
-        );
-
-        const result = await createComment({
-          content: hasContent
-            ? buildCommentContent(
-                submittedComment,
-                submittedGif,
-                submittedImage,
-              )
-            : null,
-          assetSymbols: [symbol],
-          prediction: {
-            direction: submittedDirection,
-            pointsBet: submittedAmount,
-            sessionDate,
-          },
-        });
-
-        voteSaved = true;
-        updatedPoints = result.points;
       } else {
-        const result = await submitMarketVote({
+        const result = await createMarketPrediction({
           symbol,
           direction: submittedDirection,
-          pointsBet: 0,
+          pointsBet: submittedAmount,
           sessionDate,
+          viewerId: userId,
+          canWriteComment,
+          comment,
+          gif,
+          image,
         });
-
         voteSaved = true;
-
+        updatedPoints = result.points;
         savedDirection = result.direction;
         savedPointsBet = result.pointsBet;
         savedStatus = result.status;
       }
 
-      voteRevisionRef.current += 1;
+      invalidateRequests();
 
       if (!isCurrentView()) return;
 
@@ -531,7 +494,7 @@ export function MarketVoteButton({
         }
       });
     } catch (error) {
-      voteRevisionRef.current += 1;
+      invalidateRequests();
 
       if (voteSaved) {
         console.error("Prediction saved, but the UI update failed:", error);
@@ -655,64 +618,6 @@ export function MarketVoteButton({
       cancelled = true;
     };
   }, [isCombinedEditing, userId, symbol, editorLookupKey, editLoadVersion]);
-
-  useEffect(() => {
-    if (!active) return;
-
-    let cancelled = false;
-    const revision = voteRevisionRef.current;
-
-    setVoteLookupFailed(false);
-
-    if (!sessionKey) {
-      setCheckedLookupKey(lookupKey);
-      return;
-    }
-
-    const sessionDate = new Date(sessionKey);
-
-    function isCurrentRequest() {
-      return (
-        !cancelled &&
-        revision === voteRevisionRef.current &&
-        activeLookupKeyRef.current === lookupKey
-      );
-    }
-
-    async function loadVote() {
-      try {
-        const result = await getBatchedMarketVotes({
-          symbol,
-          sessionDate,
-          viewerId: userId,
-        });
-
-        const vote = result.myPrediction;
-
-        if (!isCurrentRequest()) return;
-
-        setVoteState({
-          lookupKey,
-          direction: vote?.direction ?? null,
-          pointsBet: vote?.pointsBet ?? 0,
-          status: vote?.status ?? null,
-        });
-
-        setVoteLookupFailed(false);
-      } catch {
-        if (!isCurrentRequest()) return;
-        setVoteLookupFailed(true);
-      } finally {
-        if (isCurrentRequest()) setCheckedLookupKey(lookupKey);
-      }
-    }
-
-    void loadVote();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [symbol, sessionKey, lookupKey, refreshVersion, active, userId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -956,7 +861,7 @@ export function MarketVoteButton({
                       }
 
                       if (saving) {
-                        voteRevisionRef.current += 1;
+                        invalidateRequests();
                       }
                     }}
                     onSaved={(result) => {
@@ -973,7 +878,7 @@ export function MarketVoteButton({
                         savedPrediction &&
                         editorLookupKey === activeLookupKeyRef.current
                       ) {
-                        voteRevisionRef.current += 1;
+                        invalidateRequests();
 
                         setVoteState({
                           lookupKey,

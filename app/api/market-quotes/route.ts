@@ -143,7 +143,7 @@ const getQuote = unstable_cache(
       percent,
     };
   },
-  ["relative-market-quotes-v2"],
+  ["relative-market-quotes-v3"],
   { revalidate: 30 },
 );
 
@@ -181,10 +181,7 @@ export async function GET(request: Request) {
     markets.map(async (market) => {
       const item = market!;
 
-      const providerSymbol =
-        item.providerSymbol ??
-        (item.symbol === "TOPIX" ? "1306.T" : item.symbol);
-
+      const providerSymbol = item.providerSymbol ?? item.symbol;
       try {
         return {
           symbol: item.symbol,

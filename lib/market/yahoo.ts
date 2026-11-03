@@ -27,22 +27,10 @@ export type DailyMarketCandle = {
   close: number;
 };
 
-// -----------------------------------------------------------------------------
-// PROVIDER SYMBOL OVERRIDES
-// -----------------------------------------------------------------------------
-
-const PROVIDER_SYMBOLS: Record<string, string> = {
-  TOPIX: "1306.T",
-};
-
-// -----------------------------------------------------------------------------
-// PROVIDER SYMBOL
-// -----------------------------------------------------------------------------
-
 export function resolveProviderSymbol(symbol: string): string {
   const market = ALL_MARKET_SYMBOLS.find((item) => item.symbol === symbol);
 
-  return market?.providerSymbol ?? PROVIDER_SYMBOLS[symbol] ?? symbol;
+  return market?.providerSymbol ?? symbol;
 }
 
 // -----------------------------------------------------------------------------

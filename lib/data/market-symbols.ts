@@ -256,7 +256,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
     },
 
     {
-      name: "Nasdaq",
+      name: "Nasdaq Composite",
       symbol: "^IXIC",
       displaySymbol: "IXIC",
       country: "US",
@@ -302,7 +302,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
     },
 
     {
-      name: "Bovespa Index",
+      name: "Ibovespa",
       symbol: "^BVSP",
       displaySymbol: "IBOV",
       country: "BR",
@@ -340,7 +340,6 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       marketSchedule: "JP_EQUITY",
       icon: "/market-icons/nikkei225_icon.png",
     },
-
     {
       name: "TOPIX",
       symbol: "TOPIX",
@@ -348,14 +347,13 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       country: "JP",
       region: "Asia",
       assetType: "index",
-      providerSymbol: "1306.T",
-      isProxy: true,
+      providerSymbol: "^TOPX",
       timezone: "Asia/Tokyo",
       marketSchedule: "JP_EQUITY",
     },
 
     {
-      name: "Shanghai Composite Index",
+      name: "Shanghai Composite",
       symbol: "000001.SS",
       displaySymbol: "SSEC",
       country: "CN",
@@ -401,7 +399,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
     },
 
     {
-      name: "TAIEX",
+      name: "Taiwan Weighted",
       symbol: "^TWII",
       displaySymbol: "TAIEX",
       country: "TW",
@@ -600,7 +598,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
 
   Africa: [
     {
-      name: "South Africa Top 40",
+      name: "FTSE/JSE Top 40",
       symbol: "^JN0U.JO",
       displaySymbol: "SA40",
       country: "ZA",

@@ -32,14 +32,13 @@ import { toast } from "sonner";
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { usePointBalance } from "@/app/context/point-balance-context";
+import { getMarketVote } from "@/app/actions/market-vote";
 import {
-  getMarketVote,
-  submitMarketVote,
-  updateMarketVote,
-} from "@/app/actions/market-vote";
-import { createComment, getPredictionCommentForEdit } from "@/app/actions/post";
+  createMarketPrediction,
+  editMarketPrediction,
+} from "@/app/lib/market-vote-mutations";
+import { getPredictionCommentForEdit } from "@/app/actions/post";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
-import { buildCommentContent } from "@/lib/utils/build-comment-content";
 import {
   MARKET_PREDICTION_LABELS,
   VOTE_INTERFACE_LABELS,
@@ -688,7 +687,7 @@ function OverviewPredictionPopup({
 
     try {
       if (editing) {
-        const result = await updateMarketVote({
+        const result = await editMarketPrediction({
           symbol: item.symbol,
           direction,
           pointsBet: 0,
@@ -696,45 +695,27 @@ function OverviewPredictionPopup({
         });
 
         saved = true;
-
-        if (result.points !== null) {
-          setPoints(result.points);
-        }
-      } else if (viewerId) {
-        const canWrite = user?.status !== "BANNED" && user?.status !== "MUTED";
-
-        const submittedImage = canWrite ? image : null;
-
-        const submittedGif = canWrite && !submittedImage ? gif : null;
-
-        const result = await createComment({
-          content: buildCommentContent(
-            canWrite ? comment : "",
-            submittedGif,
-            submittedImage,
-          ),
-          assetSymbols: [item.symbol],
-          prediction: {
-            direction,
-            pointsBet: submittedAmount,
-            sessionDate: new Date(sessionMs),
-          },
-        });
-
-        saved = true;
-
-        if (result.points !== null) {
-          setPoints(result.points);
-        }
+        if (result.points !== null) setPoints(result.points);
       } else {
-        await submitMarketVote({
+        const canWrite =
+          Boolean(viewerId) &&
+          user?.status !== "BANNED" &&
+          user?.status !== "MUTED";
+
+        const result = await createMarketPrediction({
           symbol: item.symbol,
           direction,
-          pointsBet: 0,
+          pointsBet: submittedAmount,
           sessionDate: new Date(sessionMs),
+          viewerId,
+          canWriteComment: canWrite,
+          comment,
+          gif,
+          image,
         });
 
         saved = true;
+        if (result.points !== null) setPoints(result.points);
       }
 
       if (!mountedRef.current) return;
