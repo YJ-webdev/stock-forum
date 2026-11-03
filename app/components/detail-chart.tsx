@@ -219,7 +219,7 @@ export function DetailChart({
   ).length;
   const minZoomSpan = Math.min(
     1,
-    Math.max(0.025, 24 / Math.max(observationCount, 1)),
+    Math.max(0.025, 32 / Math.max(observationCount, 1)),
   );
   const [viewport, setViewport] = useState({ start: 0, end: 1 });
   const svgRef = useRef<SVGSVGElement>(null);
@@ -278,6 +278,27 @@ export function DetailChart({
   );
 
   const resetZoom = useCallback(() => updateViewport(0, 1), [updateViewport]);
+
+  const zoomToLimit = useCallback(
+    (direction: "in" | "out", anchor = 0.5) => {
+      stopHolding();
+
+      if (direction === "out") {
+        resetZoom();
+        return;
+      }
+
+      const current = viewportRef.current;
+      const span = current.end - current.start;
+      const worldAnchor = current.start + span * anchor;
+
+      updateViewport(
+        worldAnchor - minZoomSpan * anchor,
+        worldAnchor + minZoomSpan * (1 - anchor),
+      );
+    },
+    [minZoomSpan, resetZoom, stopHolding, updateViewport],
+  );
 
   const startHolding = useCallback(
     (factor: number) => {
@@ -451,6 +472,13 @@ export function DetailChart({
       context.clip();
       context.drawImage(source, 0, 0);
 
+      context.drawImage(
+        chartImage,
+        (svgRect.left - elementRect.left) * scale,
+        (svgRect.top - elementRect.top) * scale,
+        svgRect.width * scale,
+        svgRect.height * scale,
+      );
       // Export-only branding in the unused space at the top right,
       // centered on the actual MA button row (no extra padding or header).
       const font = 'system-ui, -apple-system, "Segoe UI", sans-serif';
@@ -480,7 +508,7 @@ export function DetailChart({
       context.save();
       context.translate(iconX, iconY);
       context.scale(iconSize / 24, iconSize / 24);
-      context.strokeStyle = dark ? "#d4d4d8" : "#52525b";
+      context.strokeStyle = dark ? "#d4d4d8" : "#3f3f46";
       context.lineWidth = 1.5;
       context.lineCap = "round";
       context.lineJoin = "round";
@@ -505,14 +533,6 @@ export function DetailChart({
       context.font = `400 ${9 * scale}px ${font}`;
       context.fillText(brandUrl, textX, centerY + 7 * scale);
       context.restore();
-
-      context.drawImage(
-        chartImage,
-        (svgRect.left - elementRect.left) * scale,
-        (svgRect.top - elementRect.top) * scale,
-        svgRect.width * scale,
-        svgRect.height * scale,
-      );
 
       return new Promise<Blob>((resolve, reject) => {
         result.toBlob(
@@ -1116,32 +1136,86 @@ export function DetailChart({
     return ticks;
   }
 
-  // Select the finest calendar step that keeps the *grid* readable.
-  // On a 5D overview, show trading-day boundaries instead of arbitrary
-  // hour labels; within a single day, use the same adaptive logic as 1D.
-  let selectedStep: TickStep = candidateSteps[candidateSteps.length - 1].step;
-  if (fiveDayOverview) {
-    selectedStep = { unit: "day", every: 1 };
-  } else {
-    for (const candidate of candidateSteps) {
-      const ticks = buildTicks(candidate.step);
-      if (ticks.length < 2) {
-        selectedStep = candidate.step;
+  // Build the grid and its labels from one shared set of observation ticks.
+  // If calendar buckets are too sparse (for example, at the rightmost zoom
+  // boundary), fall back to evenly sampled real observations for BOTH.
+  const isIntradayAxis = range === "1D" || (range === "5D" && !fiveDayOverview);
+
+  const visibleTickCandidates = visibleData
+    .map((point) => ({
+      x: getX(point.timestampMs),
+      timestampMs: point.timestampMs,
+    }))
+    .filter(
+      (point) =>
+        Number.isFinite(point.x) &&
+        point.x >= paddingLeft + 10 &&
+        point.x <= chartRight - 10,
+    );
+
+  function observationTicks(): XTick[] {
+    const ticks: XTick[] = [];
+    const unit: TickUnit = isIntradayAxis
+      ? "minute"
+      : visibleDurationMs >= 365 * DAY_MS
+        ? "month"
+        : "day";
+
+    for (const point of visibleTickCandidates) {
+      if (ticks.length && point.x - ticks[ticks.length - 1].x < gridSpacing) {
         continue;
       }
-      let minimumDistance = Infinity;
-      for (let i = 1; i < ticks.length; i++) {
-        minimumDistance = Math.min(
-          minimumDistance,
-          ticks[i].x - ticks[i - 1].x,
-        );
+      ticks.push({
+        x: point.x,
+        label: tickLabel(point.timestampMs, unit),
+      });
+    }
+    return ticks;
+  }
+
+  let xGridTicks: XTick[] = [];
+
+  if (fiveDayOverview) {
+    xGridTicks = buildTicks({ unit: "day", every: 1 });
+  } else {
+    // Prefer the finest calendar bucket whose ticks are not overcrowded.
+    // Ignore candidates producing fewer than two visible ticks; otherwise
+    // the axis can get stuck showing a single year/date at extreme zoom.
+    for (const candidate of candidateSteps) {
+      if (candidate.approximateMs > visibleDurationMs) break;
+      const ticks = buildTicks(candidate.step);
+      if (ticks.length < 2) continue;
+      const minimumDistance = Math.min(
+        ...ticks.slice(1).map((tick, index) => tick.x - ticks[index].x),
+      );
+      if (minimumDistance >= gridSpacing) {
+        xGridTicks = ticks;
+        break;
       }
-      selectedStep = candidate.step;
-      if (minimumDistance >= gridSpacing) break;
     }
   }
 
-  const xGridTicks = buildTicks(selectedStep);
+  // Rebuild both grid and labels together when calendar ticks do not
+  // adequately cover the visible observations. Never patch only labels.
+  const observationGrid = observationTicks();
+  const gridCoverage =
+    xGridTicks.length >= 2
+      ? xGridTicks[xGridTicks.length - 1].x - xGridTicks[0].x
+      : 0;
+  const observationCoverage =
+    observationGrid.length >= 2
+      ? observationGrid[observationGrid.length - 1].x - observationGrid[0].x
+      : 0;
+
+  if (
+    xGridTicks.length < 2 ||
+    (observationGrid.length >= 2 && gridCoverage < observationCoverage * 0.6)
+  ) {
+    xGridTicks = observationGrid;
+  }
+
+  // Labels are always a readable subset of the SAME grid positions.
+  // Thus every label has a corresponding vertical guide line.
   const xLabelTicks: XTick[] = [];
   let lastLabelX = -Infinity;
   for (const tick of xGridTicks) {
@@ -1365,8 +1439,8 @@ export function DetailChart({
   // Leave a visible gap between adjacent candle bodies (at least 1 SVG unit).
   // Width stays proportional to spacing and never overlaps neighboring candles.
   const candleWidth = Math.max(
-    0.5,
-    Math.min(minimumPointSpacing * 0.82, minimumPointSpacing - 1, 14),
+    1,
+    Math.min(minimumPointSpacing * 0.75, minimumPointSpacing - 2, 22),
   );
 
   const hoverLabelX = hoveredPoint
@@ -1609,6 +1683,23 @@ export function DetailChart({
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
           onMouseLeave={() => setHoveredPoint(null)}
+          onDoubleClick={(event) => {
+            const position = getSvgPosition(event.clientX, event.clientY);
+            if (!position) return;
+
+            if (position.x < paddingLeft || position.x > chartRight) return;
+
+            const anchor = getAnchor(position.x);
+
+            const currentSpan =
+              viewportRef.current.end - viewportRef.current.start;
+
+            if (currentSpan <= minZoomSpan + 0.0001) {
+              zoomToLimit("out");
+            } else {
+              zoomToLimit("in", anchor);
+            }
+          }}
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
