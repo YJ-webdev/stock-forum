@@ -3,13 +3,13 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   useTransition,
   type PointerEvent,
+  type MouseEvent,
+  type KeyboardEvent,
 } from "react";
-
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -30,7 +30,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
 import {
   addMarketsToWatchlist,
   removeMarketsFromWatchlist,
@@ -47,254 +46,82 @@ const MarketPicker = dynamic(() =>
   import("./market-picker").then((module) => module.MarketPicker),
 );
 
-interface HomeMarketCarouselProps {
-  markets: HomeMarketEntry[];
-}
-
-interface DragState {
+type Direction = -1 | 1;
+type DragState = {
   pointerId: number;
   startX: number;
   startScrollLeft: number;
   active: boolean;
-}
+};
+
+const MANAGE_CLASS =
+  "outfit flex h-60 shrink-0 cursor-pointer flex-col items-center justify-center gap-2 " +
+  "rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50/60 text-sm text-zinc-500 " +
+  "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 " +
+  "dark:border-zinc-700 dark:bg-zinc-800/20 dark:text-zinc-400";
 
 function formatLabel(
   template: string,
   values: Record<string, string | number>,
-): string {
-  return template.replace(/\{(\w+)\}/g, (placeholder, key: string) =>
-    values[key] !== undefined ? String(values[key]) : placeholder,
+) {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    key in values ? String(values[key]) : match,
   );
 }
 
-const MANAGE_BUTTON_CLASS =
-  "outfit flex h-60 shrink-0 cursor-pointer " +
-  "flex-col items-center justify-center gap-2 " +
-  "rounded-xl border-2 border-dashed border-zinc-200 " +
-  "bg-zinc-50/60 text-sm text-zinc-500 transition-colors " +
-  "focus-visible:outline-none focus-visible:ring-2 " +
-  "focus-visible:ring-zinc-400 " +
-  "dark:border-zinc-700 dark:bg-zinc-800/20 dark:text-zinc-400";
-
-const SCROLL_BUTTON_CLASS =
-  "group/scroll absolute top-1/2 z-20 flex -translate-y-1/2 " +
-  "items-center justify-center rounded-full p-2 " +
-  "opacity-0 transition-opacity duration-150 " +
-  "group-hover/markets:opacity-100! focus-visible:opacity-100! " +
-  "focus-visible:outline-none focus-visible:ring-2 " +
-  "focus-visible:ring-zinc-400";
-
-const SCROLL_BUTTON_FACE_CLASS =
-  "flex size-9 items-center justify-center rounded-full " +
-  "border border-zinc-200 bg-white shadow-sm transition-colors " +
-  "dark:border-zinc-700 dark:bg-zinc-900";
-
-export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
-  const router = useRouter();
-  const user = useCurrentUser();
-  const userLanguage = resolveLanguage(user?.language);
-  const labels = WATCHLIST_LABELS[userLanguage];
-  const marketNames = MARKET_NAME_LABELS[userLanguage];
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<DragState | null>(null);
-  const suppressClickRef = useRef(false);
-  const savingRef = useRef(false);
-
+function useCarouselScroll(enabled: boolean) {
+  const ref = useRef<HTMLDivElement>(null);
+  const drag = useRef<DragState | null>(null);
+  const suppressClick = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [selectedSymbols, setSelectedSymbols] = useState<string[]>([]);
-  const [isPending, startTransition] = useTransition();
+  const [edges, setEdges] = useState({ left: false, right: false });
 
-  const isEmpty = markets.length === 0;
-  const existingSymbols = useMemo(
-    () => markets.map(({ market }) => market.symbol),
-    [markets],
-  );
-
-  const symbolsToAdd = selectedSymbols.filter(
-    (symbol) => !existingSymbols.includes(symbol),
-  );
-
-  const symbolsToRemove = existingSymbols.filter(
-    (symbol) => !selectedSymbols.includes(symbol),
-  );
-
-  const totalWatchlistCount = new Set(selectedSymbols).size;
-  const hasChanges = symbolsToAdd.length > 0 || symbolsToRemove.length > 0;
-
-  const limitLabel = formatLabel(labels.limit, {
-    max: MAX_WATCHLIST_MARKETS,
-  });
-
-  const updateScrollButtons = useCallback(() => {
-    const element = scrollRef.current;
-
-    if (!element) {
-      setCanScrollLeft(false);
-      setCanScrollRight(false);
-      return;
-    }
-
-    const maxScroll = element.scrollWidth - element.clientWidth;
-
-    setCanScrollLeft(element.scrollLeft > 1);
-    setCanScrollRight(element.scrollLeft < maxScroll - 1);
+  const updateEdges = useCallback(() => {
+    const el = ref.current;
+    const left = !!el && el.scrollLeft > 1;
+    const right = !!el && el.scrollLeft < el.scrollWidth - el.clientWidth - 1;
+    setEdges((old) =>
+      old.left === left && old.right === right ? old : { left, right },
+    );
   }, []);
 
   useEffect(() => {
-    const element = scrollRef.current;
+    const el = ref.current;
+    if (!el || !enabled) return;
 
-    if (!element) {
-      updateScrollButtons();
-      return;
-    }
-
+    updateEdges();
     if (typeof ResizeObserver !== "undefined") {
-      const observer = new ResizeObserver(updateScrollButtons);
-
-      observer.observe(element);
-
-      if (element.firstElementChild) {
-        observer.observe(element.firstElementChild);
-      }
-
+      const observer = new ResizeObserver(updateEdges);
+      observer.observe(el);
+      if (el.firstElementChild) observer.observe(el.firstElementChild);
       return () => observer.disconnect();
     }
 
-    const frame = window.requestAnimationFrame(updateScrollButtons);
+    window.addEventListener("resize", updateEdges);
+    return () => window.removeEventListener("resize", updateEdges);
+  }, [enabled, updateEdges]);
 
-    window.addEventListener("resize", updateScrollButtons);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("resize", updateScrollButtons);
-    };
-  }, [markets, updateScrollButtons]);
-
-  function openPicker() {
-    if (savingRef.current) return;
-
-    if (!user) {
-      toast.error(labels.login);
-      return;
-    }
-
-    setSelectedSymbols([...existingSymbols]);
-    setIsPickerOpen(true);
-  }
-
-  function handlePickerOpenChange(open: boolean) {
-    if (savingRef.current) return;
-
-    setIsPickerOpen(open);
-
-    if (!open) {
-      setSelectedSymbols([]);
-    }
-  }
-
-  function toggleMarket(symbol: string) {
-    if (savingRef.current) return;
-
-    setSelectedSymbols((previous) => {
-      if (previous.includes(symbol)) {
-        return previous.filter((item) => item !== symbol);
-      }
-
-      if (previous.length >= MAX_WATCHLIST_MARKETS) {
-        return previous;
-      }
-
-      return [...previous, symbol];
+  const scroll = useCallback((direction: Direction) => {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollBy({
+      left: direction * el.clientWidth,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
     });
-  }
+  }, []);
 
-  function handleSaveMarkets() {
-    if (savingRef.current || !hasChanges) return;
-
-    if (!user) {
-      toast.error(labels.login);
-      return;
-    }
-
-    if (totalWatchlistCount > MAX_WATCHLIST_MARKETS) {
-      toast.error(limitLabel);
-      return;
-    }
-
-    const additions = [...symbolsToAdd];
-    const removals = [...symbolsToRemove];
-
-    savingRef.current = true;
-
-    startTransition(async () => {
-      let removed = false;
-
-      try {
-        // Remove first so replacements work at the watchlist limit.
-        if (removals.length > 0) {
-          await removeMarketsFromWatchlist(removals);
-          removed = true;
-        }
-
-        if (additions.length > 0) {
-          await addMarketsToWatchlist(additions);
-        }
-
-        setIsPickerOpen(false);
-        setSelectedSymbols([]);
-
-        toast.success(labels.updated);
-        router.refresh();
-      } catch {
-        if (removed) {
-          // Reflect successful removals if additions failed.
-          setSelectedSymbols((previous) =>
-            previous.filter((symbol) => !additions.includes(symbol)),
-          );
-          router.refresh();
-        }
-
-        toast.error(removed ? labels.partial_failure : labels.failed);
-      } finally {
-        savingRef.current = false;
-      }
-    });
-  }
-
-  function scrollByCard(direction: -1 | 1) {
-    const container = scrollRef.current;
-
-    if (!container) return;
-
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
-    container.scrollBy({
-      left: direction * container.clientWidth,
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-    });
-  }
-
-  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
-    suppressClickRef.current = false;
-
+  function onPointerDown(event: PointerEvent<HTMLDivElement>) {
     if (event.pointerType !== "mouse" || event.button !== 0) return;
-
-    const target = event.target;
-
     if (
-      target instanceof Element &&
-      target.closest("button, input, textarea, select, [role='button']")
-    ) {
+      event.target instanceof Element &&
+      event.target.closest("button, input, textarea, select, [role='button']")
+    )
       return;
-    }
 
-    dragRef.current = {
+    suppressClick.current = false;
+    drag.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
       startScrollLeft: event.currentTarget.scrollLeft,
@@ -302,50 +129,166 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
     };
   }
 
-  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
-    const drag = dragRef.current;
+  function onPointerMove(event: PointerEvent<HTMLDivElement>) {
+    const state = drag.current;
+    if (!state || state.pointerId !== event.pointerId) return;
+    const distance = event.clientX - state.startX;
 
-    if (!drag || drag.pointerId !== event.pointerId) return;
-
-    const distance = event.clientX - drag.startX;
-
-    if (!drag.active) {
+    if (!state.active) {
       if (Math.abs(distance) < 5) return;
-
-      drag.active = true;
-      suppressClickRef.current = true;
-
+      state.active = true;
+      suppressClick.current = true;
       event.currentTarget.setPointerCapture(event.pointerId);
       setIsDragging(true);
     }
 
     event.preventDefault();
-    event.currentTarget.scrollLeft = drag.startScrollLeft - distance;
+    event.currentTarget.scrollLeft = state.startScrollLeft - distance;
   }
 
   function finishDrag(event: PointerEvent<HTMLDivElement>) {
-    const drag = dragRef.current;
-
-    if (!drag || drag.pointerId !== event.pointerId) return;
-
-    dragRef.current = null;
+    if (drag.current?.pointerId !== event.pointerId) return;
+    drag.current = null;
     setIsDragging(false);
-
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
   }
 
+  return {
+    ref,
+    edges,
+    scroll,
+    updateEdges,
+    isDragging,
+    dragHandlers: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp: finishDrag,
+      onPointerCancel: finishDrag,
+      onLostPointerCapture: () => {
+        drag.current = null;
+        setIsDragging(false);
+      },
+      onPointerLeave: () => {
+        if (!drag.current?.active) drag.current = null;
+      },
+      onClickCapture: (event: MouseEvent<HTMLDivElement>) => {
+        if (!suppressClick.current) return;
+        event.preventDefault();
+        event.stopPropagation();
+        suppressClick.current = false;
+      },
+      onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          scroll(event.key === "ArrowLeft" ? -1 : 1);
+        }
+      },
+    },
+  };
+}
+
+export function HomeMarketCarousel({
+  markets,
+}: {
+  markets: HomeMarketEntry[];
+}) {
+  const router = useRouter();
+  const user = useCurrentUser();
+  const language = resolveLanguage(user?.language);
+  const labels = WATCHLIST_LABELS[language];
+  const marketNames = MARKET_NAME_LABELS[language];
+  const carousel = useCarouselScroll(markets.length > 0);
+
+  const saving = useRef(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [isPending, startTransition] = useTransition();
+
+  const existing = markets.map(({ market }) => market.symbol);
+  const existingSet = new Set(existing);
+  const selectedSet = new Set(selected);
+  const additions = selected.filter((symbol) => !existingSet.has(symbol));
+  const removals = existing.filter((symbol) => !selectedSet.has(symbol));
+  const hasChanges = additions.length > 0 || removals.length > 0;
+  const limitLabel = formatLabel(labels.limit, { max: MAX_WATCHLIST_MARKETS });
+
+  function openPicker() {
+    if (saving.current) return;
+    if (!user) return void toast.error(labels.login);
+    setSelected(existing);
+    setPickerOpen(true);
+  }
+
+  function changePickerOpen(open: boolean) {
+    if (saving.current) return;
+    setPickerOpen(open);
+    if (!open) setSelected([]);
+  }
+
+  function toggleMarket(symbol: string) {
+    if (saving.current) return;
+    setSelected((previous) =>
+      previous.includes(symbol)
+        ? previous.filter((item) => item !== symbol)
+        : previous.length < MAX_WATCHLIST_MARKETS
+          ? [...previous, symbol]
+          : previous,
+    );
+  }
+
+  function saveMarkets() {
+    if (saving.current || !hasChanges) return;
+    if (!user) return void toast.error(labels.login);
+    if (selectedSet.size > MAX_WATCHLIST_MARKETS) {
+      toast.error(limitLabel);
+      return;
+    }
+
+    const toAdd = [...additions];
+    const toRemove = [...removals];
+    saving.current = true;
+
+    startTransition(async () => {
+      let removed = false;
+      try {
+        // Free capacity before adding replacements at the watchlist limit.
+        if (toRemove.length) {
+          await removeMarketsFromWatchlist(toRemove);
+          removed = true;
+        }
+        if (toAdd.length) await addMarketsToWatchlist(toAdd);
+
+        setPickerOpen(false);
+        setSelected([]);
+        toast.success(labels.updated);
+        router.refresh();
+      } catch {
+        if (removed) {
+          setSelected((previous) =>
+            previous.filter((symbol) => !toAdd.includes(symbol)),
+          );
+          router.refresh();
+        }
+        toast.error(removed ? labels.partial_failure : labels.failed);
+      } finally {
+        saving.current = false;
+      }
+    });
+  }
+
   return (
     <>
       <div className="group/markets relative min-h-[254.5px] w-full min-w-0">
-        {isEmpty ? (
+        {markets.length === 0 ? (
           <div className="h-[254.5px] w-full px-4">
             <button
               type="button"
               onClick={openPicker}
               aria-haspopup="dialog"
-              className={`${MANAGE_BUTTON_CLASS} w-full`}
+              className={`${MANAGE_CLASS} w-full`}
             >
               <PiPlusMinus className="size-5 shrink-0" aria-hidden="true" />
               {labels.manage}
@@ -354,49 +297,13 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
         ) : (
           <>
             <div
-              ref={scrollRef}
+              ref={carousel.ref}
               role="region"
               aria-label={labels.my_markets}
               tabIndex={0}
-              onScroll={updateScrollButtons}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={finishDrag}
-              onPointerCancel={finishDrag}
-              onLostPointerCapture={() => {
-                dragRef.current = null;
-                setIsDragging(false);
-              }}
-              onPointerLeave={() => {
-                if (!dragRef.current?.active) {
-                  dragRef.current = null;
-                }
-              }}
-              onClickCapture={(event) => {
-                if (suppressClickRef.current) {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  suppressClickRef.current = false;
-                }
-              }}
-              onKeyDown={(event) => {
-                if (event.target !== event.currentTarget) return;
-
-                if (event.key === "ArrowLeft") {
-                  event.preventDefault();
-                  scrollByCard(-1);
-                } else if (event.key === "ArrowRight") {
-                  event.preventDefault();
-                  scrollByCard(1);
-                }
-              }}
-              className={`
-                hide-scrollbar w-full overflow-x-auto
-                overscroll-x-contain rounded-sm
-                focus-visible:outline-none focus-visible:ring-2
-                focus-visible:ring-zinc-400
-                ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}
-              `}
+              onScroll={carousel.updateEdges}
+              {...carousel.dragHandlers}
+              className={`hide-scrollbar w-full overflow-x-auto overscroll-x-contain rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${carousel.isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
             >
               <div className="flex min-h-[254.5px] w-max min-w-full items-center gap-8 px-4 py-2">
                 {markets.map(
@@ -413,18 +320,13 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                           market: marketNames[market.symbol] ?? market.name,
                         })}
                         draggable={false}
-                        className="
-    absolute inset-0 z-10 cursor-pointer rounded-lg
-    focus-visible:outline-none focus-visible:ring-2
-    focus-visible:ring-zinc-400
-  "
+                        className="absolute inset-0 z-10 cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
                       />
-
                       <BullBearVoteCard
                         market={market}
                         initialVote={initialVote}
                         initialVoteSessionKey={initialVoteSessionKey}
-                        userLanguage={userLanguage}
+                        userLanguage={language}
                       />
                     </div>
                   ),
@@ -435,7 +337,7 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                     type="button"
                     onClick={openPicker}
                     aria-haspopup="dialog"
-                    className={`${MANAGE_BUTTON_CLASS} w-44`}
+                    className={`${MANAGE_CLASS} w-44`}
                   >
                     <PiPlusMinus
                       className="size-5 shrink-0"
@@ -447,43 +349,36 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
               </div>
             </div>
 
-            <CarouselScrollButton
+            <ScrollButton
               direction={-1}
               label={labels.previous}
-              canScroll={canScrollLeft}
-              onScroll={scrollByCard}
+              canScroll={carousel.edges.left}
+              onScroll={carousel.scroll}
             />
-            <CarouselScrollButton
+            <ScrollButton
               direction={1}
               label={labels.next}
-              canScroll={canScrollRight}
-              onScroll={scrollByCard}
+              canScroll={carousel.edges.right}
+              onScroll={carousel.scroll}
             />
           </>
         )}
       </div>
 
-      <Dialog open={isPickerOpen} onOpenChange={handlePickerOpenChange}>
+      <Dialog open={pickerOpen} onOpenChange={changePickerOpen}>
         <DialogContent
           overlayClassName="bg-black/30 dark:bg-black/60 backdrop-blur-none!"
-          className="
-            outfit flex h-[85dvh] max-h-170 flex-col gap-0
-            overflow-hidden rounded-xl p-0 text-zinc-900
-            dark:border dark:text-zinc-100 sm:max-w-lg
-          "
+          className="outfit flex h-[85dvh] max-h-170 flex-col gap-0 overflow-hidden rounded-xl p-0 text-zinc-900 dark:border dark:text-zinc-100 sm:max-w-lg"
         >
           <DialogHeader className="shrink-0 px-6 pt-7 pb-5 text-left">
             <DialogTitle className="pr-6 text-xl font-medium">
               {labels.title}
             </DialogTitle>
-
             <DialogDescription className="text-sm leading-6">
-              {formatLabel(labels.description, {
-                max: MAX_WATCHLIST_MARKETS,
-              })}{" "}
+              {formatLabel(labels.description, { max: MAX_WATCHLIST_MARKETS })}{" "}
               <span>
                 {formatLabel(labels.selected, {
-                  count: selectedSymbols.length,
+                  count: selected.length,
                   max: MAX_WATCHLIST_MARKETS,
                 })}
               </span>
@@ -491,13 +386,13 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
           </DialogHeader>
 
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-6 pb-6">
-            {isPickerOpen && (
+            {pickerOpen && (
               <MarketPicker
-                selectedSymbols={selectedSymbols}
+                selectedSymbols={selected}
                 onToggle={toggleMarket}
-                existingSymbols={existingSymbols}
+                existingSymbols={existing}
                 disabled={isPending}
-                language={userLanguage}
+                language={language}
               />
             )}
           </div>
@@ -509,25 +404,23 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
                 aria-live="polite"
               >
                 {formatLabel(labels.market_count, {
-                  count: totalWatchlistCount,
+                  count: selectedSet.size,
                   max: MAX_WATCHLIST_MARKETS,
                 })}
               </span>
-
               <Button
                 type="button"
                 className="h-10 text-sm font-normal"
                 disabled={
                   isPending ||
                   !hasChanges ||
-                  totalWatchlistCount > MAX_WATCHLIST_MARKETS
+                  selectedSet.size > MAX_WATCHLIST_MARKETS
                 }
-                onClick={handleSaveMarkets}
+                onClick={saveMarkets}
               >
                 {isPending ? labels.saving : labels.save}
               </Button>
             </div>
-
             <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
               {limitLabel}
             </p>
@@ -538,19 +431,17 @@ export function HomeMarketCarousel({ markets }: HomeMarketCarouselProps) {
   );
 }
 
-interface CarouselScrollButtonProps {
-  direction: -1 | 1;
-  label: string;
-  canScroll: boolean;
-  onScroll: (direction: -1 | 1) => void;
-}
-
-function CarouselScrollButton({
+function ScrollButton({
   direction,
   label,
   canScroll,
   onScroll,
-}: CarouselScrollButtonProps) {
+}: {
+  direction: Direction;
+  label: string;
+  canScroll: boolean;
+  onScroll: (direction: Direction) => void;
+}) {
   const Icon =
     direction === -1
       ? canScroll
@@ -570,15 +461,11 @@ function CarouselScrollButton({
         event.stopPropagation();
         if (canScroll) onScroll(direction);
       }}
-      className={`${SCROLL_BUTTON_CLASS} ${direction === -1 ? "left-0" : "right-0"} ${canScroll ? "cursor-pointer" : "cursor-default"}`}
+      className={`group/scroll absolute top-1/2 z-20 flex -translate-y-1/2 items-center justify-center rounded-full p-2 opacity-0 transition-opacity duration-150 group-hover/markets:opacity-100! focus-visible:opacity-100! focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${direction === -1 ? "left-0" : "right-0"} ${canScroll ? "cursor-pointer" : "cursor-default"}`}
     >
       <span
         aria-hidden="true"
-        className={`${SCROLL_BUTTON_FACE_CLASS} ${
-          canScroll
-            ? "text-black group-hover/scroll:bg-zinc-100 dark:text-white dark:group-hover/scroll:bg-zinc-800"
-            : "text-zinc-300 dark:text-zinc-600"
-        }`}
+        className={`flex size-9 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm transition-colors dark:border-zinc-700 dark:bg-zinc-900 ${canScroll ? "text-black group-hover/scroll:bg-zinc-100 dark:text-white dark:group-hover/scroll:bg-zinc-800" : "text-zinc-300 dark:text-zinc-600"}`}
       >
         <Icon className="size-5" strokeWidth={1.75} />
       </span>

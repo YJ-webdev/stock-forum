@@ -18,15 +18,12 @@ import {
 import { refreshMarketQuote } from "@/app/hooks/market-quote-store";
 
 import {
-  getMarketVote,
   getMarketVoteStats,
-  submitMarketVote,
   updateMarketVote,
   type MarketVoteStats,
   type VoteDirection,
 } from "@/app/actions/market-vote";
 import {
-  createComment,
   type MarketCommentsPage,
   type MarketPageComments,
 } from "@/app/actions/post";
@@ -58,7 +55,12 @@ import {
 import { resolveLanguage } from "@/lib/data/languages";
 
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
-import { buildCommentContent } from "@/lib/utils/build-comment-content";
+import { useMarketVoteState } from "@/app/hooks/use-market-vote-state";
+import { useLiveVotingWindow } from "@/app/hooks/use-live-voting-window";
+import {
+  createMarketPrediction,
+  editMarketPrediction,
+} from "@/app/lib/market-vote-mutations";
 import { countryCodeToFlag } from "@/lib/utils/nationality-flag";
 import type { InitialMarketQuote } from "@/lib/utils/build-market-quote";
 
@@ -202,66 +204,6 @@ function getChartSession(
   };
 }
 
-// Use the server reference time for the first render.
-// Publish updates only when voting-window fields actually change.
-function useLiveVotingWindow(
-  symbol: string,
-  enabled: boolean,
-  initialNowMs: number,
-) {
-  const [session, setSession] = useState(() => ({
-    symbol,
-    window: getVotingWindow(symbol, initialNowMs),
-  }));
-
-  useEffect(() => {
-    if (!enabled) return;
-
-    function updateWindow() {
-      if (document.visibilityState !== "visible") return;
-
-      const next = getVotingWindow(symbol, Date.now());
-
-      setSession((previous) => {
-        const current = previous.window;
-
-        if (
-          previous.symbol === symbol &&
-          current.isMarketOpen === next.isMarketOpen &&
-          current.canVote === next.canVote &&
-          current.predictionFor?.getTime() === next.predictionFor?.getTime() &&
-          current.currentSessionStartMs === next.currentSessionStartMs &&
-          current.targetMs === next.targetMs &&
-          current.countdownType === next.countdownType &&
-          current.showCountdown === next.showCountdown
-        ) {
-          return previous;
-        }
-
-        return {
-          symbol,
-          window: next,
-        };
-      });
-    }
-
-    updateWindow();
-
-    const timer = window.setInterval(updateWindow, 1000);
-
-    document.addEventListener("visibilitychange", updateWindow);
-
-    return () => {
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", updateWindow);
-    };
-  }, [symbol, enabled]);
-
-  return session.symbol === symbol
-    ? session.window
-    : getVotingWindow(symbol, initialNowMs);
-}
-
 export default function MarketPageClient({
   symbol,
   initialNowMs,
@@ -288,26 +230,9 @@ export default function MarketPageClient({
   const [showDetailChart, setShowDetailChart] = useState(false);
   const [statsRefreshVersion, setStatsRefreshVersion] = useState(0);
 
-  const [voteSelection, setVoteSelection] = useState<{
-    key: string | null;
-    direction: VoteDirection | null;
-    pointsBet: number;
-    status:
-      | NonNullable<Awaited<ReturnType<typeof getMarketVote>>>["status"]
-      | null;
-  }>({
-    key: null,
-    direction: null,
-    pointsBet: 0,
-    status: null,
-  });
-
-  const [checkedVoteKey, setCheckedVoteKey] = useState<string | null>(null);
-  const [voteLookupFailed, setVoteLookupFailed] = useState(false);
   const [voteRefreshVersion, setVoteRefreshVersion] = useState(0);
 
   const submittingVoteRef = useRef(false);
-  const voteRevisionRef = useRef(0);
   const statsRevisionRef = useRef(0);
 
   const [voteStats, setVoteStats] = useState<MarketVoteStats | null>(
@@ -357,11 +282,11 @@ export default function MarketPageClient({
   const exchangeTimezone =
     data?.exchangeTimezone ?? symbolMeta?.timezone ?? "UTC";
 
-  const votingWindow = useLiveVotingWindow(
-    selectedSymbol,
-    canPredict,
+  const votingWindow = useLiveVotingWindow(selectedSymbol, {
+    enabled: canPredict,
     initialNowMs,
-  );
+    intervalMs: 1_000,
+  });
 
   const isMarketOpen = canPredict ? votingWindow.isMarketOpen : false;
 
@@ -375,80 +300,27 @@ export default function MarketPageClient({
     voteSessionKey,
   ]);
 
-  const activeVoteKeyRef = useRef(voteLookupKey);
-  activeVoteKeyRef.current = voteLookupKey;
+  const {
+    activeLookupKeyRef: activeVoteKeyRef,
+    invalidateRequests,
+    currentVote,
+    isVoteLoading: isVoteChecking,
+    voteLookupFailed,
+    setVoteState,
+    setCheckedLookupKey,
+    setVoteLookupFailed,
+  } = useMarketVoteState({
+    symbol: selectedSymbol,
+    viewerId: user?.id ?? null,
+    sessionKey: voteSessionKey,
+    enabled: canPredict,
+    mode: "single",
+    refreshVersion: voteRefreshVersion,
+  });
 
-  const selectedVote =
-    voteSelection.key === voteLookupKey ? voteSelection.direction : null;
-
-  const selectedPointsBet =
-    voteSelection.key === voteLookupKey ? voteSelection.pointsBet : 0;
-
-  const selectedVoteStatus =
-    voteSelection.key === voteLookupKey ? voteSelection.status : null;
-
-  const isVoteChecking =
-    canPredict && Boolean(voteSessionKey) && checkedVoteKey !== voteLookupKey;
-
-  useEffect(() => {
-    let cancelled = false;
-    const revision = voteRevisionRef.current;
-
-    setVoteLookupFailed(false);
-
-    if (!canPredict || !voteSessionKey) {
-      setCheckedVoteKey(voteLookupKey);
-      return;
-    }
-
-    const isCurrentRequest = () =>
-      !cancelled &&
-      revision === voteRevisionRef.current &&
-      activeVoteKeyRef.current === voteLookupKey;
-
-    const sessionDate = new Date(voteSessionKey);
-
-    async function loadVote() {
-      try {
-        const vote = await getMarketVote({
-          symbol: selectedSymbol,
-          sessionDate,
-        });
-
-        if (!isCurrentRequest()) return;
-
-        setVoteSelection({
-          key: voteLookupKey,
-          direction: vote?.direction ?? null,
-          pointsBet: vote?.pointsBet ?? 0,
-          status: vote?.status ?? null,
-        });
-
-        setVoteLookupFailed(false);
-      } catch (error) {
-        if (!isCurrentRequest()) return;
-
-        setVoteLookupFailed(true);
-        console.error("Failed to load prediction:", error);
-      } finally {
-        if (isCurrentRequest()) {
-          setCheckedVoteKey(voteLookupKey);
-        }
-      }
-    }
-
-    void loadVote();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    canPredict,
-    selectedSymbol,
-    voteSessionKey,
-    voteLookupKey,
-    voteRefreshVersion,
-  ]);
+  const selectedVote = currentVote?.direction ?? null;
+  const selectedPointsBet = currentVote?.pointsBet ?? 0;
+  const selectedVoteStatus = currentVote?.status ?? null;
 
   useEffect(() => {
     if (!canPredict || !voteSessionKey) {
@@ -589,21 +461,9 @@ export default function MarketPageClient({
       user?.status !== "BANNED" &&
       user?.status !== "MUTED";
 
-    const trimmedComment = canWriteComment ? comment.trim() : "";
-
-    const submittedImage = canWriteComment ? image : null;
-
-    // Keep a single attachment; an uploaded image takes priority.
-    const submittedGif = canWriteComment && !submittedImage ? gif : null;
-
-    const content =
-      trimmedComment || submittedGif || submittedImage
-        ? buildCommentContent(trimmedComment, submittedGif, submittedImage)
-        : null;
-
     submittingVoteRef.current = true;
 
-    voteRevisionRef.current += 1;
+    invalidateRequests();
     statsRevisionRef.current += 1;
 
     startTransition(async () => {
@@ -616,41 +476,31 @@ export default function MarketPageClient({
 
         let updatedPoints: number | null = null;
 
-        if (user?.id) {
-          const result = await createComment({
-            content,
-            assetSymbols: [selectedSymbol],
-            prediction: {
-              direction,
-              pointsBet: submittedAmount,
-              sessionDate,
-            },
-          });
-
-          voteSubmitted = true;
-          createdComment = result.comment ?? null;
-          updatedPoints = result.points;
-        } else {
-          await submitMarketVote({
-            symbol: selectedSymbol,
-            direction,
-            pointsBet: 0,
-            sessionDate,
-          });
-
-          voteSubmitted = true;
-        }
+        const result = await createMarketPrediction({
+          symbol: selectedSymbol,
+          direction,
+          pointsBet: submittedAmount,
+          sessionDate,
+          viewerId: user?.id ?? null,
+          canWriteComment,
+          comment,
+          gif,
+          image,
+        });
+        voteSubmitted = true;
+        createdComment = result.comment;
+        updatedPoints = result.points;
 
         if (!isCurrentView()) return;
 
-        setVoteSelection({
-          key: submittedKey,
-          direction,
-          pointsBet: submittedAmount,
-          status: "PENDING",
+        setVoteState({
+          lookupKey: submittedKey,
+          direction: result.direction,
+          pointsBet: result.pointsBet,
+          status: result.status,
         });
 
-        setCheckedVoteKey(submittedKey);
+        setCheckedLookupKey(submittedKey);
         setVoteLookupFailed(false);
 
         if (updatedPoints != null) {
@@ -778,7 +628,7 @@ export default function MarketPageClient({
 
     submittingVoteRef.current = true;
 
-    voteRevisionRef.current += 1;
+    invalidateRequests();
     statsRevisionRef.current += 1;
 
     const isCurrentView = () => activeVoteKeyRef.current === submittedKey;
@@ -787,7 +637,7 @@ export default function MarketPageClient({
       let result: Awaited<ReturnType<typeof updateMarketVote>>;
 
       try {
-        result = await updateMarketVote({
+        result = await editMarketPrediction({
           symbol: selectedSymbol,
           direction,
           pointsBet: submittedAmount,
@@ -801,7 +651,7 @@ export default function MarketPageClient({
               : "Failed to update prediction.",
           );
 
-          setCheckedVoteKey(null);
+          setCheckedLookupKey(null);
           setVoteRefreshVersion((value) => value + 1);
         }
 
@@ -810,14 +660,14 @@ export default function MarketPageClient({
 
       if (!isCurrentView()) return null;
 
-      setVoteSelection({
-        key: submittedKey,
+      setVoteState({
+        lookupKey: submittedKey,
         direction: result.direction,
         pointsBet: result.pointsBet,
         status: result.status,
       });
 
-      setCheckedVoteKey(submittedKey);
+      setCheckedLookupKey(submittedKey);
       setVoteLookupFailed(false);
 
       if (result.points !== null) {
@@ -902,17 +752,17 @@ export default function MarketPageClient({
       return;
     }
 
-    voteRevisionRef.current += 1;
+    invalidateRequests();
     statsRevisionRef.current += 1;
 
-    setVoteSelection({
-      key: voteLookupKey,
+    setVoteState({
+      lookupKey: voteLookupKey,
       direction: prediction.direction,
       pointsBet: prediction.pointsBet,
       status: prediction.status,
     });
 
-    setCheckedVoteKey(voteLookupKey);
+    setCheckedLookupKey(voteLookupKey);
     setVoteLookupFailed(false);
     setStatsRefreshVersion((value) => value + 1);
   };

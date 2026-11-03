@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TZDate } from "@date-fns/tz";
 
-import { useMarketQuote } from "@/app/hooks/useMarketQuote";
 import type { VoteDirection } from "@/app/actions/market-vote";
 import type { HomeMarketItem } from "@/types/home-market";
+
+import { useMarketQuote } from "@/app/hooks/useMarketQuote";
 import { ALL_MARKET_SYMBOLS, TRADING_HOURS } from "@/lib/data/market-symbols";
 import { resolveLanguage } from "@/lib/data/languages";
 import { CHART_LABELS } from "@/lib/data/translations";
@@ -23,44 +24,46 @@ interface BullBearVoteCardProps {
   userLanguage?: string | null;
 }
 
+interface SparklineSession {
+  sessionStartMs: number | null;
+  sessionEndMs: number | null;
+}
+
 const MARKET_BY_SYMBOL = new Map(
   ALL_MARKET_SYMBOLS.map((market) => [market.symbol, market]),
 );
 
-const EMPTY_SESSION = {
+const EMPTY_SESSION: SparklineSession = {
   sessionStartMs: null,
   sessionEndMs: null,
 };
 
 function getSparklineSession(
-  market: HomeMarketItem,
+  symbol: string,
+  providerSymbol: string | null | undefined,
   history?: { timestampMs: number }[],
-): { sessionStartMs: number | null; sessionEndMs: number | null } {
+): SparklineSession {
   if (!history?.length) return EMPTY_SESSION;
 
   const metadata =
-    MARKET_BY_SYMBOL.get(market.symbol) ??
-    (market.providerSymbol
-      ? MARKET_BY_SYMBOL.get(market.providerSymbol)
-      : undefined);
+    MARKET_BY_SYMBOL.get(symbol) ??
+    (providerSymbol ? MARKET_BY_SYMBOL.get(providerSymbol) : undefined);
 
   if (!metadata?.marketSchedule) return EMPTY_SESSION;
+
   const schedule = TRADING_HOURS[metadata.marketSchedule];
   if (!schedule) return EMPTY_SESSION;
 
-  let latestTimestampMs = -Infinity;
-  for (const point of history) {
-    if (
-      Number.isFinite(point.timestampMs) &&
-      point.timestampMs > latestTimestampMs
-    ) {
-      latestTimestampMs = point.timestampMs;
+  let latestTimestamp = -Infinity;
+
+  for (const { timestampMs } of history) {
+    if (Number.isFinite(timestampMs)) {
+      latestTimestamp = Math.max(latestTimestamp, timestampMs);
     }
   }
-  if (!Number.isFinite(latestTimestampMs)) return EMPTY_SESSION;
 
-  // Anchor to the date of the actual candles, including holidays.
-  const dataDate = new TZDate(latestTimestampMs, schedule.timezone);
+  if (!Number.isFinite(latestTimestamp)) return EMPTY_SESSION;
+
   const [openHour, openMinute] = schedule.open.split(":").map(Number);
   const [closeHour, closeMinute] = schedule.close.split(":").map(Number);
 
@@ -68,35 +71,36 @@ function getSparklineSession(
     return EMPTY_SESSION;
   }
 
-  const year = dataDate.getFullYear();
-  const month = dataDate.getMonth();
+  // Use the latest candle's exchange-local date, not today's date.
+  const date = new TZDate(latestTimestamp, schedule.timezone);
+
   const openMinutes = openHour * 60 + openMinute;
   const closeMinutes = closeHour * 60 + closeMinute;
-  const isOvernight = closeMinutes <= openMinutes;
-  let startDay = dataDate.getDate();
+  const overnight = closeMinutes <= openMinutes;
 
-  if (
-    isOvernight &&
-    dataDate.getHours() * 60 + dataDate.getMinutes() <= closeMinutes
-  ) {
-    startDay -= 1;
-  }
+  const startsPreviousDay =
+    overnight && date.getHours() * 60 + date.getMinutes() <= closeMinutes;
+
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate() - (startsPreviousDay ? 1 : 0);
 
   return {
     sessionStartMs: new TZDate(
       year,
       month,
-      startDay,
+      day,
       openHour,
       openMinute,
       0,
       0,
       schedule.timezone,
     ).getTime(),
+
     sessionEndMs: new TZDate(
       year,
       month,
-      startDay + (isOvernight ? 1 : 0),
+      day + (overnight ? 1 : 0),
       closeHour,
       closeMinute,
       0,
@@ -123,9 +127,11 @@ export function BullBearVoteCard({
 }: BullBearVoteCardProps) {
   const cardRef = useRef<HTMLElement>(null);
   const [quoteEnabled, setQuoteEnabled] = useState(false);
+
   const language = resolveLanguage(userLanguage);
   const chartLabels = CHART_LABELS[language];
 
+  // Fetch quotes only when the card approaches the visible area.
   useEffect(() => {
     const card = cardRef.current;
     if (!card) return;
@@ -135,18 +141,24 @@ export function BullBearVoteCard({
       return;
     }
 
-    const wrapper = card.closest("[data-carousel-card]");
-    const scrollContainer = wrapper?.parentElement?.parentElement ?? null;
+    const scrollContainer = card.closest("[data-carousel-card]")?.parentElement
+      ?.parentElement;
+
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return;
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+
         setQuoteEnabled(true);
         observer.disconnect();
       },
-      { root: scrollContainer, rootMargin: "0px 200px", threshold: 0 },
+      {
+        root: scrollContainer ?? null,
+        rootMargin: "0px 200px",
+      },
     );
 
     observer.observe(card);
+
     return () => observer.disconnect();
   }, []);
 
@@ -161,15 +173,16 @@ export function BullBearVoteCard({
     quoteEnabled,
   );
 
-  const showQuoteLoading = !data && !error;
-  const hasChartData = data?.history.some((point) =>
-    Number.isFinite(point.price),
-  );
-  const showVoting = market.assetType === "index" && quoteEnabled;
+  const isQuoteLoading = !data && !error;
+  const hasChartData =
+    data?.history.some(({ price }) => Number.isFinite(price)) ?? false;
+
+  const showVoting = quoteEnabled && market.assetType === "index";
 
   const { sessionStartMs, sessionEndMs } = useMemo(
-    () => getSparklineSession(market, data?.history),
-    [market, data?.history],
+    () =>
+      getSparklineSession(market.symbol, market.providerSymbol, data?.history),
+    [market.symbol, market.providerSymbol, data?.history],
   );
 
   const changeColor = !data
@@ -200,7 +213,7 @@ export function BullBearVoteCard({
             <Numeric className="outfit text-[18px] font-extrabold tracking-normal text-zinc-800 tabular-nums dark:text-zinc-100">
               {data.value}
             </Numeric>
-          ) : showQuoteLoading ? (
+          ) : isQuoteLoading ? (
             <QuoteSkeleton className="h-4.5 w-24" />
           ) : (
             <span className="text-[18px] text-zinc-400 dark:text-zinc-500">
@@ -216,7 +229,7 @@ export function BullBearVoteCard({
             >
               {formatChange(data.change)} ({data.percent})
             </p>
-          ) : showQuoteLoading ? (
+          ) : isQuoteLoading ? (
             <QuoteSkeleton className="h-3 w-28" />
           ) : (
             <span className="text-sm text-zinc-400 dark:text-zinc-500">—</span>
@@ -238,7 +251,7 @@ export function BullBearVoteCard({
                 lunchEndMs={data.lunchEndMs}
               />
             </div>
-          ) : showQuoteLoading ? (
+          ) : isQuoteLoading ? (
             <div className="flex h-full w-full items-center px-3">
               <QuoteSkeleton className="h-10 w-full" />
             </div>

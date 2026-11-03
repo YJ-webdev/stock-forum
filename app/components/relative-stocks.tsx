@@ -273,6 +273,7 @@ export function RelativeStocks({
   const voteCacheRef = useRef(voteCache);
   voteCacheRef.current = voteCache;
   const [failedVoteKeys, setFailedVoteKeys] = useState<Set<string>>(new Set());
+  const failedVoteVersionsRef = useRef(new Map<string, number>());
   const pendingVoteKeysRef = useRef(new Set<string>());
   const voteRevisionRef = useRef(new Map<string, number>());
   const mountedRef = useRef(false);
@@ -376,6 +377,13 @@ export function RelativeStocks({
     const key = getVoteCacheKey(symbol, sessionDateMs);
     const revision = (voteRevisionRef.current.get(key) ?? 0) + 1;
     voteRevisionRef.current.set(key, revision);
+    failedVoteVersionsRef.current.delete(key);
+    setFailedVoteKeys((previous) => {
+      if (!previous.has(key)) return previous;
+      const next = new Set(previous);
+      next.delete(key);
+      return next;
+    });
     try {
       const result = await getMarketVoteListStats({
         markets: [{ symbol, sessionDate: new Date(sessionDateMs) }],
@@ -383,12 +391,27 @@ export function RelativeStocks({
       if (!mountedRef.current || voteRevisionRef.current.get(key) !== revision)
         return;
       const stats = result[symbol];
-      if (!stats) return;
+      if (!stats) {
+        failedVoteVersionsRef.current.set(key, returnRefreshVersion);
+        setFailedVoteKeys((previous) => new Set(previous).add(key));
+        return;
+      }
+      failedVoteVersionsRef.current.delete(key);
+      setFailedVoteKeys((previous) => {
+        if (!previous.has(key)) return previous;
+        const next = new Set(previous);
+        next.delete(key);
+        return next;
+      });
       setVoteCache((previous) => ({
         ...previous,
         [key]: { stats, refreshVersion: returnRefreshVersion },
       }));
     } catch (error) {
+      if (mountedRef.current && voteRevisionRef.current.get(key) === revision) {
+        failedVoteVersionsRef.current.set(key, returnRefreshVersion);
+        setFailedVoteKeys((previous) => new Set(previous).add(key));
+      }
       console.error(`Failed to refresh vote stats for ${symbol}:`, error);
     }
   }
@@ -404,7 +427,8 @@ export function RelativeStocks({
       const cached = voteCacheRef.current[key];
       return (
         (!cached || cached.refreshVersion < returnRefreshVersion) &&
-        !pendingVoteKeysRef.current.has(key)
+        !pendingVoteKeysRef.current.has(key) &&
+        failedVoteVersionsRef.current.get(key) !== returnRefreshVersion
       );
     });
     if (requests.length === 0) return;
@@ -452,18 +476,45 @@ export function RelativeStocks({
         });
         setFailedVoteKeys((previous) => {
           const next = new Set(previous);
-          for (const entry of entries)
-            if (!result[entry.symbol]) next.add(entry.key);
+          for (const entry of entries) {
+            if (
+              (voteRevisionRef.current.get(entry.key) ?? 0) !== entry.revision
+            ) {
+              continue;
+            }
+            if (result[entry.symbol]) {
+              failedVoteVersionsRef.current.delete(entry.key);
+              next.delete(entry.key);
+            } else {
+              failedVoteVersionsRef.current.set(
+                entry.key,
+                returnRefreshVersion,
+              );
+              next.add(entry.key);
+            }
+          }
           return next;
         });
       } catch (error) {
         console.error("Failed to load market vote stats:", error);
-        if (mountedRef.current)
+        if (mountedRef.current) {
           setFailedVoteKeys((previous) => {
             const next = new Set(previous);
-            for (const entry of entries) next.add(entry.key);
+            for (const entry of entries) {
+              if (
+                (voteRevisionRef.current.get(entry.key) ?? 0) !== entry.revision
+              ) {
+                continue;
+              }
+              failedVoteVersionsRef.current.set(
+                entry.key,
+                returnRefreshVersion,
+              );
+              next.add(entry.key);
+            }
             return next;
           });
+        }
       } finally {
         for (const entry of entries)
           pendingVoteKeysRef.current.delete(entry.key);

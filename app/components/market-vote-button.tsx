@@ -23,6 +23,7 @@ import type { CommentDraft } from "@/app/hooks/use-comment-draft";
 
 import { buildCommentContent } from "@/lib/utils/build-comment-content";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
+import { useLiveVotingWindow } from "@/app/hooks/use-live-voting-window";
 import { resolveLanguage } from "@/lib/data/languages";
 import {
   MARKET_VOTE_EDIT_LABELS,
@@ -83,6 +84,14 @@ type EditablePredictionComment = Awaited<
 >;
 
 type EditorMode = "create" | "edit";
+
+const FOCUS_REFRESH_THROTTLE_MS = 1_000;
+
+const createEmptyDraft = (): CommentDraft => ({
+  text: "",
+  gif: null,
+  image: null,
+});
 
 interface MarketVoteButtonProps {
   marketName: string;
@@ -156,16 +165,11 @@ export function MarketVoteButton({
   const editorRef = useRef<HTMLDivElement>(null);
 
   const submittingRef = useRef(false);
-  const combinedSavingRef = useRef(false);
   const mountedRef = useRef(false);
   const voteRevisionRef = useRef(0);
   const lastFocusRefreshRef = useRef(0);
 
-  const [draft, setDraft] = useState<CommentDraft>({
-    text: "",
-    gif: null,
-    image: null,
-  });
+  const [draft, setDraft] = useState<CommentDraft>(createEmptyDraft);
 
   const draftOwnerRef = useRef(JSON.stringify([userId, symbol]));
 
@@ -178,7 +182,6 @@ export function MarketVoteButton({
   const [betAmount, setBetAmount] = useState(50);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [now, setNow] = useState(() => Date.now());
   const [refreshVersion, setRefreshVersion] = useState(0);
 
   const [editableComment, setEditableComment] = useState<{
@@ -189,7 +192,21 @@ export function MarketVoteButton({
   const [editLoadError, setEditLoadError] = useState(false);
   const [editLoadVersion, setEditLoadVersion] = useState(0);
 
-  const votingWindow = getVotingWindow(symbol, now);
+  const active = enabled || editor !== null || isSubmitting;
+
+  const votingWindow = useLiveVotingWindow(symbol, {
+    enabled: active,
+    intervalMs: 15_000,
+    onFocus: () => {
+      if (submittingRef.current) return;
+      const time = Date.now();
+      if (time - lastFocusRefreshRef.current < FOCUS_REFRESH_THROTTLE_MS) {
+        return;
+      }
+      lastFocusRefreshRef.current = time;
+      setRefreshVersion((current) => current + 1);
+    },
+  });
   const sessionKey = getSessionKey(votingWindow.predictionFor);
 
   const lookupKey = JSON.stringify([userId, symbol, sessionKey]);
@@ -230,8 +247,6 @@ export function MarketVoteButton({
 
   const isCombinedEditing = isEditing && userId !== null;
 
-  const active = enabled || isOpen || isSubmitting;
-
   const canEdit =
     direction !== null &&
     currentVote?.status === "PENDING" &&
@@ -252,15 +267,11 @@ export function MarketVoteButton({
     : "";
 
   function closePopup() {
-    if (submittingRef.current || combinedSavingRef.current) {
+    if (submittingRef.current) {
       return;
     }
 
-    setDraft({
-      text: "",
-      gif: null,
-      image: null,
-    });
+    setDraft(createEmptyDraft());
     setEditor(null);
     setEditableComment(null);
 
@@ -311,11 +322,7 @@ export function MarketVoteButton({
     trigger: HTMLButtonElement,
     nextDirection?: VoteDirection,
   ) {
-    if (
-      voteButtonDisabled ||
-      submittingRef.current ||
-      combinedSavingRef.current
-    ) {
+    if (voteButtonDisabled || submittingRef.current) {
       return;
     }
 
@@ -338,7 +345,6 @@ export function MarketVoteButton({
           : 0,
     );
 
-    setNow(Date.now());
     setEditor({ lookupKey, mode });
   }
 
@@ -347,12 +353,7 @@ export function MarketVoteButton({
     gif: GifResult | null,
     image: CommentImage | null = null,
   ) {
-    if (
-      submittingRef.current ||
-      combinedSavingRef.current ||
-      !editor ||
-      editor.lookupKey !== lookupKey
-    ) {
+    if (submittingRef.current || !editor || editor.lookupKey !== lookupKey) {
       return;
     }
 
@@ -501,11 +502,7 @@ export function MarketVoteButton({
       setCheckedLookupKey(submittedLookupKey);
       setVoteLookupFailed(false);
 
-      setDraft({
-        text: "",
-        gif: null,
-        image: null,
-      });
+      setDraft(createEmptyDraft());
 
       setEditor(null);
       setEditableComment(null);
@@ -581,11 +578,7 @@ export function MarketVoteButton({
     draftOwnerRef.current = owner;
 
     if (ownerChanged) {
-      setDraft({
-        text: "",
-        gif: null,
-        image: null,
-      });
+      setDraft(createEmptyDraft());
     }
 
     setEditor((previous) => {
@@ -666,78 +659,6 @@ export function MarketVoteButton({
   useEffect(() => {
     if (!active) return;
 
-    function updateVotingState() {
-      if (document.visibilityState !== "visible") {
-        return;
-      }
-
-      const time = Date.now();
-      const next = getVotingWindow(symbol, time);
-
-      setNow((previousTime) => {
-        const previous = getVotingWindow(symbol, previousTime);
-
-        const unchanged =
-          previous.isMarketOpen === next.isMarketOpen &&
-          previous.canVote === next.canVote &&
-          previous.predictionFor?.getTime() === next.predictionFor?.getTime() &&
-          previous.currentSessionStartMs === next.currentSessionStartMs &&
-          previous.targetMs === next.targetMs &&
-          previous.countdownType === next.countdownType &&
-          previous.showCountdown === next.showCountdown;
-
-        return unchanged ? previousTime : time;
-      });
-    }
-
-    updateVotingState();
-
-    const interval = window.setInterval(updateVotingState, 1000);
-
-    function handleFocus() {
-      if (document.visibilityState !== "visible") {
-        return;
-      }
-
-      const currentTime = Date.now();
-
-      updateVotingState();
-
-      if (submittingRef.current || combinedSavingRef.current) {
-        return;
-      }
-
-      if (currentTime - lastFocusRefreshRef.current < 1000) {
-        return;
-      }
-
-      lastFocusRefreshRef.current = currentTime;
-
-      setRefreshVersion((current) => current + 1);
-    }
-
-    function handleVisibilityChange() {
-      if (document.visibilityState === "visible") {
-        handleFocus();
-      }
-    }
-
-    window.addEventListener("focus", handleFocus);
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.clearInterval(interval);
-
-      window.removeEventListener("focus", handleFocus);
-
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [active, symbol]);
-
-  useEffect(() => {
-    if (!active) return;
-
     let cancelled = false;
     const revision = voteRevisionRef.current;
 
@@ -780,12 +701,9 @@ export function MarketVoteButton({
         setVoteLookupFailed(false);
       } catch {
         if (!isCurrentRequest()) return;
-
         setVoteLookupFailed(true);
       } finally {
-        if (isCurrentRequest()) {
-          setCheckedLookupKey(lookupKey);
-        }
+        if (isCurrentRequest()) setCheckedLookupKey(lookupKey);
       }
     }
 
@@ -809,17 +727,12 @@ export function MarketVoteButton({
       if (
         event.key !== "Escape" ||
         event.defaultPrevented ||
-        submittingRef.current ||
-        combinedSavingRef.current
+        submittingRef.current
       ) {
         return;
       }
 
-      setDraft({
-        text: "",
-        gif: null,
-        image: null,
-      });
+      setDraft(createEmptyDraft());
       setEditor(null);
       setEditableComment(null);
 
@@ -839,21 +752,15 @@ export function MarketVoteButton({
     !votingWindow.canVote ||
     (isEditing ? !canEdit : direction !== null);
 
-  const editorMessage = votingWindow.isMarketOpen
-    ? toastLabels.market_open
-    : !votingWindow.canVote
-      ? toastLabels.unavailable
-      : voteLookupFailed
-        ? interfaceLabels.lookup_failed
-        : isVoteLoading
-          ? interfaceLabels.checking
-          : isEditing
-            ? !canEdit
-              ? toastLabels.unavailable
-              : null
-            : direction
-              ? toastLabels.already_voted
-              : null;
+  const editorMessage = (() => {
+    if (votingWindow.isMarketOpen) return toastLabels.market_open;
+    if (!votingWindow.canVote) return toastLabels.unavailable;
+    if (voteLookupFailed) return interfaceLabels.lookup_failed;
+    if (isVoteLoading) return interfaceLabels.checking;
+    if (isEditing && !canEdit) return toastLabels.unavailable;
+    if (!isEditing && direction) return toastLabels.already_voted;
+    return null;
+  })();
 
   return (
     <div className="flex min-h-7.5 w-full items-center justify-end">
@@ -1042,8 +949,6 @@ export function MarketVoteButton({
                     prediction={editableComment.data.prediction}
                     onCancel={closePopup}
                     onSavingChange={(saving) => {
-                      combinedSavingRef.current = saving;
-
                       submittingRef.current = saving;
 
                       if (mountedRef.current) {
@@ -1082,11 +987,7 @@ export function MarketVoteButton({
                         setVoteLookupFailed(false);
                       }
 
-                      setDraft({
-                        text: "",
-                        gif: null,
-                        image: null,
-                      });
+                      setDraft(createEmptyDraft());
 
                       setEditor(null);
                       setEditableComment(null);
@@ -1131,25 +1032,7 @@ export function MarketVoteButton({
                     </button>
                   </div>
                 ) : (
-                  <div
-                    role="status"
-                    className="
-                      flex min-h-40 items-center justify-center
-                    "
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="
-                        size-5 animate-spin rounded-full
-                        border-2 border-zinc-200
-                        border-t-zinc-600
-                        dark:border-zinc-700
-                        dark:border-t-zinc-200
-                      "
-                    />
-
-                    <span className="sr-only">{interfaceLabels.checking}</span>
-                  </div>
+                  <EditorLoading />
                 )
               ) : (
                 <PredictionCommentInput

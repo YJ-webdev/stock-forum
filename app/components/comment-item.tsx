@@ -592,6 +592,7 @@ export function CommentItem({
       {showEditor ? (
         editingPrediction && comment.prediction ? (
           <PredictionCommentEditInput
+            refreshOnSaved={false}
             key={`prediction-edit:${comment.id}:${comment.prediction.id}`}
             commentId={comment.id}
             prediction={comment.prediction}
