@@ -2,8 +2,7 @@
 
 import type { GlobalMarketNewsItem } from "@/app/actions/news";
 
-import { NewsFeed } from "@/app/components/news/news-feed";
-import type { NewsRegion } from "@/app/components/news/news-region-filters";
+import { NewsFeed, NewsRegion } from "@/app/components/news/news-feed";
 
 interface NewsPageClientProps {
   initialNews: GlobalMarketNewsItem[];
@@ -15,9 +14,7 @@ export default function NewsPageClient({
   initialRegion = "All",
 }: NewsPageClientProps) {
   return (
-    <main className="mx-auto mt-10 w-full max-w-5xl px-4 py-8 sm:px-6">
-      <h1 className="sr-only">Global Market News</h1>
-
+    <main className="mx-auto w-full max-w-4xl px-4 sm:px-6">
       <NewsFeed initialNews={initialNews} initialRegion={initialRegion} />
     </main>
   );

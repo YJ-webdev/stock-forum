@@ -8,13 +8,19 @@ import {
   type MarketNewsItem,
 } from "@/app/actions/news";
 
-import {
-  NewsRegionFilters,
-  type NewsFilter,
-  type NewsRegion,
-} from "./news-region-filters";
-
 import { NewsRow } from "./news-row";
+import { ScrollToTopButton } from "../scroll-to-top-button";
+
+export type NewsRegion =
+  | "All"
+  | "America"
+  | "Asia"
+  | "Middle_East"
+  | "Europe"
+  | "Africa"
+  | "Global";
+
+export type NewsFilter = NewsRegion | "Market";
 
 interface NewsFeedProps {
   initialNews: GlobalMarketNewsItem[] | MarketNewsItem[];
@@ -35,7 +41,18 @@ interface RegionData {
 const CACHE_TTL_MS = 60 * 60 * 1000;
 const NEWS_LIMIT = 50;
 
+const REGIONS: { value: NewsRegion; label: string }[] = [
+  { value: "All", label: "All" },
+  { value: "America", label: "America" },
+  { value: "Europe", label: "Europe" },
+  { value: "Asia", label: "Asia" },
+  { value: "Middle_East", label: "Middle East" },
+  { value: "Africa", label: "Africa" },
+  { value: "Global", label: "Global" },
+];
+
 const newsCache = new Map<NewsRegion, CacheEntry>();
+
 const pendingRequests = new Map<NewsRegion, Promise<GlobalMarketNewsItem[]>>();
 
 function getCachedNews(region: NewsRegion): GlobalMarketNewsItem[] | null {
@@ -104,6 +121,7 @@ export function NewsFeed({
   );
 
   const [errorRegion, setErrorRegion] = useState<NewsRegion | null>(null);
+
   const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
@@ -131,6 +149,7 @@ export function NewsFeed({
         region,
         news: initialNews as GlobalMarketNewsItem[],
       });
+
       setErrorRegion(null);
       return;
     }
@@ -172,6 +191,7 @@ export function NewsFeed({
     if (filter === "Market") return;
 
     newsCache.delete(filter);
+
     setRegionData(null);
     setErrorRegion(null);
     setRetryKey((current) => current + 1);
@@ -179,9 +199,7 @@ export function NewsFeed({
 
   const isMarketSelected = filter === "Market";
 
-  const activeRegion: NewsRegion | null = isMarketSelected
-    ? null
-    : (filter as NewsRegion);
+  const activeRegion: NewsRegion | null = isMarketSelected ? null : filter;
 
   const cachedRegionNews = activeRegion ? getCachedNews(activeRegion) : null;
 
@@ -204,14 +222,71 @@ export function NewsFeed({
 
   const loading = activeRegion !== null && globalNews === null && !error;
 
+  const options: { value: NewsFilter; label: string }[] = marketName
+    ? [
+        { value: "Market", label: marketName },
+        ...REGIONS.filter((region) => region.value !== "All"),
+      ]
+    : REGIONS;
+
   return (
     <>
-      <NewsRegionFilters
-        value={filter}
-        onChange={handleFilterChange}
-        marketName={marketName}
-      />
+      {/* Sticky news filters */}
+      <div
+        role="group"
+        aria-label="Filter news"
+        className="
+          sticky top-10 z-30 pt-4 mb-6
+          flex items-center gap-1
+          overflow-x-auto
+          border-b border-zinc-200
+          bg-white
+          dark:border-zinc-800
+          dark:bg-zinc-950
+        "
+      >
+        {options.map(({ value: option, label }) => {
+          const active = filter === option;
 
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => handleFilterChange(option)}
+              aria-pressed={active}
+              className={`
+                relative shrink-0 cursor-pointer
+                whitespace-nowrap px-3 pb-3
+                text-sm transition-colors
+                focus-visible:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-inset
+                focus-visible:ring-zinc-400
+                ${
+                  active
+                    ? "font-medium text-zinc-950 dark:text-zinc-50"
+                    : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                }
+              `}
+            >
+              {label}
+
+              {active && (
+                <span
+                  aria-hidden="true"
+                  className="
+                    absolute right-2 bottom-0 left-2
+                    h-0.5 rounded-full
+                    bg-zinc-900 dark:bg-zinc-100
+                  "
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* News content */}
       {loading ? (
         <div
           role="status"
@@ -219,7 +294,13 @@ export function NewsFeed({
         >
           <div
             aria-hidden="true"
-            className="size-5 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-700 dark:border-zinc-700 dark:border-t-zinc-200"
+            className="
+              size-5 animate-spin rounded-full
+              border-2 border-zinc-200
+              border-t-zinc-700
+              dark:border-zinc-700
+              dark:border-t-zinc-200
+            "
           />
           <span className="sr-only">Loading news...</span>
         </div>
@@ -228,10 +309,15 @@ export function NewsFeed({
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Unable to load news.
           </p>
+
           <button
             type="button"
             onClick={handleRetry}
-            className="cursor-pointer text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-100"
+            className="
+              cursor-pointer text-sm font-medium
+              text-zinc-900 hover:underline
+              dark:text-zinc-100
+            "
           >
             Try again
           </button>
@@ -239,11 +325,15 @@ export function NewsFeed({
       ) : news.length === 0 ? (
         <div
           role="status"
-          className="flex min-h-64 flex-col items-center justify-center gap-2 text-center"
+          className="
+            flex min-h-64 flex-col items-center
+            justify-center gap-2 text-center
+          "
         >
           <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
             No news available.
           </p>
+
           <p className="text-xs text-zinc-400 dark:text-zinc-500">
             Check back later for updates.
           </p>
@@ -255,6 +345,8 @@ export function NewsFeed({
           ))}
         </div>
       )}
+
+      <ScrollToTopButton threshold={400} />
     </>
   );
 }

@@ -71,7 +71,7 @@ export default async function MarketNewsPage({ params }: PageProps) {
   const news = await getMarketNews(market.symbol);
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+    <main className="mx-auto w-full max-w-4xl px-4 sm:px-6">
       <NewsFeed
         key={market.symbol}
         initialNews={news}
