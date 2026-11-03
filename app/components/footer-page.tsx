@@ -10,6 +10,7 @@ import { useCurrentUser } from "@/app/context/user-context";
 import { resolveLanguage, type Language } from "@/lib/data/languages";
 
 import { FOOTER_LABELS } from "@/lib/data/translations";
+import { ABOUT_PAGE_CONTENT } from "@/lib/data/about-translations";
 
 import {
   FOOTER_PAGE_CONTENT,
@@ -21,7 +22,12 @@ import {
 // TYPES
 // -----------------------------------------------------------------------------
 
-type FooterPageType = "help" | "feedback" | "privacy_terms" | "disclaimer";
+type FooterPageType =
+  | "help"
+  | "feedback"
+  | "privacy_terms"
+  | "disclaimer"
+  | "about";
 type PolicyPageType = "privacy_terms" | "disclaimer";
 
 interface FooterPageProps {
@@ -44,12 +50,14 @@ export function FooterPage({ type }: FooterPageProps) {
   const content = FOOTER_PAGE_CONTENT[language];
 
   return (
-    <main className="mx-auto min-h-[calc(100dvh-146px)] w-full max-w-2xl px-5 pt-5 pb-10 md:px-6">
+    <main className="mx-auto w-full max-w-2xl px-5 pt-5 pb-10 md:px-6">
       <h1 className="text-2xl font-medium tracking-tight text-zinc-800 dark:text-zinc-100">
         {labels[type]}
       </h1>
 
       <div className="mt-6">
+        {type === "about" && <AboutContent language={language} />}
+
         {type === "help" && <HelpContent content={content} />}
 
         {type === "feedback" && (
@@ -385,6 +393,42 @@ function PolicyContent({
             </section>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// ABOUT — fully expanded, no accordion
+// -----------------------------------------------------------------------------
+
+function AboutContent({ language }: { language: Language }) {
+  const copy = ABOUT_PAGE_CONTENT[language];
+
+  return (
+    <div>
+      <p className="mb-6 text-[15px] leading-7 text-zinc-500 dark:text-zinc-400">
+        {copy.intro}
+      </p>
+
+      <div className="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        {copy.sections.map(({ title, paragraphs }, index) => (
+          <section key={index} className="py-5">
+            <h2 className="text-[15px] font-medium text-zinc-800 dark:text-zinc-200">
+              {title}
+            </h2>
+            <div className="mt-3 space-y-3">
+              {paragraphs.map((paragraph, paragraphIndex) => (
+                <p
+                  key={paragraphIndex}
+                  className="text-[15px] leading-7 text-zinc-500 dark:text-zinc-400"
+                >
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );

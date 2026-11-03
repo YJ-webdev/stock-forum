@@ -27,6 +27,7 @@ export const BreadCrumbs = () => {
     feedback: footerLabels.feedback,
     "privacy-terms": footerLabels.privacy_terms,
     disclaimer: footerLabels.disclaimer,
+    about: footerLabels.about,
     news: labels.news,
   };
 

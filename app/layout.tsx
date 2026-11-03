@@ -5,14 +5,13 @@ import type { ReactNode } from "react";
 
 import { Figtree, Outfit } from "next/font/google";
 
-import { Toaster } from "sonner";
-
 import "@/app/globals.css";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { ThemeProvider } from "./components/theme-provider";
+import { ResponsiveToaster } from "./components/responsive-toaster";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -65,6 +64,29 @@ interface RootLayoutProps {
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        name: SITE_NAME,
+        url: SITE_URL,
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        name: SITE_NAME,
+        url: SITE_URL,
+        description: SITE_DESCRIPTION,
+        inLanguage: "en",
+        publisher: {
+          "@id": `${SITE_URL}/#organization`,
+        },
+      },
+    ],
+  };
+
   return (
     <html
       lang="en"
@@ -76,6 +98,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
       )}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+          }}
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -84,31 +112,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         >
           <TooltipProvider>{children}</TooltipProvider>
 
-          <Toaster
-            position="bottom-center"
-            duration={5000}
-            className="left-1/2! right-auto! translate-none! transform-[translateX(-50%)]!"
-            toastOptions={{
-              classNames: {
-                toast: cn(
-                  "left-1/2! right-auto! -translate-x-1/2!",
-                  "w-max! max-w-[calc(100vw-32px)]!",
-                  "border-none! px-5! py-4! text-[15px]!",
-                  "bg-zinc-900! text-white!",
-                  "dark:bg-white! dark:text-zinc-950!",
-                ),
-                title: cn(
-                  "min-w-0! text-[15px]! font-medium! text-inherit!",
-                  "whitespace-normal! break-words!",
-                  "sm:whitespace-nowrap!",
-                ),
-                description: cn(
-                  "text-sm! whitespace-normal! break-words!",
-                  "text-zinc-100! dark:text-zinc-600!",
-                ),
-              },
-            }}
-          />
+          <ResponsiveToaster />
         </ThemeProvider>
       </body>
     </html>

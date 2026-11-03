@@ -5984,79 +5984,92 @@ export const FOOTER_LABELS: Record<
     feedback: string;
     privacy_terms: string;
     disclaimer: string;
+    about: string;
   }
 > = {
   en: {
     help: "Help",
     feedback: "Feedback",
-    privacy_terms: "Privacy & terms",
+    privacy_terms: "Privacy & Terms",
     disclaimer: "Disclaimer",
+    about: "About",
   },
   ko: {
     help: "도움말",
     feedback: "의견 보내기",
-    privacy_terms: "개인정보 처리방침 및 이용약관",
+    privacy_terms: "개인정보 및 약관",
     disclaimer: "면책",
+    about: "소개",
   },
   ja: {
     help: "ヘルプ",
     feedback: "フィードバック",
-    privacy_terms: "プライバシー・利用規約",
-    disclaimer: "免責事項",
+    privacy_terms: "プライバシー・規約",
+    disclaimer: "免責",
+    about: "概要",
   },
   zh: {
     help: "帮助",
     feedback: "反馈",
-    privacy_terms: "隐私政策与使用条款",
+    privacy_terms: "隐私与条款",
     disclaimer: "免责声明",
+    about: "关于",
   },
   de: {
     help: "Hilfe",
     feedback: "Feedback",
-    privacy_terms: "Datenschutz & Nutzungsbedingungen",
-    disclaimer: "Haftungsausschluss",
+    privacy_terms: "Datenschutz & AGB",
+    disclaimer: "Haftung",
+    about: "Über uns",
   },
   fr: {
     help: "Aide",
-    feedback: "Commentaires",
-    privacy_terms: "Confidentialité et conditions",
+    feedback: "Avis",
+    privacy_terms: "Confidentialité & CGU",
     disclaimer: "Avertissement",
+    about: "À propos",
   },
   es: {
     help: "Ayuda",
     feedback: "Comentarios",
-    privacy_terms: "Privacidad y condiciones",
+    privacy_terms: "Privacidad y términos",
     disclaimer: "Aviso legal",
+    about: "Acerca de",
   },
   pt: {
     help: "Ajuda",
     feedback: "Feedback",
     privacy_terms: "Privacidade e termos",
     disclaimer: "Aviso legal",
+    about: "Sobre",
   },
   it: {
     help: "Aiuto",
     feedback: "Feedback",
-    privacy_terms: "Privacy e condizioni",
+    privacy_terms: "Privacy e termini",
     disclaimer: "Avvertenze",
+    about: "Info",
   },
   ru: {
     help: "Помощь",
-    feedback: "Обратная связь",
+    feedback: "Отзывы",
     privacy_terms: "Конфиденциальность и условия",
-    disclaimer: "Отказ от ответственности",
+    disclaimer: "Дисклеймер",
+    about: "О нас",
   },
   ar: {
     help: "المساعدة",
-    feedback: "إرسال ملاحظات",
+    feedback: "ملاحظات",
     privacy_terms: "الخصوصية والشروط",
     disclaimer: "إخلاء المسؤولية",
+    about: "حول",
   },
   hi: {
     help: "सहायता",
     feedback: "प्रतिक्रिया",
     privacy_terms: "गोपनीयता और शर्तें",
     disclaimer: "अस्वीकरण",
+    about: "परिचय",
   },
 };
 

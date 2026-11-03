@@ -556,7 +556,7 @@ export function RelativeStocks({
 
                   <th
                     scope="col"
-                    className="w-[20%] px-1 text-center md:w-[8%] md:px-2"
+                    className="pl-1 pr-3 text-center align-middle md:pl-0 md:pr-0"
                   >
                     {labels.vote}
                   </th>
@@ -974,7 +974,7 @@ function VotingCells({
         </div>
       </td>
       <td
-        className="px-1 text-center align-middle md:px-2"
+        className="pl-1 pr-3 text-center align-middle md:pl-0 md:pr-0"
         onClick={(event) => event.stopPropagation()}
       >
         {!eligible ? (
@@ -993,7 +993,7 @@ function VotingCells({
             onClick={() => openPrediction("create")}
             aria-label={`${item.name}: ${labels.predict}`}
             aria-haspopup="dialog"
-            className="mx-auto inline-flex min-h-9 shrink-0 cursor-pointer whitespace-nowrap items-center justify-center rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition-colors hover:border-zinc-500 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 dark:focus-visible:ring-offset-zinc-800"
+            className="mx-auto inline-flex min-h-9 max-w-full cursor-pointer whitespace-nowrap items-center justify-center rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition-colors hover:border-zinc-500 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 dark:focus-visible:ring-offset-zinc-800"
           >
             {labels.predict}
           </button>

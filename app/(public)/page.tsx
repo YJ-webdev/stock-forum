@@ -99,7 +99,6 @@ export default async function Home() {
           initialNowMs={initialNowMs}
           initialComments={community.comments}
           initialNextCursor={community.nextCursor}
-          initialTotalCount={community.totalCount}
           markets={communityMarkets}
         />
       </section>

@@ -11,10 +11,11 @@ export const Footer = () => {
   const labels = FOOTER_LABELS[resolveLanguage(user?.language)];
 
   const links = [
+    { href: "/about", label: labels.about },
     { href: "/help", label: labels.help },
-    { href: "/feedback", label: labels.feedback },
     { href: "/privacy-terms", label: labels.privacy_terms },
     { href: "/disclaimer", label: labels.disclaimer },
+    { href: "/feedback", label: labels.feedback },
   ];
 
   return (

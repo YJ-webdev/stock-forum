@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function AssetNotFound() {
   return (
-    <div className="flex min-h-[calc(100dvh-56px)] w-full items-center justify-center">
+    <div className="flex w-full items-center justify-center">
       <div className="flex flex-col items-center px-6 text-center">
         <h1 className="text-xl font-medium">Asset could not be found</h1>
 

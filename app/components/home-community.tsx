@@ -1,5 +1,3 @@
-// app/components/home-community.tsx
-
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -34,7 +32,6 @@ interface HomeCommunityProps {
   initialNowMs: number;
   initialComments: HomeComments;
   initialNextCursor: HomeCommentCursor | null;
-  initialTotalCount: number;
 
   markets: {
     symbol: string;
@@ -45,6 +42,11 @@ interface HomeCommunityProps {
 }
 
 type Comment = HomeComments[number];
+
+interface CommentPage {
+  comments: HomeComments;
+  nextCursor: HomeCommentCursor | null;
+}
 
 const COMMENTS_TIMEOUT_MS = 15_000;
 const TIME_REFRESH_INTERVAL_MS = 60_000;
@@ -71,11 +73,19 @@ function withTimeout<T>(
   });
 }
 
+function getPageKey(
+  symbol: string | null,
+  sort: HomeCommentSort,
+  viewerId: string | null,
+  viewerRole: string | null,
+) {
+  return JSON.stringify([symbol, sort, viewerId, viewerRole]);
+}
+
 export function HomeCommunity({
   initialNowMs,
   initialComments,
   initialNextCursor,
-  initialTotalCount,
   markets,
 }: HomeCommunityProps) {
   const user = useCurrentUser();
@@ -85,13 +95,16 @@ export function HomeCommunity({
   const labels = HOME_COMMUNITY_LABELS[language];
   const labelsRef = useRef(labels);
 
-  const [nowMs, setNowMs] = useState(initialNowMs);
+  const viewerId = user?.id ?? null;
+  const viewerRole = user?.role ?? null;
 
-  const [comments, setComments] = useState(initialComments);
-  const [nextCursor, setNextCursor] = useState(initialNextCursor);
+  const [nowMs, setNowMs] = useState(initialNowMs);
 
   const [assetSymbol, setAssetSymbol] = useState<string | null>(null);
   const [sort, setSort] = useState<HomeCommentSort>("latest");
+
+  const [comments, setComments] = useState(initialComments);
+  const [nextCursor, setNextCursor] = useState(initialNextCursor);
 
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -102,12 +115,29 @@ export function HomeCommunity({
   const loadingMoreRef = useRef(false);
 
   const initialViewerRef = useRef({
-    id: user?.id ?? null,
-    role: user?.role ?? null,
+    id: viewerId,
+    role: viewerRole,
   });
 
-  const viewerId = user?.id ?? null;
-  const viewerRole = user?.role ?? null;
+  // Keep each fetched market/sort result in memory.
+  const pagesRef = useRef<Map<string, CommentPage>>(
+    new Map([
+      [
+        getPageKey(
+          null,
+          "latest",
+          initialViewerRef.current.id,
+          initialViewerRef.current.role,
+        ),
+        {
+          comments: initialComments,
+          nextCursor: initialNextCursor,
+        },
+      ],
+    ]),
+  );
+
+  const pageKey = getPageKey(assetSymbol, sort, viewerId, viewerRole);
 
   const targetCommentId = searchParams.get("comment");
   const targetReplyId = searchParams.get("reply");
@@ -128,19 +158,14 @@ export function HomeCommunity({
     labelsRef.current = labels;
   }, [labels]);
 
-  // Match the server's reference time during hydration, then use client time.
   useEffect(() => {
-    const updateNow = () => {
-      setNowMs(Date.now());
-    };
+    const updateNow = () => setNowMs(Date.now());
 
     updateNow();
 
     const timer = window.setInterval(updateNow, TIME_REFRESH_INTERVAL_MS);
 
-    return () => {
-      window.clearInterval(timer);
-    };
+    return () => window.clearInterval(timer);
   }, [initialNowMs]);
 
   useEffect(() => {
@@ -154,27 +179,17 @@ export function HomeCommunity({
     const isCurrentRequest = () =>
       !cancelled && requestVersionRef.current === requestVersion;
 
-    const cleanup = () => {
-      cancelled = true;
+    const cached = pagesRef.current.get(pageKey);
 
-      if (requestVersionRef.current === requestVersion) {
-        requestVersionRef.current += 1;
-      }
-    };
-
-    const useInitialPage =
-      assetSymbol === null &&
-      sort === "latest" &&
-      reloadKey === 0 &&
-      viewerId === initialViewerRef.current.id &&
-      viewerRole === initialViewerRef.current.role;
-
-    if (useInitialPage) {
-      setComments(initialComments);
-      setNextCursor(initialNextCursor);
+    if (cached) {
+      setComments(cached.comments);
+      setNextCursor(cached.nextCursor);
       setLoading(false);
 
-      return cleanup;
+      return () => {
+        cancelled = true;
+        requestVersionRef.current += 1;
+      };
     }
 
     setComments([]);
@@ -192,9 +207,16 @@ export function HomeCommunity({
 
         if (!isCurrentRequest()) return;
 
+        const page: CommentPage = {
+          comments: result.comments,
+          nextCursor: result.nextCursor,
+        };
+
+        pagesRef.current.set(pageKey, page);
+
+        setComments(page.comments);
+        setNextCursor(page.nextCursor);
         setNowMs(Date.now());
-        setComments(result.comments);
-        setNextCursor(result.nextCursor);
       } catch (error) {
         if (!isCurrentRequest()) return;
 
@@ -210,20 +232,27 @@ export function HomeCommunity({
 
     void loadComments();
 
-    return cleanup;
-  }, [
-    assetSymbol,
-    sort,
-    viewerId,
-    viewerRole,
-    reloadKey,
-    initialComments,
-    initialNextCursor,
-    initialTotalCount,
-  ]);
+    return () => {
+      cancelled = true;
+      requestVersionRef.current += 1;
+    };
+  }, [assetSymbol, sort, viewerId, viewerRole, pageKey, reloadKey]);
 
   const updateComment = useCallback(
     (commentId: string, updater: (comment: Comment) => Comment) => {
+      for (const [key, page] of pagesRef.current) {
+        if (!page.comments.some((comment) => comment.id === commentId)) {
+          continue;
+        }
+
+        pagesRef.current.set(key, {
+          ...page,
+          comments: page.comments.map((comment) =>
+            comment.id === commentId ? updater(comment) : comment,
+          ),
+        });
+      }
+
       setComments((current) =>
         current.map((comment) =>
           comment.id === commentId ? updater(comment) : comment,
@@ -234,6 +263,13 @@ export function HomeCommunity({
   );
 
   const removeComment = useCallback((commentId: string) => {
+    for (const [key, page] of pagesRef.current) {
+      pagesRef.current.set(key, {
+        ...page,
+        comments: page.comments.filter((comment) => comment.id !== commentId),
+      });
+    }
+
     setComments((current) =>
       current.filter((comment) => comment.id !== commentId),
     );
@@ -243,6 +279,21 @@ export function HomeCommunity({
     if (symbol === assetSymbol) return;
 
     requestVersionRef.current += 1;
+
+    const key = getPageKey(symbol, sort, viewerId, viewerRole);
+    const page = pagesRef.current.get(key);
+
+    if (page) {
+      setComments(page.comments);
+      setNextCursor(page.nextCursor);
+      setLoading(false);
+      setLoadError(false);
+    } else {
+      setComments([]);
+      setNextCursor(null);
+      setLoading(true);
+    }
+
     setAssetSymbol(symbol);
   }
 
@@ -250,6 +301,22 @@ export function HomeCommunity({
     if (nextSort === sort) return;
 
     requestVersionRef.current += 1;
+
+    const key = getPageKey(assetSymbol, nextSort, viewerId, viewerRole);
+
+    const page = pagesRef.current.get(key);
+
+    if (page) {
+      setComments(page.comments);
+      setNextCursor(page.nextCursor);
+      setLoading(false);
+      setLoadError(false);
+    } else {
+      setComments([]);
+      setNextCursor(null);
+      setLoading(true);
+    }
+
     setSort(nextSort);
   }
 
@@ -257,6 +324,7 @@ export function HomeCommunity({
     if (!nextCursor || loading || loadingMoreRef.current) return;
 
     const requestVersion = requestVersionRef.current;
+    const cursor = nextCursor;
 
     loadingMoreRef.current = true;
     setLoadingMore(true);
@@ -266,24 +334,32 @@ export function HomeCommunity({
         getHomeComments({
           assetSymbol,
           sort,
-          cursor: nextCursor,
+          cursor,
         }),
       );
 
       if (requestVersionRef.current !== requestVersion) return;
 
+      const existing = pagesRef.current.get(pageKey);
+
+      const currentComments = existing?.comments ?? comments;
+      const existingIds = new Set(currentComments.map((comment) => comment.id));
+
+      const mergedComments = [
+        ...currentComments,
+        ...result.comments.filter((comment) => !existingIds.has(comment.id)),
+      ];
+
+      const page: CommentPage = {
+        comments: mergedComments,
+        nextCursor: result.nextCursor,
+      };
+
+      pagesRef.current.set(pageKey, page);
+
+      setComments(page.comments);
+      setNextCursor(page.nextCursor);
       setNowMs(Date.now());
-
-      setComments((current) => {
-        const existingIds = new Set(current.map((comment) => comment.id));
-
-        return [
-          ...current,
-          ...result.comments.filter((comment) => !existingIds.has(comment.id)),
-        ];
-      });
-
-      setNextCursor(result.nextCursor);
     } catch (error) {
       if (requestVersionRef.current !== requestVersion) return;
 
@@ -391,6 +467,8 @@ export function HomeCommunity({
         onPublished={(postedSymbol) => {
           requestVersionRef.current += 1;
 
+          pagesRef.current.clear();
+
           if (assetSymbol !== null) {
             setAssetSymbol(postedSymbol);
           }
@@ -427,7 +505,10 @@ export function HomeCommunity({
 
             <button
               type="button"
-              onClick={() => setReloadKey((current) => current + 1)}
+              onClick={() => {
+                pagesRef.current.delete(pageKey);
+                setReloadKey((current) => current + 1);
+              }}
               className="
                 mt-3 cursor-pointer rounded-sm text-sm
                 text-zinc-700 underline underline-offset-4
@@ -461,6 +542,7 @@ export function HomeCommunity({
                 ) ?? comment.assets[0];
 
               const marketSymbol = asset?.assetSymbol;
+
               const marketname = marketSymbol
                 ? (marketBySymbol.get(marketSymbol)?.name ?? marketSymbol)
                 : undefined;
