@@ -3084,6 +3084,7 @@ export const PANEL_LEFT_LABELS: Record<
 export const NAVBAR_LABELS: Record<
   Language,
   {
+    navbar: string;
     close_search: string;
     toggle_sidebar: string;
     login: string;
@@ -3099,6 +3100,7 @@ export const NAVBAR_LABELS: Record<
   }
 > = {
   en: {
+    navbar: "Main navigation",
     close_search: "Close search",
     toggle_sidebar: "Toggle sidebar",
     login: "Log in",
@@ -3113,6 +3115,7 @@ export const NAVBAR_LABELS: Record<
     history: "History",
   },
   ko: {
+    navbar: "주요 탐색",
     close_search: "검색 닫기",
     toggle_sidebar: "사이드바 열기 또는 닫기",
     login: "로그인",
@@ -3127,6 +3130,7 @@ export const NAVBAR_LABELS: Record<
     history: "히스토리",
   },
   ja: {
+    navbar: "メインナビゲーション",
     close_search: "検索を閉じる",
     toggle_sidebar: "サイドバーの開閉",
     login: "ログイン",
@@ -3141,6 +3145,7 @@ export const NAVBAR_LABELS: Record<
     history: "履歴",
   },
   zh: {
+    navbar: "主导航",
     close_search: "关闭搜索",
     toggle_sidebar: "展开或收起侧栏",
     login: "登录",
@@ -3155,6 +3160,7 @@ export const NAVBAR_LABELS: Record<
     history: "历史",
   },
   de: {
+    navbar: "Hauptnavigation",
     close_search: "Suche schließen",
     toggle_sidebar: "Seitenleiste ein-/ausblenden",
     login: "Anmelden",
@@ -3169,6 +3175,7 @@ export const NAVBAR_LABELS: Record<
     history: "Verlauf",
   },
   fr: {
+    navbar: "Navigation principale",
     close_search: "Fermer la recherche",
     toggle_sidebar: "Afficher ou masquer le panneau latéral",
     login: "Connexion",
@@ -3183,6 +3190,7 @@ export const NAVBAR_LABELS: Record<
     history: "Historique",
   },
   es: {
+    navbar: "Navegación principal",
     close_search: "Cerrar búsqueda",
     toggle_sidebar: "Mostrar u ocultar la barra lateral",
     login: "Iniciar sesión",
@@ -3197,6 +3205,7 @@ export const NAVBAR_LABELS: Record<
     history: "Historial",
   },
   pt: {
+    navbar: "Navegação principal",
     close_search: "Fechar pesquisa",
     toggle_sidebar: "Mostrar ou ocultar a barra lateral",
     login: "Entrar",
@@ -3211,6 +3220,7 @@ export const NAVBAR_LABELS: Record<
     history: "Histórico",
   },
   it: {
+    navbar: "Navigazione principale",
     close_search: "Chiudi ricerca",
     toggle_sidebar: "Mostra o nascondi la barra laterale",
     login: "Accedi",
@@ -3225,6 +3235,7 @@ export const NAVBAR_LABELS: Record<
     history: "Cronologia",
   },
   ru: {
+    navbar: "Главная навигация",
     close_search: "Закрыть поиск",
     toggle_sidebar: "Показать или скрыть боковую панель",
     login: "Войти",
@@ -3239,6 +3250,7 @@ export const NAVBAR_LABELS: Record<
     history: "История",
   },
   ar: {
+    navbar: "التنقل الرئيسي",
     close_search: "إغلاق البحث",
     toggle_sidebar: "إظهار أو إخفاء الشريط الجانبي",
     login: "تسجيل الدخول",
@@ -3253,6 +3265,7 @@ export const NAVBAR_LABELS: Record<
     history: "التاريخ",
   },
   hi: {
+    navbar: "मुख्य नेविगेशन",
     close_search: "खोज बंद करें",
     toggle_sidebar: "साइडबार दिखाएँ या छिपाएँ",
     login: "लॉग इन",

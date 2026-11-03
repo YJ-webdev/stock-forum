@@ -128,6 +128,7 @@ export function Navbar({
 
   return (
     <nav
+      aria-label={labels.navbar}
       className="
         fixed inset-x-0 top-0 z-30
         flex h-18 items-center justify-between

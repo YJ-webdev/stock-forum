@@ -20,11 +20,14 @@ export const Footer = () => {
   return (
     <footer
       className="
-        flex shrink-0  flex-wrap-reverse  items-center px-4 sm:mx-0 justify-center
-        gap-3 sm:gap-x-5 gap-y-1 bg-white
-        pb-[max(0.625rem,env(safe-area-inset-bottom))]
-        text-zinc-700 dark:bg-zinc-900 dark:text-zinc-100
-      "
+    flex min-h-12 shrink-0 flex-wrap-reverse items-center
+    justify-center gap-x-3 gap-y-1
+    bg-white px-4
+    pb-[max(0.625rem,env(safe-area-inset-bottom))]
+    text-zinc-700
+    dark:bg-zinc-900 dark:text-zinc-100
+    sm:gap-x-5
+  "
     >
       {links.map(({ href, label }) => (
         <Link

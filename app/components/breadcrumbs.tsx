@@ -85,10 +85,10 @@ export const BreadCrumbs = () => {
   return (
     <div
       className="
-        sticky top-0 z-20
-        flex w-full items-center justify-between
-        bg-white px-4 py-3 dark:bg-zinc-900
-      "
+    sticky top-0 z-20
+    flex h-11 w-full shrink-0 items-center justify-between
+    bg-white px-4 dark:bg-zinc-900
+  "
     >
       <nav
         aria-label={labels.breadcrumb}

@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 };
 
 export default async function NewsPage() {
-  const news = await getGlobalMarketNews(30);
+  const news = await getGlobalMarketNews(50);
 
   return <NewsPageClient initialNews={news} />;
 }

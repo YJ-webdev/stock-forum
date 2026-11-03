@@ -21,6 +21,8 @@ interface MarketNewsProps {
 }
 
 const NEWS_CLIENT_CACHE_TIME = 60 * 60 * 1000; // 1 hour
+const NEWS_HISTORY_DAYS = 4;
+const NEWS_HISTORY_MS = NEWS_HISTORY_DAYS * 24 * 60 * 60 * 1000;
 
 interface NewsCacheEntry {
   news: MarketNewsItem[];
@@ -32,9 +34,7 @@ const newsCache = new Map<string, NewsCacheEntry>();
 function getCachedNews(symbol: string): MarketNewsItem[] | null {
   const cached = newsCache.get(symbol);
 
-  if (!cached) {
-    return null;
-  }
+  if (!cached) return null;
 
   const isExpired = Date.now() - cached.cachedAt >= NEWS_CLIENT_CACHE_TIME;
 
@@ -43,13 +43,33 @@ function getCachedNews(symbol: string): MarketNewsItem[] | null {
     return null;
   }
 
-  return cached.news;
+  return cached.news.filter((item) => {
+    const publishedAt = new Date(item.publishedAt).getTime();
+
+    return (
+      Number.isFinite(publishedAt) &&
+      publishedAt <= Date.now() &&
+      Date.now() - publishedAt <= NEWS_HISTORY_MS
+    );
+  });
 }
 
 function setCachedNews(symbol: string, news: MarketNewsItem[]) {
+  const now = Date.now();
+
+  const recentNews = news.filter((item) => {
+    const publishedAt = new Date(item.publishedAt).getTime();
+
+    return (
+      Number.isFinite(publishedAt) &&
+      publishedAt <= now &&
+      now - publishedAt <= NEWS_HISTORY_MS
+    );
+  });
+
   newsCache.set(symbol, {
-    news,
-    cachedAt: Date.now(),
+    news: recentNews,
+    cachedAt: now,
   });
 }
 
@@ -103,8 +123,7 @@ export default function MarketNews({ symbol }: MarketNewsProps) {
         }
 
         setCachedNews(symbol, result);
-
-        setNews(result);
+        setNews(getCachedNews(symbol) ?? []);
         setIndex(0);
       } catch (error) {
         console.error(`Failed to load market news for ${symbol}:`, error);

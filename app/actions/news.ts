@@ -94,12 +94,12 @@ interface IndexNewsProfile {
 const MARKETAUX_URL = "https://api.marketaux.com/v1/news/all";
 
 const NEWS_CACHE_TIME_MS = 24 * 60 * 60 * 1000;
-const NEWS_HISTORY_DAYS = 7;
+const NEWS_HISTORY_DAYS = 4;
 
 const MARKET_PAGE_NEWS_LIMIT = 3;
 const NEWS_PAGE_LIMIT = 21;
 
-const MARKETAUX_CANDIDATE_LIMIT = 10;
+const MARKETAUX_CANDIDATE_LIMIT = 3;
 
 // -----------------------------------------------------------------------------
 // Index-specific profiles
@@ -1238,103 +1238,147 @@ export async function getMarketNews(
 // Global news page
 // -----------------------------------------------------------------------------
 
+export type GlobalNewsRegion =
+  | "All"
+  | "America"
+  | "Asia"
+  | "Middle_East"
+  | "Europe"
+  | "Africa"
+  | "Global";
+
+const GLOBAL_NEWS_REGIONS: Exclude<GlobalNewsRegion, "All">[] = [
+  "America",
+  "Asia",
+  "Middle_East",
+  "Europe",
+  "Africa",
+  "Global",
+];
+
+const GLOBAL_NEWS_CANDIDATE_LIMIT = 500;
+
+function globalNewsScore(
+  item: GlobalMarketNewsItem,
+  context: NewsContext,
+): number {
+  const article: MarketauxArticle = {
+    uuid: item.id,
+    title: item.title,
+    description: item.summary,
+    url: item.url,
+    published_at: new Date(item.publishedAt).toISOString(),
+  };
+
+  const relevance = calculateArticleRelevance(article, context);
+
+  const ageHours = Math.max(
+    0,
+    (Date.now() - new Date(item.publishedAt).getTime()) / 3_600_000,
+  );
+
+  // Relevance and freshness both contribute to ranking.
+  const relevanceScore = Math.min(relevance, 200) / 200;
+  const freshnessScore = Math.exp(-ageHours / 48);
+
+  return relevanceScore * 0.65 + freshnessScore * 0.35;
+}
+
 export async function getGlobalMarketNews(
-  limit = 30,
+  limit = 50,
+  region: GlobalNewsRegion = "All",
 ): Promise<GlobalMarketNewsItem[]> {
-  const target = clampNewsLimit(limit, 30);
+  const target = clampNewsLimit(limit, 50);
 
-  const result: GlobalMarketNewsItem[] = [];
-
-  const urls = new Set<string>();
-  const titles = new Set<string>();
-
-  const publishedAfter = sevenDaysAgo();
-
-  let cursor: string | undefined;
-
-  // Read further batches until enough unique articles are found
-  // or the stored results are exhausted.
-  while (result.length < target) {
-    const batch: GlobalMarketNewsItem[] = await prisma.marketNews.findMany({
-      where: {
-        publishedAt: {
-          gte: publishedAfter,
-        },
-
-        market: {
-          category: {
-            in: ["America", "Asia", "Middle_East", "Europe"],
-          },
-        },
-      },
-
-      select: {
-        id: true,
-        marketSymbol: true,
-
-        title: true,
-        summary: true,
-        imageUrl: true,
-
-        source: true,
-        sourceIcon: true,
-
-        url: true,
-        publishedAt: true,
-
-        market: {
-          select: {
-            symbol: true,
-            displaySymbol: true,
-            name: true,
-            category: true,
-          },
-        },
-      },
-
-      orderBy: [{ publishedAt: "desc" }, { id: "asc" }],
-
-      take: 100,
-
-      ...(cursor
-        ? {
-            cursor: { id: cursor },
-            skip: 1,
-          }
-        : {}),
-    });
-
-    if (batch.length === 0) {
-      break;
-    }
-
-    for (const item of batch) {
-      const url = articleUrlKey(item.url);
-      const title = normalizeText(item.title);
-
-      if (urls.has(url) || (title && titles.has(title))) {
-        continue;
-      }
-
-      urls.add(url);
-
-      if (title) {
-        titles.add(title);
-      }
-
-      result.push(item);
-
-      if (result.length === target) {
-        break;
-      }
-    }
-
-    cursor = batch[batch.length - 1].id;
-
-    if (batch.length < 100) {
-      break;
-    }
+  if (region !== "All" && !GLOBAL_NEWS_REGIONS.includes(region)) {
+    return [];
   }
 
-  return result;
+  const marketFilter =
+    region === "All" ? { in: GLOBAL_NEWS_REGIONS } : { equals: region };
+
+  const items = await prisma.marketNews.findMany({
+    where: {
+      publishedAt: {
+        gte: sevenDaysAgo(),
+      },
+      market: {
+        category: marketFilter,
+      },
+    },
+    select: {
+      id: true,
+      marketSymbol: true,
+      title: true,
+      summary: true,
+      imageUrl: true,
+      source: true,
+      sourceIcon: true,
+      url: true,
+      publishedAt: true,
+      market: {
+        select: {
+          symbol: true,
+          displaySymbol: true,
+          name: true,
+          category: true,
+          assetType: true,
+          timezone: true,
+        },
+      },
+    },
+    orderBy: [{ publishedAt: "desc" }, { id: "asc" }],
+    take: GLOBAL_NEWS_CANDIDATE_LIMIT,
+  });
+
+  const contexts = new Map<string, NewsContext>();
+
+  const ranked = items.map((item) => {
+    let context = contexts.get(item.marketSymbol);
+
+    if (!context) {
+      context = buildNewsContext({
+        symbol: item.market.symbol,
+        name: item.market.name,
+        assetType: item.market.assetType,
+        timezone: item.market.timezone,
+      });
+
+      contexts.set(item.marketSymbol, context);
+    }
+
+    return {
+      item,
+      score: globalNewsScore(item, context),
+    };
+  });
+
+  ranked.sort(
+    (a, b) =>
+      b.score - a.score ||
+      new Date(b.item.publishedAt).getTime() -
+        new Date(a.item.publishedAt).getTime(),
+  );
+
+  const unique = deduplicateNews(
+    ranked.map(({ item }) => ({
+      id: item.id,
+      marketSymbol: item.marketSymbol,
+      title: item.title,
+      summary: item.summary,
+      imageUrl: item.imageUrl,
+      source: item.source,
+      sourceIcon: item.sourceIcon,
+      url: item.url,
+      publishedAt: item.publishedAt,
+      market: {
+        symbol: item.market.symbol,
+        displaySymbol: item.market.displaySymbol,
+        name: item.market.name,
+        category: item.market.category,
+      },
+    })),
+  );
+
+  return unique.slice(0, target);
 }

@@ -515,7 +515,9 @@ export default function LayoutShell({ user, children }: LayoutShellProps) {
     >
       <div className="flex min-h-full flex-col">
         {pathname !== "/" && <BreadCrumbs />}
-        {children}
+
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+
         <Footer />
       </div>
     </div>
