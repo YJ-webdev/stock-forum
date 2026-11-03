@@ -1,6 +1,10 @@
 import { TZDate } from "@date-fns/tz";
 
-import { ALL_MARKET_SYMBOLS, TRADING_HOURS } from "../data/market-symbols";
+import {
+  ALL_MARKET_SYMBOLS,
+  TRADING_HOURS,
+  type MarketSchedule,
+} from "../data/market-symbols";
 
 const COUNTDOWN_THRESHOLD_MS = 6 * 60 * 60 * 1000;
 
@@ -14,6 +18,17 @@ export interface VotingWindow {
   showCountdown: boolean;
   countdownType: VotingCountdownType | null;
   currentSessionStartMs: number | null;
+}
+
+function isMarketWeekend(
+  dayOfWeek: number,
+  marketSchedule: MarketSchedule,
+): boolean {
+  if (marketSchedule === "SA_EQUITY") {
+    return dayOfWeek === 5 || dayOfWeek === 6;
+  }
+
+  return dayOfWeek === 0 || dayOfWeek === 6;
 }
 
 function getTimestampForMarketTime(
@@ -32,15 +47,14 @@ function getPreviousWeekdayClose(
   nowMs: number,
   closeTime: string,
   timezone: string,
+  marketSchedule: MarketSchedule,
 ): number | null {
   const date = new TZDate(nowMs, timezone);
 
   for (let offset = 1; offset <= 7; offset++) {
     date.setDate(date.getDate() - 1);
 
-    const dayOfWeek = date.getDay();
-
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
+    if (isMarketWeekend(date.getDay(), marketSchedule)) {
       continue;
     }
 
@@ -60,6 +74,7 @@ function getNextWeekdayOpen(
   nowMs: number,
   openTime: string,
   timezone: string,
+  marketSchedule: MarketSchedule,
 ): number | null {
   const now = new TZDate(nowMs, timezone);
 
@@ -75,9 +90,7 @@ function getNextWeekdayOpen(
       timezone,
     );
 
-    const dayOfWeek = date.getDay();
-
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
+    if (isMarketWeekend(date.getDay(), marketSchedule)) {
       continue;
     }
 
@@ -103,17 +116,13 @@ function createVotingWindow(
   return {
     isMarketOpen: false,
     canVote: targetMs !== null,
-
     targetMs,
     predictionFor: targetMs === null ? null : new Date(targetMs),
-
     showCountdown:
       remaining !== null &&
       remaining > 0 &&
       remaining <= COUNTDOWN_THRESHOLD_MS,
-
     countdownType: targetMs === null ? null : "VOTING_CLOSES",
-
     currentSessionStartMs,
   };
 }
@@ -136,28 +145,30 @@ export function getVotingWindow(
     };
   }
 
-  const schedule = TRADING_HOURS[item.marketSchedule];
+  const marketSchedule = item.marketSchedule;
+  const schedule = TRADING_HOURS[marketSchedule];
+
   const now = new TZDate(nowMs, schedule.timezone);
 
   const year = now.getFullYear();
   const month = now.getMonth();
   const day = now.getDate();
-  const dayOfWeek = now.getDay();
 
-  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  const isWeekend = isMarketWeekend(now.getDay(), marketSchedule);
 
-  // Weekends: voting closes at the next weekday's open.
   if (isWeekend) {
     const nextOpenMs = getNextWeekdayOpen(
       nowMs,
       schedule.open,
       schedule.timezone,
+      marketSchedule,
     );
 
     const previousCloseMs = getPreviousWeekdayClose(
       nowMs,
       schedule.close,
       schedule.timezone,
+      marketSchedule,
     );
 
     return createVotingWindow(nextOpenMs, previousCloseMs, nowMs);
@@ -179,18 +190,17 @@ export function getVotingWindow(
     schedule.timezone,
   );
 
-  // Before open: voting closes at today's open.
   if (nowMs < openMs) {
     const previousCloseMs = getPreviousWeekdayClose(
       nowMs,
       schedule.close,
       schedule.timezone,
+      marketSchedule,
     );
 
     return createVotingWindow(openMs, previousCloseMs, nowMs);
   }
 
-  // During the session: voting is closed; no countdown.
   if (nowMs < closeMs) {
     return {
       isMarketOpen: true,
@@ -203,11 +213,11 @@ export function getVotingWindow(
     };
   }
 
-  // After close: voting closes at the next weekday's open.
   const nextOpenMs = getNextWeekdayOpen(
     nowMs,
     schedule.open,
     schedule.timezone,
+    marketSchedule,
   );
 
   return createVotingWindow(nextOpenMs, closeMs, nowMs);

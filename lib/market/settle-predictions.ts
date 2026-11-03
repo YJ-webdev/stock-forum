@@ -12,8 +12,9 @@ import {
   getSettlementCandle,
 } from "@/lib/market/yahoo";
 
-// Give Yahoo time to finalize daily candles after market close.
 const SETTLEMENT_DATA_GRACE_MS = 30 * 60 * 1000;
+const SETTLEMENT_BATCH_SIZE = 200;
+const SETTLEMENT_RUN_BUDGET_MS = 180_000;
 
 type SettlementSummary = {
   checked: number;
@@ -61,164 +62,216 @@ export async function settlePendingPredictions(): Promise<SettlementSummary> {
     errors: 0,
   };
 
-  // Include guests and soft-deleted members.
-  // Direction, bet, and reference close are read inside settlement.
-  const predictions = await prisma.prediction.findMany({
-    where: {
-      status: PredictionStatus.PENDING,
-    },
-    select: {
-      id: true,
-      userId: true,
-      symbol: true,
-      sessionDate: true,
-      asset: {
-        select: {
-          displaySymbol: true,
+  const startedAt = Date.now();
+  const deadline = startedAt + SETTLEMENT_RUN_BUDGET_MS;
+
+  // Reuse the same Yahoo result for predictions targeting
+  // the same market and session.
+  const candleCache = new Map<string, ReturnType<typeof getSettlementCandle>>();
+
+  let cursor: string | undefined;
+  let completedScan = false;
+
+  while (Date.now() < deadline) {
+    const predictions = await prisma.prediction.findMany({
+      where: {
+        status: PredictionStatus.PENDING,
+      },
+      select: {
+        id: true,
+        userId: true,
+        symbol: true,
+        sessionDate: true,
+        asset: {
+          select: {
+            displaySymbol: true,
+          },
         },
       },
-    },
-    orderBy: [{ sessionDate: "asc" }, { id: "asc" }],
-  });
+      orderBy: {
+        id: "asc",
+      },
+      take: SETTLEMENT_BATCH_SIZE,
+      ...(cursor
+        ? {
+            cursor: { id: cursor },
+            skip: 1,
+          }
+        : {}),
+    });
 
-  for (const prediction of predictions) {
-    summary.checked += 1;
+    if (predictions.length === 0) {
+      completedScan = true;
+      break;
+    }
 
-    try {
-      const displaySymbol = prediction.asset.displaySymbol ?? prediction.symbol;
+    // Save the cursor before processing this batch.
+    cursor = predictions[predictions.length - 1].id;
 
-      // Avoid fetching candles for sessions that have not finished yet.
-      const expectedCloseMs = getExpectedSessionCloseMs(
-        prediction.symbol,
-        prediction.sessionDate,
-      );
-
-      if (
-        expectedCloseMs !== null &&
-        Date.now() < expectedCloseMs + SETTLEMENT_DATA_GRACE_MS
-      ) {
-        summary.pending += 1;
-        continue;
+    for (const prediction of predictions) {
+      if (Date.now() >= deadline) {
+        break;
       }
 
-      const settlementCandle = await getSettlementCandle(
-        prediction.symbol,
-        prediction.sessionDate,
-      );
+      summary.checked += 1;
 
-      if (!settlementCandle) {
-        summary.pending += 1;
+      try {
+        const displaySymbol =
+          prediction.asset.displaySymbol ?? prediction.symbol;
 
-        // Guests have no personal notifications.
-        const userId = prediction.userId;
+        const expectedCloseMs = getExpectedSessionCloseMs(
+          prediction.symbol,
+          prediction.sessionDate,
+        );
 
-        if (userId === null || expectedCloseMs === null) {
+        if (
+          expectedCloseMs !== null &&
+          Date.now() < expectedCloseMs + SETTLEMENT_DATA_GRACE_MS
+        ) {
+          summary.pending += 1;
           continue;
         }
 
-        const pendingEventKey =
-          `prediction:${prediction.id}:pending:` +
-          prediction.sessionDate.toISOString();
+        const cacheKey = [
+          prediction.symbol,
+          prediction.sessionDate.toISOString(),
+        ].join(":");
 
-        await prisma.$transaction(async (tx) => {
-          // Keep lock order consistent with vote edits and settlement.
-          await tx.$queryRaw`
-            SELECT "id"
-            FROM "User"
-            WHERE "id" = ${userId}
-            FOR UPDATE
-          `;
+        let candlePromise = candleCache.get(cacheKey);
 
-          const user = await tx.user.findUnique({
-            where: {
-              id: userId,
-            },
-            select: {
-              deletedAt: true,
-            },
-          });
+        if (!candlePromise) {
+          candlePromise = getSettlementCandle(
+            prediction.symbol,
+            prediction.sessionDate,
+          );
 
-          if (!user || user.deletedAt) return;
+          candleCache.set(cacheKey, candlePromise);
+        }
 
-          await tx.$queryRaw`
-            SELECT "id"
-            FROM "Prediction"
-            WHERE "id" = ${prediction.id}
-            FOR UPDATE
-          `;
+        const settlementCandle = await candlePromise;
 
-          const currentPrediction = await tx.prediction.findUnique({
-            where: {
-              id: prediction.id,
-            },
-            select: {
-              userId: true,
-              status: true,
-            },
-          });
+        if (!settlementCandle) {
+          summary.pending += 1;
 
-          if (
-            !currentPrediction ||
-            currentPrediction.userId !== userId ||
-            currentPrediction.status !== PredictionStatus.PENDING
-          ) {
-            return;
+          const userId = prediction.userId;
+
+          if (userId === null || expectedCloseMs === null) {
+            continue;
           }
 
-          await tx.notification.upsert({
-            where: {
-              eventKey: pendingEventKey,
-            },
-            update: {},
-            create: {
-              userId,
-              type: "PREDICTION_PENDING",
-              title: "Prediction still pending",
-              message:
-                `No completed trading session is available yet for ` +
-                `${displaySymbol}. ` +
-                `The market may have been closed, it may be a non-trading day, ` +
-                `or market data may still be unavailable. ` +
-                `Your prediction will be settled after the next completed trading session.`,
-              predictionId: prediction.id,
-              eventKey: pendingEventKey,
-            },
+          const pendingEventKey =
+            `prediction:${prediction.id}:pending:` +
+            prediction.sessionDate.toISOString();
+
+          await prisma.$transaction(async (tx) => {
+            await tx.$queryRaw`
+              SELECT "id"
+              FROM "User"
+              WHERE "id" = ${userId}
+              FOR UPDATE
+            `;
+
+            const user = await tx.user.findUnique({
+              where: {
+                id: userId,
+              },
+              select: {
+                deletedAt: true,
+              },
+            });
+
+            if (!user || user.deletedAt) return;
+
+            await tx.$queryRaw`
+              SELECT "id"
+              FROM "Prediction"
+              WHERE "id" = ${prediction.id}
+              FOR UPDATE
+            `;
+
+            const currentPrediction = await tx.prediction.findUnique({
+              where: {
+                id: prediction.id,
+              },
+              select: {
+                userId: true,
+                status: true,
+              },
+            });
+
+            if (
+              !currentPrediction ||
+              currentPrediction.userId !== userId ||
+              currentPrediction.status !== PredictionStatus.PENDING
+            ) {
+              return;
+            }
+
+            await tx.notification.upsert({
+              where: {
+                eventKey: pendingEventKey,
+              },
+              update: {},
+              create: {
+                userId,
+                type: "PREDICTION_PENDING",
+                title: "Prediction still pending",
+                message:
+                  `No completed trading session is available yet for ` +
+                  `${displaySymbol}. ` +
+                  `The market may have been closed, it may be a non-trading day, ` +
+                  `or market data may still be unavailable. ` +
+                  `Your prediction will be settled after the next completed trading session.`,
+                predictionId: prediction.id,
+                eventKey: pendingEventKey,
+              },
+            });
           });
+
+          continue;
+        }
+
+        const settlementClose = settlementCandle.close;
+
+        if (!Number.isFinite(settlementClose) || settlementClose <= 0) {
+          throw new Error("Invalid prediction settlement close.");
+        }
+
+        const outcome = await settlePrediction({
+          predictionId: prediction.id,
+          userId: prediction.userId,
+          symbol: displaySymbol,
+          settlementClose,
         });
 
-        continue;
+        if (outcome === null) continue;
+
+        if (outcome === "WON") {
+          summary.won += 1;
+        } else if (outcome === "LOST") {
+          summary.lost += 1;
+        } else {
+          summary.draw += 1;
+        }
+      } catch (error) {
+        summary.errors += 1;
+
+        console.error(`Failed to settle prediction ${prediction.id}:`, error);
       }
+    }
 
-      const settlementClose = settlementCandle.close;
-
-      if (!Number.isFinite(settlementClose) || settlementClose <= 0) {
-        throw new Error("Invalid prediction settlement close.");
-      }
-
-      // Calculate the outcome using the latest locked prediction.
-      const outcome = await settlePrediction({
-        predictionId: prediction.id,
-        userId: prediction.userId,
-        symbol: displaySymbol,
-        settlementClose,
-      });
-
-      // Another request may already have settled the prediction.
-      if (outcome === null) continue;
-
-      if (outcome === "WON") {
-        summary.won += 1;
-      } else if (outcome === "LOST") {
-        summary.lost += 1;
-      } else {
-        summary.draw += 1;
-      }
-    } catch (error) {
-      summary.errors += 1;
-
-      console.error(`Failed to settle prediction ${prediction.id}:`, error);
+    if (predictions.length < SETTLEMENT_BATCH_SIZE) {
+      completedScan = true;
+      break;
     }
   }
+
+  console.info("Prediction settlement completed:", {
+    ...summary,
+    yahooRequests: candleCache.size,
+    completedScan,
+    durationMs: Date.now() - startedAt,
+  });
 
   return summary;
 }

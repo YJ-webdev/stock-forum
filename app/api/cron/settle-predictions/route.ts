@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 
 import { settlePendingPredictions } from "@/lib/market/settle-predictions";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 240;
 
 // -----------------------------------------------------------------------------
 // SETTLE PREDICTIONS CRON

@@ -1,14 +1,17 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import {
   NotificationType,
   PredictionStatus,
+  Prisma,
   UserTier,
 } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/prisma";
 
-// --------------------------------------------------------userId---------------------
+// -----------------------------------------------------------------------------
 // CONFIG
 // -----------------------------------------------------------------------------
 
@@ -16,6 +19,7 @@ const RANKING_PERIOD_DAYS = 30;
 const MIN_SETTLED_PREDICTIONS = 10;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const WRITE_BATCH_SIZE = 250;
 
 const TIER_NAMES: Record<UserTier, string> = {
   UNRANKED: "Unranked",
@@ -50,6 +54,16 @@ interface RankedUser {
   netProfit: number;
 }
 
+interface RankingRow {
+  userId: string;
+  tier: UserTier;
+  rank: number | null;
+  netProfit: number;
+  settledCount: number;
+  wonCount: number;
+  lostCount: number;
+}
+
 export interface RankingUpdateSummary {
   totalUsers: number;
   rankedUsers: number;
@@ -60,7 +74,7 @@ export interface RankingUpdateSummary {
 }
 
 // -----------------------------------------------------------------------------
-// TIER
+// HELPERS
 // -----------------------------------------------------------------------------
 
 function getUserTier(rank: number, totalRankedUsers: number): UserTier {
@@ -83,6 +97,16 @@ function getUserTier(rank: number, totalRankedUsers: number): UserTier {
   return UserTier.BRONZE;
 }
 
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+
+  return chunks;
+}
+
 // -----------------------------------------------------------------------------
 // UPDATE USER RANKINGS
 // -----------------------------------------------------------------------------
@@ -90,26 +114,15 @@ function getUserTier(rank: number, totalRankedUsers: number): UserTier {
 export async function updateUserRankings(): Promise<RankingUpdateSummary> {
   return prisma.$transaction(
     async (tx) => {
-      // Prevent overlapping ranking jobs.
+      // Only one ranking job may run at a time.
       const [lock] = await tx.$queryRaw<{ locked: boolean }[]>`
-        SELECT pg_try_advisory_xact_lock(482731, 1) AS locked
+        SELECT pg_try_advisory_xact_lock(482731, 1)
+          AS locked
       `;
 
       if (!lock?.locked) {
         throw new Error("A ranking update is already running.");
       }
-
-      // Coordinate ranking writes with account deletion and settlement.
-      // Use a consistent lock order and a fixed set of users for this run.
-      const lockedUsers = await tx.$queryRaw<{ id: string }[]>`
-        SELECT "id"
-        FROM "User"
-        WHERE "deletedAt" IS NULL
-        ORDER BY "id"
-        FOR UPDATE
-      `;
-
-      const userIds = lockedUsers.map((user) => user.id);
 
       const periodEnd = new Date();
 
@@ -117,16 +130,11 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
         periodEnd.getTime() - RANKING_PERIOD_DAYS * DAY_MS,
       );
 
-      // Include non-deleted accounts regardless of role or isBot.
-      // Read their previous tiers before updating rankings.
+      // No full-table FOR UPDATE lock.
       const users = await tx.user.findMany({
         where: {
-          id: {
-            in: userIds,
-          },
           deletedAt: null,
         },
-
         select: {
           id: true,
           ranking: {
@@ -135,38 +143,33 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
             },
           },
         },
-
         orderBy: {
           id: "asc",
         },
       });
 
+      // Aggregate directly in PostgreSQL.
+      // No large userId IN (...) array.
       const results = await tx.prediction.groupBy({
         by: ["userId", "status"],
-
         where: {
           userId: {
-            in: userIds,
+            not: null,
           },
-
           user: {
             deletedAt: null,
           },
-
           status: {
             in: [PredictionStatus.WON, PredictionStatus.LOST],
           },
-
           settledAt: {
             gte: periodStart,
             lt: periodEnd,
           },
         },
-
         _sum: {
           pointsChange: true,
         },
-
         _count: {
           _all: true,
           pointsChange: true,
@@ -180,7 +183,6 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
 
         if (userId === null) continue;
 
-        // Missing settlement profit must not be treated as zero.
         if (result._count.pointsChange !== result._count._all) {
           throw new Error(
             `Missing pointsChange for settled predictions: ${userId}`,
@@ -215,9 +217,7 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
       for (const user of users) {
         const stats = statsByUser.get(user.id);
 
-        if (!stats) {
-          continue;
-        }
+        if (!stats) continue;
 
         const settledCount = stats.wonCount + stats.lostCount;
 
@@ -231,11 +231,12 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
         });
       }
 
-      eligibleUsers.sort((a, b) => b.netProfit - a.netProfit);
+      eligibleUsers.sort(
+        (a, b) => b.netProfit - a.netProfit || a.userId.localeCompare(b.userId),
+      );
 
       // -----------------------------------------------------------------------
       // SHARED RANKS
-      // Example: 1, 2, 2, 4
       // -----------------------------------------------------------------------
 
       const rankByUser = new Map<string, number>();
@@ -256,10 +257,12 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
       }
 
       // -----------------------------------------------------------------------
-      // SAVE RANKINGS / CREATE TIER NOTIFICATIONS
+      // BUILD RANKING ROWS
       // -----------------------------------------------------------------------
 
-      let tierChangedUsers = 0;
+      const rankingRows: RankingRow[] = [];
+
+      const notifications: Prisma.NotificationCreateManyInput[] = [];
 
       for (const user of users) {
         const stats = statsByUser.get(user.id) ?? {
@@ -277,31 +280,14 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
             ? UserTier.UNRANKED
             : getUserTier(rank, eligibleUsers.length);
 
-        const data = {
+        rankingRows.push({
+          userId: user.id,
           tier: nextTier,
           rank,
           netProfit: stats.netProfit,
-
           settledCount: stats.wonCount + stats.lostCount,
           wonCount: stats.wonCount,
           lostCount: stats.lostCount,
-
-          periodStart,
-          periodEnd,
-          calculatedAt: periodEnd,
-        };
-
-        await tx.userRanking.upsert({
-          where: {
-            userId: user.id,
-          },
-
-          update: data,
-
-          create: {
-            userId: user.id,
-            ...data,
-          },
         });
 
         if (previousTier === nextTier) {
@@ -310,43 +296,119 @@ export async function updateUserRankings(): Promise<RankingUpdateSummary> {
 
         const upgraded = TIER_ORDER[nextTier] > TIER_ORDER[previousTier];
 
-        await tx.notification.create({
-          data: {
-            userId: user.id,
-
-            type: upgraded
-              ? NotificationType.TIER_UP
-              : NotificationType.TIER_DOWN,
-
-            tier: nextTier,
-
-            title: upgraded ? "Tier upgraded" : "Tier downgraded",
-
-            message: upgraded
-              ? `Your tier has been upgraded to ${TIER_NAMES[nextTier]}.`
-              : `Your tier has been downgraded to ${TIER_NAMES[nextTier]}.`,
-
-            eventKey:
-              `tier-change:${user.id}:${periodEnd.toISOString()}:` +
-              `${previousTier}:${nextTier}`,
-          },
+        notifications.push({
+          id: randomUUID(),
+          userId: user.id,
+          type: upgraded
+            ? NotificationType.TIER_UP
+            : NotificationType.TIER_DOWN,
+          tier: nextTier,
+          title: upgraded ? "Tier upgraded" : "Tier downgraded",
+          message: upgraded
+            ? `Your tier has been upgraded to ${TIER_NAMES[nextTier]}.`
+            : `Your tier has been downgraded to ${TIER_NAMES[nextTier]}.`,
+          eventKey:
+            `tier-change:${user.id}:${periodEnd.toISOString()}:` +
+            `${previousTier}:${nextTier}`,
         });
+      }
 
-        tierChangedUsers += 1;
+      // -----------------------------------------------------------------------
+      // INSERT MISSING RANKINGS
+      // -----------------------------------------------------------------------
+
+      // New users get a ranking row before the bulk update.
+      // Existing users are skipped.
+      for (const batch of chunkArray(rankingRows, WRITE_BATCH_SIZE)) {
+        await tx.userRanking.createMany({
+          data: batch.map((row) => ({
+            id: randomUUID(),
+            userId: row.userId,
+            tier: row.tier,
+            rank: row.rank,
+            netProfit: row.netProfit,
+            settledCount: row.settledCount,
+            wonCount: row.wonCount,
+            lostCount: row.lostCount,
+            periodStart,
+            periodEnd,
+            calculatedAt: periodEnd,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      // -----------------------------------------------------------------------
+      // BULK UPDATE
+      // -----------------------------------------------------------------------
+
+      for (const batch of chunkArray(rankingRows, WRITE_BATCH_SIZE)) {
+        const values = Prisma.join(
+          batch.map(
+            (row) =>
+              Prisma.sql`(
+              ${row.userId},
+              ${row.tier},
+              ${row.rank},
+              ${row.netProfit},
+              ${row.settledCount},
+              ${row.wonCount},
+              ${row.lostCount}
+            )`,
+          ),
+        );
+
+        await tx.$executeRaw`
+          UPDATE "UserRanking" AS ranking
+          SET
+            "tier" = data.tier::"UserTier",
+            "rank" = data.rank,
+            "netProfit" = data.net_profit,
+            "settledCount" = data.settled_count,
+            "wonCount" = data.won_count,
+            "lostCount" = data.lost_count,
+            "periodStart" = ${periodStart},
+            "periodEnd" = ${periodEnd},
+            "calculatedAt" = ${periodEnd},
+            "updatedAt" = NOW()
+          FROM (
+            VALUES ${values}
+          ) AS data(
+            user_id,
+            tier,
+            rank,
+            net_profit,
+            settled_count,
+            won_count,
+            lost_count
+          )
+          WHERE ranking."userId" = data.user_id
+        `;
+      }
+
+      // -----------------------------------------------------------------------
+      // TIER NOTIFICATIONS
+      // -----------------------------------------------------------------------
+
+      for (const batch of chunkArray(notifications, WRITE_BATCH_SIZE)) {
+        await tx.notification.createMany({
+          data: batch,
+          skipDuplicates: true,
+        });
       }
 
       return {
         totalUsers: users.length,
         rankedUsers: eligibleUsers.length,
         unrankedUsers: users.length - eligibleUsers.length,
-        tierChangedUsers,
+        tierChangedUsers: notifications.length,
         periodStart: periodStart.toISOString(),
         periodEnd: periodEnd.toISOString(),
       };
     },
     {
       maxWait: 10_000,
-      timeout: 60_000,
+      timeout: 120_000,
     },
   );
 }
