@@ -340,6 +340,7 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       marketSchedule: "JP_EQUITY",
       icon: "/market-icons/nikkei225_icon.png",
     },
+
     {
       name: "TOPIX",
       symbol: "TOPIX",
@@ -347,7 +348,8 @@ export const MARKET_SYMBOLS: Record<string, MarketSymbolItem[]> = {
       country: "JP",
       region: "Asia",
       assetType: "index",
-      providerSymbol: "^TOPX",
+      providerSymbol: "1306.T",
+      isProxy: true,
       timezone: "Asia/Tokyo",
       marketSchedule: "JP_EQUITY",
     },
