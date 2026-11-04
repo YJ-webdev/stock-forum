@@ -11,7 +11,14 @@ import {
   type SetStateAction,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, CheckCheck, RotateCcw, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import {
+  Bell,
+  CheckCheck,
+  MessageSquareText,
+  RotateCcw,
+  X,
+} from "lucide-react";
 
 import {
   deleteSocialNotification,
@@ -40,6 +47,7 @@ import {
   FcBearish,
   FcBullish,
   FcCancel,
+  FcFeedback,
   FcLibrary,
   FcLikePlaceholder,
   FcNeutralTrading,
@@ -106,7 +114,7 @@ const SECTION_ORDER: DateSectionKey[] = [
 const notificationCache = new Map<string, NotificationCacheEntry>();
 
 function canDeleteNotification(type: MyNotification["type"]) {
-  return !PREDICTION_TYPES.has(type);
+  return type !== "FEEDBACK_RECEIVED" && !PREDICTION_TYPES.has(type);
 }
 
 function sortNotifications(notifications: MyNotification[]) {
@@ -212,6 +220,8 @@ function NotificationPanelContent({
   const [refreshing, setRefreshing] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [selectedFeedback, setSelectedFeedback] =
+    useState<MyNotification | null>(null);
   const [sectionNow, setSectionNow] = useState(() => new Date());
 
   const [swipedNotificationId, setSwipedNotificationId] = useState<
@@ -373,6 +383,11 @@ function NotificationPanelContent({
   }, [userId, refreshKey, retryKey]);
 
   function handleNotificationClick(notification: MyNotification) {
+    if (notification.type === "FEEDBACK_RECEIVED") {
+      setSelectedFeedback(notification);
+      setSwipedNotificationId(null);
+    }
+
     const href = getNotificationHref(notification);
 
     if (!notification.readAt && !mutationDisabled && !mutationBusy.current) {
@@ -769,6 +784,14 @@ function NotificationPanelContent({
           </span>
         )}
       </div>
+
+      {selectedFeedback && (
+        <FeedbackDialog
+          notification={selectedFeedback}
+          language={language}
+          onClose={() => setSelectedFeedback(null)}
+        />
+      )}
     </section>
   );
 }
@@ -799,7 +822,8 @@ function NotificationItem({
   const unread = notification.readAt === null;
   const deletable = canDeleteNotification(notification.type);
   const href = getNotificationHref(notification);
-  const clickable = Boolean(href) || unread;
+  const clickable =
+    notification.type === "FEEDBACK_RECEIVED" || Boolean(href) || unread;
   const isBanNotification = notification.type === "USER_BANNED";
 
   const preview = getNotificationPreview(notification);
@@ -1286,6 +1310,9 @@ function NotificationIcon({ type }: { type: MyNotification["type"] }) {
       case "REPLY_REPORTED":
         return FcAdvertising;
 
+      case "FEEDBACK_RECEIVED":
+        return FcFeedback;
+
       case "PREDICTION_WON":
         return FcBullish;
 
@@ -1338,5 +1365,248 @@ function EmptyNotifications({ message }: { message: string }) {
       />
       <p className="text-sm text-zinc-500 dark:text-zinc-400">{message}</p>
     </div>
+  );
+}
+
+const FEEDBACK_DIALOG_LABELS = {
+  en: {
+    heading: "Feedback",
+    from: "From",
+    guest: "Guest",
+    date: "Submitted",
+    suggestion: "Suggestion",
+    bug: "Bug report",
+    other: "Other",
+    unavailable: "The original feedback is unavailable.",
+  },
+  ko: {
+    heading: "피드백",
+    from: "작성자",
+    guest: "비로그인 사용자",
+    date: "제출일",
+    suggestion: "제안",
+    bug: "오류 신고",
+    other: "기타",
+    unavailable: "원본 피드백을 불러올 수 없습니다.",
+  },
+  ja: {
+    heading: "フィードバック",
+    from: "送信者",
+    guest: "ゲスト",
+    date: "送信日時",
+    suggestion: "提案",
+    bug: "不具合の報告",
+    other: "その他",
+    unavailable: "元のフィードバックを取得できません。",
+  },
+  zh: {
+    heading: "反馈",
+    from: "提交者",
+    guest: "访客",
+    date: "提交时间",
+    suggestion: "建议",
+    bug: "问题报告",
+    other: "其他",
+    unavailable: "无法获取原始反馈。",
+  },
+  de: {
+    heading: "Feedback",
+    from: "Von",
+    guest: "Gast",
+    date: "Eingereicht",
+    suggestion: "Vorschlag",
+    bug: "Fehlermeldung",
+    other: "Sonstiges",
+    unavailable: "Originalfeedback nicht verfügbar.",
+  },
+  fr: {
+    heading: "Avis",
+    from: "De",
+    guest: "Invité",
+    date: "Envoyé le",
+    suggestion: "Suggestion",
+    bug: "Bug",
+    other: "Autre",
+    unavailable: "Le message original est indisponible.",
+  },
+  es: {
+    heading: "Comentarios",
+    from: "De",
+    guest: "Invitado",
+    date: "Enviado",
+    suggestion: "Sugerencia",
+    bug: "Error",
+    other: "Otro",
+    unavailable: "El mensaje original no está disponible.",
+  },
+  pt: {
+    heading: "Feedback",
+    from: "De",
+    guest: "Visitante",
+    date: "Enviado",
+    suggestion: "Sugestão",
+    bug: "Erro",
+    other: "Outro",
+    unavailable: "O feedback original não está disponível.",
+  },
+  it: {
+    heading: "Feedback",
+    from: "Da",
+    guest: "Ospite",
+    date: "Inviato",
+    suggestion: "Suggerimento",
+    bug: "Errore",
+    other: "Altro",
+    unavailable: "Il feedback originale non è disponibile.",
+  },
+  ru: {
+    heading: "Обратная связь",
+    from: "От",
+    guest: "Гость",
+    date: "Отправлено",
+    suggestion: "Предложение",
+    bug: "Ошибка",
+    other: "Другое",
+    unavailable: "Исходное сообщение недоступно.",
+  },
+  ar: {
+    heading: "الملاحظات",
+    from: "من",
+    guest: "زائر",
+    date: "تاريخ الإرسال",
+    suggestion: "اقتراح",
+    bug: "بلاغ عن خطأ",
+    other: "أخرى",
+    unavailable: "الملاحظة الأصلية غير متاحة.",
+  },
+  hi: {
+    heading: "फ़ीडबैक",
+    from: "भेजने वाला",
+    guest: "अतिथि",
+    date: "भेजने की तारीख",
+    suggestion: "सुझाव",
+    bug: "बग रिपोर्ट",
+    other: "अन्य",
+    unavailable: "मूल फ़ीडबैक उपलब्ध नहीं है।",
+  },
+} satisfies Record<ResolvedLanguage, Record<string, string>>;
+
+function FeedbackDialog({
+  notification,
+  language,
+  onClose,
+}: {
+  notification: MyNotification;
+  language: ResolvedLanguage;
+  onClose: () => void;
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const copy = FEEDBACK_DIALOG_LABELS[language];
+  // Category is encoded in the notification title by the feedback action.
+  const category = notification.title
+    .match(/(?:·|:)\s*(suggestion|bug|other)\s*$/i)?.[1]
+    ?.toLowerCase();
+  const categoryLabel =
+    category === "suggestion"
+      ? copy.suggestion
+      : category === "bug"
+        ? copy.bug
+        : category === "other"
+          ? copy.other
+          : null;
+  const author = notification.actor?.name?.trim() || copy.guest;
+  const submittedAt = new Date(notification.createdAt);
+  const formattedDate = Number.isFinite(submittedAt.getTime())
+    ? new Intl.DateTimeFormat(language, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(submittedAt)
+    : "";
+
+  useEffect(() => {
+    closeRef.current?.focus();
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/55 p-4"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="feedback-dialog-title"
+        className="flex max-h-[min(85dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-zinc-900"
+      >
+        <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <MessageSquareText
+              className="size-5 shrink-0 text-zinc-500"
+              strokeWidth={1.6}
+              aria-hidden="true"
+            />
+            <h2
+              id="feedback-dialog-title"
+              className="truncate text-base font-semibold text-zinc-900 dark:text-zinc-100"
+            >
+              {copy.heading}
+            </h2>
+          </div>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label={NOTIFICATION_LABELS[language].close}
+            className="flex size-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+        <div className="min-h-0 overflow-y-auto px-5 py-5">
+          {categoryLabel && (
+            <span className="inline-flex rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              {categoryLabel}
+            </span>
+          )}
+          <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+            <dt className="text-zinc-400">{copy.from}</dt>
+            <dd className="text-zinc-700 dark:text-zinc-200">{author}</dd>
+            <dt className="text-zinc-400">{copy.date}</dt>
+            <dd className="text-zinc-700 dark:text-zinc-200">
+              {formattedDate}
+            </dd>
+          </dl>
+          <div className="mt-5 whitespace-pre-wrap wrap-break-word border-t border-zinc-100 pt-5 text-sm leading-7 text-zinc-800 dark:border-zinc-800 dark:text-zinc-200">
+            {notification.message ?? copy.unavailable}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }

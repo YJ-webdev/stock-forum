@@ -10,9 +10,17 @@ interface SubmitFeedbackInput {
   message: string;
 }
 
+type FeedbackError =
+  | "feedback_invalid_category"
+  | "feedback_invalid_message"
+  | "feedback_too_short"
+  | "feedback_too_long"
+  | "feedback_rate_limited"
+  | "feedback_error";
+
 type SubmitFeedbackResult =
   | { success: true }
-  | { success: false; error: string };
+  | { success: false; error: FeedbackError };
 
 const CATEGORY_MAP = {
   suggestion: "SUGGESTION",
@@ -20,111 +28,119 @@ const CATEGORY_MAP = {
   other: "OTHER",
 } as const;
 
-const MAX_MESSAGE_LENGTH = 2000;
 const MIN_MESSAGE_LENGTH = 5;
+const MAX_MESSAGE_LENGTH = 2000;
+
+// This cooldown applies to signed-in users.
+// Guest rate limiting requires a separate shared rate limiter.
 const COOLDOWN_MS = 60_000;
 
-export async function submitFeedback({
-  category,
-  message,
-}: SubmitFeedbackInput): Promise<SubmitFeedbackResult> {
+export async function submitFeedback(
+  input: SubmitFeedbackInput,
+): Promise<SubmitFeedbackResult> {
+  const { category, message } = input ?? {};
+
   if (
     typeof category !== "string" ||
     !Object.prototype.hasOwnProperty.call(CATEGORY_MAP, category)
   ) {
     return {
       success: false,
-      error: "Invalid feedback category.",
+      error: "feedback_invalid_category",
     };
   }
 
   if (typeof message !== "string") {
     return {
       success: false,
-      error: "Invalid feedback message.",
+      error: "feedback_invalid_message",
     };
   }
 
   const trimmedMessage = message.trim();
 
-  if (
-    trimmedMessage.length < MIN_MESSAGE_LENGTH ||
-    trimmedMessage.length > MAX_MESSAGE_LENGTH
-  ) {
+  if (trimmedMessage.length < MIN_MESSAGE_LENGTH) {
     return {
       success: false,
-      error: "Feedback must contain 5–2000 characters.",
+      error: "feedback_too_short",
     };
   }
 
-  const session = await auth();
-  const userId = session?.user?.id ?? null;
+  if (trimmedMessage.length > MAX_MESSAGE_LENGTH) {
+    return {
+      success: false,
+      error: "feedback_too_long",
+    };
+  }
 
   try {
-    // This check limits submissions by signed-in users.
-    // Guest IP-based rate limiting is configured separately.
+    const session = await auth();
+    const userId = session?.user?.id ?? null;
+
+    const categoryValue = CATEGORY_MAP[category];
+
+    // Prevent rapid repeat submissions from signed-in users.
     if (userId) {
-      const recentFeedback = await prisma.feedback.findFirst({
+      const recentNotification = await prisma.notification.findFirst({
         where: {
-          userId,
+          type: "FEEDBACK_RECEIVED",
+          actorId: userId,
           createdAt: {
             gte: new Date(Date.now() - COOLDOWN_MS),
           },
         },
-        select: { id: true },
+        select: {
+          id: true,
+        },
       });
 
-      if (recentFeedback) {
+      if (recentNotification) {
         return {
           success: false,
-          error: "Please wait before sending another feedback.",
+          error: "feedback_rate_limited",
         };
       }
     }
 
-    await prisma.$transaction(async (tx) => {
-      const feedback = await tx.feedback.create({
-        data: {
-          category: CATEGORY_MAP[category],
-          message: trimmedMessage,
-          userId,
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      const admins = await tx.user.findMany({
-        where: {
-          role: "ADMIN",
-          status: "ACTIVE",
-          deletedAt: null,
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (admins.length === 0) return;
-
-      await tx.notification.createMany({
-        data: admins.map((admin) => ({
-          userId: admin.id,
-          type: "FEEDBACK_RECEIVED" as const,
-          title: `New Feedback · ${category}`,
-          message: trimmedMessage.slice(0, 300),
-          feedbackId: feedback.id,
-        })),
-      });
+    const admins = await prisma.user.findMany({
+      where: {
+        role: "ADMIN",
+        status: "ACTIVE",
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
     });
 
-    return { success: true };
+    if (admins.length === 0) {
+      console.error("Feedback submission failed: No active admins.");
+
+      return {
+        success: false,
+        error: "feedback_error",
+      };
+    }
+
+    await prisma.notification.createMany({
+      data: admins.map((admin) => ({
+        userId: admin.id,
+        actorId: userId,
+        type: "FEEDBACK_RECEIVED" as const,
+        title: `New Feedback · ${categoryValue}`,
+        message: trimmedMessage,
+      })),
+    });
+
+    return {
+      success: true,
+    };
   } catch (error) {
     console.error("Failed to submit feedback:", error);
 
     return {
       success: false,
-      error: "Unable to send feedback. Please try again.",
+      error: "feedback_error",
     };
   }
 }

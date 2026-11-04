@@ -312,12 +312,7 @@ export default function UserMenu({
           />
         )}
 
-        <Avatar
-          aria-hidden="true"
-          className={`size-12 hover:grayscale-0 ${
-            isOpen ? "grayscale-0" : "grayscale"
-          }`}
-        >
+        <Avatar aria-hidden="true" className="size-12">
           {user.image && <AvatarImage src={user.image} alt="" />}
 
           <AvatarFallback className="bg-zinc-500 text-lg font-semibold text-white">

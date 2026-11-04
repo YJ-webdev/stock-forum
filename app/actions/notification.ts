@@ -6,13 +6,17 @@ import { prisma } from "@/lib/prisma";
 import { resolveLanguage } from "@/lib/data/languages";
 import { COMMENT_ACTION_LABELS } from "@/lib/data/translations";
 
-const PREDICTION_NOTIFICATION_TYPES = [
+const NON_DELETABLE_NOTIFICATION_TYPES = [
   "PREDICTION_WON",
   "PREDICTION_LOST",
   "PREDICTION_DRAW",
   "PREDICTION_VOID",
   "PREDICTION_PENDING",
+  "FEEDBACK_RECEIVED",
 ] as const;
+
+const NOTIFICATION_RETENTION_DAYS = 30;
+const NOTIFICATION_LIMIT = 30;
 
 export async function hasUnreadNotifications() {
   const session = await auth();
@@ -42,7 +46,9 @@ export async function getNotifications() {
     return [];
   }
 
-  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const cutoff = new Date(
+    Date.now() - NOTIFICATION_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+  );
 
   await prisma.notification.deleteMany({
     where: {
@@ -58,7 +64,7 @@ export async function getNotifications() {
       userId,
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    take: 30,
+    take: NOTIFICATION_LIMIT,
     select: {
       id: true,
       type: true,
@@ -119,22 +125,6 @@ export async function getNotifications() {
           pointsBet: true,
           referenceClose: true,
           settlementClose: true,
-        },
-      },
-
-      feedbackId: true,
-
-      feedback: {
-        select: {
-          id: true,
-          category: true,
-          message: true,
-          createdAt: true,
-          user: {
-            select: {
-              name: true,
-            },
-          },
         },
       },
     },
@@ -204,8 +194,8 @@ export async function markAllNotificationsAsRead() {
   });
 }
 
-// Keep the existing export name for compatibility with the panel.
-// All non-prediction notification types can be deleted.
+// Keep the existing export name for panel compatibility.
+// Prediction and feedback notifications cannot be manually deleted.
 export async function deleteSocialNotification(notificationId: string) {
   const session = await auth();
 
@@ -225,7 +215,7 @@ export async function deleteSocialNotification(notificationId: string) {
       id: notificationId.trim(),
       userId: session.user.id,
       type: {
-        notIn: [...PREDICTION_NOTIFICATION_TYPES],
+        notIn: [...NON_DELETABLE_NOTIFICATION_TYPES],
       },
     },
   });
@@ -234,31 +224,6 @@ export async function deleteSocialNotification(notificationId: string) {
     success: true,
   };
 }
-
-// Delete all non-prediction notifications belonging to this user.
-// export async function deleteAllSocialNotifications() {
-//   const session = await auth();
-
-//   const labels =
-//     COMMENT_ACTION_LABELS[resolveLanguage(session?.user?.language)];
-
-//   if (!session?.user?.id) {
-//     throw new Error(labels.login_required);
-//   }
-
-//   await prisma.notification.deleteMany({
-//     where: {
-//       userId: session.user.id,
-//       type: {
-//         notIn: [...PREDICTION_NOTIFICATION_TYPES],
-//       },
-//     },
-//   });
-
-//   return {
-//     success: true,
-//   };
-// }
 
 export async function getUnreadNotificationCount(): Promise<number> {
   const session = await auth();
