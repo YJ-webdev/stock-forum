@@ -87,9 +87,6 @@ const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
   display: "swap",
-  preload: true,
-  adjustFontFallback: true,
-  fallback: ["monospace"],
 });
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
