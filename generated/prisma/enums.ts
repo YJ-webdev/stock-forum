@@ -91,7 +91,8 @@ export const NotificationType = {
   REPLY_REPORTED: 'REPLY_REPORTED',
   TIER_UP: 'TIER_UP',
   TIER_DOWN: 'TIER_DOWN',
-  USER_BANNED: 'USER_BANNED'
+  USER_BANNED: 'USER_BANNED',
+  FEEDBACK_RECEIVED: 'FEEDBACK_RECEIVED'
 } as const
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]
@@ -128,3 +129,12 @@ export const UserActivityType = {
 } as const
 
 export type UserActivityType = (typeof UserActivityType)[keyof typeof UserActivityType]
+
+
+export const FeedbackCategory = {
+  SUGGESTION: 'SUGGESTION',
+  BUG: 'BUG',
+  OTHER: 'OTHER'
+} as const
+
+export type FeedbackCategory = (typeof FeedbackCategory)[keyof typeof FeedbackCategory]

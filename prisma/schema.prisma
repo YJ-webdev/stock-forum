@@ -99,6 +99,8 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  feedbacks Feedback[]
 }
 
 model Account {
@@ -446,6 +448,8 @@ enum NotificationType {
   TIER_DOWN
 
   USER_BANNED
+
+  FEEDBACK_RECEIVED
 }
 
 model Notification {
@@ -476,6 +480,10 @@ model Notification {
   replyId String?
   reply   Reply?  @relation(fields: [replyId], references: [id], onDelete: Cascade)
 
+feedbackId String?
+feedback   Feedback? @relation(fields: [feedbackId], references: [id], onDelete: SetNull)
+
+
   eventKey String? @unique
 
   readAt    DateTime?
@@ -487,6 +495,8 @@ model Notification {
   @@index([predictionId])
   @@index([commentId])
   @@index([replyId])
+  @@index([feedbackId])
+
 }
 
 model PointBalance {
@@ -615,4 +625,25 @@ model UserRanking {
 
   @@index([tier])
   @@index([rank])
+}
+
+enum FeedbackCategory {
+  SUGGESTION
+  BUG
+  OTHER
+}
+
+model Feedback {
+  id        String           @id @default(cuid())
+  category  FeedbackCategory
+  message   String           @db.Text
+
+  userId    String?
+  user      User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime         @default(now())
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  notifications Notification[]
 }

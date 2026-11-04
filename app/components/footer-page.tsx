@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { ChevronDown, MessageSquare } from "lucide-react";
 
 import { useCurrentUser } from "@/app/context/user-context";
@@ -17,6 +17,8 @@ import {
   type FooterPageContent,
   type FeedbackCategory,
 } from "@/lib/data/footer-translations";
+import { submitFeedback } from "../actions/feedback";
+import { toast } from "sonner";
 
 // -----------------------------------------------------------------------------
 // TYPES
@@ -185,7 +187,41 @@ function FeedbackContent({
   language: Language;
 }) {
   const [category, setCategory] = useState<FeedbackCategory>("suggestion");
+
   const [message, setMessage] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  const trimmedMessage = message.trim();
+
+  const canSubmit =
+    !isPending && trimmedMessage.length >= 5 && trimmedMessage.length <= 2000;
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!canSubmit) return;
+
+    startTransition(async () => {
+      try {
+        const result = await submitFeedback({
+          category,
+          message: trimmedMessage,
+        });
+
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+
+        setMessage("");
+        setCategory("suggestion");
+
+        toast.success("Feedback sent successfully. Thank you!");
+      } catch {
+        toast.error("Unable to send feedback. Please try again.");
+      }
+    });
+  }
 
   return (
     <div>
@@ -193,11 +229,8 @@ function FeedbackContent({
         {copy.feedback_intro}
       </p>
 
-      <form
-        className="mt-7 space-y-6"
-        onSubmit={(event) => event.preventDefault()}
-      >
-        <fieldset>
+      <form className="mt-7 space-y-6" onSubmit={handleSubmit}>
+        <fieldset disabled={isPending}>
           <legend className="mb-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">
             {copy.feedback_question}
           </legend>
@@ -214,6 +247,7 @@ function FeedbackContent({
                   transition-colors
                   focus-visible:outline-none
                   focus-visible:ring-2 focus-visible:ring-zinc-400
+                  disabled:cursor-wait
                   ${
                     category === value
                       ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
@@ -246,7 +280,10 @@ function FeedbackContent({
                 : copy.feedback_placeholder
             }
             maxLength={2000}
+            minLength={5}
+            required
             rows={7}
+            disabled={isPending}
             className="
               block w-full resize-y rounded-xl
               border border-zinc-100 bg-zinc-100
@@ -255,6 +292,7 @@ function FeedbackContent({
               focus:border-zinc-100
               dark:border-zinc-800 dark:bg-zinc-800
               dark:text-zinc-100 dark:focus:border-zinc-600
+              disabled:cursor-wait disabled:opacity-60
               md:text-[15px]
             "
           />
@@ -266,22 +304,20 @@ function FeedbackContent({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            {copy.unavailable}
-          </p>
-
+        <div className="flex items-center justify-end">
           <button
             type="submit"
-            disabled
+            disabled={!canSubmit}
+            aria-busy={isPending}
             className="
-              min-h-8.5 rounded-full bg-zinc-900 px-5
-              text-sm font-medium text-white
-              disabled:cursor-default disabled:opacity-40
+              min-h-8.5 cursor-pointer rounded-full
+              bg-zinc-900 px-5 text-sm font-medium text-white
+              transition-opacity
+              disabled:cursor-not-allowed disabled:opacity-40
               dark:bg-zinc-100 dark:text-zinc-900
             "
           >
-            {copy.send}
+            {isPending ? "Sending..." : copy.send}
           </button>
         </div>
       </form>

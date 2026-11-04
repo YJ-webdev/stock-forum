@@ -290,6 +290,7 @@ export type UserWhereInput = {
   pointBalance?: Prisma.XOR<Prisma.PointBalanceNullableScalarRelationFilter, Prisma.PointBalanceWhereInput> | null
   pointTransactions?: Prisma.PointTransactionListRelationFilter
   chatBanIdentities?: Prisma.ChatBanIdentityListRelationFilter
+  feedbacks?: Prisma.FeedbackListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -329,6 +330,7 @@ export type UserOrderByWithRelationInput = {
   pointBalance?: Prisma.PointBalanceOrderByWithRelationInput
   pointTransactions?: Prisma.PointTransactionOrderByRelationAggregateInput
   chatBanIdentities?: Prisma.ChatBanIdentityOrderByRelationAggregateInput
+  feedbacks?: Prisma.FeedbackOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -371,6 +373,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   pointBalance?: Prisma.XOR<Prisma.PointBalanceNullableScalarRelationFilter, Prisma.PointBalanceWhereInput> | null
   pointTransactions?: Prisma.PointTransactionListRelationFilter
   chatBanIdentities?: Prisma.ChatBanIdentityListRelationFilter
+  feedbacks?: Prisma.FeedbackListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -454,6 +457,7 @@ export type UserCreateInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -493,6 +497,7 @@ export type UserUncheckedCreateInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -532,6 +537,7 @@ export type UserUpdateInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -571,6 +577,7 @@ export type UserUncheckedUpdateInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -1015,6 +1022,22 @@ export type UserUpdateOneRequiredWithoutRankingNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRankingInput, Prisma.UserUpdateWithoutRankingInput>, Prisma.UserUncheckedUpdateWithoutRankingInput>
 }
 
+export type UserCreateNestedOneWithoutFeedbacksInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFeedbacksInput, Prisma.UserUncheckedCreateWithoutFeedbacksInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFeedbacksInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutFeedbacksNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFeedbacksInput, Prisma.UserUncheckedCreateWithoutFeedbacksInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFeedbacksInput
+  upsert?: Prisma.UserUpsertWithoutFeedbacksInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutFeedbacksInput, Prisma.UserUpdateWithoutFeedbacksInput>, Prisma.UserUncheckedUpdateWithoutFeedbacksInput>
+}
+
 export type UserCreateWithoutAccountsInput = {
   isBot?: boolean
   id?: string
@@ -1051,6 +1074,7 @@ export type UserCreateWithoutAccountsInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAccountsInput = {
@@ -1089,6 +1113,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAccountsInput = {
@@ -1143,6 +1168,7 @@ export type UserUpdateWithoutAccountsInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -1181,6 +1207,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionsInput = {
@@ -1219,6 +1246,7 @@ export type UserCreateWithoutSessionsInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -1257,6 +1285,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -1311,6 +1340,7 @@ export type UserUpdateWithoutSessionsInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -1349,6 +1379,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutChatBanIdentitiesInput = {
@@ -1387,6 +1418,7 @@ export type UserCreateWithoutChatBanIdentitiesInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutChatBanIdentitiesInput = {
@@ -1425,6 +1457,7 @@ export type UserUncheckedCreateWithoutChatBanIdentitiesInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutChatBanIdentitiesInput = {
@@ -1479,6 +1512,7 @@ export type UserUpdateWithoutChatBanIdentitiesInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutChatBanIdentitiesInput = {
@@ -1517,6 +1551,7 @@ export type UserUncheckedUpdateWithoutChatBanIdentitiesInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCommentsInput = {
@@ -1555,6 +1590,7 @@ export type UserCreateWithoutCommentsInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCommentsInput = {
@@ -1593,6 +1629,7 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCommentsInput = {
@@ -1647,6 +1684,7 @@ export type UserUpdateWithoutCommentsInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCommentsInput = {
@@ -1685,6 +1723,7 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutModerationActionsPerformedInput = {
@@ -1723,6 +1762,7 @@ export type UserCreateWithoutModerationActionsPerformedInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutModerationActionsPerformedInput = {
@@ -1761,6 +1801,7 @@ export type UserUncheckedCreateWithoutModerationActionsPerformedInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutModerationActionsPerformedInput = {
@@ -1804,6 +1845,7 @@ export type UserCreateWithoutModerationActionsReceivedInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutModerationActionsReceivedInput = {
@@ -1842,6 +1884,7 @@ export type UserUncheckedCreateWithoutModerationActionsReceivedInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutModerationActionsReceivedInput = {
@@ -1896,6 +1939,7 @@ export type UserUpdateWithoutModerationActionsPerformedInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutModerationActionsPerformedInput = {
@@ -1934,6 +1978,7 @@ export type UserUncheckedUpdateWithoutModerationActionsPerformedInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithoutModerationActionsReceivedInput = {
@@ -1983,6 +2028,7 @@ export type UserUpdateWithoutModerationActionsReceivedInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutModerationActionsReceivedInput = {
@@ -2021,6 +2067,7 @@ export type UserUncheckedUpdateWithoutModerationActionsReceivedInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPredictionsInput = {
@@ -2059,6 +2106,7 @@ export type UserCreateWithoutPredictionsInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPredictionsInput = {
@@ -2097,6 +2145,7 @@ export type UserUncheckedCreateWithoutPredictionsInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPredictionsInput = {
@@ -2151,6 +2200,7 @@ export type UserUpdateWithoutPredictionsInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPredictionsInput = {
@@ -2189,6 +2239,7 @@ export type UserUncheckedUpdateWithoutPredictionsInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRepliesInput = {
@@ -2227,6 +2278,7 @@ export type UserCreateWithoutRepliesInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRepliesInput = {
@@ -2265,6 +2317,7 @@ export type UserUncheckedCreateWithoutRepliesInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRepliesInput = {
@@ -2319,6 +2372,7 @@ export type UserUpdateWithoutRepliesInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRepliesInput = {
@@ -2357,6 +2411,7 @@ export type UserUncheckedUpdateWithoutRepliesInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCommentLikesInput = {
@@ -2395,6 +2450,7 @@ export type UserCreateWithoutCommentLikesInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCommentLikesInput = {
@@ -2433,6 +2489,7 @@ export type UserUncheckedCreateWithoutCommentLikesInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCommentLikesInput = {
@@ -2487,6 +2544,7 @@ export type UserUpdateWithoutCommentLikesInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCommentLikesInput = {
@@ -2525,6 +2583,7 @@ export type UserUncheckedUpdateWithoutCommentLikesInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutReplyLikesInput = {
@@ -2563,6 +2622,7 @@ export type UserCreateWithoutReplyLikesInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutReplyLikesInput = {
@@ -2601,6 +2661,7 @@ export type UserUncheckedCreateWithoutReplyLikesInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutReplyLikesInput = {
@@ -2655,6 +2716,7 @@ export type UserUpdateWithoutReplyLikesInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutReplyLikesInput = {
@@ -2693,6 +2755,7 @@ export type UserUncheckedUpdateWithoutReplyLikesInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutBalanceInput = {
@@ -2731,6 +2794,7 @@ export type UserCreateWithoutBalanceInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutBalanceInput = {
@@ -2769,6 +2833,7 @@ export type UserUncheckedCreateWithoutBalanceInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutBalanceInput = {
@@ -2823,6 +2888,7 @@ export type UserUpdateWithoutBalanceInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutBalanceInput = {
@@ -2861,6 +2927,7 @@ export type UserUncheckedUpdateWithoutBalanceInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutWatchlistInput = {
@@ -2899,6 +2966,7 @@ export type UserCreateWithoutWatchlistInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWatchlistInput = {
@@ -2937,6 +3005,7 @@ export type UserUncheckedCreateWithoutWatchlistInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWatchlistInput = {
@@ -2991,6 +3060,7 @@ export type UserUpdateWithoutWatchlistInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWatchlistInput = {
@@ -3029,6 +3099,7 @@ export type UserUncheckedUpdateWithoutWatchlistInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutNotificationsReceivedInput = {
@@ -3067,6 +3138,7 @@ export type UserCreateWithoutNotificationsReceivedInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutNotificationsReceivedInput = {
@@ -3105,6 +3177,7 @@ export type UserUncheckedCreateWithoutNotificationsReceivedInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutNotificationsReceivedInput = {
@@ -3148,6 +3221,7 @@ export type UserCreateWithoutNotificationsSentInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutNotificationsSentInput = {
@@ -3186,6 +3260,7 @@ export type UserUncheckedCreateWithoutNotificationsSentInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutNotificationsSentInput = {
@@ -3240,6 +3315,7 @@ export type UserUpdateWithoutNotificationsReceivedInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotificationsReceivedInput = {
@@ -3278,6 +3354,7 @@ export type UserUncheckedUpdateWithoutNotificationsReceivedInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithoutNotificationsSentInput = {
@@ -3327,6 +3404,7 @@ export type UserUpdateWithoutNotificationsSentInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotificationsSentInput = {
@@ -3365,6 +3443,7 @@ export type UserUncheckedUpdateWithoutNotificationsSentInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPointBalanceInput = {
@@ -3403,6 +3482,7 @@ export type UserCreateWithoutPointBalanceInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPointBalanceInput = {
@@ -3441,6 +3521,7 @@ export type UserUncheckedCreateWithoutPointBalanceInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPointBalanceInput = {
@@ -3495,6 +3576,7 @@ export type UserUpdateWithoutPointBalanceInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPointBalanceInput = {
@@ -3533,6 +3615,7 @@ export type UserUncheckedUpdateWithoutPointBalanceInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPointTransactionsInput = {
@@ -3571,6 +3654,7 @@ export type UserCreateWithoutPointTransactionsInput = {
   followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPointTransactionsInput = {
@@ -3609,6 +3693,7 @@ export type UserUncheckedCreateWithoutPointTransactionsInput = {
   followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPointTransactionsInput = {
@@ -3663,6 +3748,7 @@ export type UserUpdateWithoutPointTransactionsInput = {
   followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPointTransactionsInput = {
@@ -3701,6 +3787,7 @@ export type UserUncheckedUpdateWithoutPointTransactionsInput = {
   followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutFollowingInput = {
@@ -3739,6 +3826,7 @@ export type UserCreateWithoutFollowingInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutFollowingInput = {
@@ -3777,6 +3865,7 @@ export type UserUncheckedCreateWithoutFollowingInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutFollowingInput = {
@@ -3820,6 +3909,7 @@ export type UserCreateWithoutFollowersInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutFollowersInput = {
@@ -3858,6 +3948,7 @@ export type UserUncheckedCreateWithoutFollowersInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutFollowersInput = {
@@ -3912,6 +4003,7 @@ export type UserUpdateWithoutFollowingInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFollowingInput = {
@@ -3950,6 +4042,7 @@ export type UserUncheckedUpdateWithoutFollowingInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithoutFollowersInput = {
@@ -3999,6 +4092,7 @@ export type UserUpdateWithoutFollowersInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFollowersInput = {
@@ -4037,6 +4131,7 @@ export type UserUncheckedUpdateWithoutFollowersInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutActivitiesInput = {
@@ -4075,6 +4170,7 @@ export type UserCreateWithoutActivitiesInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutActivitiesInput = {
@@ -4113,6 +4209,7 @@ export type UserUncheckedCreateWithoutActivitiesInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutActivitiesInput = {
@@ -4167,6 +4264,7 @@ export type UserUpdateWithoutActivitiesInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutActivitiesInput = {
@@ -4205,6 +4303,7 @@ export type UserUncheckedUpdateWithoutActivitiesInput = {
   pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRankingInput = {
@@ -4243,6 +4342,7 @@ export type UserCreateWithoutRankingInput = {
   pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRankingInput = {
@@ -4281,6 +4381,7 @@ export type UserUncheckedCreateWithoutRankingInput = {
   pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
   pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
   chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedbacks?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRankingInput = {
@@ -4335,6 +4436,7 @@ export type UserUpdateWithoutRankingInput = {
   pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
   pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
   chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRankingInput = {
@@ -4354,6 +4456,179 @@ export type UserUncheckedUpdateWithoutRankingInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
+  moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
+  replyLikes?: Prisma.ReplyLikeUncheckedUpdateManyWithoutUserNestedInput
+  commentLikes?: Prisma.CommentLikeUncheckedUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUncheckedUpdateOneWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUncheckedUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUncheckedUpdateManyWithoutActorNestedInput
+  activities?: Prisma.UserActivityUncheckedUpdateManyWithoutUserNestedInput
+  following?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.UserFollowUncheckedUpdateManyWithoutFollowingNestedInput
+  pointBalance?: Prisma.PointBalanceUncheckedUpdateOneWithoutUserNestedInput
+  pointTransactions?: Prisma.PointTransactionUncheckedUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedbacks?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutFeedbacksInput = {
+  isBot?: boolean
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  nationality?: string | null
+  language?: string
+  role?: $Enums.Role
+  statusMessage?: string | null
+  status?: $Enums.UserStatus
+  mutedAt?: Date | string | null
+  bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  ranking?: Prisma.UserRankingCreateNestedOneWithoutUserInput
+  moderationActionsReceived?: Prisma.ModerationActionCreateNestedManyWithoutTargetUserInput
+  moderationActionsPerformed?: Prisma.ModerationActionCreateNestedManyWithoutModeratorInput
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
+  replyLikes?: Prisma.ReplyLikeCreateNestedManyWithoutUserInput
+  commentLikes?: Prisma.CommentLikeCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceCreateNestedOneWithoutUserInput
+  watchlist?: Prisma.WatchlistCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationCreateNestedManyWithoutActorInput
+  activities?: Prisma.UserActivityCreateNestedManyWithoutUserInput
+  following?: Prisma.UserFollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.UserFollowCreateNestedManyWithoutFollowingInput
+  pointBalance?: Prisma.PointBalanceCreateNestedOneWithoutUserInput
+  pointTransactions?: Prisma.PointTransactionCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutFeedbacksInput = {
+  isBot?: boolean
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  nationality?: string | null
+  language?: string
+  role?: $Enums.Role
+  statusMessage?: string | null
+  status?: $Enums.UserStatus
+  mutedAt?: Date | string | null
+  bannedAt?: Date | string | null
+  deletedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  ranking?: Prisma.UserRankingUncheckedCreateNestedOneWithoutUserInput
+  moderationActionsReceived?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutTargetUserInput
+  moderationActionsPerformed?: Prisma.ModerationActionUncheckedCreateNestedManyWithoutModeratorInput
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
+  replyLikes?: Prisma.ReplyLikeUncheckedCreateNestedManyWithoutUserInput
+  commentLikes?: Prisma.CommentLikeUncheckedCreateNestedManyWithoutUserInput
+  balance?: Prisma.AccountBalanceUncheckedCreateNestedOneWithoutUserInput
+  watchlist?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput
+  predictions?: Prisma.PredictionUncheckedCreateNestedManyWithoutUserInput
+  notificationsReceived?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  notificationsSent?: Prisma.NotificationUncheckedCreateNestedManyWithoutActorInput
+  activities?: Prisma.UserActivityUncheckedCreateNestedManyWithoutUserInput
+  following?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.UserFollowUncheckedCreateNestedManyWithoutFollowingInput
+  pointBalance?: Prisma.PointBalanceUncheckedCreateNestedOneWithoutUserInput
+  pointTransactions?: Prisma.PointTransactionUncheckedCreateNestedManyWithoutUserInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutFeedbacksInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutFeedbacksInput, Prisma.UserUncheckedCreateWithoutFeedbacksInput>
+}
+
+export type UserUpsertWithoutFeedbacksInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutFeedbacksInput, Prisma.UserUncheckedUpdateWithoutFeedbacksInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutFeedbacksInput, Prisma.UserUncheckedCreateWithoutFeedbacksInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutFeedbacksInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutFeedbacksInput, Prisma.UserUncheckedUpdateWithoutFeedbacksInput>
+}
+
+export type UserUpdateWithoutFeedbacksInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUpdateOneWithoutUserNestedInput
+  moderationActionsReceived?: Prisma.ModerationActionUpdateManyWithoutTargetUserNestedInput
+  moderationActionsPerformed?: Prisma.ModerationActionUpdateManyWithoutModeratorNestedInput
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
+  replyLikes?: Prisma.ReplyLikeUpdateManyWithoutUserNestedInput
+  commentLikes?: Prisma.CommentLikeUpdateManyWithoutUserNestedInput
+  balance?: Prisma.AccountBalanceUpdateOneWithoutUserNestedInput
+  watchlist?: Prisma.WatchlistUpdateManyWithoutUserNestedInput
+  predictions?: Prisma.PredictionUpdateManyWithoutUserNestedInput
+  notificationsReceived?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  notificationsSent?: Prisma.NotificationUpdateManyWithoutActorNestedInput
+  activities?: Prisma.UserActivityUpdateManyWithoutUserNestedInput
+  following?: Prisma.UserFollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.UserFollowUpdateManyWithoutFollowingNestedInput
+  pointBalance?: Prisma.PointBalanceUpdateOneWithoutUserNestedInput
+  pointTransactions?: Prisma.PointTransactionUpdateManyWithoutUserNestedInput
+  chatBanIdentities?: Prisma.ChatBanIdentityUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutFeedbacksInput = {
+  isBot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  statusMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  mutedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ranking?: Prisma.UserRankingUncheckedUpdateOneWithoutUserNestedInput
   moderationActionsReceived?: Prisma.ModerationActionUncheckedUpdateManyWithoutTargetUserNestedInput
   moderationActionsPerformed?: Prisma.ModerationActionUncheckedUpdateManyWithoutModeratorNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -4398,6 +4673,7 @@ export type UserCountOutputType = {
   followers: number
   pointTransactions: number
   chatBanIdentities: number
+  feedbacks: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4418,6 +4694,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   followers?: boolean | UserCountOutputTypeCountFollowersArgs
   pointTransactions?: boolean | UserCountOutputTypeCountPointTransactionsArgs
   chatBanIdentities?: boolean | UserCountOutputTypeCountChatBanIdentitiesArgs
+  feedbacks?: boolean | UserCountOutputTypeCountFeedbacksArgs
 }
 
 /**
@@ -4549,6 +4826,13 @@ export type UserCountOutputTypeCountChatBanIdentitiesArgs<ExtArgs extends runtim
   where?: Prisma.ChatBanIdentityWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountFeedbacksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FeedbackWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   isBot?: boolean
@@ -4587,6 +4871,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   pointBalance?: boolean | Prisma.User$pointBalanceArgs<ExtArgs>
   pointTransactions?: boolean | Prisma.User$pointTransactionsArgs<ExtArgs>
   chatBanIdentities?: boolean | Prisma.User$chatBanIdentitiesArgs<ExtArgs>
+  feedbacks?: boolean | Prisma.User$feedbacksArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -4669,6 +4954,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   pointBalance?: boolean | Prisma.User$pointBalanceArgs<ExtArgs>
   pointTransactions?: boolean | Prisma.User$pointTransactionsArgs<ExtArgs>
   chatBanIdentities?: boolean | Prisma.User$chatBanIdentitiesArgs<ExtArgs>
+  feedbacks?: boolean | Prisma.User$feedbacksArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -4697,6 +4983,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     pointBalance: Prisma.$PointBalancePayload<ExtArgs> | null
     pointTransactions: Prisma.$PointTransactionPayload<ExtArgs>[]
     chatBanIdentities: Prisma.$ChatBanIdentityPayload<ExtArgs>[]
+    feedbacks: Prisma.$FeedbackPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     isBot: boolean
@@ -5129,6 +5416,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   pointBalance<T extends Prisma.User$pointBalanceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$pointBalanceArgs<ExtArgs>>): Prisma.Prisma__PointBalanceClient<runtime.Types.Result.GetResult<Prisma.$PointBalancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   pointTransactions<T extends Prisma.User$pointTransactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$pointTransactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PointTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   chatBanIdentities<T extends Prisma.User$chatBanIdentitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$chatBanIdentitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatBanIdentityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  feedbacks<T extends Prisma.User$feedbacksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$feedbacksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeedbackPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -6029,6 +6317,30 @@ export type User$chatBanIdentitiesArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.ChatBanIdentityScalarFieldEnum | Prisma.ChatBanIdentityScalarFieldEnum[]
+}
+
+/**
+ * User.feedbacks
+ */
+export type User$feedbacksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Feedback
+   */
+  select?: Prisma.FeedbackSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Feedback
+   */
+  omit?: Prisma.FeedbackOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FeedbackInclude<ExtArgs> | null
+  where?: Prisma.FeedbackWhereInput
+  orderBy?: Prisma.FeedbackOrderByWithRelationInput | Prisma.FeedbackOrderByWithRelationInput[]
+  cursor?: Prisma.FeedbackWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FeedbackScalarFieldEnum | Prisma.FeedbackScalarFieldEnum[]
 }
 
 /**

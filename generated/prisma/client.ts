@@ -156,3 +156,8 @@ export type UserActivity = Prisma.UserActivityModel
  * 
  */
 export type UserRanking = Prisma.UserRankingModel
+/**
+ * Model Feedback
+ * 
+ */
+export type Feedback = Prisma.FeedbackModel

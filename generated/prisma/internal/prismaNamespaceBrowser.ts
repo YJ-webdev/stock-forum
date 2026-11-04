@@ -73,7 +73,8 @@ export const ModelName = {
   PointTransaction: 'PointTransaction',
   UserFollow: 'UserFollow',
   UserActivity: 'UserActivity',
-  UserRanking: 'UserRanking'
+  UserRanking: 'UserRanking',
+  Feedback: 'Feedback'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -352,6 +353,7 @@ export const NotificationScalarFieldEnum = {
   predictionId: 'predictionId',
   commentId: 'commentId',
   replyId: 'replyId',
+  feedbackId: 'feedbackId',
   eventKey: 'eventKey',
   readAt: 'readAt',
   createdAt: 'createdAt'
@@ -426,6 +428,17 @@ export const UserRankingScalarFieldEnum = {
 } as const
 
 export type UserRankingScalarFieldEnum = (typeof UserRankingScalarFieldEnum)[keyof typeof UserRankingScalarFieldEnum]
+
+
+export const FeedbackScalarFieldEnum = {
+  id: 'id',
+  category: 'category',
+  message: 'message',
+  userId: 'userId',
+  createdAt: 'createdAt'
+} as const
+
+export type FeedbackScalarFieldEnum = (typeof FeedbackScalarFieldEnum)[keyof typeof FeedbackScalarFieldEnum]
 
 
 export const SortOrder = {

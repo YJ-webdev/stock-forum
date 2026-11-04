@@ -121,6 +121,22 @@ export async function getNotifications() {
           settlementClose: true,
         },
       },
+
+      feedbackId: true,
+
+      feedback: {
+        select: {
+          id: true,
+          category: true,
+          message: true,
+          createdAt: true,
+          user: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
     },
   });
 

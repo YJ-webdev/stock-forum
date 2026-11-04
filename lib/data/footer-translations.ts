@@ -16,7 +16,14 @@ export interface FooterPageContent {
   your_feedback: string;
   bug_placeholder: string;
   feedback_placeholder: string;
-  unavailable: string;
+  sending: string;
+  feedback_success: string;
+  feedback_error: string;
+  feedback_invalid_category: string;
+  feedback_invalid_message: string;
+  feedback_too_short: string;
+  feedback_too_long: string;
+  feedback_rate_limited: string;
   send: string;
   privacy_intro: string;
   disclaimer_intro: string;
@@ -41,7 +48,14 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
     your_feedback: "Your feedback",
     bug_placeholder: "What happened, and what did you expect to happen?",
     feedback_placeholder: "What would you like us to improve?",
-    unavailable: "Feedback submission is not available yet.",
+    sending: "Sending...",
+    feedback_success: "Feedback sent successfully. Thank you!",
+    feedback_error: "Unable to send feedback. Please try again.",
+    feedback_invalid_category: "Please select a valid category.",
+    feedback_invalid_message: "Please enter a valid message.",
+    feedback_too_short: "Please enter at least 5 characters.",
+    feedback_too_long: "Feedback must be 2,000 characters or fewer.",
+    feedback_rate_limited: "Please wait before sending another feedback.",
     send: "Send feedback",
     privacy_intro:
       "Learn how BullBearVote handles your information and the rules that apply when you use the community.",
@@ -186,7 +200,14 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
     your_feedback: "보내실 의견",
     bug_placeholder: "어떤 일이 있었고, 어떻게 작동할 것으로 예상했나요?",
     feedback_placeholder: "어떤 점을 개선하면 좋을까요?",
-    unavailable: "의견 보내기 기능은 아직 준비 중입니다.",
+    sending: "전송 중...",
+    feedback_success: "의견을 보내주셔서 감사합니다!",
+    feedback_error: "의견을 보내지 못했습니다. 다시 시도해 주세요.",
+    feedback_invalid_category: "올바른 분류를 선택해 주세요.",
+    feedback_invalid_message: "올바른 내용을 입력해 주세요.",
+    feedback_too_short: "5자 이상 입력해 주세요.",
+    feedback_too_long: "의견은 2,000자 이내로 입력해 주세요.",
+    feedback_rate_limited: "잠시 후 다시 의견을 보내주세요.",
     send: "의견 보내기",
     privacy_intro:
       "BullBearVote가 정보를 처리하는 방식과 커뮤니티 이용 규칙을 확인하세요.",
@@ -337,7 +358,14 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
     your_feedback: "フィードバック",
     bug_placeholder: "何が起きましたか？どのような動作を期待していましたか？",
     feedback_placeholder: "どんなところを改善してほしいですか？",
-    unavailable: "フィードバックの送信機能はまだ利用できません。",
+    sending: "送信中...",
+    feedback_success: "フィードバックを送信しました。ありがとうございます！",
+    feedback_error: "送信できませんでした。もう一度お試しください。",
+    feedback_invalid_category: "有効なカテゴリを選択してください。",
+    feedback_invalid_message: "有効なメッセージを入力してください。",
+    feedback_too_short: "5文字以上入力してください。",
+    feedback_too_long: "2,000文字以内で入力してください。",
+    feedback_rate_limited: "少し待ってから再度送信してください。",
     send: "フィードバックを送信",
     privacy_intro:
       "BullBearVoteでの情報の取り扱いと、コミュニティの利用ルールをご確認ください。",
@@ -486,7 +514,14 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
     your_feedback: "你的反馈",
     bug_placeholder: "发生了什么？你原本希望它如何运行？",
     feedback_placeholder: "你希望我们改进什么？",
-    unavailable: "反馈提交功能暂未开放。",
+    sending: "发送中...",
+    feedback_success: "反馈已发送，感谢你的意见！",
+    feedback_error: "发送失败，请重试。",
+    feedback_invalid_category: "请选择有效的类别。",
+    feedback_invalid_message: "请输入有效的内容。",
+    feedback_too_short: "请至少输入5个字符。",
+    feedback_too_long: "反馈不能超过2,000个字符。",
+    feedback_rate_limited: "请稍后再发送反馈。",
     send: "发送反馈",
     privacy_intro:
       "了解BullBearVote如何处理你的信息，以及使用社区时须遵守的规则。",
@@ -634,7 +669,15 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
     your_feedback: "Dein Feedback",
     bug_placeholder: "Was ist passiert und was hattest du erwartet?",
     feedback_placeholder: "Was sollen wir verbessern?",
-    unavailable: "Feedback kann derzeit noch nicht gesendet werden.",
+    sending: "Wird gesendet...",
+    feedback_success: "Feedback gesendet. Vielen Dank!",
+    feedback_error:
+      "Feedback konnte nicht gesendet werden. Bitte versuche es erneut.",
+    feedback_invalid_category: "Bitte wähle eine gültige Kategorie.",
+    feedback_invalid_message: "Bitte gib eine gültige Nachricht ein.",
+    feedback_too_short: "Bitte gib mindestens 5 Zeichen ein.",
+    feedback_too_long: "Dein Feedback darf höchstens 2.000 Zeichen enthalten.",
+    feedback_rate_limited: "Bitte warte, bevor du weiteres Feedback sendest.",
     send: "Feedback senden",
     privacy_intro:
       "Erfahre, wie BullBearVote deine Daten verarbeitet und welche Regeln in der Community gelten.",
@@ -785,7 +828,14 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
     your_feedback: "Votre avis",
     bug_placeholder: "Que s’est-il passé et à quoi vous attendiez-vous ?",
     feedback_placeholder: "Que souhaitez-vous voir amélioré ?",
-    unavailable: "L’envoi de commentaires n’est pas encore disponible.",
+    sending: "Envoi en cours...",
+    feedback_success: "Avis envoyé. Merci !",
+    feedback_error: "Impossible d’envoyer votre avis. Veuillez réessayer.",
+    feedback_invalid_category: "Veuillez choisir une catégorie valide.",
+    feedback_invalid_message: "Veuillez saisir un message valide.",
+    feedback_too_short: "Veuillez saisir au moins 5 caractères.",
+    feedback_too_long: "Votre avis ne doit pas dépasser 2 000 caractères.",
+    feedback_rate_limited: "Veuillez patienter avant d’envoyer un autre avis.",
     send: "Envoyer votre avis",
     privacy_intro:
       "Découvrez comment BullBearVote traite vos informations et les règles d’utilisation de la communauté.",
@@ -935,7 +985,15 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
     your_feedback: "Tus comentarios",
     bug_placeholder: "¿Qué ocurrió y qué esperabas que ocurriera?",
     feedback_placeholder: "¿Qué te gustaría que mejoráramos?",
-    unavailable: "El envío de comentarios aún no está disponible.",
+    sending: "Enviando...",
+    feedback_success: "¡Comentarios enviados! Gracias.",
+    feedback_error:
+      "No se pudieron enviar los comentarios. Inténtalo de nuevo.",
+    feedback_invalid_category: "Selecciona una categoría válida.",
+    feedback_invalid_message: "Escribe un mensaje válido.",
+    feedback_too_short: "Escribe al menos 5 caracteres.",
+    feedback_too_long: "El mensaje no puede superar los 2.000 caracteres.",
+    feedback_rate_limited: "Espera antes de enviar más comentarios.",
     send: "Enviar comentarios",
     privacy_intro:
       "Conoce cómo BullBearVote trata tu información y las reglas de la comunidad.",
@@ -1085,7 +1143,14 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
     your_feedback: "Seu feedback",
     bug_placeholder: "O que aconteceu e o que você esperava que acontecesse?",
     feedback_placeholder: "O que você gostaria que melhorássemos?",
-    unavailable: "O envio de feedback ainda não está disponível.",
+    sending: "Enviando...",
+    feedback_success: "Feedback enviado com sucesso. Obrigado!",
+    feedback_error: "Não foi possível enviar o feedback. Tente novamente.",
+    feedback_invalid_category: "Selecione uma categoria válida.",
+    feedback_invalid_message: "Insira uma mensagem válida.",
+    feedback_too_short: "Digite pelo menos 5 caracteres.",
+    feedback_too_long: "O feedback deve ter no máximo 2.000 caracteres.",
+    feedback_rate_limited: "Aguarde antes de enviar outro feedback.",
     send: "Enviar feedback",
     privacy_intro:
       "Saiba como o BullBearVote trata suas informações e quais regras se aplicam à comunidade.",
@@ -1235,7 +1300,14 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
     your_feedback: "Il tuo feedback",
     bug_placeholder: "Cosa è successo e cosa ti aspettavi?",
     feedback_placeholder: "Cosa vorresti che migliorassimo?",
-    unavailable: "L’invio di feedback non è ancora disponibile.",
+    sending: "Invio in corso...",
+    feedback_success: "Feedback inviato. Grazie!",
+    feedback_error: "Impossibile inviare il feedback. Riprova.",
+    feedback_invalid_category: "Seleziona una categoria valida.",
+    feedback_invalid_message: "Inserisci un messaggio valido.",
+    feedback_too_short: "Inserisci almeno 5 caratteri.",
+    feedback_too_long: "Il feedback non può superare i 2.000 caratteri.",
+    feedback_rate_limited: "Attendi prima di inviare un altro feedback.",
     send: "Invia feedback",
     privacy_intro:
       "Scopri come BullBearVote tratta i tuoi dati e quali regole si applicano alla community.",
@@ -1385,7 +1457,14 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
     your_feedback: "Ваш отзыв",
     bug_placeholder: "Что произошло и какого результата вы ожидали?",
     feedback_placeholder: "Что нам стоит улучшить?",
-    unavailable: "Отправка отзывов пока недоступна.",
+    sending: "Отправка...",
+    feedback_success: "Отзыв отправлен. Спасибо!",
+    feedback_error: "Не удалось отправить отзыв. Попробуйте ещё раз.",
+    feedback_invalid_category: "Выберите допустимую категорию.",
+    feedback_invalid_message: "Введите корректное сообщение.",
+    feedback_too_short: "Введите не менее 5 символов.",
+    feedback_too_long: "Отзыв не должен превышать 2 000 символов.",
+    feedback_rate_limited: "Подождите перед отправкой следующего отзыва.",
     send: "Отправить отзыв",
     privacy_intro:
       "Узнайте, как BullBearVote обрабатывает данные и какие правила действуют в сообществе.",
@@ -1534,7 +1613,14 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
     your_feedback: "ملاحظاتك",
     bug_placeholder: "ماذا حدث، وماذا كنت تتوقع أن يحدث؟",
     feedback_placeholder: "ما الذي تود أن نحسّنه؟",
-    unavailable: "إرسال الملاحظات غير متاح بعد.",
+    sending: "جارٍ الإرسال...",
+    feedback_success: "تم إرسال ملاحظاتك بنجاح. شكرًا لك!",
+    feedback_error: "تعذّر إرسال الملاحظات. يُرجى المحاولة مجددًا.",
+    feedback_invalid_category: "يُرجى اختيار فئة صالحة.",
+    feedback_invalid_message: "يُرجى إدخال رسالة صالحة.",
+    feedback_too_short: "يُرجى إدخال 5 أحرف على الأقل.",
+    feedback_too_long: "يجب ألا تتجاوز الملاحظات 2000 حرف.",
+    feedback_rate_limited: "يُرجى الانتظار قبل إرسال ملاحظات أخرى.",
     send: "إرسال الملاحظات",
     privacy_intro:
       "تعرّف على طريقة معالجة BullBearVote لمعلوماتك والقواعد المطبقة عند استخدام المجتمع.",
@@ -1682,7 +1768,15 @@ export const FOOTER_PAGE_CONTENT: Record<Language, FooterPageContent> = {
     your_feedback: "आपका फ़ीडबैक",
     bug_placeholder: "क्या हुआ और आप क्या होने की उम्मीद कर रहे थे?",
     feedback_placeholder: "आप क्या सुधार देखना चाहेंगे?",
-    unavailable: "फ़ीडबैक भेजने की सुविधा अभी उपलब्ध नहीं है।",
+    sending: "भेजा जा रहा है...",
+    feedback_success: "आपकी प्रतिक्रिया भेज दी गई है। धन्यवाद!",
+    feedback_error: "प्रतिक्रिया नहीं भेजी जा सकी। कृपया फिर प्रयास करें।",
+    feedback_invalid_category: "कृपया मान्य श्रेणी चुनें।",
+    feedback_invalid_message: "कृपया मान्य संदेश दर्ज करें।",
+    feedback_too_short: "कृपया कम से कम 5 अक्षर दर्ज करें।",
+    feedback_too_long: "प्रतिक्रिया 2,000 अक्षरों से अधिक नहीं होनी चाहिए।",
+    feedback_rate_limited:
+      "दोबारा प्रतिक्रिया भेजने से पहले कुछ देर प्रतीक्षा करें।",
     send: "फ़ीडबैक भेजें",
     privacy_intro:
       "जानें कि BullBearVote आपकी जानकारी कैसे संभालता है और समुदाय में कौन से नियम लागू होते हैं।",
