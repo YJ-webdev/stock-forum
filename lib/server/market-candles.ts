@@ -312,6 +312,42 @@ const getPreviousDailyClose = unstable_cache(
   { revalidate: 300 },
 );
 
+// Range-return baseline: the last daily close strictly before the range boundary.
+// A separate cached daily query avoids using the first weekly/monthly candle close.
+const getRangeBaselineClose = unstable_cache(
+  async (symbol: string, boundaryMs: number): Promise<number | null> => {
+    const result = await fetchChart(symbol, {
+      period1: new Date(boundaryMs - 21 * DAY_MS),
+      period2: new Date(boundaryMs),
+      interval: "1d",
+      includePrePost: false,
+    });
+
+    let latestMs = -Infinity;
+    let baseline: number | null = null;
+
+    for (const candle of result.quotes ?? []) {
+      const timestampMs = toTimestamp(candle.date);
+      if (
+        !Number.isFinite(timestampMs) ||
+        timestampMs >= boundaryMs ||
+        !isValidPrice(candle.close)
+      ) {
+        continue;
+      }
+
+      if (timestampMs > latestMs) {
+        latestMs = timestampMs;
+        baseline = candle.close;
+      }
+    }
+
+    return baseline;
+  },
+  ["yahoo-range-baseline-close-v1"],
+  { revalidate: 300 },
+);
+
 // -----------------------------------------------------------------------------
 // EXCHANGE DATE HELPERS
 // -----------------------------------------------------------------------------
@@ -933,7 +969,56 @@ export async function getMarketCandles(
         ? ((currentPrice - previousClose) / previousClose) * 100
         : 0;
 
-    const rangeStartPrice = points[0]?.price ?? previousClose;
+    // The 5D window is session-based, while other non-1D windows use
+    // the calendar cutoff from getPeriod1(). MAX uses the first available open.
+    let rangeBasePrice: number | null = null;
+
+    if (range === "1D") {
+      rangeBasePrice = isValidPrice(previousClose) ? previousClose : null;
+    } else if (range === "MAX") {
+      const firstOpen = points[0]?.open;
+      rangeBasePrice = isValidPrice(firstOpen)
+        ? firstOpen
+        : (points[0]?.price ?? null);
+    } else if (points.length > 0) {
+      const boundaryMs =
+        range === "5D" && exchangeTimezone
+          ? getTimestampForMarketTime(
+              getExchangeDate(
+                new Date(points[0].timestampMs),
+                exchangeTimezone,
+              ),
+              "00:00",
+              exchangeTimezone,
+            )
+          : exchangeTimezone
+            ? getTimestampForMarketTime(
+                getExchangeDate(getPeriod1(range), exchangeTimezone),
+                "00:00",
+                exchangeTimezone,
+              )
+            : Date.parse(getPeriod1(range).toISOString().slice(0, 10));
+
+      try {
+        rangeBasePrice = await getRangeBaselineClose(symbol, boundaryMs);
+      } catch (error) {
+        console.warn(
+          `[candles] Range baseline lookup failed: ${symbol}/${range}`,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+
+      // A first-candle open is a closer approximation than its close when
+      // historical daily data is unavailable (especially for weekly/monthly).
+      if (!isValidPrice(rangeBasePrice)) {
+        const firstOpen = points[0]?.open;
+        rangeBasePrice = isValidPrice(firstOpen)
+          ? firstOpen
+          : (points[0]?.price ?? null);
+      }
+    }
+
+    const rangeStartPrice = rangeBasePrice ?? previousClose;
 
     const rangeChangePercent =
       points.length === 0
@@ -964,6 +1049,7 @@ export async function getMarketCandles(
       points,
       currentPrice,
       previousClose,
+      rangeBasePrice,
       dailyChangePercent,
       rangeChangePercent,
       isClosed,

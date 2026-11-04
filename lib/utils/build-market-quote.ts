@@ -9,6 +9,7 @@ export interface MarketCandlesData {
   points?: ChartPoint[];
   currentPrice?: number;
   previousClose?: number;
+  rangeBasePrice?: number | null;
 
   isClosed?: boolean;
   marketOpenMs?: number | null;
@@ -68,10 +69,23 @@ export function buildMarketQuote({
     ? candles.previousClose
     : undefined;
 
+  const rangeBasePrice = isValidPrice(candles.rangeBasePrice)
+    ? candles.rangeBasePrice
+    : undefined;
+
+  const firstPoint = points[0];
+  const firstOpen = firstPoint?.open;
+  const fallbackStartPrice =
+    typeof firstOpen === "number" && isValidPrice(firstOpen)
+      ? firstOpen
+      : firstPoint?.price;
+
   const basePrice =
-    range === "1D"
-      ? (previousClose ?? points[0]?.price ?? currentPrice)
-      : (points[0]?.price ?? previousClose ?? currentPrice);
+    rangeBasePrice ??
+    (range === "1D"
+      ? (previousClose ?? fallbackStartPrice)
+      : (fallbackStartPrice ?? previousClose)) ??
+    currentPrice;
 
   const changeValue = currentPrice - basePrice;
   const percentValue = (changeValue / basePrice) * 100;

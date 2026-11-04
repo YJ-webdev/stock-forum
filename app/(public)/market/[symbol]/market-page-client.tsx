@@ -777,9 +777,16 @@ export default function MarketPageClient({
         <div className="flex items-start justify-between gap-4">
           <h1 className="outfit mt-8 min-w-0 text-[44px] font-bold leading-none tracking-tight text-gray-500/50 dark:text-zinc-500/60">
             {selectedName}
+
             {selectedSymbol === "TOPIX" && (
               <span className="ml-2 text-[0.5em] font-medium">
                 (1306.T ETF)
+              </span>
+            )}
+
+            {selectedSymbol === "^JN0U.JO" && (
+              <span className="ml-2 text-[0.5em] font-medium">
+                (USD Net TRI)
               </span>
             )}
           </h1>
