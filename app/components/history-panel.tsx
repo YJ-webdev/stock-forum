@@ -466,6 +466,14 @@ function HistoryPanelContent({
 
   async function handleDeleteActivity(activityId: string) {
     if (
+      activities.some(
+        (activity) =>
+          activity.id === activityId && activity.type === "FEEDBACK_SUBMITTED",
+      )
+    )
+      return;
+
+    if (
       !userId ||
       loading ||
       refreshing ||
@@ -765,6 +773,7 @@ function HistoryPanelContent({
                     {section.activities.map((activity) => {
                       const open = swipedActivityId === activity.id;
                       const deleting = deletingId === activity.id;
+                      const canDelete = activity.type !== "FEEDBACK_SUBMITTED";
 
                       return (
                         <li
@@ -775,6 +784,7 @@ function HistoryPanelContent({
                           "
                           onTouchStart={(event) => {
                             if (
+                              !canDelete ||
                               !window.matchMedia(SMALL_TOUCH_QUERY).matches ||
                               event.touches.length !== 1
                             ) {
@@ -794,7 +804,11 @@ function HistoryPanelContent({
                             const start = swipeStart.current;
                             swipeStart.current = null;
 
-                            if (!start || start.activityId !== activity.id) {
+                            if (
+                              !canDelete ||
+                              !start ||
+                              start.activityId !== activity.id
+                            ) {
                               return;
                             }
 
@@ -896,8 +910,9 @@ function HistoryPanelContent({
                             </span>
                           </button>
 
-                          <div
-                            className={`
+                          {canDelete && (
+                            <div
+                              className={`
                               order-last flex shrink-0 overflow-hidden
                               transition-[width,opacity] duration-200 ease-out
                               motion-reduce:transition-none
@@ -919,20 +934,22 @@ function HistoryPanelContent({
                               [@media(hover:none)_and_(min-width:768px)]:w-10
                               [@media(hover:none)_and_(min-width:768px)]:opacity-100
                             `}
-                          >
-                            <button
-                              data-history-delete
-                              type="button"
-                              disabled={
-                                refreshing || loadingMore || deletingId !== null
-                              }
-                              aria-label={`${deleteLabel}: ${labels.activities[activity.type]}`}
-                              title={deleteLabel}
-                              aria-busy={deleting}
-                              onClick={() =>
-                                void handleDeleteActivity(activity.id)
-                              }
-                              className="
+                            >
+                              <button
+                                data-history-delete
+                                type="button"
+                                disabled={
+                                  refreshing ||
+                                  loadingMore ||
+                                  deletingId !== null
+                                }
+                                aria-label={`${deleteLabel}: ${labels.activities[activity.type]}`}
+                                title={deleteLabel}
+                                aria-busy={deleting}
+                                onClick={() =>
+                                  void handleDeleteActivity(activity.id)
+                                }
+                                className="
                                 flex w-10 shrink-0 cursor-pointer
                                 items-center justify-center self-stretch
                                 bg-red-500 text-white
@@ -945,20 +962,21 @@ function HistoryPanelContent({
                                 dark:bg-red-600 dark:hover:bg-red-700
                                 dark:disabled:bg-red-500
                               "
-                            >
-                              {deleting ? (
-                                <span
-                                  aria-hidden="true"
-                                  className="
+                              >
+                                {deleting ? (
+                                  <span
+                                    aria-hidden="true"
+                                    className="
                                     size-4 animate-spin rounded-full
                                     border-2 border-white/40 border-t-white
                                   "
-                                />
-                              ) : (
-                                <X className="size-4" aria-hidden="true" />
-                              )}
-                            </button>
-                          </div>
+                                  />
+                                ) : (
+                                  <X className="size-4" aria-hidden="true" />
+                                )}
+                              </button>
+                            </div>
+                          )}
                         </li>
                       );
                     })}
@@ -1119,7 +1137,16 @@ function getActivityDetail(activity: HistoryActivity, language: Language) {
         ? activity.metadata
         : {};
 
-    const category = metadata.category;
+    const preview = metadata.preview;
+    if (typeof preview === "string" && preview.trim()) {
+      return preview.replace(/\s+/g, " ").trim();
+    }
+
+    // Older activities have only a category, without a saved preview.
+    const category =
+      typeof metadata.category === "string"
+        ? metadata.category.toUpperCase()
+        : "";
     const categoryLabels: Record<Language, Record<string, string>> = {
       en: { SUGGESTION: "Suggestion", BUG: "Bug report", OTHER: "Other" },
       ko: { SUGGESTION: "제안", BUG: "버그 신고", OTHER: "기타" },
@@ -1146,11 +1173,7 @@ function getActivityDetail(activity: HistoryActivity, language: Language) {
       ar: { SUGGESTION: "اقتراح", BUG: "بلاغ عن خطأ", OTHER: "أخرى" },
       hi: { SUGGESTION: "सुझाव", BUG: "बग रिपोर्ट", OTHER: "अन्य" },
     };
-
-    const normalizedCategory =
-      typeof category === "string" ? category.toUpperCase() : "";
-
-    return categoryLabels[language][normalizedCategory] ?? "";
+    return categoryLabels[language][category] ?? "";
   }
 
   const marketName =

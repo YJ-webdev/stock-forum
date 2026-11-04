@@ -173,7 +173,11 @@ export async function deleteUserActivity(activityId: string) {
   if (typeof activityId !== "string" || !activityId.trim())
     throw new Error("Invalid activity.");
   await prisma.userActivity.deleteMany({
-    where: { id: activityId.trim(), userId: session.user.id },
+    where: {
+      id: activityId.trim(),
+      userId: session.user.id,
+      type: { not: "FEEDBACK_SUBMITTED" },
+    },
   });
   return { success: true };
 }

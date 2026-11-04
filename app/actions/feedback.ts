@@ -77,7 +77,10 @@ export async function submitFeedback(
           data: {
             userId,
             type: "FEEDBACK_SUBMITTED",
-            metadata: { category: categoryValue },
+            metadata: {
+              category: categoryValue,
+              preview: trimmedMessage.replace(/\s+/g, " ").slice(0, 160),
+            },
           },
         });
       return "SUCCESS" as const;
