@@ -125,7 +125,8 @@ export const UserActivityType = {
   USER_FOLLOWED: 'USER_FOLLOWED',
   USER_UNFOLLOWED: 'USER_UNFOLLOWED',
   COMMENT_REPORTED: 'COMMENT_REPORTED',
-  REPLY_REPORTED: 'REPLY_REPORTED'
+  REPLY_REPORTED: 'REPLY_REPORTED',
+  FEEDBACK_SUBMITTED: 'FEEDBACK_SUBMITTED'
 } as const
 
 export type UserActivityType = (typeof UserActivityType)[keyof typeof UserActivityType]

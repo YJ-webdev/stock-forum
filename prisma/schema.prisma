@@ -597,6 +597,8 @@ enum UserActivityType {
 
   COMMENT_REPORTED
   REPLY_REPORTED
+
+  FEEDBACK_SUBMITTED
 }
 
 model UserRanking {

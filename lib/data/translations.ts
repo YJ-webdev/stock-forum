@@ -6358,6 +6358,7 @@ interface HistoryLabels {
   bull: string;
   bear: string;
   points: string;
+
   activities: {
     COMMENT_CREATED: string;
     COMMENT_EDITED: string;
@@ -6376,6 +6377,7 @@ interface HistoryLabels {
     WATCHLIST_REMOVED: string;
     USER_FOLLOWED: string;
     USER_UNFOLLOWED: string;
+    FEEDBACK_SUBMITTED: string;
   };
 }
 
@@ -6414,6 +6416,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
       WATCHLIST_REMOVED: "Removed from watchlist",
       USER_FOLLOWED: "Followed a user",
       USER_UNFOLLOWED: "Unfollowed a user",
+      FEEDBACK_SUBMITTED: "Submitted feedback",
     },
   },
 
@@ -6450,6 +6453,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
       WATCHLIST_REMOVED: "관심 목록에서 삭제",
       USER_FOLLOWED: "사용자 팔로우",
       USER_UNFOLLOWED: "사용자 팔로우 취소",
+      FEEDBACK_SUBMITTED: "피드백 제출",
     },
   },
 
@@ -6486,6 +6490,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
       WATCHLIST_REMOVED: "ウォッチリストから削除",
       USER_FOLLOWED: "ユーザーをフォロー",
       USER_UNFOLLOWED: "ユーザーのフォローを解除",
+      FEEDBACK_SUBMITTED: "フィードバックを送信",
     },
   },
 
@@ -6522,6 +6527,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
       WATCHLIST_REMOVED: "从关注列表移除",
       USER_FOLLOWED: "关注了用户",
       USER_UNFOLLOWED: "取消关注用户",
+      FEEDBACK_SUBMITTED: "提交了反馈",
     },
   },
 
@@ -6558,6 +6564,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
       WATCHLIST_REMOVED: "Aus der Watchlist entfernt",
       USER_FOLLOWED: "Nutzer gefolgt",
       USER_UNFOLLOWED: "Nutzer nicht mehr gefolgt",
+      FEEDBACK_SUBMITTED: "Feedback gesendet",
     },
   },
 
@@ -6594,6 +6601,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
       WATCHLIST_REMOVED: "Retrait de la liste de suivi",
       USER_FOLLOWED: "Utilisateur suivi",
       USER_UNFOLLOWED: "Utilisateur non suivi",
+      FEEDBACK_SUBMITTED: "Avis envoyé",
     },
   },
 
@@ -6630,6 +6638,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
       WATCHLIST_REMOVED: "Eliminado de la lista de seguimiento",
       USER_FOLLOWED: "Usuario seguido",
       USER_UNFOLLOWED: "Dejaste de seguir a un usuario",
+      FEEDBACK_SUBMITTED: "Comentarios enviados",
     },
   },
 
@@ -6666,6 +6675,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
       WATCHLIST_REMOVED: "Removido da lista de acompanhamento",
       USER_FOLLOWED: "Começou a seguir um usuário",
       USER_UNFOLLOWED: "Deixou de seguir um usuário",
+      FEEDBACK_SUBMITTED: "Feedback enviado",
     },
   },
 
@@ -6702,6 +6712,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
       WATCHLIST_REMOVED: "Rimosso dalla watchlist",
       USER_FOLLOWED: "Hai iniziato a seguire un utente",
       USER_UNFOLLOWED: "Hai smesso di seguire un utente",
+      FEEDBACK_SUBMITTED: "Feedback inviato",
     },
   },
 
@@ -6738,6 +6749,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
       WATCHLIST_REMOVED: "Удалено из списка наблюдения",
       USER_FOLLOWED: "Подписка на пользователя",
       USER_UNFOLLOWED: "Отписка от пользователя",
+      FEEDBACK_SUBMITTED: "Отзыв отправлен",
     },
   },
 
@@ -6774,6 +6786,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
       WATCHLIST_REMOVED: "الإزالة من قائمة المتابعة",
       USER_FOLLOWED: "متابعة مستخدم",
       USER_UNFOLLOWED: "إلغاء متابعة مستخدم",
+      FEEDBACK_SUBMITTED: "إرسال ملاحظات",
     },
   },
 
@@ -6811,6 +6824,7 @@ export const HISTORY_LABELS: Record<Language, HistoryLabels> = {
       WATCHLIST_REMOVED: "वॉचलिस्ट से हटाया",
       USER_FOLLOWED: "उपयोगकर्ता को फ़ॉलो किया",
       USER_UNFOLLOWED: "उपयोगकर्ता को अनफ़ॉलो किया",
+      FEEDBACK_SUBMITTED: "फ़ीडबैक भेजा",
     },
   },
 };
