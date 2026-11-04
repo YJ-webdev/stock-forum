@@ -15,6 +15,7 @@ import {
 import {
   FcBookmark,
   FcBrokenLink,
+  FcFeedback,
   FcFullTrash,
   FcInspection,
   FcLikePlaceholder,
@@ -1085,6 +1086,8 @@ function ActivityIcon({ type }: { type: HistoryActivity["type"] }) {
       case "PREDICTION_SUBMITTED":
         return FcInspection;
 
+      case "FEEDBACK_SUBMITTED":
+        return FcFeedback;
       default:
         return FcSms;
     }
