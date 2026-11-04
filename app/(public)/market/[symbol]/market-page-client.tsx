@@ -4,7 +4,6 @@
 
 import { TZDate } from "@date-fns/tz";
 import { toast } from "sonner";
-import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { IBM_Plex_Mono } from "next/font/google";
@@ -64,6 +63,14 @@ import {
 import { countryCodeToFlag } from "@/lib/utils/nationality-flag";
 import type { InitialMarketQuote } from "@/lib/utils/build-market-quote";
 
+const DetailChartAnimation = dynamic(
+  () =>
+    import("@/app/components/detail-chart-animation").then(
+      (module) => module.DetailChartAnimation,
+    ),
+  { loading: () => null },
+);
+
 const DetailChart = dynamic(
   () =>
     import("@/app/components/detail-chart").then(
@@ -87,6 +94,9 @@ const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
   display: "swap",
+  preload: true,
+  adjustFontFallback: true,
+  fallback: ["monospace"],
 });
 
 const RANGES: SelectedRange[] = ["1D", "5D", "1M", "3M", "1Y", "5Y", "MAX"];
@@ -225,6 +235,7 @@ export default function MarketPageClient({
 
   const [betAmount, setBetAmount] = useState(50);
   const [showDetailChart, setShowDetailChart] = useState(false);
+  const [hasOpenedDetailChart, setHasOpenedDetailChart] = useState(false);
   const [statsRefreshVersion, setStatsRefreshVersion] = useState(0);
 
   const [voteRefreshVersion, setVoteRefreshVersion] = useState(0);
@@ -823,7 +834,10 @@ export default function MarketPageClient({
                 type="button"
                 aria-label={selectedName}
                 aria-expanded={showDetailChart}
-                onClick={() => setShowDetailChart(true)}
+                onClick={() => {
+                  setHasOpenedDetailChart(true);
+                  setShowDetailChart(true);
+                }}
                 className="
                   relative mr-3 flex w-auto cursor-pointer
                   flex-col items-stretch gap-0
@@ -850,85 +864,38 @@ export default function MarketPageClient({
           </div>
 
           <div className="overflow-hidden">
-            <AnimatePresence initial={false}>
-              {showDetailChart && (
-                <motion.div
-                  initial={{
-                    height: 0,
-                    opacity: 0,
-                    scale: 0.92,
-                    x: 20,
-                    y: -10,
-                  }}
-                  animate={{
-                    height: "auto",
-                    opacity: 1,
-                    scale: 1,
-                    x: 0,
-                    y: 0,
-                  }}
-                  exit={{
-                    height: 0,
-                    opacity: 0,
-                    scale: 0.6,
-                    x: 20,
-                    y: -10,
-                  }}
-                  transition={{
-                    height: {
-                      duration: 0.4,
-                      ease: [0.4, 0, 0.2, 1],
-                    },
-                    scale: {
-                      duration: 0.35,
-                      ease: [0.4, 0, 0.2, 1],
-                    },
-                    x: {
-                      duration: 0.35,
-                      ease: [0.4, 0, 0.2, 1],
-                    },
-                    y: {
-                      duration: 0.35,
-                      ease: [0.4, 0, 0.2, 1],
-                    },
-                    opacity: {
-                      duration: 0.3,
-                    },
-                  }}
-                  style={{
-                    transformOrigin: "top right",
-                  }}
-                >
-                  <div className="md:mx-4">
-                    <DetailChart
-                      key={`${selectedSymbol}-${activeRange}`}
-                      userLanguage={userLanguage}
-                      history={data.history}
-                      isPositive={data.isPositive}
-                      isClosed={data.isClosed}
-                      previousClose={data.previousClose}
-                      sessionStartMs={sessionStartMs}
-                      sessionEndMs={sessionEndMs}
-                      lunchStartMs={
-                        activeRange === "1D" ? data.lunchStartMs : null
-                      }
-                      lunchEndMs={activeRange === "1D" ? data.lunchEndMs : null}
-                      exchangeTimezone={exchangeTimezone}
-                      range={activeRange}
-                      onClick={() => setShowDetailChart(false)}
-                    />
+            {hasOpenedDetailChart && (
+              <DetailChartAnimation show={showDetailChart}>
+                <div className="md:mx-4">
+                  <DetailChart
+                    key={`${selectedSymbol}-${activeRange}`}
+                    userLanguage={userLanguage}
+                    history={data.history}
+                    isPositive={data.isPositive}
+                    isClosed={data.isClosed}
+                    previousClose={data.previousClose}
+                    sessionStartMs={sessionStartMs}
+                    sessionEndMs={sessionEndMs}
+                    lunchStartMs={
+                      activeRange === "1D" ? data.lunchStartMs : null
+                    }
+                    lunchEndMs={activeRange === "1D" ? data.lunchEndMs : null}
+                    exchangeTimezone={exchangeTimezone}
+                    range={activeRange}
+                    onClick={() => setShowDetailChart(false)}
+                  />
 
-                    <div className="mx-4 mt-4 flex flex-wrap items-center justify-start gap-1 sm:gap-2 md:mx-0">
-                      {RANGES.map((range) => {
-                        const isActive = activeRange === range;
+                  <div className="mx-4 mt-4 flex flex-wrap items-center justify-start gap-1 sm:gap-2 md:mx-0">
+                    {RANGES.map((range) => {
+                      const isActive = activeRange === range;
 
-                        return (
-                          <button
-                            key={range}
-                            type="button"
-                            aria-pressed={isActive}
-                            onClick={() => void handleRangeChange(range)}
-                            className={`
+                      return (
+                        <button
+                          key={range}
+                          type="button"
+                          aria-pressed={isActive}
+                          onClick={() => void handleRangeChange(range)}
+                          className={`
                               cursor-pointer rounded-full
                               px-3.25 py-1.25 text-xs font-medium
                               transition-colors
@@ -941,16 +908,15 @@ export default function MarketPageClient({
                                   : "bg-zinc-100 text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-600/50"
                               }
                             `}
-                          >
-                            {chartLabels.ranges[range] ?? range}
-                          </button>
-                        );
-                      })}
-                    </div>
+                        >
+                          {chartLabels.ranges[range] ?? range}
+                        </button>
+                      );
+                    })}
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+              </DetailChartAnimation>
+            )}
           </div>
         </>
       ) : (
