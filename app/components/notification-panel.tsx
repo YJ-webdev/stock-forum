@@ -1048,6 +1048,17 @@ function NotificationItem({
   );
 }
 
+function getFeedbackCategory(
+  title: string,
+): "suggestion" | "bug" | "other" | null {
+  const normalized = title.trim().toLowerCase();
+  const match = normalized.match(/(?:^|[·:])\s*(suggestion|bug|other)\s*$/);
+  const value = match?.[1] ?? normalized;
+  return value === "suggestion" || value === "bug" || value === "other"
+    ? value
+    : null;
+}
+
 function getNotificationText(
   notification: MyNotification,
   language: ResolvedLanguage,
@@ -1179,6 +1190,15 @@ function getNotificationText(
       }
 
       return { title, message: priceMessage };
+    }
+
+    case "FEEDBACK_RECEIVED": {
+      const copy = FEEDBACK_DIALOG_LABELS[language];
+      const category = getFeedbackCategory(notification.title);
+      return {
+        title: category ? `${copy.heading} · ${copy[category]}` : copy.heading,
+        message: notification.message,
+      };
     }
 
     default:
@@ -1503,18 +1523,9 @@ function FeedbackDialog({
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const copy = FEEDBACK_DIALOG_LABELS[language];
-  // Category is encoded in the notification title by the feedback action.
-  const category = notification.title
-    .match(/(?:·|:)\s*(suggestion|bug|other)\s*$/i)?.[1]
-    ?.toLowerCase();
-  const categoryLabel =
-    category === "suggestion"
-      ? copy.suggestion
-      : category === "bug"
-        ? copy.bug
-        : category === "other"
-          ? copy.other
-          : null;
+  // Supports both the new category-only title and older "New Feedback · CATEGORY" titles.
+  const category = getFeedbackCategory(notification.title);
+  const categoryLabel = category ? copy[category] : null;
   const author = notification.actor?.name?.trim() || copy.guest;
   const submittedAt = new Date(notification.createdAt);
   const formattedDate = Number.isFinite(submittedAt.getTime())

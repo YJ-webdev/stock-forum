@@ -30,9 +30,6 @@ const CATEGORY_MAP = {
 
 const MIN_MESSAGE_LENGTH = 5;
 const MAX_MESSAGE_LENGTH = 2000;
-
-// This cooldown applies to signed-in users.
-// Guest rate limiting requires a separate shared rate limiter.
 const COOLDOWN_MS = 60_000;
 
 export async function submitFeedback(
@@ -79,7 +76,7 @@ export async function submitFeedback(
 
     const categoryValue = CATEGORY_MAP[category];
 
-    // Prevent rapid repeat submissions from signed-in users.
+    // Limit repeat submissions from signed-in users.
     if (userId) {
       const recentNotification = await prisma.notification.findFirst({
         where: {
@@ -127,7 +124,7 @@ export async function submitFeedback(
         userId: admin.id,
         actorId: userId,
         type: "FEEDBACK_RECEIVED" as const,
-        title: `New Feedback · ${categoryValue}`,
+        title: categoryValue,
         message: trimmedMessage,
       })),
     });
