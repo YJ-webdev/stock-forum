@@ -1174,7 +1174,7 @@ function LoadedRelativeSparkline({ item }: { item: MarketSymbolItem }) {
     "1D",
     item.displaySymbol,
     item.assetType,
-    0,
+    300_000,
     "15m",
   );
 

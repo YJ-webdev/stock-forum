@@ -168,7 +168,7 @@ export function BullBearVoteCard({
     "1D",
     market.displaySymbol,
     market.assetType,
-    0,
+    60_000,
     "5m",
     quoteEnabled,
   );

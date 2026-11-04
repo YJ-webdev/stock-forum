@@ -709,8 +709,18 @@ export function DetailChart({
     return values;
   });
 
-  const rawMin = Math.min(...priceValues);
-  const rawMax = Math.max(...priceValues);
+  const includePreviousClose =
+    range === "1D" &&
+    validPreviousClose !== undefined &&
+    viewport.start === 0 &&
+    viewport.end === 1;
+
+  const scaleValues = includePreviousClose
+    ? [...priceValues, validPreviousClose]
+    : priceValues;
+
+  const rawMin = Math.min(...scaleValues);
+  const rawMax = Math.max(...scaleValues);
   const rawPriceRange = rawMax - rawMin;
 
   const pricePadding =
@@ -1234,6 +1244,16 @@ export function DetailChart({
     previousCloseY !== null &&
     previousCloseY >= paddingTop &&
     previousCloseY <= chartBottom;
+
+  const currentPriceY = getY(data[data.length - 1].price);
+
+  const previousCloseLabelY =
+    previousCloseY !== null &&
+    Math.abs(currentPriceY - (previousCloseY - 15)) < 18
+      ? previousCloseY + 22
+      : previousCloseY !== null
+        ? previousCloseY - 15
+        : 0;
 
   const darkMode =
     typeof document !== "undefined" &&
@@ -2000,7 +2020,7 @@ export function DetailChart({
             showPreviousClose && (
               <text
                 x={chartRight - 10}
-                y={previousCloseY - 15}
+                y={previousCloseLabelY}
                 textAnchor="end"
                 pointerEvents="none"
                 className="jakarta fill-zinc-800 text-[12px] dark:fill-zinc-100 dark:font-light"

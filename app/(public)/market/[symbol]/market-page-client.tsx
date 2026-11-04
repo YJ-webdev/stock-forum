@@ -268,13 +268,13 @@ export default function MarketPageClient({
   const canPredict = selectedAssetType === "index";
   const chartInterval = activeRange === "1D" ? "1m" : undefined;
 
-  const { data, error } = useMarketQuote(
+  const { data } = useMarketQuote(
     selectedSymbol,
     selectedName,
     activeRange as ChartRange,
     selectedDisplaySymbol,
     selectedAssetType as AssetType,
-    0,
+    60_000,
     chartInterval,
     true,
     activeRange === "1D" && chartInterval === "1m" ? initialMarketQuote : null,
