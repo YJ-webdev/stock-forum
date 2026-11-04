@@ -37,8 +37,6 @@ import { MarketActionsMenu } from "@/app/components/market-action-menu";
 import MarketNews from "@/app/components/market-news";
 import type { GifResult } from "@/app/components/gif-picker";
 
-import { Skeleton } from "@/components/ui/skeleton";
-
 import {
   ALL_MARKET_SYMBOLS,
   TRADING_HOURS,
@@ -808,13 +806,7 @@ export default function MarketPageClient({
         </div>
       </div>
 
-      {error && !data ? (
-        <div className="mt-4 md:mx-4">
-          <div className="flex aspect-20/11 w-full items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-            <span className="text-xs text-zinc-400">{error}</span>
-          </div>
-        </div>
-      ) : data ? (
+      {data && (
         <>
           <div className="relative mt-3 flex min-h-28 w-full items-start justify-between">
             <MarketDetailHeader
@@ -863,39 +855,36 @@ export default function MarketPageClient({
             )}
           </div>
 
-          <div className="overflow-hidden">
-            {hasOpenedDetailChart && (
-              <DetailChartAnimation show={showDetailChart}>
-                <div className="md:mx-4">
-                  <DetailChart
-                    key={`${selectedSymbol}-${activeRange}`}
-                    userLanguage={userLanguage}
-                    history={data.history}
-                    isPositive={data.isPositive}
-                    isClosed={data.isClosed}
-                    previousClose={data.previousClose}
-                    sessionStartMs={sessionStartMs}
-                    sessionEndMs={sessionEndMs}
-                    lunchStartMs={
-                      activeRange === "1D" ? data.lunchStartMs : null
-                    }
-                    lunchEndMs={activeRange === "1D" ? data.lunchEndMs : null}
-                    exchangeTimezone={exchangeTimezone}
-                    range={activeRange}
-                    onClick={() => setShowDetailChart(false)}
-                  />
+          {hasOpenedDetailChart && (
+            <DetailChartAnimation show={showDetailChart}>
+              <div className="md:mx-4">
+                <DetailChart
+                  key={`${selectedSymbol}-${activeRange}`}
+                  userLanguage={userLanguage}
+                  history={data.history}
+                  isPositive={data.isPositive}
+                  isClosed={data.isClosed}
+                  previousClose={data.previousClose}
+                  sessionStartMs={sessionStartMs}
+                  sessionEndMs={sessionEndMs}
+                  lunchStartMs={activeRange === "1D" ? data.lunchStartMs : null}
+                  lunchEndMs={activeRange === "1D" ? data.lunchEndMs : null}
+                  exchangeTimezone={exchangeTimezone}
+                  range={activeRange}
+                  onClick={() => setShowDetailChart(false)}
+                />
 
-                  <div className="mx-4 mt-4 flex flex-wrap items-center justify-start gap-1 sm:gap-2 md:mx-0">
-                    {RANGES.map((range) => {
-                      const isActive = activeRange === range;
+                <div className="mx-4 pt-4 mb-4 sm:mb-14 flex flex-wrap items-center justify-start gap-1 sm:gap-2 md:mx-0 ">
+                  {RANGES.map((range) => {
+                    const isActive = activeRange === range;
 
-                      return (
-                        <button
-                          key={range}
-                          type="button"
-                          aria-pressed={isActive}
-                          onClick={() => void handleRangeChange(range)}
-                          className={`
+                    return (
+                      <button
+                        key={range}
+                        type="button"
+                        aria-pressed={isActive}
+                        onClick={() => void handleRangeChange(range)}
+                        className={`
                               cursor-pointer rounded-full
                               px-3.25 py-1.25 text-xs font-medium
                               transition-colors
@@ -908,40 +897,26 @@ export default function MarketPageClient({
                                   : "bg-zinc-100 text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-600/50"
                               }
                             `}
-                        >
-                          {chartLabels.ranges[range] ?? range}
-                        </button>
-                      );
-                    })}
-                  </div>
+                      >
+                        {chartLabels.ranges[range] ?? range}
+                      </button>
+                    );
+                  })}
                 </div>
-              </DetailChartAnimation>
-            )}
-          </div>
+              </div>
+            </DetailChartAnimation>
+          )}
         </>
-      ) : (
-        <div aria-hidden="true" className="relative mt-3 min-h-28 w-full px-4">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <Skeleton className="h-[42.5px] w-40 rounded-md sm:h-9" />
-            <Skeleton className="h-10 w-44 rounded-md sm:h-7" />
-          </div>
-
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1.5">
-            <Skeleton className="h-4 w-48 rounded-sm" />
-            <Skeleton className="h-3.75 w-24 rounded-sm" />
-          </div>
-        </div>
       )}
 
       {canPredict && (
         <div
           className={`
             ${ibmPlexMono.className}
-            mx-4 sm:pb-6
-            ${showDetailChart ? "pt-12 sm:pt-16" : "pt-8 sm:pt-2"}
+            mx-4 sm:pb-6 pt-8 sm:pt-2
           `}
         >
-          {voteStats ? (
+          {voteStats && (
             <div className="flex flex-col gap-5 rounded-xl border bg-zinc-50 px-5 py-4 dark:bg-zinc-800/50 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <p className="text-[14px] font-medium">
@@ -1021,8 +996,6 @@ export default function MarketPageClient({
                 </p>
               </div>
             </div>
-          ) : (
-            <Skeleton className="h-30 w-full rounded-xl" />
           )}
         </div>
       )}

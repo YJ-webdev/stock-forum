@@ -13,6 +13,7 @@ import { getInitialMarketQuote } from "@/lib/server/initial-market-quote";
 
 import MarketPageClient from "./market-page-client";
 import { ScrollToTopButton } from "@/app/components/scroll-to-top-button";
+import { notFound } from "next/navigation";
 
 interface PageProps {
   params: Promise<{
@@ -22,7 +23,14 @@ interface PageProps {
 
 async function resolveMarket(params: PageProps["params"]) {
   const { symbol } = await params;
-  const decodedSymbol = decodeURIComponent(symbol);
+
+  let decodedSymbol: string;
+
+  try {
+    decodedSymbol = decodeURIComponent(symbol);
+  } catch {
+    notFound();
+  }
 
   const market = ALL_MARKET_SYMBOLS.find(
     (item) => item.symbol === decodedSymbol,
@@ -78,7 +86,11 @@ export async function generateMetadata({
 }
 
 export default async function Page({ params }: PageProps) {
-  const { symbol, canPredict } = await resolveMarket(params);
+  const { symbol, market, canPredict } = await resolveMarket(params);
+
+  if (!market) {
+    notFound();
+  }
 
   const initialNowMs = Date.now();
 

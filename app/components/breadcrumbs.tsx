@@ -54,6 +54,10 @@ export const BreadCrumbs = () => {
       )
     : undefined;
 
+  if (isMarketRoute && !matchedMarketItem) {
+    return null;
+  }
+
   const items: BreadcrumbItem[] = [];
 
   if (matchedMarketItem) {

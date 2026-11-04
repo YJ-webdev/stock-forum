@@ -51,6 +51,7 @@ const MarketOverview = dynamic(() => import("./market-overview"), {
 const SEARCH_INPUT_ID = "market-search-input";
 const SEARCH_RESULTS_ID = "market-search-results";
 const TOUR_SEARCH_EVENT = "bullbearvote:tour-search";
+const OPEN_MARKET_OVERVIEW_EVENT = "bullbearvote:open-market-overview";
 
 interface SearchInputProps {
   isOpen: boolean;
@@ -236,9 +237,23 @@ export default function SearchInput({
     };
   }, [openSearch]);
 
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const handleOpenMarketOverview = () => {
+      openSearch();
+    };
+
+    window.addEventListener(
+      OPEN_MARKET_OVERVIEW_EVENT,
+      handleOpenMarketOverview,
+    );
+
+    return () => {
+      window.removeEventListener(
+        OPEN_MARKET_OVERVIEW_EVENT,
+        handleOpenMarketOverview,
+      );
+    };
+  }, [openSearch]);
 
   return (
     <Popover

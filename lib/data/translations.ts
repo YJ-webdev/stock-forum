@@ -8016,3 +8016,86 @@ export const COMMENT_IMAGE_LABELS: Record<Language, CommentImageLabels> = {
     remove: "चित्र हटाएँ",
   },
 };
+
+export const MARKET_NOT_FOUND_LABELS: Record<
+  Language,
+  {
+    title: string;
+    description: string;
+    open_market_overview: string;
+    home: string;
+  }
+> = {
+  en: {
+    title: "Asset could not be found",
+    description: "This market does not exist or is no longer available.",
+    open_market_overview: "Open Market Overview",
+    home: "Home",
+  },
+  ko: {
+    title: "시장을 찾을 수 없습니다",
+    description: "존재하지 않거나 더 이상 이용할 수 없는 시장입니다.",
+    open_market_overview: "시장 목록 열기",
+    home: "홈",
+  },
+  ja: {
+    title: "市場が見つかりません",
+    description: "この市場は存在しないか、現在利用できません。",
+    open_market_overview: "市場一覧を開く",
+    home: "ホーム",
+  },
+  zh: {
+    title: "未找到市场",
+    description: "该市场不存在或已无法访问。",
+    open_market_overview: "打开市场概览",
+    home: "首页",
+  },
+  de: {
+    title: "Markt nicht gefunden",
+    description: "Dieser Markt existiert nicht oder ist nicht mehr verfügbar.",
+    open_market_overview: "Marktübersicht öffnen",
+    home: "Startseite",
+  },
+  fr: {
+    title: "Marché introuvable",
+    description: "Ce marché n'existe pas ou n'est plus disponible.",
+    open_market_overview: "Ouvrir l'aperçu des marchés",
+    home: "Accueil",
+  },
+  es: {
+    title: "No se encontró el mercado",
+    description: "Este mercado no existe o ya no está disponible.",
+    open_market_overview: "Abrir resumen de mercados",
+    home: "Inicio",
+  },
+  pt: {
+    title: "Mercado não encontrado",
+    description: "Este mercado não existe ou não está mais disponível.",
+    open_market_overview: "Abrir visão geral dos mercados",
+    home: "Início",
+  },
+  it: {
+    title: "Mercato non trovato",
+    description: "Questo mercato non esiste o non è più disponibile.",
+    open_market_overview: "Apri panoramica dei mercati",
+    home: "Home",
+  },
+  ru: {
+    title: "Рынок не найден",
+    description: "Этот рынок не существует или больше недоступен.",
+    open_market_overview: "Открыть обзор рынков",
+    home: "Главная",
+  },
+  ar: {
+    title: "لم يتم العثور على السوق",
+    description: "هذا السوق غير موجود أو لم يعد متاحًا.",
+    open_market_overview: "فتح نظرة عامة على الأسواق",
+    home: "الرئيسية",
+  },
+  hi: {
+    title: "मार्केट नहीं मिला",
+    description: "यह मार्केट मौजूद नहीं है या अब उपलब्ध नहीं है।",
+    open_market_overview: "मार्केट ओवरव्यू खोलें",
+    home: "होम",
+  },
+};
