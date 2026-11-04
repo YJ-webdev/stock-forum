@@ -92,6 +92,7 @@ const UNCLICKABLE_TYPES: readonly HistoryActivity["type"][] = [
   "USER_UNFOLLOWED",
   "COMMENT_DELETED",
   "REPLY_DELETED",
+  "FEEDBACK_SUBMITTED",
 ];
 
 const SECTION_ORDER: DateSectionKey[] = [
@@ -1108,6 +1109,48 @@ function getActivityDetail(activity: HistoryActivity, language: Language) {
     activity.type === "USER_UNFOLLOWED"
   ) {
     return activity.targetUserName ?? labels.user;
+  }
+
+  if (activity.type === "FEEDBACK_SUBMITTED") {
+    const metadata =
+      activity.metadata &&
+      typeof activity.metadata === "object" &&
+      !Array.isArray(activity.metadata)
+        ? activity.metadata
+        : {};
+
+    const category = metadata.category;
+    const categoryLabels: Record<Language, Record<string, string>> = {
+      en: { SUGGESTION: "Suggestion", BUG: "Bug report", OTHER: "Other" },
+      ko: { SUGGESTION: "제안", BUG: "버그 신고", OTHER: "기타" },
+      ja: { SUGGESTION: "提案", BUG: "バグ報告", OTHER: "その他" },
+      zh: { SUGGESTION: "建议", BUG: "错误报告", OTHER: "其他" },
+      de: { SUGGESTION: "Vorschlag", BUG: "Fehlermeldung", OTHER: "Sonstiges" },
+      fr: {
+        SUGGESTION: "Suggestion",
+        BUG: "Signalement de bug",
+        OTHER: "Autre",
+      },
+      es: { SUGGESTION: "Sugerencia", BUG: "Informe de error", OTHER: "Otro" },
+      pt: { SUGGESTION: "Sugestão", BUG: "Relato de erro", OTHER: "Outro" },
+      it: {
+        SUGGESTION: "Suggerimento",
+        BUG: "Segnalazione bug",
+        OTHER: "Altro",
+      },
+      ru: {
+        SUGGESTION: "Предложение",
+        BUG: "Сообщение об ошибке",
+        OTHER: "Другое",
+      },
+      ar: { SUGGESTION: "اقتراح", BUG: "بلاغ عن خطأ", OTHER: "أخرى" },
+      hi: { SUGGESTION: "सुझाव", BUG: "बग रिपोर्ट", OTHER: "अन्य" },
+    };
+
+    const normalizedCategory =
+      typeof category === "string" ? category.toUpperCase() : "";
+
+    return categoryLabels[language][normalizedCategory] ?? "";
   }
 
   const marketName =
