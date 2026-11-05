@@ -258,60 +258,6 @@ const getHolidayFallbackChart = unstable_cache(
   { revalidate: 300 },
 );
 
-const getPreviousDailyClose = unstable_cache(
-  async (
-    symbol: string,
-    quoteDate: string,
-    timezone: string,
-  ): Promise<number | null> => {
-    const period1 = getTimestampForMarketTime(
-      addCalendarDays(quoteDate, -60),
-      "00:00",
-      timezone,
-    );
-
-    const period2 = Math.min(
-      Date.now(),
-      getTimestampForMarketTime(
-        addCalendarDays(quoteDate, 1),
-        "00:00",
-        timezone,
-      ),
-    );
-
-    const result = await fetchChart(symbol, {
-      period1: new Date(period1),
-      period2: new Date(period2),
-      interval: "1d",
-      includePrePost: false,
-    });
-
-    let latestTimestamp = -Infinity;
-    let previousClose: number | null = null;
-
-    for (const candle of result.quotes ?? []) {
-      const timestamp = toTimestamp(candle.date);
-
-      if (
-        !Number.isFinite(timestamp) ||
-        !isValidPrice(candle.close) ||
-        getExchangeDate(new Date(timestamp), timezone) >= quoteDate
-      ) {
-        continue;
-      }
-
-      if (timestamp > latestTimestamp) {
-        latestTimestamp = timestamp;
-        previousClose = candle.close;
-      }
-    }
-
-    return previousClose;
-  },
-  ["yahoo-previous-daily-close-v2"],
-  { revalidate: 300 },
-);
-
 // Range-return baseline: the last daily close strictly before the range boundary.
 // A separate cached daily query avoids using the first weekly/monthly candle close.
 const getRangeBaselineClose = unstable_cache(
@@ -855,26 +801,6 @@ export async function getMarketCandles(
 
     const quoteTimeMs = toTimestamp(quote.regularMarketTime);
 
-    const shouldCheckDailyClose =
-      market?.assetType === "index" || market?.assetType === "stock";
-
-    // Start before holiday fallback so both requests can run concurrently.
-    const previousDailyClosePromise =
-      shouldCheckDailyClose && exchangeTimezone && Number.isFinite(quoteTimeMs)
-        ? getPreviousDailyClose(
-            symbol,
-            getExchangeDate(new Date(quoteTimeMs), exchangeTimezone),
-            exchangeTimezone,
-          ).catch((error) => {
-            console.warn(
-              `[candles] Previous daily close lookup failed: ${symbol}`,
-              error instanceof Error ? error.message : String(error),
-            );
-
-            return null;
-          })
-        : Promise.resolve(null);
-
     const { isClosed, marketOpenMs, marketCloseMs } = getMarketSession(market);
 
     let sessionQuotes = rawQuotes;
@@ -925,17 +851,13 @@ export async function getMarketCandles(
       .slice()
       .sort((a, b) => toTimestamp(a.date) - toTimestamp(b.date));
 
-    let previousClose = isValidPrice(quote.regularMarketPreviousClose)
+    // Yahoo Quote is the primary source for the official previous close.
+    // Chart metadata is a fallback; intraday candle closes are not settlement prices.
+    const previousClose = isValidPrice(quote.regularMarketPreviousClose)
       ? quote.regularMarketPreviousClose
       : isValidPrice(meta?.previousClose)
         ? meta.previousClose
         : 0;
-
-    const dailyPreviousClose = await previousDailyClosePromise;
-
-    if (isValidPrice(dailyPreviousClose)) {
-      previousClose = dailyPreviousClose;
-    }
 
     const points = sessionQuotes
       .filter((candle): candle is Candle & { close: number } =>
