@@ -53,7 +53,7 @@ export function FooterPage({ type }: FooterPageProps) {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 pt-5 pb-10 md:px-6">
-      <h1 className="text-2xl font-medium tracking-tight text-zinc-800 dark:text-zinc-100">
+      <h1 className="text-2xl font-medium tracking-tight text-zinc-900 dark:text-zinc-100">
         {labels[type]}
       </h1>
 
@@ -83,7 +83,7 @@ function HelpContent({ content: copy }: { content: FooterPageContent }) {
 
   return (
     <div>
-      <p className="mb-6 text-[15px] text-zinc-500 dark:text-zinc-400">
+      <p className="mb-6 text-[15px] text-zinc-600 dark:text-zinc-400">
         {copy.help_intro}
       </p>
 
@@ -109,7 +109,7 @@ function HelpContent({ content: copy }: { content: FooterPageContent }) {
                   className="
                     flex min-h-14 w-full cursor-pointer
                     items-center justify-between gap-4 py-4
-                    text-start text-[15px] font-medium text-zinc-800
+                    text-start text-[15px] font-medium text-zinc-900
                     focus-visible:outline-none
                     focus-visible:ring-2 focus-visible:ring-inset
                     focus-visible:ring-zinc-400
@@ -149,7 +149,7 @@ function HelpContent({ content: copy }: { content: FooterPageContent }) {
                 `}
               >
                 <div className="min-h-0 overflow-hidden">
-                  <p className="pb-5 pe-6 text-[15px] leading-7 text-zinc-500 dark:text-zinc-400">
+                  <p className="pb-5 pe-6 text-[15px] leading-7 text-zinc-600 dark:text-zinc-400">
                     {content}
                   </p>
                 </div>
@@ -225,13 +225,13 @@ function FeedbackContent({
 
   return (
     <div>
-      <p className="text-[15px] text-zinc-500 dark:text-zinc-400">
+      <p className="text-[15px] text-zinc-600 dark:text-zinc-400">
         {copy.feedback_intro}
       </p>
 
       <form className="mt-7 space-y-6" onSubmit={handleSubmit}>
         <fieldset disabled={isPending}>
-          <legend className="mb-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">
+          <legend className="mb-3 text-sm font-medium text-zinc-900 dark:text-zinc-200">
             {copy.feedback_question}
           </legend>
 
@@ -251,7 +251,7 @@ function FeedbackContent({
                   ${
                     category === value
                       ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                      : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                      : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
                   }
                 `}
               >
@@ -264,7 +264,7 @@ function FeedbackContent({
         <div>
           <label
             htmlFor="feedback-message"
-            className="mb-3 block text-sm font-medium text-zinc-800 dark:text-zinc-200"
+            className="mb-3 block text-sm font-medium text-zinc-900 dark:text-zinc-200"
           >
             {copy.your_feedback}
           </label>
@@ -347,7 +347,7 @@ function PolicyContent({
 
   return (
     <div>
-      <p className="mb-6 text-[15px] text-zinc-500 dark:text-zinc-400">
+      <p className="mb-6 text-[15px] text-zinc-600 dark:text-zinc-400">
         {introduction}
       </p>
 
@@ -374,7 +374,7 @@ function PolicyContent({
                   className="
                     flex min-h-14 w-full cursor-pointer
                     items-center justify-between gap-4 py-4
-                    text-start text-[15px] font-medium text-zinc-800
+                    text-start text-[15px] font-medium text-zinc-900
                     focus-visible:outline-none
                     focus-visible:ring-2 focus-visible:ring-inset
                     focus-visible:ring-zinc-400
@@ -418,7 +418,7 @@ function PolicyContent({
                     {content.map((paragraph, paragraphIndex) => (
                       <p
                         key={paragraphIndex}
-                        className="text-[15px] leading-7 text-zinc-500 dark:text-zinc-400"
+                        className="text-[15px] leading-7 text-zinc-600 dark:text-zinc-400"
                       >
                         {paragraph.replaceAll("{email}", () => email)}
                       </p>
@@ -443,21 +443,21 @@ function AboutContent({ language }: { language: Language }) {
 
   return (
     <div>
-      <p className="mb-6 text-[15px] leading-7 text-zinc-500 dark:text-zinc-400">
+      <p className="mb-6 text-[15px] leading-7 text-zinc-600 dark:text-zinc-400">
         {copy.intro}
       </p>
 
       <div className="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
         {copy.sections.map(({ title, paragraphs }, index) => (
           <section key={index} className="py-5">
-            <h2 className="text-[15px] font-medium text-zinc-800 dark:text-zinc-200">
+            <h2 className="text-[15px] font-medium text-zinc-900 dark:text-zinc-200">
               {title}
             </h2>
             <div className="mt-3 space-y-3">
               {paragraphs.map((paragraph, paragraphIndex) => (
                 <p
                   key={paragraphIndex}
-                  className="text-[15px] leading-7 text-zinc-500 dark:text-zinc-400"
+                  className="text-[15px] leading-7 text-zinc-600 dark:text-zinc-400"
                 >
                   {paragraph}
                 </p>
