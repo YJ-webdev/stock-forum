@@ -73,6 +73,7 @@ const RETURN_REFRESH_MIN_MS = 30_000;
 const POST_CLOSE_GRACE_MINUTES = 30;
 const SCHEDULE_CHECK_MS = 60_000;
 const FINAL_RETRY_MS = 60_000;
+const CLOSED_MARKET_POLL_MS = 30 * 60_000;
 
 // --------------------------------------------------
 // STORE
@@ -432,7 +433,7 @@ function checkEntryForRefresh(entry: StoreEntry, minAgeMs: number) {
   }
 
   // --------------------------------------------------
-  // FINAL POST-CLOSE CHECK
+  // CLOSED SESSION
   // --------------------------------------------------
 
   if (
@@ -442,8 +443,13 @@ function checkEntryForRefresh(entry: StoreEntry, minAgeMs: number) {
     entry.finalCompletedKey !== session.key
   ) {
     void performFinalRefresh(entry, config, session.key);
+    return;
   }
 
+  // Refresh closed-market data every 30 minutes.
+  if (!isFresh(entry, CLOSED_MARKET_POLL_MS)) {
+    void fetchQuote(config);
+  }
   // Otherwise the market is closed.
   // No network request is made.
 }
