@@ -56,6 +56,8 @@ interface StoreEntry {
   pollingMs: number;
 
   lastSuccessAt: number;
+  consecutiveFailures: number;
+  nextRetryAt: number;
 
   finalCandidateKey: string | null;
   finalCompletedKey: string | null;
@@ -68,12 +70,13 @@ interface StoreEntry {
 
 const CACHE_FRESH_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 15_000;
-const RETURN_REFRESH_MIN_MS = 30_000;
+const RETURN_REFRESH_MIN_MS = 60_000;
 
 const POST_CLOSE_GRACE_MINUTES = 30;
 const SCHEDULE_CHECK_MS = 60_000;
 const FINAL_RETRY_MS = 60_000;
 const CLOSED_MARKET_POLL_MS = 30 * 60_000;
+const RETRY_DELAYS_MS = [60_000, 120_000, 300_000] as const;
 
 // --------------------------------------------------
 // STORE
@@ -233,6 +236,8 @@ function getEntry(
     pollingMs: 0,
 
     lastSuccessAt: 0,
+    consecutiveFailures: 0,
+    nextRetryAt: 0,
 
     finalCandidateKey: null,
     finalCompletedKey: null,
@@ -326,6 +331,8 @@ function fetchQuote(config: RequestConfig): Promise<boolean> {
       });
 
       entry.lastSuccessAt = Date.now();
+      entry.consecutiveFailures = 0;
+      entry.nextRetryAt = 0;
 
       publish(entry, {
         data,
@@ -335,6 +342,13 @@ function fetchQuote(config: RequestConfig): Promise<boolean> {
 
       return true;
     } catch (error) {
+      entry.consecutiveFailures += 1;
+      const retryIndex = Math.min(
+        entry.consecutiveFailures - 1,
+        RETRY_DELAYS_MS.length - 1,
+      );
+      entry.nextRetryAt = Date.now() + RETRY_DELAYS_MS[retryIndex];
+
       publish(entry, {
         data: entry.snapshot.data,
         loading: false,
@@ -382,7 +396,8 @@ async function performFinalRefresh(
   if (
     entry.finalCompletedKey === sessionKey ||
     entry.fetchPromise ||
-    Date.now() < entry.finalRetryAt
+    Date.now() < entry.finalRetryAt ||
+    Date.now() < entry.nextRetryAt
   ) {
     return;
   }
@@ -401,7 +416,11 @@ async function performFinalRefresh(
   }
 }
 
-function checkEntryForRefresh(entry: StoreEntry, minAgeMs: number) {
+function checkEntryForRefresh(
+  entry: StoreEntry,
+  minAgeMs: number,
+  isReturnEvent = false,
+) {
   const config = entry.requestConfig;
 
   if (
@@ -409,6 +428,7 @@ function checkEntryForRefresh(entry: StoreEntry, minAgeMs: number) {
     entry.subscriptions.size === 0 ||
     entry.pollingMs <= 0 ||
     entry.fetchPromise ||
+    Date.now() < entry.nextRetryAt ||
     !canRefresh()
   ) {
     return;
@@ -446,12 +466,15 @@ function checkEntryForRefresh(entry: StoreEntry, minAgeMs: number) {
     return;
   }
 
-  // Refresh closed-market data every 30 minutes.
-  if (!isFresh(entry, CLOSED_MARKET_POLL_MS)) {
+  // Regular closed-market checks run every 30 minutes.
+  // A tab return or network reconnection may refresh after 60 seconds.
+  const closedMaxAgeMs = isReturnEvent
+    ? RETURN_REFRESH_MIN_MS
+    : CLOSED_MARKET_POLL_MS;
+
+  if (!isFresh(entry, closedMaxAgeMs)) {
     void fetchQuote(config);
   }
-  // Otherwise the market is closed.
-  // No network request is made.
 }
 
 // --------------------------------------------------
@@ -537,7 +560,7 @@ function refreshActiveQuotes() {
   if (!canRefresh()) return;
 
   for (const entry of store.values()) {
-    checkEntryForRefresh(entry, RETURN_REFRESH_MIN_MS);
+    checkEntryForRefresh(entry, RETURN_REFRESH_MIN_MS, true);
   }
 }
 
@@ -603,10 +626,11 @@ export function subscribeToMarketQuote(
 
   configurePolling(entry);
 
-  // Initial requests are allowed while the market is closed.
-  // Revisit stale cached data without enabling closed-market polling.
+  // Fetch on first subscription when data is missing or stale.
+  // Closed-market polling is handled separately.
   if (
     !entry.fetchPromise &&
+    Date.now() >= entry.nextRetryAt &&
     (!entry.snapshot.data || (isFirstSubscriber && !isFresh(entry)))
   ) {
     void fetchQuote(config);
