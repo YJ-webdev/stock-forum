@@ -1,6 +1,7 @@
 "use client";
 
 import { ALL_MARKET_SYMBOLS, TRADING_HOURS } from "@/lib/data/market-symbols";
+
 import {
   buildMarketQuote,
   type InitialMarketQuote,
@@ -13,6 +14,10 @@ import type {
   ChartRange,
   MarketItem,
 } from "./useMarketQuote";
+
+// --------------------------------------------------
+// TYPES
+// --------------------------------------------------
 
 interface MarketQuoteSnapshot {
   data: MarketItem | null;
@@ -34,116 +39,169 @@ interface Subscription {
   pollingInterval: number;
 }
 
+interface MarketSession {
+  active: boolean;
+  finalCheckDue: boolean;
+  key: string | null;
+}
+
 interface StoreEntry {
   snapshot: MarketQuoteSnapshot;
   subscriptions: Set<Subscription>;
+
   requestConfig: RequestConfig | null;
-  fetchPromise: Promise<void> | null;
+  fetchPromise: Promise<boolean> | null;
+
   pollingTimer: number | null;
   pollingMs: number;
+
   lastSuccessAt: number;
-  lastSessionActive: boolean | null;
+
+  finalCandidateKey: string | null;
+  finalCompletedKey: string | null;
+  finalRetryAt: number;
 }
+
+// --------------------------------------------------
+// CONSTANTS
+// --------------------------------------------------
 
 const CACHE_FRESH_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 15_000;
 const RETURN_REFRESH_MIN_MS = 30_000;
-const POST_CLOSE_GRACE_MS = 30 * 60_000;
+
+const POST_CLOSE_GRACE_MINUTES = 30;
 const SCHEDULE_CHECK_MS = 60_000;
+const FINAL_RETRY_MS = 60_000;
+
+// --------------------------------------------------
+// STORE
+// --------------------------------------------------
 
 const store = new Map<string, StoreEntry>();
 
 const marketBySymbol = new Map(
-  ALL_MARKET_SYMBOLS.flatMap((market) => {
-    const symbols = [market.symbol, market.providerSymbol].filter(
-      (value): value is string => Boolean(value),
-    );
-
-    return symbols.map((symbol) => [symbol, market] as const);
-  }),
+  ALL_MARKET_SYMBOLS.flatMap((market) =>
+    [market.symbol, market.providerSymbol]
+      .filter((value): value is string => Boolean(value))
+      .map((symbol) => [symbol, market] as const),
+  ),
 );
 
-const timeFormatters = new Map<string, Intl.DateTimeFormat>();
+const formatters = new Map<string, Intl.DateTimeFormat>();
 
-function getTimeFormatter(timezone: string) {
-  let formatter = timeFormatters.get(timezone);
+// --------------------------------------------------
+// TIME HELPERS
+// --------------------------------------------------
 
-  if (!formatter) {
-    formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: timezone,
-      weekday: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    });
+function getFormatter(timezone: string) {
+  const cached = formatters.get(timezone);
 
-    timeFormatters.set(timezone, formatter);
-  }
+  if (cached) return cached;
+
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    weekday: "short",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+
+  formatters.set(timezone, formatter);
 
   return formatter;
 }
 
-function toMinutes(value: string): number {
+function toMinutes(value: string) {
   const [hours, minutes] = value.split(":").map(Number);
+
   return hours * 60 + minutes;
 }
 
-function getMarketSessionActive(
+// --------------------------------------------------
+// MARKET SESSION
+// --------------------------------------------------
+
+function getMarketSession(
   config: RequestConfig,
   nowMs = Date.now(),
-): boolean {
+): MarketSession {
+  const fallback: MarketSession = {
+    active: true,
+    finalCheckDue: false,
+    key: null,
+  };
+
   const market = marketBySymbol.get(config.symbol);
 
-  // Crypto, forex, commodities and unknown symbols retain
-  // their existing polling behavior until their own
-  // exchange calendars are implemented.
   if (!market?.marketSchedule) {
-    return true;
+    return fallback;
   }
 
-  const hours = TRADING_HOURS[market.marketSchedule];
+  const schedule = TRADING_HOURS[market.marketSchedule];
 
-  if (!hours) {
-    return true;
+  if (!schedule) {
+    return fallback;
   }
 
-  const parts = getTimeFormatter(hours.timezone).formatToParts(new Date(nowMs));
+  const parts = getFormatter(schedule.timezone).formatToParts(new Date(nowMs));
 
-  const getPart = (type: string) =>
-    parts.find((part) => part.type === type)?.value ?? "";
+  const part = (type: string) =>
+    parts.find((item) => item.type === type)?.value ?? "";
 
-  const weekday = getPart("weekday");
-  const hour = Number(getPart("hour"));
-  const minute = Number(getPart("minute"));
+  const hour = Number(part("hour"));
+  const minute = Number(part("minute"));
 
-  if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
-    return true;
+  const open = toMinutes(schedule.open);
+  const close = toMinutes(schedule.close);
+
+  if (
+    !Number.isFinite(hour) ||
+    !Number.isFinite(minute) ||
+    !Number.isFinite(open) ||
+    !Number.isFinite(close)
+  ) {
+    return fallback;
   }
+
+  // Overnight schedules require separate handling.
+  // Keep their existing polling behavior.
+  if (close <= open) {
+    return fallback;
+  }
+
+  const weekday = part("weekday");
+
+  const isTradingDay = weekday !== "Sat" && weekday !== "Sun";
 
   const currentMinutes = hour * 60 + minute;
-  const openMinutes = toMinutes(hours.open);
-  const closeMinutes = toMinutes(hours.close);
+  const graceEnd = close + POST_CLOSE_GRACE_MINUTES;
 
-  // Regular Monday-Friday equity sessions.
-  // Exchange holidays and special sessions require
-  // a separate calendar.
-  if (weekday === "Sat" || weekday === "Sun") {
-    return false;
-  }
-
-  const graceMinutes = POST_CLOSE_GRACE_MS / 60_000;
-
-  return (
-    currentMinutes >= openMinutes &&
-    currentMinutes <= closeMinutes + graceMinutes
+  const key = [config.symbol, part("year"), part("month"), part("day")].join(
+    ":",
   );
+
+  return {
+    active: isTradingDay && currentMinutes >= open && currentMinutes < graceEnd,
+
+    finalCheckDue: isTradingDay && currentMinutes >= graceEnd,
+
+    key,
+  };
 }
+
+// --------------------------------------------------
+// STORE HELPERS
+// --------------------------------------------------
 
 function getKey(
   symbol: string,
   range: ChartRange,
   chartInterval?: ChartInterval,
-): string {
+) {
   return `${symbol}::${range}::${chartInterval ?? "default"}`;
 }
 
@@ -153,9 +211,10 @@ function getEntry(
   chartInterval?: ChartInterval,
 ): StoreEntry {
   const key = getKey(symbol, range, chartInterval);
-  const existing = store.get(key);
 
-  if (existing) return existing;
+  const cached = store.get(key);
+
+  if (cached) return cached;
 
   const entry: StoreEntry = {
     snapshot: {
@@ -163,20 +222,28 @@ function getEntry(
       loading: false,
       error: null,
     },
+
     subscriptions: new Set(),
+
     requestConfig: null,
     fetchPromise: null,
+
     pollingTimer: null,
     pollingMs: 0,
+
     lastSuccessAt: 0,
-    lastSessionActive: null,
+
+    finalCandidateKey: null,
+    finalCompletedKey: null,
+    finalRetryAt: 0,
   };
 
   store.set(key, entry);
+
   return entry;
 }
 
-function publish(entry: StoreEntry, next: MarketQuoteSnapshot): void {
+function publish(entry: StoreEntry, next: MarketQuoteSnapshot) {
   const previous = entry.snapshot;
 
   if (
@@ -194,17 +261,18 @@ function publish(entry: StoreEntry, next: MarketQuoteSnapshot): void {
   }
 }
 
-function isFresh(entry: StoreEntry, maxAgeMs = CACHE_FRESH_MS): boolean {
+function isFresh(entry: StoreEntry, maxAgeMs = CACHE_FRESH_MS) {
   return (
     entry.snapshot.data !== null && Date.now() - entry.lastSuccessAt < maxAgeMs
   );
 }
 
-async function fetchQuote(config: RequestConfig): Promise<void> {
-  const { symbol, name, range, displaySymbol, assetType, chartInterval } =
-    config;
+// --------------------------------------------------
+// FETCH
+// --------------------------------------------------
 
-  const entry = getEntry(symbol, range, chartInterval);
+function fetchQuote(config: RequestConfig): Promise<boolean> {
+  const entry = getEntry(config.symbol, config.range, config.chartInterval);
 
   if (entry.fetchPromise) {
     return entry.fetchPromise;
@@ -218,40 +286,42 @@ async function fetchQuote(config: RequestConfig): Promise<void> {
       REQUEST_TIMEOUT_MS,
     );
 
-    publish(entry, {
-      data: entry.snapshot.data,
-      loading: entry.snapshot.data === null,
-      error: null,
-    });
+    if (!entry.snapshot.data) {
+      publish(entry, {
+        ...entry.snapshot,
+        loading: true,
+        error: null,
+      });
+    }
 
     try {
       const params = new URLSearchParams({
-        symbol,
-        range,
+        symbol: config.symbol,
+        range: config.range,
       });
 
-      if (chartInterval) {
-        params.set("interval", chartInterval);
+      if (config.chartInterval) {
+        params.set("interval", config.chartInterval);
       }
 
-      const response = await fetch(`/api/candles?${params.toString()}`, {
+      const response = await fetch(`/api/candles?${params}`, {
         signal: controller.signal,
         cache: "no-store",
       });
 
       if (!response.ok) {
-        throw new Error(`Market data request failed (${response.status})`);
+        throw new Error(`Failed to load market candles (${response.status})`);
       }
 
       const candles = (await response.json()) as MarketCandlesData;
 
       const data = buildMarketQuote({
         candles,
-        symbol,
-        name,
-        displaySymbol: displaySymbol ?? symbol,
-        assetType,
-        range,
+        symbol: config.symbol,
+        name: config.name,
+        displaySymbol: config.displaySymbol ?? config.symbol,
+        assetType: config.assetType,
+        range: config.range,
       });
 
       entry.lastSuccessAt = Date.now();
@@ -261,35 +331,76 @@ async function fetchQuote(config: RequestConfig): Promise<void> {
         loading: false,
         error: null,
       });
+
+      return true;
     } catch (error) {
-      const message = controller.signal.aborted
-        ? "Market data request timed out"
-        : error instanceof Error
-          ? error.message
-          : "Failed to load market data";
-
-      console.error(`Failed to fetch market quote for ${symbol}:`, error);
-
       publish(entry, {
         data: entry.snapshot.data,
         loading: false,
-        error: message,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to load market quote",
       });
+
+      return false;
     } finally {
       window.clearTimeout(timeout);
-      entry.fetchPromise = null;
     }
   });
 
   entry.fetchPromise = request;
+
+  void request.then(() => {
+    if (entry.fetchPromise === request) {
+      entry.fetchPromise = null;
+    }
+  });
+
   return request;
 }
 
-function canRefresh(): boolean {
-  return !document.hidden && navigator.onLine;
+// --------------------------------------------------
+// REFRESH CONDITIONS
+// --------------------------------------------------
+
+function canRefresh() {
+  return (
+    typeof document !== "undefined" &&
+    typeof navigator !== "undefined" &&
+    !document.hidden &&
+    navigator.onLine
+  );
 }
 
-function checkEntryForRefresh(entry: StoreEntry, minAgeMs: number): void {
+async function performFinalRefresh(
+  entry: StoreEntry,
+  config: RequestConfig,
+  sessionKey: string,
+) {
+  if (
+    entry.finalCompletedKey === sessionKey ||
+    entry.fetchPromise ||
+    Date.now() < entry.finalRetryAt
+  ) {
+    return;
+  }
+
+  // Reserve the retry window before starting the request.
+  // This also prevents duplicate final-refresh attempts.
+  entry.finalRetryAt = Date.now() + FINAL_RETRY_MS;
+
+  const success = await fetchQuote(config);
+
+  if (success) {
+    entry.finalCompletedKey = sessionKey;
+    entry.finalRetryAt = 0;
+  } else {
+    entry.finalRetryAt = Date.now() + FINAL_RETRY_MS;
+  }
+}
+
+function checkEntryForRefresh(entry: StoreEntry, minAgeMs: number) {
   const config = entry.requestConfig;
 
   if (
@@ -302,40 +413,61 @@ function checkEntryForRefresh(entry: StoreEntry, minAgeMs: number): void {
     return;
   }
 
-  const sessionActive = getMarketSessionActive(config);
-  const wasSessionActive = entry.lastSessionActive;
+  const session = getMarketSession(config);
 
-  entry.lastSessionActive = sessionActive;
+  // --------------------------------------------------
+  // ACTIVE SESSION
+  // --------------------------------------------------
 
-  if (!sessionActive) {
+  if (session.active) {
+    if (session.key !== null) {
+      entry.finalCandidateKey = session.key;
+    }
+
+    if (!isFresh(entry, minAgeMs)) {
+      void fetchQuote(config);
+    }
+
     return;
   }
 
-  // Refresh immediately when transitioning from a closed
-  // session into the next trading session.
-  const sessionJustOpened = wasSessionActive === false;
+  // --------------------------------------------------
+  // FINAL POST-CLOSE CHECK
+  // --------------------------------------------------
 
-  if (sessionJustOpened || !isFresh(entry, minAgeMs)) {
-    void fetchQuote(config);
+  if (
+    session.finalCheckDue &&
+    session.key !== null &&
+    entry.finalCandidateKey === session.key &&
+    entry.finalCompletedKey !== session.key
+  ) {
+    void performFinalRefresh(entry, config, session.key);
   }
+
+  // Otherwise the market is closed.
+  // No network request is made.
 }
 
-function configurePolling(entry: StoreEntry): void {
-  let nextPollingMs = Infinity;
+// --------------------------------------------------
+// POLLING
+// --------------------------------------------------
+
+function configurePolling(entry: StoreEntry) {
+  let nextInterval = 0;
 
   for (const subscription of entry.subscriptions) {
     const interval = subscription.pollingInterval;
 
-    if (Number.isFinite(interval) && interval > 0) {
-      nextPollingMs = Math.min(nextPollingMs, interval);
+    if (!Number.isFinite(interval) || interval <= 0) {
+      continue;
+    }
+
+    if (nextInterval === 0 || interval < nextInterval) {
+      nextInterval = interval;
     }
   }
 
-  if (!Number.isFinite(nextPollingMs)) {
-    nextPollingMs = 0;
-  }
-
-  if (entry.pollingMs === nextPollingMs) {
+  if (entry.pollingMs === nextInterval) {
     return;
   }
 
@@ -344,29 +476,30 @@ function configurePolling(entry: StoreEntry): void {
     entry.pollingTimer = null;
   }
 
-  entry.pollingMs = nextPollingMs;
+  entry.pollingMs = nextInterval;
 
-  if (nextPollingMs === 0) {
+  if (nextInterval <= 0) {
     return;
   }
 
-  // This timer checks the exchange schedule.
-  // It does not make network requests while the market
-  // is closed beyond its 30-minute grace period.
   entry.pollingTimer = window.setInterval(
     () => {
-      checkEntryForRefresh(entry, nextPollingMs);
+      checkEntryForRefresh(entry, nextInterval);
     },
-    Math.min(nextPollingMs, SCHEDULE_CHECK_MS),
+    Math.min(nextInterval, SCHEDULE_CHECK_MS),
   );
 }
+
+// --------------------------------------------------
+// SSR INITIAL QUOTE
+// --------------------------------------------------
 
 function seedMarketQuote(
   symbol: string,
   range: ChartRange,
   chartInterval: ChartInterval | undefined,
-  initialQuote?: InitialMarketQuote | null,
-): void {
+  initialQuote: InitialMarketQuote | null | undefined,
+) {
   if (
     !initialQuote ||
     initialQuote.data.id !== symbol ||
@@ -377,7 +510,7 @@ function seedMarketQuote(
 
   const entry = getEntry(symbol, range, chartInterval);
 
-  if (entry.snapshot.data !== null || entry.fetchPromise) {
+  if (entry.snapshot.data || entry.fetchPromise) {
     return;
   }
 
@@ -390,7 +523,11 @@ function seedMarketQuote(
   });
 }
 
-function refreshActiveQuotes(): void {
+// --------------------------------------------------
+// VISIBILITY / NETWORK
+// --------------------------------------------------
+
+function refreshActiveQuotes() {
   if (!canRefresh()) return;
 
   for (const entry of store.values()) {
@@ -398,7 +535,7 @@ function refreshActiveQuotes(): void {
   }
 }
 
-function handleVisibilityChange(): void {
+function handleVisibilityChange() {
   if (document.visibilityState === "visible") {
     refreshActiveQuotes();
   }
@@ -406,10 +543,15 @@ function handleVisibilityChange(): void {
 
 if (typeof window !== "undefined") {
   window.addEventListener("focus", refreshActiveQuotes);
+
   window.addEventListener("online", refreshActiveQuotes);
 
   document.addEventListener("visibilitychange", handleVisibilityChange);
 }
+
+// --------------------------------------------------
+// PUBLIC API
+// --------------------------------------------------
 
 export function subscribeToMarketQuote(
   symbol: string,
@@ -421,7 +563,7 @@ export function subscribeToMarketQuote(
   chartInterval: ChartInterval | undefined,
   listener: () => void,
   initialQuote?: InitialMarketQuote | null,
-): () => void {
+) {
   seedMarketQuote(symbol, range, chartInterval, initialQuote);
 
   const entry = getEntry(symbol, range, chartInterval);
@@ -446,13 +588,17 @@ export function subscribeToMarketQuote(
   entry.subscriptions.add(subscription);
 
   if (isFirstSubscriber) {
-    entry.lastSessionActive = getMarketSessionActive(config);
+    const session = getMarketSession(config);
+
+    if (session.active && session.key !== null) {
+      entry.finalCandidateKey = session.key;
+    }
   }
 
   configurePolling(entry);
 
-  // Initial page load and explicit range changes are
-  // allowed even when the market is closed.
+  // Initial requests are allowed while the market is closed.
+  // Revisit stale cached data without enabling closed-market polling.
   if (
     !entry.fetchPromise &&
     (!entry.snapshot.data || (isFirstSubscriber && !isFresh(entry)))
@@ -467,7 +613,6 @@ export function subscribeToMarketQuote(
 
     if (entry.subscriptions.size === 0) {
       entry.requestConfig = null;
-      entry.lastSessionActive = null;
     }
   };
 }
@@ -488,8 +633,6 @@ export async function refreshMarketQuote(
   assetType: AssetType,
   chartInterval?: ChartInterval,
 ): Promise<MarketQuoteSnapshot> {
-  // Explicit refreshes are permitted regardless
-  // of the market's current trading status.
   await fetchQuote({
     symbol,
     name,
