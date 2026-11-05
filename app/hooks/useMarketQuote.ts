@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 
 import {
-  getMarketQuoteSnapshot,
-  subscribeToMarketQuote,
-} from "./market-quote-store";
-
-import type { InitialMarketQuote } from "@/lib/utils/build-market-quote";
+  buildMarketQuote,
+  type InitialMarketQuote,
+  type MarketCandlesData,
+} from "@/lib/utils/build-market-quote";
 
 export type AssetType = "index" | "stock" | "crypto" | "currency" | "commodity";
 
@@ -42,7 +41,6 @@ export type ChartInterval =
 export interface ChartPoint {
   timestampMs: number;
   price: number;
-
   open?: number;
   high?: number;
   low?: number;
@@ -53,31 +51,32 @@ export interface MarketItem {
   id: string;
   name: string;
   displaySymbol?: string;
-
   value: string;
   change: string;
   percent: string;
-
   isPositive: boolean;
-
   history: ChartPoint[];
-
   rawPrice: number;
   previousClose?: number;
-
   updatedAt?: number | string;
-
   exchangeTimezone?: string;
-
-  // Runtime market-session state returned by /api/candles
   isClosed: boolean;
-
   marketOpenMs?: number | null;
   marketCloseMs?: number | null;
-
-  // Runtime intraday break detected from candle data
   lunchStartMs?: number | null;
   lunchEndMs?: number | null;
+}
+
+interface QuoteState {
+  data: MarketItem | null;
+  loading: boolean;
+  error: string | null;
+}
+
+function getRefreshInterval(range: ChartRange, requestedInterval: number) {
+  const defaultInterval = range === "1D" || range === "5D" ? 60_000 : 300_000;
+
+  return requestedInterval > 0 ? requestedInterval : defaultInterval;
 }
 
 export function useMarketQuote(
@@ -91,69 +90,140 @@ export function useMarketQuote(
   enabled = true,
   initialQuote?: InitialMarketQuote | null,
 ) {
-  const usableInitialQuote =
-    initialQuote?.data.id === symbol ? initialQuote : null;
+  const [state, setState] = useState<QuoteState>(() => ({
+    data: initialQuote?.data.id === symbol ? initialQuote.data : null,
+    loading: false,
+    error: null,
+  }));
 
-  // A stable snapshot shared by SSR and hydration.
-  const initialSnapshot = useMemo(
-    () => ({
-      data: usableInitialQuote?.data ?? null,
-      loading: false,
-      error: null,
-    }),
-    [usableInitialQuote],
-  );
+  useEffect(() => {
+    if (!enabled) return;
 
-  const subscribe = useCallback(
-    (listener: () => void) => {
-      if (!enabled) {
-        return () => {};
+    let disposed = false;
+    let controller: AbortController | null = null;
+    let requestVersion = 0;
+
+    const interval = getRefreshInterval(range, pollingInterval);
+
+    async function refresh() {
+      if (disposed || document.hidden || !navigator.onLine) {
+        return;
       }
 
-      return subscribeToMarketQuote(
-        symbol,
-        name,
-        range,
-        displaySymbol,
-        assetType,
-        pollingInterval,
-        chartInterval,
-        listener,
-        usableInitialQuote,
-      );
-    },
-    [
-      symbol,
-      name,
-      range,
-      displaySymbol,
-      assetType,
-      pollingInterval,
-      chartInterval,
-      enabled,
-      usableInitialQuote,
-    ],
-  );
+      // Cancel any older request for this chart.
+      controller?.abort();
 
-  const getSnapshot = useCallback(() => {
-    const snapshot = getMarketQuoteSnapshot(symbol, range, chartInterval);
+      const currentController = new AbortController();
+      controller = currentController;
 
-    // Display server data until the subscription seeds the browser store.
-    if (
-      snapshot.data === null &&
-      snapshot.error === null &&
-      usableInitialQuote
-    ) {
-      return initialSnapshot;
+      const version = ++requestVersion;
+
+      setState((previous) => ({
+        ...previous,
+        loading: previous.data === null,
+        error: null,
+      }));
+
+      try {
+        const params = new URLSearchParams({
+          symbol,
+          range,
+        });
+
+        if (chartInterval) {
+          params.set("interval", chartInterval);
+        }
+
+        const response = await fetch(`/api/candles?${params.toString()}`, {
+          cache: "no-store",
+          signal: currentController.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Market request failed (${response.status})`);
+        }
+
+        const candles = (await response.json()) as MarketCandlesData;
+
+        const nextData = buildMarketQuote({
+          candles,
+          symbol,
+          name,
+          displaySymbol,
+          assetType,
+          range,
+        });
+
+        if (disposed || version !== requestVersion) {
+          return;
+        }
+
+        setState({
+          data: nextData,
+          loading: false,
+          error: null,
+        });
+      } catch (error) {
+        if (
+          disposed ||
+          currentController.signal.aborted ||
+          version !== requestVersion
+        ) {
+          return;
+        }
+
+        setState((previous) => ({
+          ...previous,
+          loading: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to load market data",
+        }));
+      } finally {
+        if (controller === currentController) {
+          controller = null;
+        }
+      }
     }
 
-    return snapshot;
-  }, [symbol, range, chartInterval, usableInitialQuote, initialSnapshot]);
+    function handleReturn() {
+      if (!document.hidden) {
+        void refresh();
+      }
+    }
 
-  const getServerSnapshot = useCallback(
-    () => initialSnapshot,
-    [initialSnapshot],
-  );
+    // Fetch immediately when the chart is mounted
+    // or when its symbol/range changes.
+    void refresh();
 
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+    const timer = window.setInterval(() => {
+      void refresh();
+    }, interval);
+
+    document.addEventListener("visibilitychange", handleReturn);
+
+    window.addEventListener("online", handleReturn);
+
+    return () => {
+      disposed = true;
+      controller?.abort();
+      window.clearInterval(timer);
+
+      document.removeEventListener("visibilitychange", handleReturn);
+
+      window.removeEventListener("online", handleReturn);
+    };
+  }, [
+    symbol,
+    name,
+    range,
+    displaySymbol,
+    assetType,
+    pollingInterval,
+    chartInterval,
+    enabled,
+  ]);
+
+  return state;
 }

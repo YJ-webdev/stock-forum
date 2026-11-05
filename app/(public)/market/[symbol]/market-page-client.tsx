@@ -14,7 +14,6 @@ import {
   type SelectedRange,
   useMarketQuote,
 } from "@/app/hooks/useMarketQuote";
-import { refreshMarketQuote } from "@/app/hooks/market-quote-store";
 
 import {
   getMarketVoteStats,
@@ -255,7 +254,6 @@ export default function MarketPageClient({
   const [isPending, startTransition] = useTransition();
 
   const discussionRef = useRef<HTMLDivElement>(null);
-  const rangeRequestRef = useRef(0);
 
   const selectedSymbol = symbol;
 
@@ -398,12 +396,6 @@ export default function MarketPageClient({
     initialVoteStats,
     initialVoteStatsSessionKey,
   ]);
-
-  useEffect(() => {
-    return () => {
-      rangeRequestRef.current += 1;
-    };
-  }, [selectedSymbol]);
 
   const handleVote = (
     direction: VoteDirection,
@@ -726,30 +718,10 @@ export default function MarketPageClient({
     }
   };
 
-  const handleRangeChange = async (range: SelectedRange) => {
-    const requestId = ++rangeRequestRef.current;
-
-    if (range === activeRange) return;
-
-    const requestedInterval = range === "1D" ? "1m" : undefined;
-
-    const result = await refreshMarketQuote(
-      selectedSymbol,
-      selectedName,
-      range,
-      selectedDisplaySymbol,
-      selectedAssetType as AssetType,
-      requestedInterval,
-    );
-
-    if (requestId !== rangeRequestRef.current) return;
-
-    if (result.error || !result.data) {
-      toast.error(chartLabels.data_unavailable);
-      return;
+  const handleRangeChange = (range: SelectedRange) => {
+    if (range !== activeRange) {
+      setActiveRange(range);
     }
-
-    setActiveRange(range);
   };
 
   const handlePredictionEdited = (
@@ -897,7 +869,7 @@ export default function MarketPageClient({
                         key={range}
                         type="button"
                         aria-pressed={isActive}
-                        onClick={() => void handleRangeChange(range)}
+                        onClick={() => handleRangeChange(range)}
                         className={`
                               cursor-pointer rounded-full
                               px-3.25 py-1.25 text-xs font-medium

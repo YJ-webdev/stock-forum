@@ -1,217 +1,84 @@
-import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
-import YahooFinance from "yahoo-finance2";
 
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
+import { getMarketCandles } from "@/lib/server/market-candles";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-const yahoo = new YahooFinance();
-
-const DAY_MS = 24 * 60 * 60 * 1000;
+const HEADERS = { "Cache-Control": "no-store, max-age=0" };
 
 function isPrice(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
-const exchangeDateFormatters = new Map<string, Intl.DateTimeFormat>();
-
-function getExchangeDate(date: Date, timezone: string): string {
-  let formatter = exchangeDateFormatters.get(timezone);
-
-  if (!formatter) {
-    formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: timezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-
-    exchangeDateFormatters.set(timezone, formatter);
-  }
-
-  const parts = formatter.formatToParts(date);
-
-  const year = parts.find((part) => part.type === "year")?.value;
-  const month = parts.find((part) => part.type === "month")?.value;
-  const day = parts.find((part) => part.type === "day")?.value;
-
-  return `${year}-${month}-${day}`;
-}
-
-async function getPreviousDailyClose(
-  symbol: string,
-  quoteTime: Date,
-  timezone: string,
-): Promise<number | null> {
-  const quoteDate = getExchangeDate(quoteTime, timezone);
-
-  const chart = await yahoo.chart(symbol, {
-    period1: new Date(quoteTime.getTime() - 60 * DAY_MS),
-    period2: new Date(Math.min(Date.now(), quoteTime.getTime() + DAY_MS)),
-    interval: "1d",
-    includePrePost: false,
-    return: "array",
-  });
-
-  let previousClose: number | null = null;
-  let latestTimestamp = -Infinity;
-
-  for (const candle of chart.quotes ?? []) {
-    const date = new Date(candle.date);
-    const timestamp = date.getTime();
-
-    if (
-      !Number.isFinite(timestamp) ||
-      !isPrice(candle.close) ||
-      getExchangeDate(date, timezone) >= quoteDate
-    ) {
-      continue;
-    }
-
-    if (timestamp > latestTimestamp) {
-      latestTimestamp = timestamp;
-      previousClose = candle.close;
-    }
-  }
-
-  return previousClose;
-}
-
-const getQuote = unstable_cache(
-  async (symbol: string, isIndex: boolean, timezone: string) => {
-    const quote = await yahoo.quote(symbol);
-
-    const price = quote.regularMarketPrice;
-
-    if (!isPrice(price)) {
-      throw new Error("No market price available");
-    }
-
-    // This is a guard against a near-zero denominator for indices.
-    const isUsablePreviousClose = (value: unknown): value is number =>
-      isPrice(value) && (!isIndex || value >= price * 0.01);
-
-    let previousClose: number | null = isUsablePreviousClose(
-      quote.regularMarketPreviousClose,
-    )
-      ? quote.regularMarketPreviousClose
-      : null;
-
-    if (isIndex && previousClose === null) {
-      const quoteTime = quote.regularMarketTime
-        ? new Date(quote.regularMarketTime)
-        : null;
-
-      if (quoteTime && Number.isFinite(quoteTime.getTime())) {
-        try {
-          const dailyClose = await getPreviousDailyClose(
-            symbol,
-            quoteTime,
-            timezone,
-          );
-
-          if (isUsablePreviousClose(dailyClose)) {
-            previousClose = dailyClose;
-          }
-        } catch (error) {
-          console.warn(
-            `[market-quotes] Previous close lookup failed: ${symbol}`,
-            error instanceof Error ? error.message : String(error),
-          );
-        }
-      }
-    }
-
-    // Keep change and percent based on the same previous close.
-    const change = previousClose !== null ? price - previousClose : null;
-
-    const calculatedPercent =
-      previousClose !== null && change !== null
-        ? (change / previousClose) * 100
-        : null;
-
-    const percent =
-      calculatedPercent !== null && Number.isFinite(calculatedPercent)
-        ? calculatedPercent
-        : null;
-
-    return {
-      price,
-      previousClose,
-      change,
-      percent,
-    };
-  },
-  ["relative-market-quotes-v3"],
-  { revalidate: 30 },
-);
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-
-  const symbols = Array.from(
-    new Set(
+  const symbols = [
+    ...new Set(
       (searchParams.get("symbols") ?? "")
         .split(",")
         .map((symbol) => symbol.trim())
         .filter(Boolean),
     ),
-  );
+  ];
 
-  if (symbols.length === 0 || symbols.length > 60) {
+  if (symbols.length < 1 || symbols.length > 60) {
     return NextResponse.json(
       { error: "Provide between 1 and 60 market symbols." },
-      { status: 400 },
+      { status: 400, headers: HEADERS },
     );
   }
 
-  const markets = symbols.map((symbol) =>
-    ALL_MARKET_SYMBOLS.find((item) => item.symbol === symbol),
+  const marketMap = new Map(
+    ALL_MARKET_SYMBOLS.map((market) => [market.symbol, market]),
   );
-
-  if (markets.some((market) => !market)) {
+  if (symbols.some((symbol) => !marketMap.has(symbol))) {
     return NextResponse.json(
       { error: "Unknown market symbol." },
-      { status: 400 },
+      { status: 400, headers: HEADERS },
     );
   }
 
-  const results = await Promise.all(
-    markets.map(async (market) => {
-      const item = market!;
+  const quotes: Record<
+    string,
+    {
+      price: number;
+      previousClose: number | null;
+      change: number | null;
+      percent: number | null;
+    }
+  > = {};
+  const errors: Record<string, string> = {};
 
-      const providerSymbol = item.providerSymbol ?? item.symbol;
-      try {
-        return {
-          symbol: item.symbol,
-          quote: await getQuote(
-            providerSymbol,
-            item.assetType === "index",
-            item.timezone ?? "UTC",
-          ),
-          error: null,
-        };
-      } catch (error) {
-        return {
-          symbol: item.symbol,
-          quote: null,
-          error: error instanceof Error ? error.message : "Quote unavailable",
-        };
-      }
-    }),
-  );
+  // Small batches avoid launching up to 120 upstream requests at once.
+  const BATCH_SIZE = 5;
+  for (let offset = 0; offset < symbols.length; offset += BATCH_SIZE) {
+    await Promise.all(
+      symbols.slice(offset, offset + BATCH_SIZE).map(async (symbol) => {
+        try {
+          // Both endpoints use the same validated market data service.
+          const data = await getMarketCandles(symbol, "1D", "5m");
+          const price = data.currentPrice;
+          if (!isPrice(price)) throw new Error("Market price unavailable");
 
-  return NextResponse.json({
-    quotes: Object.fromEntries(
-      results
-        .filter((result) => result.quote !== null)
-        .map((result) => [result.symbol, result.quote]),
-    ),
-    errors: Object.fromEntries(
-      results
-        .filter((result) => result.error !== null)
-        .map((result) => [result.symbol, result.error]),
-    ),
-  });
+          const previousClose = isPrice(data.previousClose)
+            ? data.previousClose
+            : null;
+          const change = previousClose === null ? null : price - previousClose;
+          quotes[symbol] = {
+            price,
+            previousClose,
+            change,
+            percent: change === null ? null : (change / previousClose!) * 100,
+          };
+        } catch (error) {
+          errors[symbol] =
+            error instanceof Error ? error.message : "Quote unavailable";
+        }
+      }),
+    );
+  }
+
+  return NextResponse.json({ quotes, errors }, { headers: HEADERS });
 }

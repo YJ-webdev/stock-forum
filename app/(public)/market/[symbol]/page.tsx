@@ -1,19 +1,20 @@
 // app/(public)/market/[symbol]/page.tsx
 
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { auth } from "@/auth";
 import { getMarketComments } from "@/app/actions/post";
 import { getMarketVoteStats } from "@/app/actions/market-vote";
 import { isMarketInWatchlist } from "@/app/actions/watchlist";
 
+import { ScrollToTopButton } from "@/app/components/scroll-to-top-button";
+
 import { ALL_MARKET_SYMBOLS } from "@/lib/data/market-symbols";
+import { getInitialMarketQuote } from "@/lib/server/market-candles";
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
-import { getInitialMarketQuote } from "@/lib/server/initial-market-quote";
 
 import MarketPageClient from "./market-page-client";
-import { ScrollToTopButton } from "@/app/components/scroll-to-top-button";
-import { notFound } from "next/navigation";
 
 interface PageProps {
   params: Promise<{
@@ -48,7 +49,11 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { symbol, market, canPredict } = await resolveMarket(params);
 
-  const name = market?.name ?? symbol;
+  if (!market) {
+    notFound();
+  }
+
+  const name = market.name;
 
   const title = canPredict
     ? `${name} Predictions & Discussion`
@@ -64,11 +69,9 @@ export async function generateMetadata({
   return {
     title,
     description,
-
     alternates: {
       canonical: url,
     },
-
     openGraph: {
       type: "website",
       siteName: "BullBearVote",
@@ -76,7 +79,6 @@ export async function generateMetadata({
       title: shareTitle,
       description,
     },
-
     twitter: {
       card: "summary_large_image",
       title: shareTitle,
@@ -99,7 +101,6 @@ export default async function Page({ params }: PageProps) {
     : null;
 
   const sessionDate = votingWindow?.predictionFor ?? null;
-
   const currentSessionStartMs = votingWindow?.currentSessionStartMs ?? null;
 
   const [

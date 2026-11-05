@@ -148,7 +148,7 @@ export function HomeCommunity({
     [],
   );
 
-  const filterMarkets = markets.slice(0, 5);
+  const filterMarkets = markets.slice(0, 6);
   const selectedMarket = assetSymbol ? marketBySymbol.get(assetSymbol) : null;
 
   const highlightTargetComment =

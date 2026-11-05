@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export interface RelativeQuote {
   price: number;
@@ -10,142 +10,113 @@ export interface RelativeQuote {
 }
 
 type QuoteMap = Record<string, RelativeQuote>;
-
-interface CachedResult {
+interface QuoteState {
+  key: string;
   quotes: QuoteMap;
-  fetchedAt: number;
+  loading: boolean;
+  error: string | null;
 }
 
-const cache = new Map<string, CachedResult>();
-const pending = new Map<string, Promise<CachedResult>>();
-const FRESH_MS = 30_000;
-
-function loadQuotes(key: string): Promise<CachedResult> {
-  const existing = pending.get(key);
-
-  if (existing) {
-    return existing;
-  }
-
-  const request = (async () => {
-    const controller = new AbortController();
-
-    const timeout = window.setTimeout(() => controller.abort(), 15_000);
-
-    try {
-      const params = new URLSearchParams({
-        symbols: (JSON.parse(key) as string[]).join(","),
-      });
-
-      const response = await fetch(`/api/market-quotes?${params}`, {
-        signal: controller.signal,
-        cache: "no-store",
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to load quotes (${response.status})`);
-      }
-
-      const json = await response.json();
-
-      const result: CachedResult = {
-        quotes: json.quotes ?? {},
-        fetchedAt: Date.now(),
-      };
-
-      cache.set(key, result);
-
-      return result;
-    } finally {
-      window.clearTimeout(timeout);
-    }
-  })();
-
-  pending.set(key, request);
-
-  void request.then(
-    () => pending.delete(key),
-    () => pending.delete(key),
-  );
-
-  return request;
-}
+const POLL_MS = 30_000;
+const TIMEOUT_MS = 15_000;
 
 export function useRelativeQuotes(symbols: string[]) {
   const key = JSON.stringify([...new Set(symbols)].sort());
-
-  const [state, setState] = useState<{
-    key: string;
-    quotes: QuoteMap;
-    loading: boolean;
-    error: string | null;
-  }>(() => ({
+  const requestedSymbols = useMemo(() => JSON.parse(key) as string[], [key]);
+  const [state, setState] = useState<QuoteState>({
     key,
-    quotes: cache.get(key)?.quotes ?? {},
-    loading: symbols.length > 0,
+    quotes: {},
+    loading: requestedSymbols.length > 0,
     error: null,
-  }));
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    const cached = cache.get(key);
-    const empty = (JSON.parse(key) as string[]).length === 0;
-
-    if (empty || (cached && Date.now() - cached.fetchedAt < FRESH_MS)) {
-      setState({
-        key,
-        quotes: cached?.quotes ?? {},
-        loading: false,
-        error: null,
-      });
-
-      return;
-    }
+    let disposed = false;
+    let inFlight = false;
+    let controller: AbortController | null = null;
 
     setState({
       key,
-      quotes: cached?.quotes ?? {},
-      loading: true,
+      quotes: {},
+      loading: requestedSymbols.length > 0,
       error: null,
     });
+    if (requestedSymbols.length === 0) return;
 
-    void loadQuotes(key).then(
-      (result) => {
-        if (!cancelled) {
-          setState({
+    async function refresh() {
+      if (disposed || inFlight || document.hidden || !navigator.onLine) return;
+      inFlight = true;
+      const requestController = new AbortController();
+      controller = requestController;
+      const timeout = window.setTimeout(
+        () => requestController.abort(),
+        TIMEOUT_MS,
+      );
+
+      try {
+        const params = new URLSearchParams({
+          symbols: requestedSymbols.join(","),
+        });
+        const response = await fetch(`/api/market-quotes?${params}`, {
+          cache: "no-store",
+          signal: requestController.signal,
+        });
+        if (!response.ok)
+          throw new Error(`Quote request failed (${response.status})`);
+        const json = (await response.json()) as { quotes?: QuoteMap };
+        if (!json.quotes || typeof json.quotes !== "object") {
+          throw new Error("Invalid quote response");
+        }
+        if (!disposed) {
+          setState((previous) => ({
             key,
-            quotes: result.quotes,
+            quotes: { ...previous.quotes, ...json.quotes },
             loading: false,
             error: null,
-          });
+          }));
         }
-      },
-      (error) => {
-        if (!cancelled) {
-          setState({
-            key,
-            quotes: cached?.quotes ?? {},
+      } catch (error) {
+        if (!disposed && !requestController.signal.aborted) {
+          setState((previous) => ({
+            ...previous,
             loading: false,
             error:
-              error instanceof Error ? error.message : "Failed to load quotes",
-          });
+              error instanceof Error
+                ? error.message
+                : "Failed to refresh quotes",
+          }));
         }
-      },
-    );
+      } finally {
+        window.clearTimeout(timeout);
+        if (controller === requestController) controller = null;
+        inFlight = false;
+      }
+    }
+
+    function refreshOnReturn() {
+      if (!document.hidden) void refresh();
+    }
+
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), POLL_MS);
+    document.addEventListener("visibilitychange", refreshOnReturn);
+    window.addEventListener("online", refreshOnReturn);
 
     return () => {
-      cancelled = true;
+      disposed = true;
+      controller?.abort();
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshOnReturn);
+      window.removeEventListener("online", refreshOnReturn);
     };
-  }, [key]);
+  }, [key, requestedSymbols]);
 
   if (state.key !== key) {
     return {
-      quotes: cache.get(key)?.quotes ?? {},
-      loading: symbols.length > 0,
-      error: null,
+      quotes: {} as QuoteMap,
+      loading: requestedSymbols.length > 0,
+      error: null as string | null,
     };
   }
-
-  return state;
+  return { quotes: state.quotes, loading: state.loading, error: state.error };
 }
