@@ -52,6 +52,7 @@ import {
 import { resolveLanguage } from "@/lib/data/languages";
 
 import { getVotingWindow } from "@/lib/utils/get-voting-window";
+import { getLatestMarketCloseMs } from "@/lib/utils/get-latest-market-close";
 import { useMarketVoteState } from "@/app/hooks/use-market-vote-state";
 import { useLiveVotingWindow } from "@/app/hooks/use-live-voting-window";
 import {
@@ -232,6 +233,7 @@ export default function MarketPageClient({
   const { points: userPoints, setPoints: setUserPoints } = usePointBalance();
 
   const [betAmount, setBetAmount] = useState(50);
+  const [boundaryNowMs, setBoundaryNowMs] = useState(initialNowMs);
   const [showDetailChart, setShowDetailChart] = useState(false);
   const [hasOpenedDetailChart, setHasOpenedDetailChart] = useState(false);
   const [statsRefreshVersion, setStatsRefreshVersion] = useState(0);
@@ -293,6 +295,18 @@ export default function MarketPageClient({
     initialNowMs,
     intervalMs: 1_000,
   });
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") setBoundaryNowMs(Date.now());
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const sessionBoundaryMs = useMemo(
+    () => getLatestMarketCloseMs(selectedSymbol, boundaryNowMs),
+    [selectedSymbol, boundaryNowMs],
+  );
 
   const isMarketOpen = canPredict ? votingWindow.isMarketOpen : false;
 
@@ -1047,6 +1061,7 @@ export default function MarketPageClient({
           currentSessionStartMs={
             canPredict ? votingWindow.currentSessionStartMs : null
           }
+          sessionBoundaryMs={sessionBoundaryMs}
         />
       </div>
     </div>

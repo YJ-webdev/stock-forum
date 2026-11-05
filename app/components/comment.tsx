@@ -63,6 +63,7 @@ interface MarketCommentsProps {
 
   assetSymbol: string;
   currentSessionStartMs: number | null;
+  sessionBoundaryMs: number | null;
 
   prediction: {
     selectedVote: PredictionDirection | null;
@@ -121,6 +122,7 @@ export function MarketComments({
   assetSymbol,
   prediction,
   currentSessionStartMs,
+  sessionBoundaryMs,
   onPredictionEdited,
   initialCommentsPage,
   initialCommentsViewerId,
@@ -745,18 +747,14 @@ export function MarketComments({
           comments.map((comment, index) => {
             const previousComment = comments[index - 1];
 
-            const isCurrentSession =
-              currentSessionStartMs !== null &&
-              new Date(comment.createdAt).getTime() >= currentSessionStartMs;
-
-            const previousIsCurrentSession =
-              currentSessionStartMs !== null &&
+            const showSessionBoundary =
+              index > 0 &&
+              sessionBoundaryMs !== null &&
+              Number.isFinite(sessionBoundaryMs) &&
               previousComment !== undefined &&
               new Date(previousComment.createdAt).getTime() >=
-                currentSessionStartMs;
-
-            const showSessionBoundary =
-              index > 0 && previousIsCurrentSession && !isCurrentSession;
+                sessionBoundaryMs &&
+              new Date(comment.createdAt).getTime() < sessionBoundaryMs;
 
             return (
               <div key={comment.id} className="dark:bg-zinc-900">
