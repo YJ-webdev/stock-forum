@@ -42,6 +42,8 @@ export interface TradingHours {
   timezone: string;
   open: string;
   close: string;
+  lunchStart?: string;
+  lunchEnd?: string;
 }
 
 // -----------------------------------------------------------------------------
@@ -112,18 +114,32 @@ export const TRADING_HOURS: Record<MarketSchedule, TradingHours> = {
     timezone: "Asia/Tokyo",
     open: "09:00",
     close: "15:30",
+    lunchStart: "11:30",
+    lunchEnd: "12:30",
   },
 
   CN_EQUITY: {
     timezone: "Asia/Shanghai",
     open: "09:30",
     close: "15:00",
+    lunchStart: "11:30",
+    lunchEnd: "13:00",
   },
 
   HK_EQUITY: {
     timezone: "Asia/Hong_Kong",
     open: "09:30",
     close: "16:00",
+    lunchStart: "12:00",
+    lunchEnd: "13:00",
+  },
+
+  SG_EQUITY: {
+    timezone: "Asia/Singapore",
+    open: "09:00",
+    close: "17:00",
+    lunchStart: "12:00",
+    lunchEnd: "13:00",
   },
 
   IN_EQUITY: {
@@ -148,12 +164,6 @@ export const TRADING_HOURS: Record<MarketSchedule, TradingHours> = {
     timezone: "Australia/Sydney",
     open: "10:00",
     close: "16:00",
-  },
-
-  SG_EQUITY: {
-    timezone: "Asia/Singapore",
-    open: "09:00",
-    close: "17:00",
   },
 
   ID_EQUITY: {

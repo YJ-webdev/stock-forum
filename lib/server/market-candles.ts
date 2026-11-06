@@ -268,6 +268,35 @@ export async function getMarketCandles(
   const change = base === null ? null : ((currentPrice - base) / base) * 100;
   const session = sessionState(market, now);
 
+  const schedule = market?.marketSchedule
+    ? TRADING_HOURS[market.marketSchedule]
+    : null;
+
+  let lunchStartMs: number | null = null;
+  let lunchEndMs: number | null = null;
+
+  if (range === "1D" && schedule?.lunchStart && schedule?.lunchEnd) {
+    const day = exchangeDay(last.timestampMs, schedule.timezone);
+    const [year, month, date] = day.split("-").map(Number);
+
+    const toTimestamp = (time: string) => {
+      const [hour, minute] = time.split(":").map(Number);
+
+      return new TZDate(
+        year,
+        month - 1,
+        date,
+        hour,
+        minute,
+        0,
+        schedule.timezone,
+      ).getTime();
+    };
+
+    lunchStartMs = toTimestamp(schedule.lunchStart);
+    lunchEndMs = toTimestamp(schedule.lunchEnd);
+  }
+
   return {
     points,
     currentPrice,
@@ -288,8 +317,8 @@ export async function getMarketCandles(
         : Number.isFinite(metaTime) && metaTime >= last.timestampMs
           ? metaTime
           : last.timestampMs,
-    lunchStartMs: null,
-    lunchEndMs: null,
+    lunchStartMs,
+    lunchEndMs,
   };
 }
 
